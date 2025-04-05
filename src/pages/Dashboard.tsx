@@ -191,6 +191,45 @@ const Dashboard: React.FC = () => {
     });
   }, [hypotheses, ideas, filters, searchQuery]);
 
+  // Filter experiments based on the same criteria
+  const filteredExperiments = React.useMemo(() => {
+    return experiments.filter(experiment => {
+      if (filters.userId && experiment.userId !== filters.userId) {
+        return false;
+      }
+      
+      // Timeframe filter
+      if (filters.timeframe) {
+        const createdDate = new Date(experiment.createdAt);
+        let cutoffDate;
+        
+        switch (filters.timeframe) {
+          case 'today':
+            cutoffDate = startOfToday();
+            break;
+          case 'week':
+            cutoffDate = startOfWeek(new Date());
+            break;
+          case 'month':
+            cutoffDate = startOfMonth(new Date());
+            break;
+          case 'quarter':
+            cutoffDate = startOfQuarter(new Date());
+            break;
+          case 'year':
+            cutoffDate = startOfYear(new Date());
+            break;
+        }
+        
+        if (!isAfter(createdDate, cutoffDate)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [experiments, filters]);
+
   const handleHypothesisStatusChange = (hypothesisId: string, newStatus: HypothesisStatus) => {
     editHypothesis(hypothesisId, { status: newStatus });
     toast({
@@ -253,6 +292,7 @@ const Dashboard: React.FC = () => {
               <KanbanBoard 
                 ideas={filteredIdeas}
                 hypotheses={filteredHypotheses}
+                experiments={filteredExperiments}
                 onHypothesisStatusChange={handleHypothesisStatusChange}
                 onIdeaToHypothesis={handleIdeaToHypothesis}
               />

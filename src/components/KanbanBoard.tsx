@@ -7,13 +7,15 @@ import {
   DropResult 
 } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
-import { GrowthIdea, Hypothesis, HypothesisStatus, ALL_HYPOTHESIS_STATUSES } from '@/types';
+import { GrowthIdea, Hypothesis, HypothesisStatus, ALL_HYPOTHESIS_STATUSES, Experiment } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import PectiScoreDisplay from './PectiScoreDisplay';
+import StatusBadge from './StatusBadge';
 
 interface KanbanBoardProps {
   ideas: GrowthIdea[];
   hypotheses: Hypothesis[];
+  experiments: Experiment[];
   onHypothesisStatusChange: (hypothesisId: string, newStatus: HypothesisStatus) => void;
   onIdeaToHypothesis: (ideaId: string) => void;
 }
@@ -21,7 +23,7 @@ interface KanbanBoardProps {
 interface Column {
   id: HypothesisStatus;
   title: string;
-  items: Hypothesis[];
+  items: (Hypothesis | (Hypothesis & { experiment: Experiment }))[];
 }
 
 interface IdeaColumn {
@@ -33,6 +35,7 @@ interface IdeaColumn {
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ 
   ideas, 
   hypotheses, 
+  experiments,
   onHypothesisStatusChange,
   onIdeaToHypothesis
 }) => {
@@ -62,6 +65,22 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       });
     }
   });
+
+  // Add hypotheses with in-progress experiments to the Testing column
+  if (experiments && experiments.length > 0) {
+    experiments.forEach(experiment => {
+      if (experiment.status === 'In Progress') {
+        const relatedHypothesis = hypotheses.find(h => h.id === experiment.hypothesisId);
+        
+        if (relatedHypothesis && relatedHypothesis.status !== 'Testing') {
+          initialColumns.Testing.items.push({
+            ...relatedHypothesis,
+            experiment
+          });
+        }
+      }
+    });
+  }
 
   const [columns, setColumns] = useState(initialColumns);
 
@@ -204,38 +223,48 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     ref={provided.innerRef}
                     className="space-y-2 min-h-[50px]"
                   >
-                    {columns[status].items.map((hypothesis, index) => (
-                      <Draggable key={hypothesis.id} draggableId={hypothesis.id} index={index}>
-                        {(provided) => (
-                          <Card
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="bg-white"
-                          >
-                            <CardContent className="p-3">
-                              <div className="text-sm font-medium">{hypothesis.metric}</div>
-                              <div className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                                {hypothesis.initiative}
-                              </div>
-                              <div className="mt-2">
-                                <PectiScoreDisplay
-                                  pecti={hypothesis.pectiScore}
-                                  showPercentage={false}
-                                  showProgressBar={true}
-                                  size="sm"
-                                />
-                              </div>
-                              {hypothesis.userName && (
-                                <div className="text-xs text-muted-foreground mt-2">
-                                  By: {hypothesis.userName}
+                    {columns[status].items.map((hypothesis, index) => {
+                      // Check if this item has an attached experiment
+                      const hasExperiment = 'experiment' in hypothesis;
+                      
+                      return (
+                        <Draggable key={hypothesis.id} draggableId={hypothesis.id} index={index}>
+                          {(provided) => (
+                            <Card
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="bg-white"
+                            >
+                              <CardContent className="p-3">
+                                <div className="text-sm font-medium">{hypothesis.metric}</div>
+                                <div className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                  {hypothesis.initiative}
                                 </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        )}
-                      </Draggable>
-                    ))}
+                                <div className="mt-2">
+                                  <PectiScoreDisplay
+                                    pecti={hypothesis.pectiScore}
+                                    showPercentage={false}
+                                    showProgressBar={true}
+                                    size="sm"
+                                  />
+                                </div>
+                                {hasExperiment && (
+                                  <div className="mt-2">
+                                    <StatusBadge status={hypothesis.experiment.status} />
+                                  </div>
+                                )}
+                                {hypothesis.userName && (
+                                  <div className="text-xs text-muted-foreground mt-2">
+                                    By: {hypothesis.userName}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )}
+                        </Draggable>
+                      );
+                    })}
                     {provided.placeholder}
                   </div>
                 )}
