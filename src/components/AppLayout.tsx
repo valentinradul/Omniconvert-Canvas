@@ -17,7 +17,6 @@ import {
   FlaskConical, 
   Lightbulb, 
   LineChart, 
-  Building, 
   Settings, 
   Users 
 } from 'lucide-react';
@@ -101,20 +100,6 @@ const AppLayout: React.FC = () => {
                   <Link to="/experiments" className="flex items-center">
                     <LineChart className="h-5 w-5 mr-3" strokeWidth={1.5} />
                     <span className="text-base">Experiments</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`flex items-center py-3 px-4 ${isActive('/departments') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                >
-                  <Link to="/departments" className="flex items-center">
-                    <Building className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                    <span className="text-base">Departments</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
