@@ -3,11 +3,11 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import TeamMembersSection from '@/components/team/TeamMembersSection';
+import DepartmentsSection from '@/components/team/DepartmentsSection';
 
 const TeamSettingsPage = () => {
-  const { toast } = useToast();
-
   const handleTeamNameChange = (e: React.FormEvent) => {
     e.preventDefault();
     toast({
@@ -21,7 +21,7 @@ const TeamSettingsPage = () => {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Team Settings</h1>
         <p className="text-muted-foreground">
-          Manage your team and team member settings.
+          Manage your team, team members, and department settings.
         </p>
       </div>
       
@@ -51,20 +51,9 @@ const TeamSettingsPage = () => {
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Members</CardTitle>
-            <CardDescription>
-              Manage your team members and their roles.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Your team currently has 3 members.
-            </p>
-            <Button variant="outline">Invite Team Member</Button>
-          </CardContent>
-        </Card>
+        <TeamMembersSection />
+        
+        <DepartmentsSection />
       </div>
     </div>
   );

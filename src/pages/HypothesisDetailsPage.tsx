@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import PectiScoreDisplay from '@/components/PectiScoreDisplay';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import HypothesisEditDialog from '@/components/hypothesis/HypothesisEditDialog';
+import { Pencil } from 'lucide-react';
 
 const HypothesisDetailsPage: React.FC = () => {
   const { hypothesisId } = useParams();
@@ -15,12 +17,14 @@ const HypothesisDetailsPage: React.FC = () => {
     getHypothesisById, 
     getIdeaById, 
     deleteHypothesis,
-    getExperimentByHypothesisId
+    getExperimentByHypothesisId,
+    editHypothesis
   } = useApp();
   
   const [hypothesis, setHypothesis] = useState(getHypothesisById(hypothesisId || ''));
   const [idea, setIdea] = useState(hypothesis ? getIdeaById(hypothesis.ideaId) : undefined);
   const [experiment, setExperiment] = useState(hypothesis ? getExperimentByHypothesisId(hypothesis.id) : undefined);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   useEffect(() => {
     const currentHypothesis = getHypothesisById(hypothesisId || '');
@@ -47,6 +51,12 @@ const HypothesisDetailsPage: React.FC = () => {
   const createExperiment = () => {
     navigate(`/create-experiment/${hypothesis.id}`);
   };
+
+  const handleEditSave = (updatedHypothesis: Partial<typeof hypothesis>) => {
+    editHypothesis(hypothesis.id, updatedHypothesis);
+    setHypothesis(prev => prev ? { ...prev, ...updatedHypothesis } : prev);
+    setIsEditDialogOpen(false);
+  };
   
   const totalPectiScore = 
     hypothesis.pectiScore.potential + 
@@ -68,6 +78,13 @@ const HypothesisDetailsPage: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            onClick={() => setIsEditDialogOpen(true)} 
+            variant="outline"
+          >
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit Hypothesis
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">Delete Hypothesis</Button>
@@ -173,6 +190,13 @@ const HypothesisDetailsPage: React.FC = () => {
           <Button onClick={createExperiment}>Create Experiment</Button>
         </div>
       )}
+      
+      <HypothesisEditDialog
+        hypothesis={hypothesis}
+        open={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onSave={handleEditSave}
+      />
     </div>
   );
 };
