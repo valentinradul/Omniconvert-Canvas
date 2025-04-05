@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Hypothesis, PECTI, Category, Tag, Department, HypothesisStatus } from '@/types';
+import { Hypothesis, PECTI, Category, Tag, Department, HypothesisStatus, ALL_HYPOTHESIS_STATUSES } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowUpDown, Filter, User, Tag as TagIcon, Building } from 'lucide-react';
 import {
@@ -47,17 +46,14 @@ const HypothesesPage: React.FC = () => {
   const allTags = getAllTags();
   const allUsers = getAllUserNames();
   
-  // Filter and sort hypotheses
   const filteredHypotheses = React.useMemo(() => {
     return hypotheses.filter(hypothesis => {
-      // Search query
       if (searchQuery && !hypothesis.observation.toLowerCase().includes(searchQuery.toLowerCase()) && 
           !hypothesis.initiative.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !hypothesis.metric.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
       
-      // Department filter
       if (filters.departmentId) {
         const relatedIdea = ideas.find(i => i.id === hypothesis.ideaId);
         if (!relatedIdea || relatedIdea.departmentId !== filters.departmentId) {
@@ -65,7 +61,6 @@ const HypothesesPage: React.FC = () => {
         }
       }
       
-      // Tag filter
       if (filters.tag) {
         const relatedIdea = ideas.find(i => i.id === hypothesis.ideaId);
         if (!relatedIdea || !relatedIdea.tags || !relatedIdea.tags.includes(filters.tag)) {
@@ -73,7 +68,6 @@ const HypothesesPage: React.FC = () => {
         }
       }
       
-      // PECTI Score filter
       if (filters.minPectiScore) {
         const pectiPercentage = calculatePectiPercentage(hypothesis.pectiScore);
         if (pectiPercentage < filters.minPectiScore) {
@@ -81,7 +75,6 @@ const HypothesesPage: React.FC = () => {
         }
       }
       
-      // User filter
       if (filters.userId && hypothesis.userId !== filters.userId) {
         return false;
       }
@@ -100,19 +93,16 @@ const HypothesesPage: React.FC = () => {
     });
   }, [hypotheses, ideas, searchQuery, filters, sortField, sortDirection]);
   
-  // Helper function to calculate PECTI percentage
   const calculatePectiPercentage = (pecti: PECTI): number => {
     const { potential, ease, cost, time, impact } = pecti;
     return Math.round(((potential + ease + (5 - cost) + (5 - time) + impact) / 25) * 100);
   };
   
-  // Start editing a hypothesis's PECTI score
   const handleEditPecti = (hypothesis: Hypothesis) => {
     setEditingHypothesis(hypothesis.id);
     setEditPectiValues({...hypothesis.pectiScore});
   };
   
-  // Save edited PECTI score
   const handleSavePecti = (hypothesisId: string) => {
     editHypothesis(hypothesisId, { 
       pectiScore: editPectiValues 
@@ -120,7 +110,6 @@ const HypothesesPage: React.FC = () => {
     setEditingHypothesis(null);
   };
   
-  // Update a single PECTI value
   const handlePectiChange = (category: keyof PECTI, value: number) => {
     setEditPectiValues(prev => ({
       ...prev,
@@ -128,17 +117,15 @@ const HypothesesPage: React.FC = () => {
     }));
   };
   
-  // Toggle sort direction or change sort field
   const handleSort = (field: 'pectiScore' | 'createdAt') => {
     if (sortField === field) {
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortDirection('desc'); // Default to descending order when changing fields
+      setSortDirection('desc');
     }
   };
   
-  // Update filters
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
     setFilters(prev => ({
       ...prev,
@@ -146,7 +133,6 @@ const HypothesesPage: React.FC = () => {
     }));
   };
   
-  // Clear all filters
   const handleClearFilters = () => {
     setFilters({});
     setSearchQuery('');
@@ -161,7 +147,6 @@ const HypothesesPage: React.FC = () => {
         </div>
       </div>
       
-      {/* Search and filters */}
       <div className="bg-white border rounded-lg p-4 space-y-4">
         <div className="flex gap-4">
           <div className="flex-1">
@@ -181,7 +166,6 @@ const HypothesesPage: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Department filter */}
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               <Building className="h-4 w-4 text-gray-500" />
@@ -205,7 +189,6 @@ const HypothesesPage: React.FC = () => {
             </Select>
           </div>
           
-          {/* Tag filter */}
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               <TagIcon className="h-4 w-4 text-gray-500" />
@@ -229,7 +212,6 @@ const HypothesesPage: React.FC = () => {
             </Select>
           </div>
           
-          {/* PECTI Score filter */}
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               <Filter className="h-4 w-4 text-gray-500" />
@@ -253,7 +235,6 @@ const HypothesesPage: React.FC = () => {
             </Select>
           </div>
           
-          {/* User filter */}
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               <User className="h-4 w-4 text-gray-500" />
@@ -279,7 +260,6 @@ const HypothesesPage: React.FC = () => {
         </div>
       </div>
       
-      {/* Hypotheses List */}
       {filteredHypotheses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
           <h3 className="text-xl font-medium">No hypotheses found</h3>
@@ -342,7 +322,7 @@ const HypothesesPage: React.FC = () => {
                       ${hypothesis.status === 'Selected For Testing' ? 'bg-blue-100 text-blue-800' : ''}
                       ${hypothesis.status === 'Testing' ? 'bg-amber-100 text-amber-800' : ''}
                       ${hypothesis.status === 'Completed' ? 'bg-green-100 text-green-800' : ''}
-                      ${hypothesis.status === 'Rejected' ? 'bg-red-100 text-red-800' : ''}
+                      ${hypothesis.status === 'Archived' ? 'bg-red-100 text-red-800' : ''}
                       ${hypothesis.status === 'Backlog' ? 'bg-gray-100 text-gray-800' : ''}
                     `}>
                       {hypothesis.status}
@@ -351,7 +331,6 @@ const HypothesesPage: React.FC = () => {
                   <TableCell>
                     {isEditing ? (
                       <div className="space-y-4">
-                        {/* PECTI Score Sliders */}
                         <div className="space-y-3">
                           {['potential', 'ease', 'cost', 'time', 'impact'].map((category) => (
                             <div key={category} className="space-y-1">
