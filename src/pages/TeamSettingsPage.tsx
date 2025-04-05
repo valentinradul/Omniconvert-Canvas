@@ -10,8 +10,7 @@ import DepartmentsSection from '@/components/team/DepartmentsSection';
 const TeamSettingsPage = () => {
   const handleTeamNameChange = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Team settings updated",
+    toast("Team settings updated", {
       description: "Your team settings have been updated successfully.",
     });
   };
