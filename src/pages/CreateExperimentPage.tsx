@@ -7,13 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ALL_STATUSES, ExperimentStatus } from '@/types';
+import { ALL_STATUSES, ExperimentStatus, ObservationContent } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import ObservationContentEditor from '@/components/ObservationContentEditor';
 
 const CreateExperimentPage: React.FC = () => {
   const { hypothesisId } = useParams();
@@ -28,6 +29,11 @@ const CreateExperimentPage: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [notes, setNotes] = useState('');
+  const [observationContent, setObservationContent] = useState<ObservationContent>({
+    text: '',
+    imageUrls: [],
+    externalUrls: []
+  });
   
   useEffect(() => {
     const currentHypothesis = getHypothesisById(hypothesisId || '');
@@ -64,7 +70,8 @@ const CreateExperimentPage: React.FC = () => {
         status,
         startDate,
         endDate,
-        notes
+        notes,
+        observationContent
       };
       
       addExperiment(newExperiment);
@@ -184,6 +191,14 @@ const CreateExperimentPage: React.FC = () => {
                 value={notes} 
                 onChange={(e) => setNotes(e.target.value)} 
                 placeholder="Add any details about how the experiment will be conducted"
+              />
+            </div>
+            
+            <div className="grid gap-3 border-t border-border pt-4 mt-4">
+              <Label>Documentation & References</Label>
+              <ObservationContentEditor 
+                value={observationContent} 
+                onChange={setObservationContent} 
               />
             </div>
           </CardContent>

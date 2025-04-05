@@ -46,10 +46,18 @@ export type PECTI = {
   impact: 1 | 2 | 3 | 4 | 5;
 };
 
+// Extended type for observation content that supports text, URLs, and images
+export type ObservationContent = {
+  text: string;
+  imageUrls?: string[];
+  externalUrls?: string[];
+};
+
 export type Hypothesis = {
   id: string;
   ideaId: string;
   observation: string;
+  observationContent?: ObservationContent;
   initiative: string;
   metric: string;
   pectiScore: PECTI;
@@ -80,6 +88,7 @@ export type Experiment = {
   endDate: Date | null;
   status: ExperimentStatus;
   notes: string;
+  observationContent?: ObservationContent;
   createdAt: Date;
   updatedAt: Date;
 };

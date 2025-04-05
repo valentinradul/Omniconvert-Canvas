@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Department, GrowthIdea, Hypothesis, Experiment } from '../types';
 

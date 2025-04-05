@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
+import { ObservationContent } from '@/types';
+import ObservationContentEditor from '@/components/ObservationContentEditor';
 
 const CreateHypothesisPage: React.FC = () => {
   const { ideaId } = useParams();
@@ -19,6 +21,11 @@ const CreateHypothesisPage: React.FC = () => {
   
   // Form state
   const [observation, setObservation] = useState('');
+  const [observationContent, setObservationContent] = useState<ObservationContent>({
+    text: '',
+    imageUrls: [],
+    externalUrls: []
+  });
   const [initiative, setInitiative] = useState('');
   const [metric, setMetric] = useState('');
   
@@ -37,6 +44,14 @@ const CreateHypothesisPage: React.FC = () => {
       navigate('/ideas');
     }
   }, [ideaId, getIdeaById, navigate]);
+
+  useEffect(() => {
+    // Sync regular observation text with observationContent.text
+    setObservationContent(prev => ({
+      ...prev,
+      text: observation
+    }));
+  }, [observation]);
   
   if (!idea) {
     return <div>Loading...</div>;
@@ -46,7 +61,7 @@ const CreateHypothesisPage: React.FC = () => {
     e.preventDefault();
     
     if (!observation || !initiative || !metric) {
-      toast.error('Please fill in all fields');
+      toast.error('Please fill in all required fields');
       return;
     }
     
@@ -54,6 +69,7 @@ const CreateHypothesisPage: React.FC = () => {
       const newHypothesis = {
         ideaId: idea.id,
         observation,
+        observationContent,
         initiative,
         metric,
         pectiScore: {
@@ -104,6 +120,14 @@ const CreateHypothesisPage: React.FC = () => {
                 value={observation} 
                 onChange={(e) => setObservation(e.target.value)} 
                 placeholder="E.g. that users are dropping off during onboarding"
+              />
+            </div>
+            
+            <div className="grid gap-3 border-l-4 border-l-primary/20 pl-4">
+              <ObservationContentEditor 
+                value={observationContent} 
+                onChange={setObservationContent}
+                showTextArea={false}
               />
             </div>
             
