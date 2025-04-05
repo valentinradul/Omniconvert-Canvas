@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -17,7 +18,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useConfetti } from '@/context/ConfettiContext';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -33,8 +33,8 @@ const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signup, isAuthenticated, isLoading } = useAuth();
-  const { triggerConfetti } = useConfetti();
   
+  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       navigate("/dashboard");
@@ -54,7 +54,6 @@ const Signup = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       await signup(values.email, values.password, values.name);
-      triggerConfetti({ particleCount: 300 });
       // User will be redirected after verification or automatically logged in
       // depending on Supabase settings
     } catch (error) {
@@ -92,6 +91,7 @@ const Signup = () => {
     }
   };
 
+  // If checking auth status, show loading
   if (isLoading && isAuthenticated === null) {
     return (
       <div className="flex justify-center items-center min-h-screen">

@@ -1,8 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
-import { useConfetti } from './ConfettiContext';
 
 // Define the context type
 type AuthContextType = {
@@ -24,7 +24,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { triggerConfetti } = useConfetti();
 
   // Check for existing session and set up auth listener
   useEffect(() => {
@@ -38,8 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Defer profile fetch to avoid Supabase authentication deadlock
           setTimeout(() => {
             console.log('User signed in:', session?.user.id);
-            // Trigger confetti for OAuth sign-ins
-            triggerConfetti();
           }, 0);
         }
         
@@ -59,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, [triggerConfetti]);
+  }, []);
 
   // Login function
   const login = async (email: string, password: string): Promise<void> => {
