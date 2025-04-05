@@ -1,10 +1,8 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Logo from "@/components/Logo";
-import { Input } from "@/components/ui/input";
 
 const Index = () => {
   return (
@@ -35,26 +33,23 @@ const Index = () => {
           <div className="flex flex-col lg:flex-row items-center gap-12 py-12">
             <div className="lg:w-1/2 space-y-6">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-black">
-                Turn visitors into lifetime customers
+                All-in-one Growth Experiment Platform
               </h1>
               <p className="text-lg md:text-xl text-gray-600 max-w-lg">
-                Our solutions help you stay relevant for your customers from acquisition to retention.
+                Streamline your growth experiments from ideation to execution with our powerful tools.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Input 
-                  type="email" 
-                  placeholder="Work email" 
-                  className="max-w-sm rounded-full bg-white border-gray-200" 
-                />
-                <Button size="lg" className="bg-omni-blue text-white hover:bg-omni-blue/90 rounded-full">
-                  Book a call
-                </Button>
+              <div className="pt-4">
+                <Link to="/signup">
+                  <Button size="lg" className="bg-omni-blue text-white hover:bg-omni-blue/90 rounded-full">
+                    Start now for free
+                  </Button>
+                </Link>
               </div>
             </div>
             <div className="lg:w-1/2">
               <img 
-                src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?q=80&w=1000&auto=format&fit=crop"
-                alt="Team working together" 
+                src="/lovable-uploads/9aebc784-15b2-4b07-8054-818548d44392.png"
+                alt="Growth experiment illustration" 
                 className="rounded-lg shadow-lg w-full"
               />
             </div>
@@ -85,7 +80,7 @@ const Index = () => {
             <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
               <div className="bg-omni-light-blue text-omni-blue p-3 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5m.75-9 3-3 2.148 2.148A12.061 12.061 0 0 1 16.5 7.605" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 01 18 16.5h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-black mb-2">Hypothesis Builder</h3>
@@ -145,7 +140,7 @@ const Index = () => {
           </p>
           <Link to="/signup">
             <Button size="lg" className="bg-white text-omni-blue hover:bg-gray-100 rounded-full">
-              Get started for free
+              Start now for free
             </Button>
           </Link>
         </div>
