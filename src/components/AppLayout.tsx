@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import UserMenu from '@/components/UserMenu';
 import { useAuth } from '@/context/AuthContext';
+import Logo from '@/components/Logo';
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
@@ -19,7 +20,7 @@ const AppLayout: React.FC = () => {
         <Sidebar className="z-10">
           <SidebarContent>
             <div className="py-4 px-3 border-b border-sidebar-border">
-              <h1 className="text-xl font-bold text-sidebar-foreground">ExperimentFlow</h1>
+              <Logo className="flex items-center" />
               <p className="text-xs text-sidebar-foreground/70">Growth experimentation platform</p>
             </div>
             <SidebarMenu>

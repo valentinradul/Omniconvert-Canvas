@@ -1,17 +1,16 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
         <div className="container mx-auto px-6 py-16 md:py-24">
           <nav className="flex justify-between items-center mb-16">
-            <div className="text-2xl font-bold">ExperimentFlow</div>
+            <Logo className="flex items-center text-white" />
             <div className="space-x-4">
               <Link to="/login">
                 <Button variant="ghost" className="text-white hover:bg-blue-600">Login</Button>
@@ -37,11 +36,6 @@ const Index = () => {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                <Link to="/dashboard">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-blue-600">
-                    See how it works
-                  </Button>
-                </Link>
               </div>
             </div>
             <div className="lg:w-1/2">
@@ -55,7 +49,6 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Features Section */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
@@ -99,7 +92,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Social Proof */}
       <section className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
@@ -132,7 +124,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="bg-blue-600 py-20 text-white">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to accelerate your growth?</h2>
@@ -147,7 +138,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
