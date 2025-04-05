@@ -2,9 +2,12 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import UserMenu from '@/components/UserMenu';
+import { useAuth } from '@/context/AuthContext';
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -59,8 +62,15 @@ const AppLayout: React.FC = () => {
           </SidebarContent>
         </Sidebar>
 
-        <main className="flex-1 p-6 overflow-auto">
-          <Outlet />
+        <main className="flex-1 overflow-auto">
+          {isAuthenticated && (
+            <div className="p-4 border-b flex justify-end">
+              <UserMenu />
+            </div>
+          )}
+          <div className="p-6">
+            <Outlet />
+          </div>
         </main>
       </div>
     </SidebarProvider>
