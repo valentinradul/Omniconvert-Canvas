@@ -1,5 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Department, GrowthIdea, Hypothesis, Experiment } from '../types';
+import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag } from '../types';
+import { useAuth } from './AuthContext';
 
 // Define the shape of our context
 type AppContextType = {
@@ -24,6 +26,8 @@ type AppContextType = {
   getHypothesisById: (id: string) => Hypothesis | undefined;
   getExperimentByHypothesisId: (hypothesisId: string) => Experiment | undefined;
   getDepartmentById: (id: string) => Department | undefined;
+  getAllTags: () => Tag[];
+  getAllUserNames: () => {id: string; name: string}[];
 };
 
 // Create the context
@@ -40,6 +44,7 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 
 // Create a provider component
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [departments, setDepartments] = useState<Department[]>(() => 
     getInitialData('departments', [
       { id: generateId(), name: 'Marketing' },
@@ -77,6 +82,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('experiments', JSON.stringify(experiments));
   }, [experiments]);
   
+  // Helper function to get all unique tags
+  const getAllTags = (): Tag[] => {
+    const tagsSet = new Set<Tag>();
+    
+    ideas.forEach(idea => {
+      if (idea.tags) {
+        idea.tags.forEach(tag => tagsSet.add(tag));
+      }
+    });
+    
+    return Array.from(tagsSet);
+  };
+  
+  // Helper function to get all unique user names
+  const getAllUserNames = () => {
+    const usersMap = new Map<string, string>();
+    
+    [...ideas, ...hypotheses, ...experiments].forEach(item => {
+      if (item.userId && item.userName) {
+        usersMap.set(item.userId, item.userName);
+      }
+    });
+    
+    return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
+  };
+  
   // Department CRUD operations
   const addDepartment = (name: string) => {
     setDepartments([...departments, { id: generateId(), name }]);
@@ -107,7 +138,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       {
         ...idea,
         id: generateId(),
-        createdAt: new Date()
+        createdAt: new Date(),
+        userId: user?.id || undefined,
+        userName: user?.user_metadata?.full_name || user?.email || undefined
       }
     ]);
   };
@@ -137,7 +170,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       {
         ...hypothesis,
         id: generateId(),
-        createdAt: new Date()
+        createdAt: new Date(),
+        status: hypothesis.status || 'Backlog',
+        userId: hypothesis.userId || user?.id,
+        userName: hypothesis.userName || user?.user_metadata?.full_name || user?.email
       }
     ]);
   };
@@ -169,7 +205,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...experiment,
         id: generateId(),
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        userId: experiment.userId || user?.id,
+        userName: experiment.userName || user?.user_metadata?.full_name || user?.email
       }
     ]);
   };
@@ -213,7 +251,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       getHypothesisByIdeaId,
       getHypothesisById,
       getExperimentByHypothesisId,
-      getDepartmentById
+      getDepartmentById,
+      getAllTags,
+      getAllUserNames
     }}>
       {children}
     </AppContext.Provider>

@@ -6,6 +6,8 @@ export type Department = {
   name: string;
 };
 
+export type Tag = string;
+
 export type Category = 
   | "Outreach" 
   | "Paid Ads" 
@@ -36,6 +38,9 @@ export type GrowthIdea = {
   category: Category;
   departmentId: string;
   createdAt: Date;
+  userId?: string;
+  userName?: string;
+  tags?: Tag[];
 };
 
 export type PECTI = {
@@ -62,7 +67,25 @@ export type Hypothesis = {
   metric: string;
   pectiScore: PECTI;
   createdAt: Date;
+  userId?: string;
+  userName?: string;
+  status?: HypothesisStatus;
 };
+
+export type HypothesisStatus = 
+  | "Backlog"
+  | "Selected For Testing"
+  | "Testing"
+  | "Completed"
+  | "Archived";
+
+export const ALL_HYPOTHESIS_STATUSES: HypothesisStatus[] = [
+  "Backlog",
+  "Selected For Testing",
+  "Testing",
+  "Completed",
+  "Archived"
+];
 
 export type ExperimentStatus = 
   | "Planned" 
@@ -91,6 +114,8 @@ export type Experiment = {
   observationContent?: ObservationContent;
   createdAt: Date;
   updatedAt: Date;
+  userId?: string;
+  userName?: string;
 };
 
 // Helper function to calculate PECTI percentage score

@@ -1,112 +1,317 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/context/AuthContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  GrowthIdea, 
+  Hypothesis, 
+  HypothesisStatus,
+  Category,
+  Tag,
+} from '@/types';
+import { useToast } from '@/hooks/use-toast';
+import KanbanBoard from '@/components/KanbanBoard';
+import DashboardFilters from '@/components/DashboardFilters';
+import CreateHypothesisModal from '@/components/CreateHypothesisModal';
 import { useNavigate } from 'react-router-dom';
-import StatusBadge from '@/components/StatusBadge';
+import { subDays, startOfToday, startOfWeek, startOfMonth, startOfQuarter, startOfYear, isAfter } from 'date-fns';
 
 const Dashboard: React.FC = () => {
-  const { ideas, hypotheses, experiments } = useApp();
+  const { ideas, hypotheses, experiments, editHypothesis, getIdeaById } = useApp();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   
-  const recentExperiments = [...experiments]
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 5);
+  const [filters, setFilters] = useState<{
+    department?: string;
+    category?: Category;
+    status?: string;
+    tag?: Tag;
+    userId?: string;
+    timeframe?: 'today' | 'week' | 'month' | 'quarter' | 'year';
+  }>({});
+  
+  const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Collect all unique tags from ideas
+  const allTags = React.useMemo(() => {
+    const tagsSet = new Set<Tag>();
+    ideas.forEach(idea => {
+      if (idea.tags) {
+        idea.tags.forEach(tag => tagsSet.add(tag));
+      }
+    });
+    return Array.from(tagsSet);
+  }, [ideas]);
+  
+  // Collect all unique users
+  const allUsers = React.useMemo(() => {
+    const usersMap = new Map<string, string>();
+    
+    [...ideas, ...hypotheses, ...experiments].forEach(item => {
+      if (item.userId && item.userName) {
+        usersMap.set(item.userId, item.userName);
+      }
+    });
+    
+    return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [ideas, hypotheses, experiments]);
+  
+  // Apply filters to ideas and hypotheses
+  const filteredIdeas = React.useMemo(() => {
+    return ideas.filter(idea => {
+      // Search query
+      if (searchQuery && !idea.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
+          !idea.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      
+      // Department filter
+      if (filters.department && idea.departmentId !== filters.department) {
+        return false;
+      }
+      
+      // Category filter
+      if (filters.category && idea.category !== filters.category) {
+        return false;
+      }
+      
+      // Tag filter
+      if (filters.tag && (!idea.tags || !idea.tags.includes(filters.tag))) {
+        return false;
+      }
+      
+      // User filter
+      if (filters.userId && idea.userId !== filters.userId) {
+        return false;
+      }
+      
+      // Timeframe filter
+      if (filters.timeframe) {
+        const createdDate = new Date(idea.createdAt);
+        let cutoffDate;
+        
+        switch (filters.timeframe) {
+          case 'today':
+            cutoffDate = startOfToday();
+            break;
+          case 'week':
+            cutoffDate = startOfWeek(new Date());
+            break;
+          case 'month':
+            cutoffDate = startOfMonth(new Date());
+            break;
+          case 'quarter':
+            cutoffDate = startOfQuarter(new Date());
+            break;
+          case 'year':
+            cutoffDate = startOfYear(new Date());
+            break;
+        }
+        
+        if (!isAfter(createdDate, cutoffDate)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [ideas, filters, searchQuery]);
+  
+  const filteredHypotheses = React.useMemo(() => {
+    return hypotheses.filter(hypothesis => {
+      // Search query
+      if (searchQuery && !hypothesis.metric.toLowerCase().includes(searchQuery.toLowerCase()) && 
+          !hypothesis.initiative.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      
+      // Status filter
+      if (filters.status && hypothesis.status !== filters.status) {
+        return false;
+      }
+      
+      // User filter
+      if (filters.userId && hypothesis.userId !== filters.userId) {
+        return false;
+      }
+      
+      // Department filter and Category filter (need to check related idea)
+      if (filters.department || filters.category) {
+        const relatedIdea = ideas.find(i => i.id === hypothesis.ideaId);
+        if (!relatedIdea) return false;
+        
+        if (filters.department && relatedIdea.departmentId !== filters.department) {
+          return false;
+        }
+        
+        if (filters.category && relatedIdea.category !== filters.category) {
+          return false;
+        }
+        
+        // Tag filter (check related idea)
+        if (filters.tag && (!relatedIdea.tags || !relatedIdea.tags.includes(filters.tag))) {
+          return false;
+        }
+      }
+      
+      // Timeframe filter
+      if (filters.timeframe) {
+        const createdDate = new Date(hypothesis.createdAt);
+        let cutoffDate;
+        
+        switch (filters.timeframe) {
+          case 'today':
+            cutoffDate = startOfToday();
+            break;
+          case 'week':
+            cutoffDate = startOfWeek(new Date());
+            break;
+          case 'month':
+            cutoffDate = startOfMonth(new Date());
+            break;
+          case 'quarter':
+            cutoffDate = startOfQuarter(new Date());
+            break;
+          case 'year':
+            cutoffDate = startOfYear(new Date());
+            break;
+        }
+        
+        if (!isAfter(createdDate, cutoffDate)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [hypotheses, ideas, filters, searchQuery]);
 
-  const countByStatus = experiments.reduce((acc, exp) => {
-    acc[exp.status] = (acc[exp.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
+  const handleHypothesisStatusChange = (hypothesisId: string, newStatus: HypothesisStatus) => {
+    editHypothesis(hypothesisId, { status: newStatus });
+    toast({
+      title: "Status Updated",
+      description: `Hypothesis moved to ${newStatus}`
+    });
+  };
+  
+  const handleIdeaToHypothesis = (ideaId: string) => {
+    const idea = getIdeaById(ideaId);
+    if (idea) {
+      setSelectedIdeaId(ideaId);
+    }
+  };
+  
+  const handleFilterChange = (filterName: string, value: string | undefined) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+  };
+  
+  const handleClearFilters = () => {
+    setFilters({});
+    setSearchQuery('');
+  };
+  
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Track your growth experiments and their progress.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Track and manage your growth experiments</p>
+        </div>
+        <Button onClick={() => navigate('/ideas')}>Add New Idea</Button>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card onClick={() => navigate('/ideas')} className="cursor-pointer hover:bg-accent/50 transition-colors">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Growth Ideas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{ideas.length}</div>
-            <p className="text-xs text-muted-foreground">Total ideas in backlog</p>
-          </CardContent>
-        </Card>
-        
-        <Card onClick={() => navigate('/hypotheses')} className="cursor-pointer hover:bg-accent/50 transition-colors">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Hypotheses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{hypotheses.length}</div>
-            <p className="text-xs text-muted-foreground">Formulated hypotheses</p>
-          </CardContent>
-        </Card>
-        
-        <Card onClick={() => navigate('/experiments')} className="cursor-pointer hover:bg-accent/50 transition-colors">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Experiments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{experiments.length}</div>
-            <p className="text-xs text-muted-foreground">Total experiments</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-status-winning/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {experiments.length 
-                ? Math.round((countByStatus['Winning'] || 0) / experiments.length * 100) + '%' 
-                : 'N/A'}
+      <div className="flex gap-6">
+        <div className="flex-1">
+          <div className="bg-white rounded-lg border mb-4">
+            <div className="p-4">
+              <Input
+                placeholder="Search ideas, hypotheses, or experiments..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-xl"
+              />
             </div>
-            <p className="text-xs text-muted-foreground">Experiments with "Winning" status</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Experiment Activity</CardTitle>
-          <CardDescription>Latest updates from your running experiments</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {recentExperiments.length > 0 ? (
-            <div className="space-y-4">
-              {recentExperiments.map(experiment => {
-                const hypothesis = hypotheses.find(h => h.id === experiment.hypothesisId);
-                return (
-                  <div key={experiment.id} className="flex items-center justify-between border-b pb-3 last:border-0">
-                    <div>
-                      <h3 className="font-medium">{hypothesis?.metric}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Updated {new Date(experiment.updatedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <StatusBadge status={experiment.status} />
+          </div>
+          
+          <Tabs defaultValue="progress">
+            <div className="mb-4 flex justify-between items-center">
+              <TabsList>
+                <TabsTrigger value="progress">Progress View</TabsTrigger>
+                <TabsTrigger value="stats">Statistics</TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <TabsContent value="progress" className="mt-0">
+              <KanbanBoard 
+                ideas={filteredIdeas}
+                hypotheses={filteredHypotheses}
+                onHypothesisStatusChange={handleHypothesisStatusChange}
+                onIdeaToHypothesis={handleIdeaToHypothesis}
+              />
+            </TabsContent>
+            
+            <TabsContent value="stats" className="mt-0">
+              <div className="bg-white rounded-lg border p-6">
+                <h3 className="text-lg font-medium mb-4">Growth Metrics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <p className="text-sm text-muted-foreground">Total Ideas</p>
+                    <p className="text-3xl font-bold">{filteredIdeas.length}</p>
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <p className="text-muted-foreground">No experiments yet</p>
-              <button 
-                className="mt-2 text-primary hover:underline"
-                onClick={() => navigate('/experiments')}
-              >
-                Create your first experiment
-              </button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <p className="text-sm text-muted-foreground">Active Hypotheses</p>
+                    <p className="text-3xl font-bold">
+                      {filteredHypotheses.filter(h => 
+                        h.status === 'Selected For Testing' || h.status === 'Testing'
+                      ).length}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                    <p className="text-3xl font-bold">
+                      {filteredHypotheses.filter(h => h.status === 'Completed').length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        <div className="w-80">
+          <DashboardFilters 
+            departments={[]}
+            allTags={allTags}
+            allUsers={allUsers}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+          />
+        </div>
+      </div>
+      
+      {selectedIdeaId && (
+        <CreateHypothesisModal
+          idea={getIdeaById(selectedIdeaId)!}
+          open={!!selectedIdeaId}
+          onClose={() => setSelectedIdeaId(null)}
+          onComplete={() => {
+            setSelectedIdeaId(null);
+            toast({
+              title: "Hypothesis Created",
+              description: "Your hypothesis has been added to the board."
+            });
+          }}
+        />
+      )}
     </div>
   );
 };
