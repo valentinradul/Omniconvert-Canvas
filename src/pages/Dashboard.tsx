@@ -11,6 +11,7 @@ import {
   HypothesisStatus,
   Category,
   Tag,
+  ExperimentStatus,
 } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import KanbanBoard from '@/components/KanbanBoard';
@@ -36,6 +37,16 @@ const Dashboard: React.FC = () => {
   
   const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Calculate win rate
+  const completedExperiments = experiments.filter(e => 
+    e.status === 'Winning' || e.status === 'Losing' || e.status === 'Inconclusive'
+  );
+  
+  const winningExperiments = experiments.filter(e => e.status === 'Winning');
+  const winRate = completedExperiments.length > 0 
+    ? Math.round((winningExperiments.length / completedExperiments.length) * 100)
+    : 0;
   
   // Collect all unique tags from ideas
   const allTags = React.useMemo(() => {
@@ -301,7 +312,7 @@ const Dashboard: React.FC = () => {
             <TabsContent value="stats" className="mt-0">
               <div className="bg-white rounded-lg border p-6">
                 <h3 className="text-lg font-medium mb-4">Growth Metrics</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="bg-gray-50 p-4 rounded-md">
                     <p className="text-sm text-muted-foreground">Total Ideas</p>
                     <p className="text-3xl font-bold">{filteredIdeas.length}</p>
@@ -318,6 +329,12 @@ const Dashboard: React.FC = () => {
                     <p className="text-sm text-muted-foreground">Completed</p>
                     <p className="text-3xl font-bold">
                       {filteredHypotheses.filter(h => h.status === 'Completed').length}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <p className="text-sm text-muted-foreground">Win Rate</p>
+                    <p className="text-3xl font-bold">
+                      {winRate}%
                     </p>
                   </div>
                 </div>

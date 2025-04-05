@@ -100,12 +100,11 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
             onCancel={() => setIsEditing(false)}
           />
         ) : (
-          <div className="flex items-center">
-            <PectiScoreDisplay pecti={hypothesis.pectiScore} size="sm" />
-            <span className="ml-2 font-bold">
-              {calculatePectiPercentage(hypothesis.pectiScore)}%
-            </span>
-          </div>
+          <PectiScoreDisplay 
+            pecti={hypothesis.pectiScore} 
+            size="sm"
+            showPercentage={true}
+          />
         )}
       </TableCell>
       <TableCell className="text-right">

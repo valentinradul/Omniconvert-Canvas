@@ -8,6 +8,18 @@ interface StatusBadgeProps {
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
+  // Map status to display text
+  const getDisplayText = () => {
+    switch (status) {
+      case 'Winning':
+        return 'Winner';
+      case 'Losing':
+        return 'Loser';
+      default:
+        return status;
+    }
+  };
+  
   const getClassName = () => {
     switch (status) {
       case 'Planned':
@@ -29,7 +41,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   return (
     <Badge className={getClassName()}>
-      {status}
+      {getDisplayText()}
     </Badge>
   );
 };

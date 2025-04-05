@@ -39,6 +39,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onHypothesisStatusChange,
   onIdeaToHypothesis
 }) => {
+  // Filter out ideas that are already associated with hypotheses
+  const availableIdeas = ideas.filter(idea => 
+    !hypotheses.some(hypothesis => hypothesis.ideaId === idea.id)
+  );
+  
   // Create initial columns from hypothesis statuses
   const initialColumns = ALL_HYPOTHESIS_STATUSES.reduce<Record<string, Column>>((acc, status) => {
     acc[status] = {
@@ -53,7 +58,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const ideasColumn: IdeaColumn = {
     id: 'ideas',
     title: 'Growth Ideas',
-    items: ideas
+    items: availableIdeas
   };
 
   // Set default status for hypotheses without a status
@@ -66,14 +71,24 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
   });
 
-  // Add hypotheses with in-progress experiments to the Testing column
+  // Add hypotheses with in-progress or blocked experiments to the Testing column
   if (experiments && experiments.length > 0) {
     experiments.forEach(experiment => {
-      if (experiment.status === 'In Progress') {
+      if (experiment.status === 'In Progress' || experiment.status === 'Blocked') {
         const relatedHypothesis = hypotheses.find(h => h.id === experiment.hypothesisId);
         
         if (relatedHypothesis && relatedHypothesis.status !== 'Testing') {
           initialColumns.Testing.items.push({
+            ...relatedHypothesis,
+            experiment
+          });
+        }
+      } else if (experiment.status === 'Winning' || experiment.status === 'Losing') {
+        // Move winning or losing experiments to the Completed column
+        const relatedHypothesis = hypotheses.find(h => h.id === experiment.hypothesisId);
+        
+        if (relatedHypothesis && relatedHypothesis.status !== 'Completed') {
+          initialColumns.Completed.items.push({
             ...relatedHypothesis,
             experiment
           });

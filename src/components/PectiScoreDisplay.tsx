@@ -33,6 +33,13 @@ const PectiScoreDisplay: React.FC<PectiScoreDisplayProps> = ({
     lg: 'text-sm'
   };
 
+  // Get percentage score color
+  const getScoreColor = () => {
+    if (percentageScore >= 70) return 'bg-green-500 text-white';
+    if (percentageScore >= 40) return 'bg-amber-500 text-white';
+    return 'bg-red-500 text-white';
+  };
+
   const renderScoreBadge = (score: number, label: string) => (
     <div className="flex flex-col items-center">
       <span className={`${labelSize[size]} text-gray-500`}>{label}</span>
@@ -44,22 +51,19 @@ const PectiScoreDisplay: React.FC<PectiScoreDisplayProps> = ({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <div className="flex gap-3 justify-center">
+      <div className="flex gap-3 justify-center items-center">
         {renderScoreBadge(potential, 'P')}
         {renderScoreBadge(ease, 'E')}
         {renderScoreBadge(cost, 'C')}
         {renderScoreBadge(time, 'T')}
         {renderScoreBadge(impact, 'I')}
+        
+        {showPercentage && (
+          <div className={`ml-1 w-7 h-7 rounded-full flex items-center justify-center font-bold text-lg ${getScoreColor()}`}>
+            {percentageScore}
+          </div>
+        )}
       </div>
-      
-      {showPercentage && (
-        <div className="text-center text-sm">
-          <span className="font-medium">Score: </span>
-          <span className={`font-bold ${percentageScore >= 70 ? 'text-green-600' : percentageScore >= 40 ? 'text-amber-600' : 'text-red-600'}`}>
-            {percentageScore}%
-          </span>
-        </div>
-      )}
 
       {showProgressBar && (
         <Progress 
