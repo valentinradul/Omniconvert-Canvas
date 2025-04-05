@@ -59,14 +59,14 @@ const HypothesisFilters: React.FC<HypothesisFiltersProps> = ({
             <Label>Department</Label>
           </div>
           <Select
-            value={filters.departmentId || ""}
+            value={filters.departmentId || undefined}
             onValueChange={(value) => onFilterChange('departmentId', value || undefined)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All departments" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All departments</SelectItem>
+              <SelectItem value="all">All departments</SelectItem>
               {departments.map(dept => (
                 <SelectItem key={dept.id} value={dept.id}>
                   {dept.name}
@@ -82,14 +82,14 @@ const HypothesisFilters: React.FC<HypothesisFiltersProps> = ({
             <Label>Tag</Label>
           </div>
           <Select
-            value={filters.tag || ""}
+            value={filters.tag || undefined}
             onValueChange={(value) => onFilterChange('tag', value || undefined)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All tags" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All tags</SelectItem>
+              <SelectItem value="all">All tags</SelectItem>
               {allTags.map(tag => (
                 <SelectItem key={tag} value={tag}>
                   {tag}
@@ -105,14 +105,14 @@ const HypothesisFilters: React.FC<HypothesisFiltersProps> = ({
             <Label>Min PECTI Score</Label>
           </div>
           <Select
-            value={filters.minPectiScore?.toString() || ""}
+            value={filters.minPectiScore?.toString() || undefined}
             onValueChange={(value) => onFilterChange('minPectiScore', value ? parseInt(value) : undefined)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Any score" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Any score</SelectItem>
+              <SelectItem value="0">Any score</SelectItem>
               <SelectItem value="30">30%+</SelectItem>
               <SelectItem value="50">50%+</SelectItem>
               <SelectItem value="70">70%+</SelectItem>
@@ -128,14 +128,14 @@ const HypothesisFilters: React.FC<HypothesisFiltersProps> = ({
             <Label>User</Label>
           </div>
           <Select
-            value={filters.userId || ""}
+            value={filters.userId || undefined}
             onValueChange={(value) => onFilterChange('userId', value || undefined)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All users" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All users</SelectItem>
+              <SelectItem value="all">All users</SelectItem>
               {allUsers.map(user => (
                 <SelectItem key={user.id} value={user.id}>
                   {user.name}

@@ -45,28 +45,28 @@ const HypothesesPage: React.FC = () => {
         return false;
       }
       
-      if (filters.departmentId) {
+      if (filters.departmentId && filters.departmentId !== 'all') {
         const relatedIdea = ideas.find(i => i.id === hypothesis.ideaId);
         if (!relatedIdea || relatedIdea.departmentId !== filters.departmentId) {
           return false;
         }
       }
       
-      if (filters.tag) {
+      if (filters.tag && filters.tag !== 'all') {
         const relatedIdea = ideas.find(i => i.id === hypothesis.ideaId);
         if (!relatedIdea || !relatedIdea.tags || !relatedIdea.tags.includes(filters.tag)) {
           return false;
         }
       }
       
-      if (filters.minPectiScore) {
+      if (filters.minPectiScore && filters.minPectiScore > 0) {
         const pectiPercentage = calculatePectiPercentage(hypothesis.pectiScore);
         if (pectiPercentage < filters.minPectiScore) {
           return false;
         }
       }
       
-      if (filters.userId && hypothesis.userId !== filters.userId) {
+      if (filters.userId && filters.userId !== 'all' && hypothesis.userId !== filters.userId) {
         return false;
       }
       
@@ -95,9 +95,11 @@ const HypothesesPage: React.FC = () => {
   
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
     console.log('Filter changed:', filterName, value);
+    // If the value is "all", set to undefined to clear the filter
+    const finalValue = value === 'all' ? undefined : value;
     setFilters(prev => ({
       ...prev,
-      [filterName]: value
+      [filterName]: finalValue
     }));
   };
   
