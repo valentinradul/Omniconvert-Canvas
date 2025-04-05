@@ -2,7 +2,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query/devtools';
+// Remove the devtools import as it's causing issues
 import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import LoginPage from './pages/Login';
@@ -40,7 +40,7 @@ function App() {
           </ThemeProvider>
         </AppProvider>
       </AuthProvider>
-      <ReactQueryDevtools />
+      {/* Removed ReactQueryDevtools since it's causing issues */}
     </QueryClientProvider>
   );
 }
