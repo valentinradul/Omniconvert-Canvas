@@ -19,7 +19,7 @@ interface HypothesisFiltersProps {
     userId?: string;
   };
   onSearchChange: (value: string) => void;
-  onFilterChange: (filterName: keyof typeof filters, value: any) => void;
+  onFilterChange: (filterName: keyof HypothesisFiltersProps['filters'], value: any) => void;
   onClearFilters: () => void;
 }
 
