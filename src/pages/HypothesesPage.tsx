@@ -32,7 +32,8 @@ const HypothesesPage: React.FC = () => {
     console.log('Departments:', departments);
     console.log('Tags:', allTags);
     console.log('Users:', allUsers);
-  }, [hypotheses, ideas, departments, allTags, allUsers]);
+    console.log('Current filters state:', filters);
+  }, [hypotheses, ideas, departments, allTags, allUsers, filters]);
   
   const filteredHypotheses = React.useMemo(() => {
     console.log('Filtering hypotheses with filters:', filters);
@@ -95,11 +96,9 @@ const HypothesesPage: React.FC = () => {
   
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
     console.log('Filter changed:', filterName, value);
-    // If the value is "all", set to undefined to clear the filter
-    const finalValue = value === 'all' ? undefined : value;
     setFilters(prev => ({
       ...prev,
-      [filterName]: finalValue
+      [filterName]: value
     }));
   };
   

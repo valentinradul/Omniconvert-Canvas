@@ -33,6 +33,12 @@ const HypothesisFilters: React.FC<HypothesisFiltersProps> = ({
   onFilterChange,
   onClearFilters
 }) => {
+  // Debug to see what values we're getting
+  console.log('HypothesisFilters - Current filters:', filters);
+  console.log('HypothesisFilters - departments:', departments);
+  console.log('HypothesisFilters - tags:', allTags);
+  console.log('HypothesisFilters - users:', allUsers);
+  
   return (
     <div className="bg-white border rounded-lg p-4 space-y-4">
       <div className="flex gap-4">
@@ -59,8 +65,8 @@ const HypothesisFilters: React.FC<HypothesisFiltersProps> = ({
             <Label>Department</Label>
           </div>
           <Select
-            value={filters.departmentId || undefined}
-            onValueChange={(value) => onFilterChange('departmentId', value || undefined)}
+            value={filters.departmentId || "all"}
+            onValueChange={(value) => onFilterChange('departmentId', value === "all" ? undefined : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All departments" />
@@ -82,8 +88,8 @@ const HypothesisFilters: React.FC<HypothesisFiltersProps> = ({
             <Label>Tag</Label>
           </div>
           <Select
-            value={filters.tag || undefined}
-            onValueChange={(value) => onFilterChange('tag', value || undefined)}
+            value={filters.tag || "all"}
+            onValueChange={(value) => onFilterChange('tag', value === "all" ? undefined : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All tags" />
@@ -105,8 +111,8 @@ const HypothesisFilters: React.FC<HypothesisFiltersProps> = ({
             <Label>Min PECTI Score</Label>
           </div>
           <Select
-            value={filters.minPectiScore?.toString() || undefined}
-            onValueChange={(value) => onFilterChange('minPectiScore', value ? parseInt(value) : undefined)}
+            value={(filters.minPectiScore?.toString() || "0")}
+            onValueChange={(value) => onFilterChange('minPectiScore', value === "0" ? undefined : parseInt(value))}
           >
             <SelectTrigger>
               <SelectValue placeholder="Any score" />
@@ -128,8 +134,8 @@ const HypothesisFilters: React.FC<HypothesisFiltersProps> = ({
             <Label>User</Label>
           </div>
           <Select
-            value={filters.userId || undefined}
-            onValueChange={(value) => onFilterChange('userId', value || undefined)}
+            value={filters.userId || "all"}
+            onValueChange={(value) => onFilterChange('userId', value === "all" ? undefined : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All users" />
