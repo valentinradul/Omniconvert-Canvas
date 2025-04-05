@@ -34,19 +34,19 @@ const AppLayout: React.FC = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <Sidebar className="z-10 border-r border-sidebar-border bg-white">
+        <Sidebar className="z-10 border-r border-gray-700 bg-gray-800">
           <SidebarContent>
-            <div className="py-6 px-4 border-b border-gray-200">
+            <div className="py-6 px-4 border-b border-gray-700">
               <Logo className="flex items-center" />
-              <p className="text-xs text-gray-500 mt-1">Growth experimentation platform</p>
+              <p className="text-xs text-gray-400 mt-1">Growth experimentation platform</p>
             </div>
             <SidebarMenu className="py-4">
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   asChild 
                   className={`flex items-center py-3 px-4 ${isActive('/dashboard') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 font-medium' 
-                    : 'text-gray-700 hover:bg-gray-100'}`}
+                    ? 'bg-blue-900/30 text-white border-l-4 border-blue-500 font-medium' 
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
                 >
                   <Link to="/dashboard" className="flex items-center">
                     <LayoutDashboard className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -59,8 +59,8 @@ const AppLayout: React.FC = () => {
                 <SidebarMenuButton 
                   asChild 
                   className={`flex items-center py-3 px-4 ${isActive('/ideas') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 font-medium' 
-                    : 'text-gray-700 hover:bg-gray-100'}`}
+                    ? 'bg-blue-900/30 text-white border-l-4 border-blue-500 font-medium' 
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
                 >
                   <Link to="/ideas" className="flex items-center">
                     <Lightbulb className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -73,8 +73,8 @@ const AppLayout: React.FC = () => {
                 <SidebarMenuButton 
                   asChild 
                   className={`flex items-center py-3 px-4 ${isActive('/hypotheses') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 font-medium' 
-                    : 'text-gray-700 hover:bg-gray-100'}`}
+                    ? 'bg-blue-900/30 text-white border-l-4 border-blue-500 font-medium' 
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
                 >
                   <Link to="/hypotheses" className="flex items-center">
                     <FlaskConical className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -87,8 +87,8 @@ const AppLayout: React.FC = () => {
                 <SidebarMenuButton 
                   asChild 
                   className={`flex items-center py-3 px-4 ${isActive('/experiments') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 font-medium' 
-                    : 'text-gray-700 hover:bg-gray-100'}`}
+                    ? 'bg-blue-900/30 text-white border-l-4 border-blue-500 font-medium' 
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
                 >
                   <Link to="/experiments" className="flex items-center">
                     <LineChart className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -101,8 +101,8 @@ const AppLayout: React.FC = () => {
                 <SidebarMenuButton 
                   asChild 
                   className={`flex items-center py-3 px-4 ${isActive('/departments') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 font-medium' 
-                    : 'text-gray-700 hover:bg-gray-100'}`}
+                    ? 'bg-blue-900/30 text-white border-l-4 border-blue-500 font-medium' 
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
                 >
                   <Link to="/departments" className="flex items-center">
                     <Building className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -111,13 +111,13 @@ const AppLayout: React.FC = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="mt-6 pt-6 border-t border-gray-700">
                 <SidebarMenuItem>
                   <SidebarMenuButton 
                     asChild 
                     className={`flex items-center py-3 px-4 ${isActive('/team-settings') 
-                      ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 font-medium' 
-                      : 'text-gray-700 hover:bg-gray-100'}`}
+                      ? 'bg-blue-900/30 text-white border-l-4 border-blue-500 font-medium' 
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
                   >
                     <Link to="/team-settings" className="flex items-center">
                       <Users className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -130,8 +130,8 @@ const AppLayout: React.FC = () => {
                   <SidebarMenuButton 
                     asChild 
                     className={`flex items-center py-3 px-4 ${isActive('/account-settings') 
-                      ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 font-medium' 
-                      : 'text-gray-700 hover:bg-gray-100'}`}
+                      ? 'bg-blue-900/30 text-white border-l-4 border-blue-500 font-medium' 
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
                   >
                     <Link to="/account-settings" className="flex items-center">
                       <Settings className="h-5 w-5 mr-3" strokeWidth={1.5} />
