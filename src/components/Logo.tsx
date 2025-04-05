@@ -15,10 +15,11 @@ const Logo: React.FC<LogoProps> = ({ className = "" }) => {
       <img 
         src="/lovable-uploads/a4a5d09d-2657-46f8-8741-e7725966a66f.png" 
         alt="Company Logo" 
-        className={isHomePage ? "h-20" : "h-10"} 
+        className={isHomePage ? "h-20" : "h-15"} 
       />
     </div>
   );
 };
 
 export default Logo;
+
