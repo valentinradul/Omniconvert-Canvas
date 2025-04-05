@@ -72,7 +72,15 @@ const Signup = () => {
       });
       
       if (error) {
-        throw error;
+        if (error.message.includes('provider is not enabled')) {
+          toast({
+            variant: "destructive",
+            title: "Google signup is not enabled",
+            description: "The administrator needs to configure Google authentication in Supabase.",
+          });
+        } else {
+          throw error;
+        }
       }
     } catch (error: any) {
       toast({
