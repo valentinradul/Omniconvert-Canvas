@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -10,6 +10,8 @@ import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 interface TeamMember {
   id: string;
@@ -25,11 +27,10 @@ const formSchema = z.object({
 });
 
 const TeamMembersSection: React.FC = () => {
-  const [members, setMembers] = useState<TeamMember[]>([
-    { id: '1', name: 'John Doe', email: 'john@example.com', role: 'Admin' },
-    { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'Member' },
-  ]);
+  const [members, setMembers] = useState<TeamMember[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -40,18 +41,130 @@ const TeamMembersSection: React.FC = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const newMember: TeamMember = {
-      id: Date.now().toString(),
-      name: values.name,
-      email: values.email,
-      role: values.role
+  // Fetch team members on component mount
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      try {
+        setIsLoading(true);
+        
+        // First, get the user's team
+        const { data: teamData, error: teamError } = await supabase
+          .from('teams')
+          .select('id')
+          .eq('created_by', user?.id)
+          .single();
+          
+        if (teamError) {
+          console.error('Error fetching team:', teamError);
+          toast.error('Failed to load team members');
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!teamData) {
+          console.log('No team found for this user');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Then, get team members for this team
+        const { data: membersData, error: membersError } = await supabase
+          .from('team_members')
+          .select(`
+            id,
+            user_id,
+            role,
+            profiles:user_id (
+              full_name
+            )
+          `)
+          .eq('team_id', teamData.id);
+          
+        if (membersError) {
+          console.error('Error fetching team members:', membersError);
+          toast.error('Failed to load team members');
+          setIsLoading(false);
+          return;
+        }
+
+        // Transform the data to match our TeamMember structure
+        const formattedMembers = membersData.map(member => ({
+          id: member.id,
+          name: member.profiles?.full_name || 'Unknown',
+          email: member.profiles?.email || 'No email provided',
+          role: member.role
+        }));
+        
+        setMembers(formattedMembers);
+      } catch (error) {
+        console.error('Unexpected error fetching team members:', error);
+        toast.error('Failed to load team members');
+      } finally {
+        setIsLoading(false);
+      }
     };
-    
-    setMembers([...members, newMember]);
-    toast.success('Team member added successfully!');
-    setIsDialogOpen(false);
-    form.reset();
+
+    if (user) {
+      fetchTeamMembers();
+    }
+  }, [user]);
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      // First, get the user's team
+      const { data: teamData, error: teamError } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('created_by', user?.id)
+        .single();
+        
+      if (teamError) {
+        console.error('Error fetching team:', teamError);
+        toast.error('Failed to add team member');
+        return;
+      }
+      
+      if (!teamData) {
+        toast.error('No team found');
+        return;
+      }
+      
+      // Create a new team member
+      const { data: newMember, error: memberError } = await supabase
+        .from('team_members')
+        .insert({
+          team_id: teamData.id,
+          user_id: null, // Placeholder as we're inviting a user who might not exist yet
+          role: values.role,
+          email: values.email,
+          name: values.name,
+          status: 'invited'
+        })
+        .select()
+        .single();
+        
+      if (memberError) {
+        console.error('Error adding team member:', memberError);
+        toast.error('Failed to add team member');
+        return;
+      }
+
+      const newTeamMember: TeamMember = {
+        id: newMember.id,
+        name: values.name,
+        email: values.email,
+        role: values.role
+      };
+      
+      setMembers([...members, newTeamMember]);
+      toast.success('Team member invited successfully!');
+      setIsDialogOpen(false);
+      form.reset();
+      
+    } catch (error) {
+      console.error('Error adding team member:', error);
+      toast.error('Failed to add team member');
+    }
   };
 
   return (
@@ -139,7 +252,9 @@ const TeamMembersSection: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {members.length === 0 ? (
+          {isLoading ? (
+            <p className="text-center py-4">Loading team members...</p>
+          ) : members.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">No team members yet.</p>
           ) : (
             <div className="border rounded-md">
