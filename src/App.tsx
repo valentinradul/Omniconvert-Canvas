@@ -43,8 +43,7 @@ const App = () => (
               
               {/* Protected routes */}
               <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<AppLayout />}>
-                  <Route path="" element={<Navigate to="/dashboard" replace />} />
+                <Route element={<AppLayout />}>
                   <Route path="dashboard" element={<Dashboard />} />
                   <Route path="ideas" element={<IdeasPage />} />
                   <Route path="idea-details/:ideaId" element={<IdeaDetailsPage />} />
@@ -57,6 +56,9 @@ const App = () => (
                   <Route path="departments" element={<DepartmentsPage />} />
                   <Route path="account-settings" element={<AccountSettingsPage />} />
                   <Route path="team-settings" element={<TeamSettingsPage />} />
+
+                  {/* Redirect root path to dashboard when authenticated */}
+                  <Route path="" element={<Navigate to="/dashboard" replace />} />
                 </Route>
               </Route>
               

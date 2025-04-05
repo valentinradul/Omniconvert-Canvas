@@ -25,8 +25,8 @@ const AppLayout: React.FC = () => {
             </div>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={isActive('/') ? 'bg-sidebar-accent' : ''}>
-                  <Link to="/">
+                <SidebarMenuButton asChild className={isActive('/dashboard') ? 'bg-sidebar-accent' : ''}>
+                  <Link to="/dashboard">
                     <span>Dashboard</span>
                   </Link>
                 </SidebarMenuButton>

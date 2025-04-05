@@ -2,16 +2,19 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 
 const NotFound = () => {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",
-      location.pathname
+      location.pathname,
+      { isAuthenticated }
     );
-  }, [location.pathname]);
+  }, [location.pathname, isAuthenticated]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -24,7 +27,9 @@ const NotFound = () => {
         </p>
         <div className="space-y-4">
           <Button asChild size="lg">
-            <Link to="/">Return to Home</Link>
+            <Link to={isAuthenticated ? "/dashboard" : "/"}>
+              {isAuthenticated ? "Return to Dashboard" : "Return to Home"}
+            </Link>
           </Button>
           <div className="text-gray-500 text-sm pt-4">
             Path: <code className="bg-gray-100 p-1 rounded">{location.pathname}</code>
