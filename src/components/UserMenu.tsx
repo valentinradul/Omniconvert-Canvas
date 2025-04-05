@@ -19,10 +19,13 @@ const UserMenu: React.FC = () => {
     return null;
   }
 
+  // Use user metadata or fallback to email for display
+  const fullName = user.user_metadata?.full_name || '';
+  
   // Generate initials for avatar
   const getInitials = () => {
-    if (!user.name) return '?';
-    return user.name
+    if (!fullName) return user.email?.[0]?.toUpperCase() || '?';
+    return fullName
       .split(' ')
       .map((n) => n[0])
       .join('')
@@ -38,7 +41,7 @@ const UserMenu: React.FC = () => {
             <AvatarFallback>{getInitials()}</AvatarFallback>
           </Avatar>
           <span className="text-sm font-medium hidden md:inline-block">
-            {user.name}
+            {fullName || user.email?.split('@')[0]}
           </span>
         </button>
       </DropdownMenuTrigger>
