@@ -33,7 +33,7 @@ const AppLayout: React.FC = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <Sidebar className="z-10 border-r border-gray-200 bg-white">
+        <Sidebar className="z-10 border-r border-gray-200 !bg-white">
           <SidebarContent>
             <div className="py-6 px-4 border-b border-gray-200">
               <Logo className="flex items-center" />
@@ -145,7 +145,7 @@ const AppLayout: React.FC = () => {
 
         <main className="flex-1 overflow-auto bg-white">
           {isAuthenticated && (
-            <div className="p-4 border-b bg-white flex justify-end">
+            <div className="p-4 border-b border-gray-200 bg-white flex justify-end">
               <UserMenu />
             </div>
           )}
