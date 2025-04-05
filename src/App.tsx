@@ -21,6 +21,8 @@ import CreateExperimentPage from "./pages/CreateExperimentPage";
 import ExperimentsPage from "./pages/ExperimentsPage";
 import ExperimentDetailsPage from "./pages/ExperimentDetailsPage";
 import DepartmentsPage from "./pages/DepartmentsPage";
+import AccountSettingsPage from "./pages/AccountSettingsPage";
+import TeamSettingsPage from "./pages/TeamSettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +55,8 @@ const App = () => (
                   <Route path="experiments" element={<ExperimentsPage />} />
                   <Route path="experiment-details/:experimentId" element={<ExperimentDetailsPage />} />
                   <Route path="departments" element={<DepartmentsPage />} />
+                  <Route path="account-settings" element={<AccountSettingsPage />} />
+                  <Route path="team-settings" element={<TeamSettingsPage />} />
                 </Route>
               </Route>
               
