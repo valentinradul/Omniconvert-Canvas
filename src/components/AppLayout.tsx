@@ -45,7 +45,7 @@ const AppLayout: React.FC = () => {
                   asChild 
                   className={`flex items-center py-3 px-4 ${isActive('/dashboard') 
                     ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
                 >
                   <Link to="/dashboard" className="flex items-center">
                     <LayoutDashboard className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -59,7 +59,7 @@ const AppLayout: React.FC = () => {
                   asChild 
                   className={`flex items-center py-3 px-4 ${isActive('/ideas') 
                     ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
                 >
                   <Link to="/ideas" className="flex items-center">
                     <Lightbulb className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -73,7 +73,7 @@ const AppLayout: React.FC = () => {
                   asChild 
                   className={`flex items-center py-3 px-4 ${isActive('/hypotheses') 
                     ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
                 >
                   <Link to="/hypotheses" className="flex items-center">
                     <FlaskConical className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -87,7 +87,7 @@ const AppLayout: React.FC = () => {
                   asChild 
                   className={`flex items-center py-3 px-4 ${isActive('/experiments') 
                     ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
                 >
                   <Link to="/experiments" className="flex items-center">
                     <LineChart className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -101,7 +101,7 @@ const AppLayout: React.FC = () => {
                   asChild 
                   className={`flex items-center py-3 px-4 ${isActive('/departments') 
                     ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
                 >
                   <Link to="/departments" className="flex items-center">
                     <Building className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -116,7 +116,7 @@ const AppLayout: React.FC = () => {
                     asChild 
                     className={`flex items-center py-3 px-4 ${isActive('/team-settings') 
                       ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                      : 'text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                      : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
                   >
                     <Link to="/team-settings" className="flex items-center">
                       <Users className="h-5 w-5 mr-3" strokeWidth={1.5} />
@@ -130,7 +130,7 @@ const AppLayout: React.FC = () => {
                     asChild 
                     className={`flex items-center py-3 px-4 ${isActive('/account-settings') 
                       ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                      : 'text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                      : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
                   >
                     <Link to="/account-settings" className="flex items-center">
                       <Settings className="h-5 w-5 mr-3" strokeWidth={1.5} />
