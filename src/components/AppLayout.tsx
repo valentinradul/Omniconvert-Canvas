@@ -19,8 +19,7 @@ import {
   LineChart, 
   Building, 
   Settings, 
-  Users, 
-  ChevronRight 
+  Users 
 } from 'lucide-react';
 
 const AppLayout: React.FC = () => {
@@ -144,7 +143,7 @@ const AppLayout: React.FC = () => {
           </SidebarContent>
         </Sidebar>
 
-        <main className="flex-1 overflow-auto bg-gray-50">
+        <main className="flex-1 overflow-auto bg-white">
           {isAuthenticated && (
             <div className="p-4 border-b bg-white flex justify-end">
               <UserMenu />
