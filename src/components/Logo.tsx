@@ -8,11 +8,11 @@ interface LogoProps {
 const Logo: React.FC<LogoProps> = ({ className = "" }) => {
   return (
     <div className={className}>
-      <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="50" cy="25" r="20" fill="#1EAEDB" />
-        <circle cx="30" cy="65" r="20" fill="#1EAEDB" />
-        <circle cx="70" cy="65" r="20" fill="#1EAEDB" />
-      </svg>
+      <img 
+        src="/lovable-uploads/36110bfe-b273-479e-ad8c-950f5764e65c.png" 
+        alt="Company Logo" 
+        className="h-10"
+      />
     </div>
   );
 };
