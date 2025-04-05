@@ -9,9 +9,9 @@ const Logo: React.FC<LogoProps> = ({ className = "" }) => {
   return (
     <div className={className}>
       <img 
-        src="/lovable-uploads/36110bfe-b273-479e-ad8c-950f5764e65c.png" 
+        src="/lovable-uploads/a4a5d09d-2657-46f8-8741-e7725966a66f.png" 
         alt="Company Logo" 
-        className="h-15" // Changed from h-30 to h-15 (2 times smaller)
+        className="h-15" // Keeping the same size as before
       />
     </div>
   );
