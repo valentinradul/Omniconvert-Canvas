@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ const Index = () => {
               </Link>
               <Link to="/signup">
                 <Button className="bg-omni-blue text-white hover:bg-omni-blue/90 rounded-full">
-                  Book a call
+                  Create account
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
@@ -33,7 +34,7 @@ const Index = () => {
           <div className="flex flex-col lg:flex-row items-center gap-12 py-12">
             <div className="lg:w-1/2 space-y-6">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-black">
-                All-in-one Growth Experiment Platform
+                Turn growth ideas into experiments
               </h1>
               <p className="text-lg md:text-xl text-gray-600 max-w-lg">
                 Streamline your growth experiments from ideation to execution with our powerful tools.
