@@ -51,7 +51,7 @@ const Index = () => {
               <img 
                 src="/lovable-uploads/9aebc784-15b2-4b07-8054-818548d44392.png"
                 alt="Growth experiment illustration" 
-                className="rounded-lg shadow-lg w-full"
+                className="w-full"
               />
             </div>
           </div>

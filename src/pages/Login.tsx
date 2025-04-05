@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { ArrowLeft } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -55,6 +56,12 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="absolute top-8 left-8">
+          <Link to="/" className="flex items-center text-sm font-medium text-gray-600 hover:text-blue-600">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Homepage
+          </Link>
+        </div>
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">Sign in to your account</h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Or{" "}
