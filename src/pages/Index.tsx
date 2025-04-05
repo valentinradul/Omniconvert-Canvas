@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import Logo from "@/components/Logo";
 
 const Index = () => {
   return (
-    <div className="min-h-screen font-inter">
+    <div className="min-h-screen">
       <header className="bg-gradient-omni text-black">
         <div className="container mx-auto px-6 py-6">
           <nav className="flex justify-between items-center mb-16">
