@@ -22,6 +22,15 @@ import {
   Users 
 } from 'lucide-react';
 
+// Add custom CSS to force white background for sidebar
+const sidebarStyles = document.createElement('style');
+sidebarStyles.innerHTML = `
+  [data-sidebar="sidebar"] {
+    background-color: white !important;
+  }
+`;
+document.head.appendChild(sidebarStyles);
+
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
@@ -154,11 +163,6 @@ const AppLayout: React.FC = () => {
           </div>
         </main>
       </div>
-      <style jsx global>{`
-        [data-sidebar="sidebar"] {
-          background-color: white !important;
-        }
-      `}</style>
     </SidebarProvider>
   );
 };
