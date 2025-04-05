@@ -1,13 +1,18 @@
 
 import React from 'react';
-import { PECTI } from '@/types';
+import { PECTI, calculatePectiPercentage } from '@/types';
 
 interface PectiScoreDisplayProps {
   pecti: PECTI;
+  showPercentage?: boolean;
 }
 
-const PectiScoreDisplay: React.FC<PectiScoreDisplayProps> = ({ pecti }) => {
+const PectiScoreDisplay: React.FC<PectiScoreDisplayProps> = ({ 
+  pecti,
+  showPercentage = true
+}) => {
   const { potential, ease, cost, time, impact } = pecti;
+  const percentageScore = calculatePectiPercentage(pecti);
 
   const renderScoreBadge = (score: number, label: string) => (
     <div className="flex flex-col items-center">
@@ -19,12 +24,23 @@ const PectiScoreDisplay: React.FC<PectiScoreDisplayProps> = ({ pecti }) => {
   );
 
   return (
-    <div className="flex gap-3 justify-center">
-      {renderScoreBadge(potential, 'P')}
-      {renderScoreBadge(ease, 'E')}
-      {renderScoreBadge(cost, 'C')}
-      {renderScoreBadge(time, 'T')}
-      {renderScoreBadge(impact, 'I')}
+    <div className="space-y-2">
+      <div className="flex gap-3 justify-center">
+        {renderScoreBadge(potential, 'P')}
+        {renderScoreBadge(ease, 'E')}
+        {renderScoreBadge(cost, 'C')}
+        {renderScoreBadge(time, 'T')}
+        {renderScoreBadge(impact, 'I')}
+      </div>
+      
+      {showPercentage && (
+        <div className="text-center text-sm">
+          <span className="font-medium">Overall Score: </span>
+          <span className={`font-bold ${percentageScore >= 70 ? 'text-green-600' : percentageScore >= 40 ? 'text-amber-600' : 'text-red-600'}`}>
+            {percentageScore}%
+          </span>
+        </div>
+      )}
     </div>
   );
 };

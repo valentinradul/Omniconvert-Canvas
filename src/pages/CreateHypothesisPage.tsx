@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import { ObservationContent } from '@/types';
+import { ObservationContent, calculatePectiPercentage } from '@/types';
 import ObservationContentEditor from '@/components/ObservationContentEditor';
 
 const CreateHypothesisPage: React.FC = () => {
@@ -35,6 +35,15 @@ const CreateHypothesisPage: React.FC = () => {
   const [cost, setCost] = useState<number>(3);
   const [time, setTime] = useState<number>(3);
   const [impact, setImpact] = useState<number>(3);
+  
+  // Calculated PECTI percentage
+  const pectiPercentage = calculatePectiPercentage({
+    potential: potential as 1 | 2 | 3 | 4 | 5,
+    ease: ease as 1 | 2 | 3 | 4 | 5,
+    cost: cost as 1 | 2 | 3 | 4 | 5,
+    time: time as 1 | 2 | 3 | 4 | 5,
+    impact: impact as 1 | 2 | 3 | 4 | 5,
+  });
   
   useEffect(() => {
     const currentIdea = getIdeaById(ideaId || '');
@@ -243,13 +252,24 @@ const CreateHypothesisPage: React.FC = () => {
             </div>
             
             <div className="bg-muted/40 p-4 rounded-md">
-              <p className="font-medium mb-2">Total PECTI Score: {potential + ease + cost + time + impact} / 25</p>
-              <div className="grid grid-cols-5 gap-2">
-                <div className={`text-center rounded-md p-2 pecti-score-${potential}`}>P: {potential}</div>
-                <div className={`text-center rounded-md p-2 pecti-score-${ease}`}>E: {ease}</div>
-                <div className={`text-center rounded-md p-2 pecti-score-${cost}`}>C: {cost}</div>
-                <div className={`text-center rounded-md p-2 pecti-score-${time}`}>T: {time}</div>
-                <div className={`text-center rounded-md p-2 pecti-score-${impact}`}>I: {impact}</div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <p className="font-medium">Total PECTI Score: {potential + ease + cost + time + impact} / 25</p>
+                  <div className={`text-sm font-bold px-2 py-1 rounded ${
+                    pectiPercentage >= 70 ? 'bg-green-100 text-green-800' : 
+                    pectiPercentage >= 40 ? 'bg-amber-100 text-amber-800' : 
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {pectiPercentage}%
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  <div className={`text-center rounded-md p-2 pecti-score-${potential}`}>P: {potential}</div>
+                  <div className={`text-center rounded-md p-2 pecti-score-${ease}`}>E: {ease}</div>
+                  <div className={`text-center rounded-md p-2 pecti-score-${cost}`}>C: {cost}</div>
+                  <div className={`text-center rounded-md p-2 pecti-score-${time}`}>T: {time}</div>
+                  <div className={`text-center rounded-md p-2 pecti-score-${impact}`}>I: {impact}</div>
+                </div>
               </div>
             </div>
           </CardContent>

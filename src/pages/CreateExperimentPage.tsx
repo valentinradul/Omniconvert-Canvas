@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ObservationContentEditor from '@/components/ObservationContentEditor';
+import PectiScoreDisplay from '@/components/PectiScoreDisplay';
 
 const CreateExperimentPage: React.FC = () => {
   const { hypothesisId } = useParams();
@@ -96,11 +97,18 @@ const CreateExperimentPage: React.FC = () => {
           <CardTitle>Based on Hypothesis</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-4">
             <p className="font-medium">{idea.title}</p>
             <p><span className="text-muted-foreground">Because we observed:</span> {hypothesis.observation}</p>
             <p><span className="text-muted-foreground">We will do:</span> {hypothesis.initiative}</p>
             <p><span className="text-muted-foreground">With the goal to improve:</span> {hypothesis.metric}</p>
+            
+            {hypothesis.pectiScore && (
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground mb-2">PECTI Score:</p>
+                <PectiScoreDisplay pecti={hypothesis.pectiScore} />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

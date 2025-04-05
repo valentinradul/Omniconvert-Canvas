@@ -92,3 +92,11 @@ export type Experiment = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+// Helper function to calculate PECTI percentage score
+export const calculatePectiPercentage = (pectiScore: PECTI): number => {
+  const { potential, ease, cost, time, impact } = pectiScore;
+  const totalScore = potential + ease + cost + time + impact;
+  const maxPossibleScore = 25; // 5 points max for each of the 5 categories
+  return Math.round((totalScore / maxPossibleScore) * 100);
+};
