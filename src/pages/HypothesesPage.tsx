@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { calculatePectiPercentage, PECTI, Tag } from '@/types';
 import HypothesisFilters from '@/components/hypothesis/HypothesisFilters';
 import HypothesisTable from '@/components/hypothesis/HypothesisTable';
 import EmptyHypothesisList from '@/components/hypothesis/EmptyHypothesisList';
+import { Button } from '@/components/ui/button';
 
 const HypothesesPage: React.FC = () => {
   const { hypotheses, ideas, experiments, getIdeaById, editHypothesis, departments, getAllTags, getAllUserNames } = useApp();
@@ -24,7 +25,19 @@ const HypothesesPage: React.FC = () => {
   const allTags = getAllTags();
   const allUsers = getAllUserNames();
   
+  // Debug log to check data
+  useEffect(() => {
+    console.log('Hypotheses data:', hypotheses);
+    console.log('Ideas data:', ideas);
+    console.log('Departments:', departments);
+    console.log('Tags:', allTags);
+    console.log('Users:', allUsers);
+  }, [hypotheses, ideas, departments, allTags, allUsers]);
+  
   const filteredHypotheses = React.useMemo(() => {
+    console.log('Filtering hypotheses with filters:', filters);
+    console.log('Search query:', searchQuery);
+    
     return hypotheses.filter(hypothesis => {
       if (searchQuery && !hypothesis.observation.toLowerCase().includes(searchQuery.toLowerCase()) && 
           !hypothesis.initiative.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -55,7 +68,7 @@ const HypothesesPage: React.FC = () => {
       
       if (filters.userId && hypothesis.userId !== filters.userId) {
         return false;
-        }
+      }
       
       return true;
     }).sort((a, b) => {
@@ -81,6 +94,7 @@ const HypothesesPage: React.FC = () => {
   };
   
   const handleFilterChange = (filterName: keyof typeof filters, value: any) => {
+    console.log('Filter changed:', filterName, value);
     setFilters(prev => ({
       ...prev,
       [filterName]: value
@@ -105,6 +119,9 @@ const HypothesesPage: React.FC = () => {
           <h1 className="text-3xl font-bold tracking-tight">Hypotheses</h1>
           <p className="text-muted-foreground">Test your growth ideas with structured hypotheses</p>
         </div>
+        <Button onClick={() => navigate('/ideas')}>
+          Create New Hypothesis
+        </Button>
       </div>
       
       <HypothesisFilters
@@ -118,8 +135,16 @@ const HypothesesPage: React.FC = () => {
         onClearFilters={handleClearFilters}
       />
       
-      {filteredHypotheses.length === 0 ? (
-        <EmptyHypothesisList />
+      {hypotheses.length === 0 ? (
+        <div>
+          <p>No hypotheses available. Create your first hypothesis!</p>
+          <EmptyHypothesisList />
+        </div>
+      ) : filteredHypotheses.length === 0 ? (
+        <div>
+          <p>No hypotheses match your filters.</p>
+          <EmptyHypothesisList />
+        </div>
       ) : (
         <HypothesisTable
           hypotheses={filteredHypotheses}
