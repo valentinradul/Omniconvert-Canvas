@@ -34,12 +34,12 @@ const AppLayout: React.FC = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <Sidebar className="z-10 border-r border-gray-200 !bg-white">
-          <SidebarContent>
-            <div className="py-6 px-4 border-b border-gray-200">
+          <SidebarContent className="!bg-white">
+            <div className="py-6 px-4 border-b border-gray-200 bg-white">
               <Logo className="flex items-center" />
               <p className="text-xs text-gray-600 mt-1">Growth experimentation platform</p>
             </div>
-            <SidebarMenu className="py-4">
+            <SidebarMenu className="py-4 bg-white">
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   asChild 
@@ -110,7 +110,7 @@ const AppLayout: React.FC = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="mt-6 pt-6 border-t border-gray-200 bg-white">
                 <SidebarMenuItem>
                   <SidebarMenuButton 
                     asChild 
@@ -154,6 +154,11 @@ const AppLayout: React.FC = () => {
           </div>
         </main>
       </div>
+      <style jsx global>{`
+        [data-sidebar="sidebar"] {
+          background-color: white !important;
+        }
+      `}</style>
     </SidebarProvider>
   );
 };
