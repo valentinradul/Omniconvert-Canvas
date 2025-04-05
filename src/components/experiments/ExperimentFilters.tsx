@@ -35,7 +35,7 @@ const ExperimentFilters: React.FC<ExperimentFiltersProps> = ({
       <div className="flex gap-2 w-full md:w-1/3">
         <div className="w-1/2">
           <Select 
-            value={filterStatus} 
+            value={filterStatus || "all"} 
             onValueChange={(value) => setFilterStatus(value === 'all' ? undefined : value)}
           >
             <SelectTrigger>
@@ -51,7 +51,7 @@ const ExperimentFilters: React.FC<ExperimentFiltersProps> = ({
         </div>
         <div className="w-1/2">
           <Select 
-            value={filterResponsible} 
+            value={filterResponsible || "all"} 
             onValueChange={(value) => setFilterResponsible(value === 'all' ? undefined : value)}
           >
             <SelectTrigger>

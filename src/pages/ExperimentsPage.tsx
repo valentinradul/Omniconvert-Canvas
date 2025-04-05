@@ -76,8 +76,8 @@ const ExperimentsPage: React.FC = () => {
       {experiments.length === 0 ? (
         <ExperimentNoData />
       ) : (
-        <Tabs value={viewMode} className="mt-0">
-          <TabsContent value="grid">
+        <div>
+          {viewMode === "grid" && (
             <ExperimentGrid
               experiments={filteredExperiments}
               getHypothesisById={getHypothesisById}
@@ -85,9 +85,9 @@ const ExperimentsPage: React.FC = () => {
               getAllUserNames={getAllUserNames}
               getExperimentDuration={getExperimentDuration}
             />
-          </TabsContent>
+          )}
           
-          <TabsContent value="list">
+          {viewMode === "list" && (
             <ExperimentList
               experiments={filteredExperiments}
               getHypothesisById={getHypothesisById}
@@ -95,8 +95,8 @@ const ExperimentsPage: React.FC = () => {
               getAllUserNames={getAllUserNames}
               getExperimentDuration={getExperimentDuration}
             />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       )}
     </div>
   );
