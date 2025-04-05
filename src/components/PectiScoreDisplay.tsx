@@ -59,7 +59,7 @@ const PectiScoreDisplay: React.FC<PectiScoreDisplayProps> = ({
         {renderScoreBadge(impact, 'I')}
         
         {showPercentage && (
-          <div className={`ml-1 w-7 h-7 rounded-full flex items-center justify-center font-bold text-lg ${getScoreColor()}`}>
+          <div className={`ml-1 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg ${getScoreColor()}`}>
             {percentageScore}
           </div>
         )}

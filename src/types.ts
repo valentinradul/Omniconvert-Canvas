@@ -41,6 +41,7 @@ export type GrowthIdea = {
   userId?: string;
   userName?: string;
   tags?: Tag[];
+  responsibleUserId?: string;
 };
 
 export type PECTI = {
@@ -70,6 +71,7 @@ export type Hypothesis = {
   userId?: string;
   userName?: string;
   status?: HypothesisStatus;
+  responsibleUserId?: string;
 };
 
 export type HypothesisStatus = 
@@ -116,6 +118,8 @@ export type Experiment = {
   updatedAt: Date;
   userId?: string;
   userName?: string;
+  responsibleUserId?: string;
+  statusUpdatedAt?: Date;
 };
 
 // Helper function to calculate PECTI percentage score

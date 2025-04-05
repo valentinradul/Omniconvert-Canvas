@@ -18,7 +18,7 @@ type AppContextType = {
   addHypothesis: (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => void;
   editHypothesis: (id: string, hypothesis: Partial<Hypothesis>) => void;
   deleteHypothesis: (id: string) => void;
-  addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt' | 'statusUpdatedAt'>) => void;
   editExperiment: (id: string, experiment: Partial<Experiment>) => void;
   deleteExperiment: (id: string) => void;
   getIdeaById: (id: string) => GrowthIdea | undefined;
@@ -28,6 +28,12 @@ type AppContextType = {
   getDepartmentById: (id: string) => Department | undefined;
   getAllTags: () => Tag[];
   getAllUserNames: () => {id: string; name: string}[];
+  getExperimentDuration: (experiment: Experiment) => { 
+    daysRunning: number;
+    daysRemaining: number | null; 
+    daysInStatus: number;
+    daysTotal: number | null;
+  };
 };
 
 // Create the context
@@ -106,6 +112,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
     
     return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
+  };
+  
+  // Helper function to calculate experiment durations and days in status
+  const getExperimentDuration = (experiment: Experiment) => {
+    const today = new Date();
+    const createdAt = new Date(experiment.createdAt);
+    const statusUpdatedAt = experiment.statusUpdatedAt ? new Date(experiment.statusUpdatedAt) : createdAt;
+    const startDate = experiment.startDate ? new Date(experiment.startDate) : null;
+    const endDate = experiment.endDate ? new Date(experiment.endDate) : null;
+    
+    // Calculate days running (from creation or start date, whichever is applicable)
+    const daysRunning = startDate 
+      ? Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      : Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calculate days remaining to end date, if applicable
+    const daysRemaining = endDate 
+      ? Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+    
+    // Calculate days in the current status
+    const daysInStatus = Math.floor((today.getTime() - statusUpdatedAt.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calculate total planned days for the experiment
+    const daysTotal = startDate && endDate
+      ? Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+      
+    return {
+      daysRunning,
+      daysRemaining, 
+      daysInStatus,
+      daysTotal
+    };
   };
   
   // Department CRUD operations
@@ -197,7 +237,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   // Experiment CRUD operations
-  const addExperiment = (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addExperiment = (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt' | 'statusUpdatedAt'>) => {
     const now = new Date();
     setExperiments([
       ...experiments,
@@ -206,6 +246,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: generateId(),
         createdAt: now,
         updatedAt: now,
+        statusUpdatedAt: now,
         userId: experiment.userId || user?.id,
         userName: experiment.userName || user?.user_metadata?.full_name || user?.email
       }
@@ -213,9 +254,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   const editExperiment = (id: string, experimentUpdates: Partial<Experiment>) => {
-    setExperiments(experiments.map(experiment => 
-      experiment.id === id ? { ...experiment, ...experimentUpdates, updatedAt: new Date() } : experiment
-    ));
+    const now = new Date();
+    
+    setExperiments(experiments.map(experiment => {
+      if (experiment.id !== id) return experiment;
+      
+      // If status is changing, update statusUpdatedAt
+      const statusIsChanging = experimentUpdates.status && experiment.status !== experimentUpdates.status;
+      
+      return {
+        ...experiment,
+        ...experimentUpdates,
+        updatedAt: now,
+        statusUpdatedAt: statusIsChanging ? now : experiment.statusUpdatedAt || experiment.createdAt
+      };
+    }));
   };
   
   const deleteExperiment = (id: string) => {
@@ -253,7 +306,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       getExperimentByHypothesisId,
       getDepartmentById,
       getAllTags,
-      getAllUserNames
+      getAllUserNames,
+      getExperimentDuration
     }}>
       {children}
     </AppContext.Provider>

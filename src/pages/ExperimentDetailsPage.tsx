@@ -13,7 +13,7 @@ import StatusBadge from '@/components/StatusBadge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistance } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -27,7 +27,9 @@ const ExperimentDetailsPage: React.FC = () => {
     getHypothesisById, 
     getIdeaById, 
     editExperiment,
-    deleteExperiment
+    deleteExperiment,
+    getAllUserNames,
+    getExperimentDuration
   } = useApp();
   
   const experiment = experiments.find(e => e.id === experimentId);
@@ -39,8 +41,10 @@ const ExperimentDetailsPage: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [notes, setNotes] = useState('');
+  const [responsibleUserId, setResponsibleUserId] = useState<string | undefined>(undefined);
   
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const allUsers = getAllUserNames();
   
   useEffect(() => {
     if (experiment) {
@@ -48,6 +52,7 @@ const ExperimentDetailsPage: React.FC = () => {
       setStartDate(experiment.startDate);
       setEndDate(experiment.endDate);
       setNotes(experiment.notes);
+      setResponsibleUserId(experiment.responsibleUserId);
     } else {
       navigate('/experiments');
     }
@@ -76,7 +81,8 @@ const ExperimentDetailsPage: React.FC = () => {
         status: status as ExperimentStatus,
         startDate,
         endDate,
-        notes
+        notes,
+        responsibleUserId
       });
       
       setEditDialogOpen(false);
@@ -92,6 +98,10 @@ const ExperimentDetailsPage: React.FC = () => {
     navigate('/experiments');
     toast.success('Experiment deleted successfully!');
   };
+
+  const duration = getExperimentDuration(experiment);
+  const responsible = experiment.responsibleUserId ? 
+    allUsers.find(u => u.id === experiment.responsibleUserId)?.name : undefined;
   
   return (
     <div className="space-y-6">
@@ -103,6 +113,7 @@ const ExperimentDetailsPage: React.FC = () => {
           <h1 className="text-3xl font-bold tracking-tight">{idea.title}</h1>
           <p className="text-muted-foreground">
             Created on {new Date(experiment.createdAt).toLocaleDateString()}
+            {responsible && ` • Responsible: ${responsible}`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -134,6 +145,26 @@ const ExperimentDetailsPage: React.FC = () => {
                             <SelectItem key={stat} value={stat}>{stat}</SelectItem>
                           ))}
                         </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="grid gap-3">
+                    <Label htmlFor="responsible">Responsible Person</Label>
+                    <Select
+                      value={responsibleUserId}
+                      onValueChange={setResponsibleUserId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Assign to someone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Unassigned</SelectItem>
+                        {allUsers.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -236,21 +267,25 @@ const ExperimentDetailsPage: React.FC = () => {
           <StatusBadge status={experiment.status} />
         </div>
         <div>
-          <h3 className="font-medium">Timeframe</h3>
+          <h3 className="font-medium">Duration</h3>
+          <div className="text-sm text-muted-foreground space-y-1">
+            <div>In status: {duration.daysInStatus} days</div>
+            <div>Running: {duration.daysRunning} days</div>
+            {duration.daysRemaining !== null && (
+              <div className="font-medium">Remaining: {duration.daysRemaining} days</div>
+            )}
+          </div>
+        </div>
+        <div>
+          <h3 className="font-medium">Dates</h3>
           <p className="text-sm text-muted-foreground">
             {experiment.startDate 
-              ? new Date(experiment.startDate).toLocaleDateString() 
+              ? format(new Date(experiment.startDate), 'MMM d, yyyy') 
               : 'Not started'} 
             {' — '} 
             {experiment.endDate 
-              ? new Date(experiment.endDate).toLocaleDateString() 
+              ? format(new Date(experiment.endDate), 'MMM d, yyyy') 
               : 'No end date'}
-          </p>
-        </div>
-        <div>
-          <h3 className="font-medium">Last Updated</h3>
-          <p className="text-sm text-muted-foreground">
-            {new Date(experiment.updatedAt).toLocaleDateString()}
           </p>
         </div>
       </div>

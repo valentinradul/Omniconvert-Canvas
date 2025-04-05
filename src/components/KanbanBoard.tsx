@@ -40,9 +40,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onIdeaToHypothesis
 }) => {
   // Filter out ideas that are already associated with hypotheses
-  const availableIdeas = ideas.filter(idea => 
-    !hypotheses.some(hypothesis => hypothesis.ideaId === idea.id)
-  );
+  const ideasWithHypothesis = hypotheses.map(hypothesis => hypothesis.ideaId);
+  const availableIdeas = ideas.filter(idea => !ideasWithHypothesis.includes(idea.id));
   
   // Create initial columns from hypothesis statuses
   const initialColumns = ALL_HYPOTHESIS_STATUSES.reduce<Record<string, Column>>((acc, status) => {
@@ -73,25 +72,57 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   // Add hypotheses with in-progress or blocked experiments to the Testing column
   if (experiments && experiments.length > 0) {
+    // Process each experiment
     experiments.forEach(experiment => {
-      if (experiment.status === 'In Progress' || experiment.status === 'Blocked') {
-        const relatedHypothesis = hypotheses.find(h => h.id === experiment.hypothesisId);
-        
-        if (relatedHypothesis && relatedHypothesis.status !== 'Testing') {
-          initialColumns.Testing.items.push({
-            ...relatedHypothesis,
-            experiment
-          });
-        }
-      } else if (experiment.status === 'Winning' || experiment.status === 'Losing') {
-        // Move winning or losing experiments to the Completed column
-        const relatedHypothesis = hypotheses.find(h => h.id === experiment.hypothesisId);
-        
-        if (relatedHypothesis && relatedHypothesis.status !== 'Completed') {
-          initialColumns.Completed.items.push({
-            ...relatedHypothesis,
-            experiment
-          });
+      const relatedHypothesis = hypotheses.find(h => h.id === experiment.hypothesisId);
+      
+      if (relatedHypothesis) {
+        if (experiment.status === 'In Progress' || experiment.status === 'Blocked') {
+          // Move the hypothesis to Testing column if not already there
+          if (relatedHypothesis.status !== 'Testing') {
+            // Make sure it's not already in another column before adding
+            const existingHypothesisIndex = initialColumns.Testing.items.findIndex(
+              item => item.id === relatedHypothesis.id
+            );
+            
+            if (existingHypothesisIndex === -1) {
+              initialColumns.Testing.items.push({
+                ...relatedHypothesis,
+                experiment,
+                status: 'Testing'
+              });
+              
+              // Remove from original column if it exists somewhere else
+              ALL_HYPOTHESIS_STATUSES.forEach(status => {
+                initialColumns[status].items = initialColumns[status].items.filter(
+                  item => item.id !== relatedHypothesis.id || status === 'Testing'
+                );
+              });
+            }
+          }
+        } else if (experiment.status === 'Winning' || experiment.status === 'Losing' || experiment.status === 'Inconclusive') {
+          // Move completed experiments to the Completed column
+          if (relatedHypothesis.status !== 'Completed') {
+            // Make sure it's not already in another column before adding
+            const existingHypothesisIndex = initialColumns.Completed.items.findIndex(
+              item => item.id === relatedHypothesis.id
+            );
+            
+            if (existingHypothesisIndex === -1) {
+              initialColumns.Completed.items.push({
+                ...relatedHypothesis,
+                experiment,
+                status: 'Completed'
+              });
+              
+              // Remove from original column if it exists somewhere else
+              ALL_HYPOTHESIS_STATUSES.forEach(status => {
+                initialColumns[status].items = initialColumns[status].items.filter(
+                  item => item.id !== relatedHypothesis.id || status === 'Completed'
+                );
+              });
+            }
+          }
         }
       }
     });
@@ -259,8 +290,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 <div className="mt-2">
                                   <PectiScoreDisplay
                                     pecti={hypothesis.pectiScore}
-                                    showPercentage={false}
-                                    showProgressBar={true}
+                                    showPercentage={true}
+                                    showProgressBar={false}
                                     size="sm"
                                   />
                                 </div>
