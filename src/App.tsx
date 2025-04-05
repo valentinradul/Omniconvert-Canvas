@@ -1,74 +1,63 @@
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { ReactQueryDevtools } from 'react-query/devtools';
+import { AuthProvider } from './context/AuthContext';
+import { AppProvider } from './context/AppContext';
+import LoginPage from './pages/Login';
+import SignupPage from './pages/Signup';
+import DashboardPage from './pages/Dashboard';
+import IdeasPage from './pages/IdeasPage';
+import HypothesesPage from './pages/HypothesesPage';
+import ExperimentsPage from './pages/ExperimentsPage';
+import CreateIdeaPage from './pages/CreateIdeaPage';
+import CreateHypothesisPage from './pages/CreateHypothesisPage';
+import CreateExperimentPage from './pages/CreateExperimentPage';
+import EditIdeaPage from './pages/EditIdeaPage';
+import EditHypothesisPage from './pages/EditHypothesisPage';
+import EditExperimentPage from './pages/EditExperimentPage';
+import DepartmentManagementPage from './pages/DepartmentManagementPage';
+import { Toaster } from '@/components/ui/sonner';
+import { ThemeProvider } from "@/components/theme-provider"
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AppProvider } from "./context/AppContext";
-import { AuthProvider } from "./context/AuthContext";
-import AppLayout from "./components/AppLayout";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import IdeasPage from "./pages/IdeasPage";
-import IdeaDetailsPage from "./pages/IdeaDetailsPage";
-import CreateHypothesisPage from "./pages/CreateHypothesisPage";
-import HypothesesPage from "./pages/HypothesesPage";
-import HypothesisDetailsPage from "./pages/HypothesisDetailsPage";
-import CreateExperimentPage from "./pages/CreateExperimentPage";
-import ExperimentsPage from "./pages/ExperimentsPage";
-import ExperimentDetailsPage from "./pages/ExperimentDetailsPage";
-import DepartmentsPage from "./pages/DepartmentsPage";
-import AccountSettingsPage from "./pages/AccountSettingsPage";
-import TeamSettingsPage from "./pages/TeamSettingsPage";
-import NotFound from "./pages/NotFound";
+// Import our new ConfettiProvider
+import { ConfettiProvider } from './context/ConfettiContext';
 
-const queryClient = new QueryClient();
+function App() {
+  const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <AppProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public routes */}
-              <Route index element={<Index />} />
-              <Route path="login" element={<Login />} />
-              <Route path="signup" element={<Signup />} />
-              
-              {/* Protected routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route element={<AppLayout />}>
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="ideas" element={<IdeasPage />} />
-                  <Route path="idea-details/:ideaId" element={<IdeaDetailsPage />} />
-                  <Route path="create-hypothesis/:ideaId" element={<CreateHypothesisPage />} />
-                  <Route path="hypotheses" element={<HypothesesPage />} />
-                  <Route path="hypothesis-details/:hypothesisId" element={<HypothesisDetailsPage />} />
-                  <Route path="create-experiment/:hypothesisId" element={<CreateExperimentPage />} />
-                  <Route path="experiments" element={<ExperimentsPage />} />
-                  <Route path="experiment-details/:experimentId" element={<ExperimentDetailsPage />} />
-                  <Route path="departments" element={<DepartmentsPage />} />
-                  <Route path="account-settings" element={<AccountSettingsPage />} />
-                  <Route path="team-settings" element={<TeamSettingsPage />} />
-
-                  {/* Redirect root path to dashboard when authenticated */}
-                  <Route path="" element={<Navigate to="/dashboard" replace />} />
-                </Route>
-              </Route>
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AppProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppProvider>
+          <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+            <ConfettiProvider>
+              <Toaster />
+              <Router>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/ideas" element={<IdeasPage />} />
+                  <Route path="/ideas/create" element={<CreateIdeaPage />} />
+                  <Route path="/ideas/edit/:ideaId" element={<EditIdeaPage />} />
+                  <Route path="/hypotheses" element={<HypothesesPage />} />
+                  <Route path="/hypotheses/create/:ideaId" element={<CreateHypothesisPage />} />
+                  <Route path="/hypotheses/edit/:hypothesisId" element={<EditHypothesisPage />} />
+                  <Route path="/experiments" element={<ExperimentsPage />} />
+                  <Route path="/experiments/create/:hypothesisId" element={<CreateExperimentPage />} />
+                  <Route path="/experiments/edit/:experimentId" element={<EditExperimentPage />} />
+                  <Route path="/departments" element={<DepartmentManagementPage />} />
+                  <Route path="/" element={<DashboardPage />} />
+                </Routes>
+              </Router>
+            </ConfettiProvider>
+          </ThemeProvider>
+        </AppProvider>
+      </AuthProvider>
+      <ReactQueryDevtools />
+    </QueryClientProvider>
+  );
+}
 
 export default App;

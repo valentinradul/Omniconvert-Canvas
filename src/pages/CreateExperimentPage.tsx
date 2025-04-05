@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -16,11 +15,13 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ObservationContentEditor from '@/components/ObservationContentEditor';
 import PectiScoreDisplay from '@/components/PectiScoreDisplay';
+import { useConfetti } from '@/context/ConfettiContext';
 
 const CreateExperimentPage: React.FC = () => {
   const { hypothesisId } = useParams();
   const navigate = useNavigate();
   const { getHypothesisById, getIdeaById, addExperiment } = useApp();
+  const { triggerConfetti } = useConfetti();
 
   const [hypothesis, setHypothesis] = useState(getHypothesisById(hypothesisId || ''));
   const [idea, setIdea] = useState(hypothesis ? getIdeaById(hypothesis.ideaId) : undefined);
@@ -76,6 +77,10 @@ const CreateExperimentPage: React.FC = () => {
       };
       
       addExperiment(newExperiment);
+      
+      // Trigger confetti when experiment is created
+      triggerConfetti();
+      
       toast.success('Experiment created successfully!');
       navigate('/experiments');
     } catch (error) {
