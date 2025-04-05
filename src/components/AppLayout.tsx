@@ -14,7 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import Logo from '@/components/Logo';
 import { 
   LayoutDashboard, 
-  Flask, 
+  FlaskConical, 
   Lightbulb, 
   LineChart, 
   Building, 
@@ -77,7 +77,7 @@ const AppLayout: React.FC = () => {
                     : ''}`}
                 >
                   <Link to="/hypotheses" className="flex items-center">
-                    <Flask className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                    <FlaskConical className="h-5 w-5 mr-3" strokeWidth={1.5} />
                     <span className="text-base">Hypotheses</span>
                   </Link>
                 </SidebarMenuButton>
@@ -93,7 +93,6 @@ const AppLayout: React.FC = () => {
                   <Link to="/experiments" className="flex items-center">
                     <LineChart className="h-5 w-5 mr-3" strokeWidth={1.5} />
                     <span className="text-base">Experiments</span>
-                    {/* Use ChevronRight if this had submenu */}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
