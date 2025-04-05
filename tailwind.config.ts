@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -70,7 +69,14 @@ export default {
 					winning: '#10b981',
 					losing: '#ef4444',
 					inconclusive: '#6b7280'
+				},
+				omni: {
+					blue: '#3366FF',
+					'light-blue': '#EEF4FF'
 				}
+			},
+			backgroundImage: {
+				'gradient-omni': 'linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%)',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -98,6 +104,9 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+			},
+			fontFamily: {
+				'inter': ['Inter', 'sans-serif'],
 			}
 		}
 	},

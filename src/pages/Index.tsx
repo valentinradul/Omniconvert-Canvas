@@ -1,47 +1,60 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Logo from "@/components/Logo";
+import { Input } from "@/components/ui/input";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-white">
-      <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-        <div className="container mx-auto px-6 py-16 md:py-24">
+    <div className="min-h-screen font-inter">
+      <header className="bg-gradient-omni text-black">
+        <div className="container mx-auto px-6 py-6">
           <nav className="flex justify-between items-center mb-16">
-            <Logo className="flex items-center text-white" />
+            <Logo className="flex items-center" />
+            <div className="hidden md:flex items-center gap-8 text-sm font-medium">
+              <a href="#features" className="hover:text-omni-blue">Our software</a>
+              <a href="#services" className="hover:text-omni-blue">Services</a>
+              <a href="#pricing" className="hover:text-omni-blue">Pricing</a>
+              <a href="#about" className="hover:text-omni-blue">About</a>
+            </div>
             <div className="space-x-4">
               <Link to="/login">
-                <Button variant="ghost" className="text-white hover:bg-blue-600">Login</Button>
+                <Button variant="ghost" className="text-black hover:bg-black/5">Login</Button>
               </Link>
               <Link to="/signup">
-                <Button className="bg-white text-blue-600 hover:bg-gray-100">Sign up free</Button>
+                <Button className="bg-omni-blue text-white hover:bg-omni-blue/90 rounded-full">
+                  Book a call
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
               </Link>
             </div>
           </nav>
           
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="lg:w-1/2 space-y-8">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Turn Growth Ideas into Winning Experiments
+          <div className="flex flex-col lg:flex-row items-center gap-12 py-12">
+            <div className="lg:w-1/2 space-y-6">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-black">
+                Turn visitors into lifetime customers
               </h1>
-              <p className="text-xl md:text-2xl opacity-90">
-                The complete platform to track, manage, and optimize your growth experiments - from idea to impact.
+              <p className="text-lg md:text-xl text-gray-600 max-w-lg">
+                Our solutions help you stay relevant for your customers from acquisition to retention.
               </p>
-              <div className="flex gap-4 pt-4">
-                <Link to="/signup">
-                  <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-                    Start for free
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Input 
+                  type="email" 
+                  placeholder="Work email" 
+                  className="max-w-sm rounded-full bg-white border-gray-200" 
+                />
+                <Button size="lg" className="bg-omni-blue text-white hover:bg-omni-blue/90 rounded-full">
+                  Book a call
+                </Button>
               </div>
             </div>
             <div className="lg:w-1/2">
               <img 
-                src="https://images.unsplash.com/photo-1533750516457-a7f992034fec?q=80&w=1000&auto=format&fit=crop"
-                alt="Growth experiment dashboard" 
+                src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?q=80&w=1000&auto=format&fit=crop"
+                alt="Team working together" 
                 className="rounded-lg shadow-lg w-full"
               />
             </div>
@@ -49,10 +62,10 @@ const Index = () => {
         </div>
       </header>
 
-      <section className="py-20 bg-gray-50">
+      <section id="features" className="py-20 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">All-in-one Growth Experiment Platform</h2>
+            <h2 className="text-3xl font-bold text-black mb-4">All-in-one Growth Experiment Platform</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Streamline your growth process from ideation to execution with our powerful tools
             </p>
@@ -60,43 +73,43 @@ const Index = () => {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-              <div className="bg-blue-100 text-blue-600 p-3 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <div className="bg-omni-light-blue text-omni-blue p-3 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Idea Backlog</h3>
+              <h3 className="text-xl font-bold text-black mb-2">Idea Backlog</h3>
               <p className="text-gray-600">Collect and organize growth ideas from your team in one centralized place.</p>
             </div>
             
             <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-              <div className="bg-green-100 text-green-600 p-3 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <div className="bg-omni-light-blue text-omni-blue p-3 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5m.75-9 3-3 2.148 2.148A12.061 12.061 0 0 1 16.5 7.605" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Hypothesis Builder</h3>
+              <h3 className="text-xl font-bold text-black mb-2">Hypothesis Builder</h3>
               <p className="text-gray-600">Turn your ideas into structured hypotheses with our easy-to-use builder.</p>
             </div>
             
             <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-              <div className="bg-purple-100 text-purple-600 p-3 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <div className="bg-omni-light-blue text-omni-blue p-3 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Experiment Tracker</h3>
+              <h3 className="text-xl font-bold text-black mb-2">Experiment Tracker</h3>
               <p className="text-gray-600">Track the progress and results of your experiments in real-time.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-20">
+      <section id="services" className="py-20 bg-gradient-omni">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Trusted by Growth Teams Everywhere</h2>
-            <p className="text-xl text-gray-600">Join hundreds of teams that use ExperimentFlow to drive growth</p>
+            <h2 className="text-3xl font-bold text-black mb-4">Trusted by Growth Teams Everywhere</h2>
+            <p className="text-xl text-gray-600">Join hundreds of teams that use our platform to drive growth</p>
           </div>
           
           <div className="flex flex-wrap justify-center items-center gap-12 opacity-70">
@@ -124,21 +137,21 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="bg-blue-600 py-20 text-white">
+      <section id="pricing" className="bg-omni-blue py-20 text-white">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to accelerate your growth?</h2>
           <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
             Start turning your growth ideas into experiments today. No credit card required.
           </p>
           <Link to="/signup">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+            <Button size="lg" className="bg-white text-omni-blue hover:bg-gray-100 rounded-full">
               Get started for free
             </Button>
           </Link>
         </div>
       </section>
 
-      <footer className="bg-gray-900 text-white py-12">
+      <footer id="about" className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
@@ -148,8 +161,8 @@ const Index = () => {
             <div>
               <h4 className="font-medium mb-4">Product</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Features</a></li>
-                <li><a href="#" className="hover:text-white">Pricing</a></li>
+                <li><a href="#features" className="hover:text-white">Features</a></li>
+                <li><a href="#pricing" className="hover:text-white">Pricing</a></li>
                 <li><a href="#" className="hover:text-white">Case Studies</a></li>
               </ul>
             </div>
@@ -164,7 +177,7 @@ const Index = () => {
             <div>
               <h4 className="font-medium mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">About Us</a></li>
+                <li><a href="#about" className="hover:text-white">About Us</a></li>
                 <li><a href="#" className="hover:text-white">Careers</a></li>
                 <li><a href="#" className="hover:text-white">Contact</a></li>
               </ul>
