@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -31,7 +32,14 @@ const formSchema = z.object({
 const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signup } = useAuth();
+  const { signup, isAuthenticated, isLoading } = useAuth();
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, isLoading, navigate]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,19 +54,43 @@ const Signup = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       await signup(values.email, values.password, values.name);
-      toast({
-        title: "Account created",
-        description: "Welcome to ExperimentFlow!",
-      });
-      navigate("/dashboard");
+      // User will be redirected after verification or automatically logged in
+      // depending on Supabase settings
     } catch (error) {
+      // Error is handled in the auth context
+      console.error("Signup submission error:", error);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Sign up failed",
-        description: "There was an error creating your account",
+        title: "Signup with Google failed",
+        description: error.message || "Please try again later",
       });
     }
   };
+
+  // If checking auth status, show loading
+  if (isLoading && isAuthenticated === null) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -154,8 +186,8 @@ const Signup = () => {
               />
 
               <div>
-                <Button type="submit" className="w-full">
-                  Sign up
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Creating account..." : "Sign up"}
                 </Button>
               </div>
             </form>
@@ -173,7 +205,7 @@ const Signup = () => {
 
             <div className="mt-6">
               <div>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={handleGoogleSignup}>
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
