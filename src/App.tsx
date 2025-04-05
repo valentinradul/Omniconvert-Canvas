@@ -20,10 +20,11 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppProvider>
-          <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-            <ConfettiProvider>
+      {/* Rearrange order of providers - ConfettiProvider needs to be outside AuthProvider */}
+      <ConfettiProvider>
+        <AuthProvider>
+          <AppProvider>
+            <ThemeProvider defaultTheme="light" storageKey="ui-theme">
               <Toaster />
               <Router>
                 <Routes>
@@ -36,10 +37,10 @@ function App() {
                   <Route path="/" element={<DashboardPage />} />
                 </Routes>
               </Router>
-            </ConfettiProvider>
-          </ThemeProvider>
-        </AppProvider>
-      </AuthProvider>
+            </ThemeProvider>
+          </AppProvider>
+        </AuthProvider>
+      </ConfettiProvider>
       {/* Removed ReactQueryDevtools since it's causing issues */}
     </QueryClientProvider>
   );
