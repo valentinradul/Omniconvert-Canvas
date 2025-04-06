@@ -1,9 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { 
-  CompanyInvitation,
-} from '@/services/company/types';
+import { CompanyInvitation } from '@/services/company/types';
 import {
   getUserInvitations,
   getCompanyInvitations,
@@ -69,15 +67,19 @@ export function useCompanyInvitations(companyId?: string) {
       return false;
     }
     
+    console.log(`Sending invitation to ${email} with role ${role} for company ${companyId}`);
+    
     try {
       const result = await inviteTeamMember(companyId, email, role);
       if (result) {
         toast.success(`Invitation sent to ${email}`);
-        fetchCompanyInvitations();
+        // Refresh the list of company invitations after sending a new one
+        await fetchCompanyInvitations();
       }
       return result;
     } catch (error) {
       console.error('Error sending invitation:', error);
+      toast.error('Failed to send invitation');
       return false;
     }
   };

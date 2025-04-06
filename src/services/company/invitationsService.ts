@@ -8,9 +8,9 @@ export async function inviteTeamMember(companyId: string, email: string, role: '
     console.log(`Starting invitation process for ${email} with role ${role} in company ${companyId}`);
     
     // Get the current user
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) {
-      console.error('No authenticated user found');
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) {
+      console.error('No authenticated user found', userError);
       toast.error('You must be logged in to invite team members');
       return false;
     }
@@ -27,6 +27,8 @@ export async function inviteTeamMember(companyId: string, email: string, role: '
       
     if (checkError) {
       console.error('Error checking for existing invitation:', checkError);
+      toast.error('Failed to check for existing invitation');
+      return false;
     }
     
     if (existingInvitation) {
@@ -54,7 +56,6 @@ export async function inviteTeamMember(companyId: string, email: string, role: '
     }
     
     console.log('Invitation created successfully:', data);
-    toast.success(`Invitation sent to ${email}`);
     return true;
   } catch (error) {
     console.error('Exception in inviteTeamMember:', error);

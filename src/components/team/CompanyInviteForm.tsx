@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -8,7 +9,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useCompanyContext } from '@/context/CompanyContext';
-import { inviteTeamMember } from '@/services/company/invitationsService';
+import { useCompanyInvitations } from '@/hooks/useCompanyInvitations';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email" }),
@@ -34,6 +36,7 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
   isSubmitting = false
 }) => {
   const { activeCompany } = useCompanyContext();
+  const { sendInvitation } = useCompanyInvitations(activeCompany?.id);
   
   const form = useForm<InviteFormData>({
     resolver: zodResolver(formSchema),
@@ -49,12 +52,12 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
       
       if (!activeCompany?.id) {
         console.error('No active company found');
+        toast.error("No active company selected");
         return;
       }
       
-      // Pass the form values to the inviteTeamMember function
-      const result = await inviteTeamMember(
-        activeCompany.id,
+      // Use sendInvitation from useCompanyInvitations hook
+      const result = await sendInvitation(
         values.email,
         values.role
       );
@@ -67,6 +70,7 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
       }
     } catch (error) {
       console.error('Error in CompanyInviteForm handleSubmit:', error);
+      toast.error("Failed to send invitation");
     }
   };
   
