@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -152,7 +151,7 @@ export async function inviteTeamMember(companyId: string, email: string, role: '
     return true;
   } catch (error) {
     console.error('Exception in inviteTeamMember:', error);
-    toast.error('An unexpected error occurred');
+    toast.error('An unexpected error occurred when sending the invitation');
     return false;
   }
 }
@@ -237,8 +236,8 @@ export async function acceptInvitation(invitationId: string): Promise<boolean> {
       .from('company_members')
       .insert({
         company_id: invitation.company_id,
-        role: invitation.role,
-        user_id: userData.user.id
+        user_id: userData.user.id,
+        role: invitation.role
       });
       
     if (memberError) {

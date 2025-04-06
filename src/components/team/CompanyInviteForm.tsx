@@ -53,6 +53,7 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
         return;
       }
       
+      // Pass the form values to the inviteTeamMember function
       const result = await inviteTeamMember(
         activeCompany.id,
         values.email,
