@@ -5,6 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 type Role = 'admin' | 'manager' | 'member';
 
+interface UserRoleRecord {
+  role: Role;
+}
+
 export function useUserRole() {
   const { user } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);
@@ -19,16 +23,22 @@ export function useUserRole() {
       }
 
       try {
+        // Use type assertion to work around TypeScript limitations
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id) as unknown as {
+            data: UserRoleRecord[] | null;
+            error: Error | null;
+          };
 
         if (error) {
           console.error('Error fetching user roles:', error);
           setRoles([]);
+        } else if (data) {
+          setRoles(data.map(item => item.role as Role));
         } else {
-          setRoles(data.map(item => item.role) as Role[]);
+          setRoles([]);
         }
       } catch (error) {
         console.error('Error in roles fetch:', error);
