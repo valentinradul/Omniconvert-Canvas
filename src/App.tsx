@@ -1,6 +1,6 @@
 
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./context/AuthContext";
 import { AppProvider } from "./context/AppContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AppLayout from "./components/AppLayout";
 
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -42,19 +43,21 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route element={<ProtectedRoute />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/ideas" element={<IdeasPage />} />
-                  <Route path="/idea-details/:ideaId" element={<IdeaDetailsPage />} />
-                  <Route path="/create-hypothesis/:ideaId" element={<CreateHypothesisPage />} />
-                  <Route path="/hypotheses" element={<HypothesesPage />} />
-                  <Route path="/hypothesis-details/:hypothesisId" element={<HypothesisDetailsPage />} />
-                  <Route path="/create-experiment/:hypothesisId" element={<CreateExperimentPage />} />
-                  <Route path="/experiments" element={<ExperimentsPage />} />
-                  <Route path="/experiment-details/:experimentId" element={<ExperimentDetailsPage />} />
-                  <Route path="/departments" element={<DepartmentsPage />} />
-                  <Route path="/categories" element={<CategoriesPage />} />
-                  <Route path="/team-settings" element={<TeamSettingsPage />} />
-                  <Route path="/account-settings" element={<AccountSettingsPage />} />
+                  <Route element={<AppLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/ideas" element={<IdeasPage />} />
+                    <Route path="/idea-details/:ideaId" element={<IdeaDetailsPage />} />
+                    <Route path="/create-hypothesis/:ideaId" element={<CreateHypothesisPage />} />
+                    <Route path="/hypotheses" element={<HypothesesPage />} />
+                    <Route path="/hypothesis-details/:hypothesisId" element={<HypothesisDetailsPage />} />
+                    <Route path="/create-experiment/:hypothesisId" element={<CreateExperimentPage />} />
+                    <Route path="/experiments" element={<ExperimentsPage />} />
+                    <Route path="/experiment-details/:experimentId" element={<ExperimentDetailsPage />} />
+                    <Route path="/departments" element={<DepartmentsPage />} />
+                    <Route path="/categories" element={<CategoriesPage />} />
+                    <Route path="/team-settings" element={<TeamSettingsPage />} />
+                    <Route path="/account-settings" element={<AccountSettingsPage />} />
+                  </Route>
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
