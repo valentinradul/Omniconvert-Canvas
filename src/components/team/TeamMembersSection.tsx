@@ -11,7 +11,7 @@ import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { toast } from 'sonner';
 
 const TeamMembersSection: React.FC = () => {
-  const { members, isLoading, error, addTeamMember, updateTeamMember, deleteTeamMember, refreshMembers } = useTeamMembers();
+  const { members, isLoading, error, updateTeamMember, deleteTeamMember, refreshMembers } = useTeamMembers();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<{ id: string; data: TeamMemberFormData } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,32 +35,10 @@ const TeamMembersSection: React.FC = () => {
   const handleRetryLoad = () => {
     refreshMembers();
   };
-
-  const handleAddMember = async (values: TeamMemberFormData): Promise<void> => {
-    try {
-      console.log("Starting add team member process with values:", values);
-      setIsSubmitting(true);
-      
-      const result = await addTeamMember(values);
-      
-      console.log("Add team member result:", result);
-      
-      if (result) {
-        toast.success(`Team member ${values.name} added successfully!`);
-        setIsAddDialogOpen(false);
-        return Promise.resolve();
-      } else {
-        console.error("Failed to add team member - no result returned");
-        toast.error("Failed to add team member");
-        return Promise.reject(new Error("Failed to add team member"));
-      }
-    } catch (error) {
-      console.error("Error adding team member:", error);
-      toast.error(`Error adding team member: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return Promise.reject(error);
-    } finally {
-      setIsSubmitting(false);
-    }
+  
+  const handleInvitationSuccess = () => {
+    toast.success('Team member invitation sent successfully!');
+    refreshMembers();
   };
 
   const handleUpdateMember = async (values: Partial<TeamMemberFormData>): Promise<void> => {
@@ -128,7 +106,7 @@ const TeamMembersSection: React.FC = () => {
         <AddTeamMemberDialog 
           isOpen={isAddDialogOpen}
           onOpenChange={setIsAddDialogOpen}
-          onSubmit={handleAddMember}
+          onSuccess={handleInvitationSuccess}
           isSubmitting={isSubmitting}
         />
 

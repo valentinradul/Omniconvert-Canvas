@@ -99,21 +99,47 @@ export async function getCurrentUserCompanyRole(companyId: string): Promise<stri
 
 export async function inviteTeamMember(companyId: string, email: string, role: 'manager' | 'member'): Promise<boolean> {
   try {
+    console.log(`Starting invitation process for ${email} with role ${role} in company ${companyId}`);
+    
     // Get the current user
     const { data: userData } = await supabase.auth.getUser();
     if (!userData?.user) {
+      console.error('No authenticated user found');
       toast.error('You must be logged in to invite team members');
       return false;
     }
     
-    const { error } = await supabase
+    console.log(`Current user ID: ${userData.user.id}`);
+    
+    // Check if the invitation already exists
+    const { data: existingInvitation, error: checkError } = await supabase
+      .from('company_invitations')
+      .select('*')
+      .eq('company_id', companyId)
+      .eq('email', email)
+      .maybeSingle();
+      
+    if (checkError) {
+      console.error('Error checking for existing invitation:', checkError);
+    }
+    
+    if (existingInvitation) {
+      console.log(`Invitation already exists for ${email}`);
+      toast.error('An invitation has already been sent to this email');
+      return false;
+    }
+    
+    // Create the invitation
+    const { data, error } = await supabase
       .from('company_invitations')
       .insert({
         company_id: companyId,
-        email,
-        role,
+        email: email,
+        role: role,
         invited_by: userData.user.id
-      });
+      })
+      .select()
+      .single();
       
     if (error) {
       console.error('Error inviting team member:', error);
@@ -121,6 +147,8 @@ export async function inviteTeamMember(companyId: string, email: string, role: '
       return false;
     }
     
+    console.log('Invitation created successfully:', data);
+    toast.success(`Invitation sent to ${email}`);
     return true;
   } catch (error) {
     console.error('Exception in inviteTeamMember:', error);
