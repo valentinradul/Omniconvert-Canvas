@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { TeamMember, TeamMemberFormData, TeamMemberRole } from '@/types';
+import { TeamMember, TeamMemberFormData, TeamMemberRole, DepartmentVisibility } from '@/types';
 
 export function useTeamMembers() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -48,14 +49,14 @@ export function useTeamMembers() {
 
       if (data) {
         // Convert the data to match our TeamMember structure
-        const formattedMembers = data.map((member: any) => ({
+        const formattedMembers: TeamMember[] = data.map((member: any) => ({
           id: member.id,
           name: member.user_id || 'Invited User',  // Using user_id as placeholder
           email: `user-${member.id}@example.com`,  // Using a placeholder email
           role: (member.role as TeamMemberRole) || 'Team Member',
           department: member.department,
           title: '', // Default empty string since title isn't in the database yet
-          departmentVisibility: 'Own Department', // Default value
+          departmentVisibility: 'Own Department' as DepartmentVisibility, // Explicitly cast to DepartmentVisibility
           visibleDepartments: [], // Default empty array
           photoUrl: '' // Default empty string
         }));
@@ -127,7 +128,7 @@ export function useTeamMembers() {
           role: newMember.role as TeamMemberRole,
           department: newMember.department,
           title: title || '', // Use the title from the form data
-          departmentVisibility: departmentVisibility || 'Own Department',
+          departmentVisibility: (departmentVisibility || 'Own Department') as DepartmentVisibility, // Explicit cast
           visibleDepartments: visibleDepartments || [],
           photoUrl: photoUrl || ''
         };
@@ -175,7 +176,7 @@ export function useTeamMembers() {
             role: data.role || member.role,
             department: data.department || member.department,
             title: data.title || member.title,
-            departmentVisibility: data.departmentVisibility || member.departmentVisibility,
+            departmentVisibility: (data.departmentVisibility || member.departmentVisibility) as DepartmentVisibility, // Explicit cast
             visibleDepartments: data.visibleDepartments || member.visibleDepartments,
             photoUrl: data.photoUrl || member.photoUrl,
             name: data.name || member.name,
