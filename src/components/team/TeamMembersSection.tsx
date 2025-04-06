@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 
 const TeamMembersSection: React.FC = () => {
-  const { members, isLoading, addTeamMember, updateTeamMember, deleteTeamMember, refreshMembers } = useTeamMembers();
+  const { members, isLoading, addTeamMember, updateTeamMember, deleteTeamMember, refreshMembers, error: membersError } = useTeamMembers();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
@@ -24,16 +24,28 @@ const TeamMembersSection: React.FC = () => {
     if (!user) {
       console.log("User not authenticated");
     } else {
-      console.log("Authenticated as:", user.email);
+      console.log("TeamMembersSection - Authenticated as:", user.email);
     }
-  }, [user]);
+    
+    if (membersError) {
+      console.error("Error loading team members:", membersError);
+    }
+  }, [user, membersError]);
 
   const handleAddTeamMember = async (values: TeamMemberFormData) => {
     console.log("Submitting team member data:", values);
     setIsSubmitting(true);
     
     try {
-      const result = await addTeamMember(values);
+      // Make sure role is in expected format (enum string)
+      const normalizedValues = {
+        ...values,
+        role: values.role.toLowerCase().replace(' ', '_') as any
+      };
+      
+      console.log("Normalized team member data:", normalizedValues);
+      
+      const result = await addTeamMember(normalizedValues);
       if (result) {
         setIsAddDialogOpen(false);
         toast.success("Team member added successfully!");
@@ -53,7 +65,15 @@ const TeamMembersSection: React.FC = () => {
       setIsSubmitting(true);
       
       try {
-        const result = await updateTeamMember(selectedMember.id, values);
+        // Normalize role if it's being updated
+        const normalizedValues = {...values};
+        if (values.role) {
+          normalizedValues.role = values.role.toLowerCase().replace(' ', '_') as any;
+        }
+        
+        console.log("Updating team member with normalized data:", normalizedValues);
+        
+        const result = await updateTeamMember(selectedMember.id, normalizedValues);
         if (result) {
           setIsEditDialogOpen(false);
           setSelectedMember(null);
@@ -90,6 +110,7 @@ const TeamMembersSection: React.FC = () => {
   };
   
   const handleRetry = () => {
+    console.log("Retrying team members fetch");
     refreshMembers();
   };
 
@@ -114,6 +135,17 @@ const TeamMembersSection: React.FC = () => {
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
               <p>Loading team members...</p>
+            </div>
+          ) : membersError ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center gap-4 border rounded-md">
+              <AlertTriangle className="h-10 w-10 text-red-500" />
+              <p>Error loading team members</p>
+              <p className="text-sm text-muted-foreground">
+                {membersError instanceof Error ? membersError.message : 'An unknown error occurred'}
+              </p>
+              <Button size="sm" variant="outline" onClick={handleRetry}>
+                Retry
+              </Button>
             </div>
           ) : members.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center gap-4 border rounded-md">

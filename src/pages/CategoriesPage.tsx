@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,21 +14,35 @@ import EditCategoryDialog from '@/components/categories/EditCategoryDialog';
 import AccessDeniedCard from '@/components/categories/AccessDeniedCard';
 import LoadingCard from '@/components/categories/LoadingCard';
 import CategoryHeader from '@/components/categories/CategoryHeader';
+import { useAuth } from '@/context/AuthContext';
 
 const CategoriesPage: React.FC = () => {
   const { categories, addCategory, editCategory, deleteCategory } = useApp();
-  const { isAdmin, isLoading } = useUserRole();
+  const { isAdmin, isLoading, roles } = useUserRole();
+  const { user } = useAuth();
   
   const [newCategory, setNewCategory] = useState('');
   const [editingCategory, setEditingCategory] = useState<{ oldValue: Category; newValue: Category } | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
+  // Debug information about current user and roles
+  useEffect(() => {
+    console.log('CategoriesPage - Auth state:', { 
+      userId: user?.id,
+      userEmail: user?.email,
+      isAdmin, 
+      roles,
+      isLoading
+    });
+  }, [user, isAdmin, roles, isLoading]);
+  
   if (isLoading) {
     return <LoadingCard />;
   }
   
   if (!isAdmin) {
+    console.log('Access denied to Categories page - Not an admin');
     return <AccessDeniedCard />;
   }
   
@@ -72,6 +86,8 @@ const CategoriesPage: React.FC = () => {
     deleteCategory(category);
     toast.success('Category deleted successfully');
   };
+  
+  console.log('Rendering CategoriesPage - Admin access granted');
   
   return (
     <div className="space-y-6">
