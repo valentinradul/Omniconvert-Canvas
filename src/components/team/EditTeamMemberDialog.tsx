@@ -80,7 +80,7 @@ export const EditTeamMemberDialog: React.FC<EditTeamMemberDialogProps> = ({
               <UserPhotoUpload 
                 userName={form.watch('name')}
                 onPhotoChange={handlePhotoChange}
-                existingPhotoUrl={member.photoUrl}
+                currentPhotoUrl={member.photoUrl}
               />
             </div>
             
