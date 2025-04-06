@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
-import { TeamMember, TeamMemberFormData, DepartmentVisibility } from '@/types';
+import { TeamMember, TeamMemberFormData, DepartmentVisibility, TeamMemberRole } from '@/types';
 import { 
   fetchUserTeam,
   fetchTeamMembersForTeam,
