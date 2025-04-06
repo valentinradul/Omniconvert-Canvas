@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } from '@/types';
 import { toast } from 'sonner';
@@ -40,7 +41,7 @@ export const addTeamMemberToTeam = async (
     // If email column exists, check for existing member
     if (hasEmailColumn && data.email) {
       // Define explicit type for the existing member result
-      interface ExistingMemberResult {
+      type ExistingMemberResult = {
         id: string;
         team_id: string;
         user_id: string | null;
@@ -90,7 +91,7 @@ export const addTeamMemberToTeam = async (
       } : requiredFields;
     
     // Define explicit type for the insert operation result
-    interface InsertMemberResult {
+    type InsertMemberResult = {
       id: string;
       team_id: string;
       user_id: string | null;
@@ -102,8 +103,7 @@ export const addTeamMemberToTeam = async (
     const { data: newMember, error: memberError } = await supabase
       .from('team_members')
       .insert(insertData)
-      .select('id, team_id, user_id, role, department')
-      .returns<InsertMemberResult[]>();
+      .select('id, team_id, user_id, role, department');
       
     if (memberError) {
       console.error('Error adding team member:', memberError);
