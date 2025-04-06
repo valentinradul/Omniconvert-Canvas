@@ -44,9 +44,9 @@ const AppLayout: React.FC = () => {
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full">
-        <Sidebar className="border-r border-gray-200">
+        <Sidebar variant="sidebar" collapsible="offcanvas">
           <SidebarContent>
             <div className="py-6 px-4 border-b border-gray-200 bg-white">
               <Logo className="flex items-center" />
@@ -72,17 +72,19 @@ const AppLayout: React.FC = () => {
           </SidebarContent>
         </Sidebar>
 
-        <main className="flex-1 overflow-auto bg-white">
+        <div className="flex-1 overflow-auto bg-white">
           <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
-            <SidebarTrigger />
+            <SidebarTrigger className="md:hidden" />
             {isAuthenticated && (
-              <UserMenu />
+              <div className="ml-auto">
+                <UserMenu />
+              </div>
             )}
           </div>
           <div className="p-6">
             <Outlet />
           </div>
-        </main>
+        </div>
       </div>
     </SidebarProvider>
   );
