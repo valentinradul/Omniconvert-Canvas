@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag } from '../types';
+import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag, Category } from '../types';
 import { useAuth } from './AuthContext';
 
 // Define the shape of our context
@@ -9,6 +8,7 @@ type AppContextType = {
   ideas: GrowthIdea[];
   hypotheses: Hypothesis[];
   experiments: Experiment[];
+  categories: Category[];
   addDepartment: (name: string) => void;
   editDepartment: (id: string, name: string) => void;
   deleteDepartment: (id: string) => void;
@@ -34,6 +34,9 @@ type AppContextType = {
     daysInStatus: number;
     daysTotal: number | null;
   };
+  addCategory: (category: Category) => void;
+  editCategory: (oldCategory: Category, newCategory: Category) => void;
+  deleteCategory: (category: Category) => void;
 };
 
 // Create the context
@@ -71,6 +74,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getInitialData('experiments', [])
   );
   
+  const [categories, setCategories] = useState<Category[]>(() =>
+    getInitialData('categories', [
+      "Outreach", 
+      "Paid Ads", 
+      "Events", 
+      "Onboarding", 
+      "Product-led", 
+      "Content Marketing",
+      "SEO",
+      "Partnerships",
+      "Other"
+    ])
+  );
+  
   // Update localStorage when state changes
   useEffect(() => {
     localStorage.setItem('departments', JSON.stringify(departments));
@@ -87,6 +104,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('experiments', JSON.stringify(experiments));
   }, [experiments]);
+  
+  useEffect(() => {
+    localStorage.setItem('categories', JSON.stringify(categories));
+  }, [categories]);
   
   // Helper function to get all unique tags
   const getAllTags = (): Tag[] => {
@@ -275,6 +296,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setExperiments(experiments.filter(experiment => experiment.id !== id));
   };
   
+  // Category CRUD operations
+  const addCategory = (category: Category) => {
+    setCategories([...categories, category]);
+  };
+  
+  const editCategory = (oldCategory: Category, newCategory: Category) => {
+    // Update the categories list
+    setCategories(categories.map(cat => cat === oldCategory ? newCategory : cat));
+    
+    // Update any ideas that use the old category
+    setIdeas(ideas.map(idea => 
+      idea.category === oldCategory 
+        ? { ...idea, category: newCategory } 
+        : idea
+    ));
+  };
+  
+  const deleteCategory = (category: Category) => {
+    // Check if any ideas are using this category
+    const ideasUsingCategory = ideas.some(idea => idea.category === category);
+    
+    if (ideasUsingCategory) {
+      alert('Cannot delete category that has ideas associated with it.');
+      return;
+    }
+    
+    setCategories(categories.filter(cat => cat !== category));
+  };
+  
   // Getter functions
   const getIdeaById = (id: string) => ideas.find(idea => idea.id === id);
   const getHypothesisByIdeaId = (ideaId: string) => hypotheses.find(h => h.ideaId === ideaId);
@@ -288,6 +338,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ideas,
       hypotheses,
       experiments,
+      categories,
       addDepartment,
       editDepartment,
       deleteDepartment,
@@ -307,7 +358,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       getDepartmentById,
       getAllTags,
       getAllUserNames,
-      getExperimentDuration
+      getExperimentDuration,
+      addCategory,
+      editCategory,
+      deleteCategory
     }}>
       {children}
     </AppContext.Provider>

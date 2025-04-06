@@ -7,28 +7,7 @@ export type Department = {
 
 export type Tag = string;
 
-export type Category = 
-  | "Outreach" 
-  | "Paid Ads" 
-  | "Events" 
-  | "Onboarding" 
-  | "Product-led" 
-  | "Content Marketing"
-  | "SEO"
-  | "Partnerships"
-  | "Other";
-
-export const ALL_CATEGORIES: Category[] = [
-  "Outreach",
-  "Paid Ads",
-  "Events",
-  "Onboarding",
-  "Product-led",
-  "Content Marketing",
-  "SEO",
-  "Partnerships",
-  "Other"
-];
+export type Category = string;
 
 export type GrowthIdea = {
   id: string;
@@ -43,6 +22,18 @@ export type GrowthIdea = {
   responsibleUserId?: string;
 };
 
+export const ALL_CATEGORIES: Category[] = [
+  "Outreach",
+  "Paid Ads",
+  "Events",
+  "Onboarding",
+  "Product-led",
+  "Content Marketing",
+  "SEO",
+  "Partnerships",
+  "Other"
+];
+
 export type PECTI = {
   potential: 1 | 2 | 3 | 4 | 5;
   ease: 1 | 2 | 3 | 4 | 5;
@@ -51,7 +42,6 @@ export type PECTI = {
   impact: 1 | 2 | 3 | 4 | 5;
 };
 
-// Extended type for observation content that supports text, URLs, and images
 export type ObservationContent = {
   text: string;
   imageUrls?: string[];
@@ -121,7 +111,6 @@ export type Experiment = {
   statusUpdatedAt?: Date;
 };
 
-// Helper function to calculate PECTI percentage score
 export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   const { potential, ease, cost, time, impact } = pectiScore;
   const totalScore = potential + ease + cost + time + impact;
@@ -129,7 +118,6 @@ export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   return Math.round((totalScore / maxPossibleScore) * 100);
 };
 
-// Defined roles for team members
 export type TeamMemberRole = "Admin" | "Manager" | "Team Member";
 
 export const ALL_TEAM_MEMBER_ROLES: TeamMemberRole[] = [
@@ -138,7 +126,6 @@ export const ALL_TEAM_MEMBER_ROLES: TeamMemberRole[] = [
   "Team Member"
 ];
 
-// Department visibility level for team members
 export type DepartmentVisibility = "Own Department" | "Selected Departments" | "All Departments";
 
 export const ALL_DEPARTMENT_VISIBILITY_OPTIONS: DepartmentVisibility[] = [
@@ -147,7 +134,6 @@ export const ALL_DEPARTMENT_VISIBILITY_OPTIONS: DepartmentVisibility[] = [
   "All Departments"
 ];
 
-// Extended TeamMember type with more properties
 export interface TeamMember {
   id: string;
   name: string;
@@ -160,7 +146,6 @@ export interface TeamMember {
   photoUrl?: string;
 }
 
-// Data structure for team member form
 export interface TeamMemberFormData {
   name: string;
   email: string;

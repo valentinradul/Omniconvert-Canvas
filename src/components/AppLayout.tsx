@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { 
@@ -18,7 +17,10 @@ import {
   Lightbulb, 
   LineChart, 
   Settings, 
-  Users 
+  Users, 
+  Beaker,
+  Building,
+  FolderTree
 } from 'lucide-react';
 
 // Add custom CSS to force white background for sidebar
@@ -29,6 +31,16 @@ sidebarStyles.innerHTML = `
   }
 `;
 document.head.appendChild(sidebarStyles);
+
+const navigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Ideas', href: '/ideas', icon: Lightbulb },
+  { name: 'Hypotheses', href: '/hypotheses', icon: FlaskConical },
+  { name: 'Experiments', href: '/experiments', icon: Beaker },
+  { name: 'Departments', href: '/departments', icon: Building },
+  { name: 'Categories', href: '/categories', icon: FolderTree },
+  { name: 'Settings', href: '/team-settings', icon: Settings }
+];
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
@@ -48,91 +60,21 @@ const AppLayout: React.FC = () => {
               <p className="text-xs text-gray-600 mt-1">Growth experimentation platform</p>
             </div>
             <SidebarMenu className="py-4 bg-white">
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`flex items-center py-3 px-4 ${isActive('/dashboard') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                >
-                  <Link to="/dashboard" className="flex items-center">
-                    <LayoutDashboard className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                    <span className="text-base">Dashboard</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`flex items-center py-3 px-4 ${isActive('/ideas') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                >
-                  <Link to="/ideas" className="flex items-center">
-                    <Lightbulb className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                    <span className="text-base">Growth Ideas</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`flex items-center py-3 px-4 ${isActive('/hypotheses') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                >
-                  <Link to="/hypotheses" className="flex items-center">
-                    <FlaskConical className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                    <span className="text-base">Hypotheses</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`flex items-center py-3 px-4 ${isActive('/experiments') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                >
-                  <Link to="/experiments" className="flex items-center">
-                    <LineChart className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                    <span className="text-base">Experiments</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <div className="mt-6 pt-6 border-t border-gray-200 bg-white">
-                <SidebarMenuItem>
+              {navigation.map((item) => (
+                <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton 
                     asChild 
-                    className={`flex items-center py-3 px-4 ${isActive('/team-settings') 
+                    className={`flex items-center py-3 px-4 ${isActive(item.href) 
                       ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
                       : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
                   >
-                    <Link to="/team-settings" className="flex items-center">
-                      <Users className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                      <span className="text-base">Team Settings</span>
+                    <Link to={item.href} className="flex items-center">
+                      <item.icon className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                      <span className="text-base">{item.name}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    className={`flex items-center py-3 px-4 ${isActive('/account-settings') 
-                      ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                      : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                  >
-                    <Link to="/account-settings" className="flex items-center">
-                      <Settings className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                      <span className="text-base">Account Settings</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </div>
+              ))}
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>

@@ -11,11 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Category, ALL_CATEGORIES } from '@/types';
+import { Category } from '@/types';
 import TagInput from '@/components/TagInput';
 
 const IdeasPage: React.FC = () => {
-  const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
+  const { ideas, departments, categories, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -130,7 +130,7 @@ const IdeasPage: React.FC = () => {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {ALL_CATEGORIES.map((cat) => (
+                      {categories.map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           {cat}
                         </SelectItem>
