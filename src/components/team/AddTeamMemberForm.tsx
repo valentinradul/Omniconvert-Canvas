@@ -27,9 +27,13 @@ const formSchema = z.object({
 
 interface AddTeamMemberFormProps {
   onSubmit: (values: TeamMemberFormData) => Promise<void>;
+  isSubmitting?: boolean;
 }
 
-export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }) => {
+export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ 
+  onSubmit, 
+  isSubmitting = false 
+}) => {
   const { departments } = useApp();
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   
@@ -238,7 +242,9 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
         )}
         
         <DialogFooter className="pt-4">
-          <Button type="submit">Add Member</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Adding...' : 'Add Member'}
+          </Button>
         </DialogFooter>
       </form>
     </Form>

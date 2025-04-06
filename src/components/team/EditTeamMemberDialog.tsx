@@ -1,24 +1,23 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ImagePlus } from 'lucide-react';
+import { TeamMember, TeamMemberFormData, ALL_TEAM_MEMBER_ROLES, ALL_DEPARTMENT_VISIBILITY_OPTIONS } from '@/types';
 import { useApp } from '@/context/AppContext';
-import { TeamMember, ALL_TEAM_MEMBER_ROLES, ALL_DEPARTMENT_VISIBILITY_OPTIONS } from '@/types';
+import { UserPhotoUpload } from './UserPhotoUpload';
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }).optional(),
-  email: z.string().email({ message: "Please enter a valid email" }).optional(),
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email" }),
   role: z.enum(["Admin", "Manager", "Team Member"] as const),
   department: z.string().optional(),
   title: z.string().min(2, { message: "Title must be at least 2 characters" }).optional(),
@@ -27,87 +26,62 @@ const formSchema = z.object({
   photoUrl: z.string().optional()
 });
 
-type FormValues = z.infer<typeof formSchema>;
-
 interface EditTeamMemberDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: Partial<FormValues>) => Promise<void>;
-  member: TeamMember | null;
+  onSubmit: (values: Partial<TeamMemberFormData>) => Promise<void>;
+  member: TeamMember;
+  isSubmitting?: boolean;
 }
 
-export const EditTeamMemberDialog: React.FC<EditTeamMemberDialogProps> = ({ 
-  isOpen, 
-  onOpenChange, 
+export const EditTeamMemberDialog: React.FC<EditTeamMemberDialogProps> = ({
+  isOpen,
+  onOpenChange,
   onSubmit,
-  member 
+  member,
+  isSubmitting = false
 }) => {
   const { departments } = useApp();
-  const [photoPreview, setPhotoPreview] = useState<string | null>(member?.photoUrl || null);
   
-  const form = useForm<FormValues>({
+  const form = useForm<TeamMemberFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: member?.name || '',
-      email: member?.email || '',
-      role: (member?.role as any) || 'Team Member',
-      department: member?.department || '',
-      title: member?.title || '',
-      departmentVisibility: (member?.departmentVisibility as any) || 'Own Department',
-      visibleDepartments: member?.visibleDepartments || []
+      name: member.name,
+      email: member.email,
+      role: member.role,
+      department: member.department,
+      title: member.title || '',
+      departmentVisibility: member.departmentVisibility || 'Own Department',
+      visibleDepartments: member.visibleDepartments || [],
+      photoUrl: member.photoUrl
     },
-    values: {
-      name: member?.name || '',
-      email: member?.email || '',
-      role: (member?.role as any) || 'Team Member',
-      department: member?.department || '',
-      title: member?.title || '',
-      departmentVisibility: (member?.departmentVisibility as any) || 'Own Department',
-      visibleDepartments: member?.visibleDepartments || []
-    }
   });
-
-  React.useEffect(() => {
-    if (member && isOpen) {
-      form.reset({
-        name: member.name,
-        email: member.email,
-        role: member.role,
-        department: member.department || '',
-        title: member.title || '',
-        departmentVisibility: member.departmentVisibility || 'Own Department',
-        visibleDepartments: member.visibleDepartments || []
-      });
-      setPhotoPreview(member.photoUrl || null);
-    }
-  }, [member, isOpen, form]);
 
   const selectedVisibility = form.watch('departmentVisibility');
   const selectedDepartment = form.watch('department');
+
+  const handlePhotoChange = (photoUrl: string | null) => {
+    form.setValue('photoUrl', photoUrl || undefined);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Team Member</DialogTitle>
-          <DialogDescription>
-            Update team member details and permissions.
-          </DialogDescription>
+          <h2 className="text-lg font-semibold">Edit Team Member</h2>
+          <p className="text-sm text-gray-500">
+            Update team member information and permissions.
+          </p>
         </DialogHeader>
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex items-center justify-center mb-4">
-              <div className="relative">
-                <Avatar className="h-20 w-20">
-                  {photoPreview ? (
-                    <AvatarImage src={photoPreview} alt={member?.name} />
-                  ) : (
-                    <AvatarFallback className="text-lg">
-                      {member?.name.substring(0, 2).toUpperCase() || <ImagePlus className="h-8 w-8" />}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-              </div>
+            <div className="flex justify-center mb-4">
+              <UserPhotoUpload 
+                userName={form.watch('name')}
+                onPhotoChange={handlePhotoChange}
+                existingPhotoUrl={member.photoUrl}
+              />
             </div>
             
             <FormField
@@ -117,11 +91,7 @@ export const EditTeamMemberDialog: React.FC<EditTeamMemberDialogProps> = ({
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter name" 
-                      {...field} 
-                      disabled // Name is read-only
-                    />
+                    <Input placeholder="Enter name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -135,12 +105,7 @@ export const EditTeamMemberDialog: React.FC<EditTeamMemberDialogProps> = ({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter email" 
-                      type="email" 
-                      {...field}
-                      disabled // Email is read-only
-                    />
+                    <Input placeholder="Enter email" type="email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -174,7 +139,6 @@ export const EditTeamMemberDialog: React.FC<EditTeamMemberDialogProps> = ({
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
-                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -204,7 +168,7 @@ export const EditTeamMemberDialog: React.FC<EditTeamMemberDialogProps> = ({
                   <FormLabel>Department</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    value={field.value || ''}
+                    defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -233,13 +197,13 @@ export const EditTeamMemberDialog: React.FC<EditTeamMemberDialogProps> = ({
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      value={field.value}
+                      defaultValue={field.value}
                       className="flex flex-col space-y-1"
                     >
                       {ALL_DEPARTMENT_VISIBILITY_OPTIONS.map((option) => (
                         <div key={option} className="flex items-center space-x-2">
-                          <RadioGroupItem value={option} id={`visibility-edit-${option}`} />
-                          <Label htmlFor={`visibility-edit-${option}`}>{option}</Label>
+                          <RadioGroupItem value={option} id={`visibility-${option}`} />
+                          <Label htmlFor={`visibility-${option}`}>{option}</Label>
                         </div>
                       ))}
                     </RadioGroup>
@@ -288,7 +252,12 @@ export const EditTeamMemberDialog: React.FC<EditTeamMemberDialogProps> = ({
             )}
             
             <DialogFooter className="pt-4">
-              <Button type="submit">Save Changes</Button>
+              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Updating...' : 'Update Member'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

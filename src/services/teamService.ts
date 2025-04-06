@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } from '@/types';
 import { toast } from 'sonner';
@@ -64,25 +65,29 @@ export const mapToTeamMembers = (data: any[]): TeamMember[] => {
 export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormData) => {
   console.log("Adding team member with data:", data);
   
-  // Create a new team member with the columns that exist in the table
-  const { data: newMember, error: memberError } = await supabase
-    .from('team_members')
-    .insert({
-      team_id: teamId,
-      user_id: null, // Placeholder as we're inviting a user
-      role: data.role,
-      department: data.department || null // Ensure department is not undefined
-    })
-    .select();
-    
-  if (memberError) {
-    console.error('Error adding team member:', memberError);
-    toast.error(`Failed to add team member: ${memberError.message}`);
-    return null;
-  }
+  try {
+    // Create a new team member with the columns that exist in the table
+    const { data: newMember, error: memberError } = await supabase
+      .from('team_members')
+      .insert({
+        team_id: teamId,
+        user_id: null, // We're inviting a user that may not exist in the system yet
+        role: data.role,
+        department: data.department || null // Ensure department is not undefined
+      })
+      .select();
+      
+    if (memberError) {
+      console.error('Error adding team member:', memberError);
+      throw new Error(memberError.message);
+    }
 
-  console.log("Member added successfully:", newMember);
-  return newMember?.[0];
+    console.log("Member added successfully:", newMember);
+    return newMember?.[0];
+  } catch (error) {
+    console.error('Exception when adding team member:', error);
+    throw error;
+  }
 };
 
 /**

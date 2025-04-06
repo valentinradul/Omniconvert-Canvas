@@ -9,12 +9,14 @@ interface AddTeamMemberDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: TeamMemberFormData) => Promise<void>;
+  isSubmitting?: boolean;
 }
 
 export const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({ 
   isOpen, 
   onOpenChange, 
-  onSubmit 
+  onSubmit,
+  isSubmitting = false
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -28,7 +30,7 @@ export const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
             Invite a new member to join your team.
           </DialogDescription>
         </DialogHeader>
-        <AddTeamMemberForm onSubmit={onSubmit} />
+        <AddTeamMemberForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
       </DialogContent>
     </Dialog>
   );
