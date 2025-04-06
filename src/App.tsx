@@ -1,83 +1,99 @@
 
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "@/components/ui/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
 
-import { AuthProvider } from "./context/AuthContext";
-import { AppProvider } from "./context/AppContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
-import AppLayout from "./components/AppLayout";
+// Layout & Common Components
+import AppLayout from './components/AppLayout';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import OnboardingTeamInvite from "./pages/OnboardingTeamInvite";
-import Dashboard from "./pages/Dashboard";
-import IdeasPage from "./pages/IdeasPage";
-import IdeaDetailsPage from "./pages/IdeaDetailsPage";
-import CreateHypothesisPage from "./pages/CreateHypothesisPage";
-import HypothesesPage from "./pages/HypothesesPage";
-import HypothesisDetailsPage from "./pages/HypothesisDetailsPage";
-import CreateExperimentPage from "./pages/CreateExperimentPage";
-import ExperimentsPage from "./pages/ExperimentsPage";
-import ExperimentDetailsPage from "./pages/ExperimentDetailsPage";
-import DepartmentsPage from "./pages/DepartmentsPage";
-import TeamSettingsPage from "./pages/TeamSettingsPage";
-import AccountSettingsPage from "./pages/AccountSettingsPage";
-import NotFound from "./pages/NotFound";
-import CategoriesPage from "./pages/CategoriesPage";
+// Auth Pages
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import NotFound from './pages/NotFound';
+import Index from './pages/Index';
 
-const queryClient = new QueryClient();
+// Main Pages
+import Dashboard from './pages/Dashboard';
+import IdeasPage from './pages/IdeasPage';
+import IdeaDetailsPage from './pages/IdeaDetailsPage';
+import HypothesesPage from './pages/HypothesesPage';
+import HypothesisDetailsPage from './pages/HypothesisDetailsPage';
+import CreateHypothesisPage from './pages/CreateHypothesisPage';
+import ExperimentsPage from './pages/ExperimentsPage';
+import ExperimentDetailsPage from './pages/ExperimentDetailsPage';
+import CreateExperimentPage from './pages/CreateExperimentPage';
+import TeamSettingsPage from './pages/TeamSettingsPage';
+import AccountSettingsPage from './pages/AccountSettingsPage';
+import CategoriesPage from './pages/CategoriesPage';
+import DepartmentsPage from './pages/DepartmentsPage';
+import OnboardingTeamInvite from './pages/OnboardingTeamInvite';
+
+// Auth Context
+import { AuthProvider } from './context/AuthContext';
+import { AppProvider } from './context/AppContext';
+import { ThemeProvider } from './components/ui/theme-provider';
+import { CompanyProvider } from './context/CompanyContext';
+
+// Onboarding pages
+import CreateCompanyPage from './pages/onboarding/CreateCompanyPage';
+import InviteTeamPage from './pages/onboarding/InviteTeamPage';
 
 function App() {
   return (
     <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="light">
         <AuthProvider>
           <AppProvider>
-            <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-              <Toaster />
+            <CompanyProvider>
               <Routes>
+                {/* Public routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                
-                {/* New onboarding route */}
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/onboarding-team-invite" element={<OnboardingTeamInvite />} />
+
+                {/* Onboarding routes */}
+                <Route path="/onboarding">
+                  <Route path="company" element={<CreateCompanyPage />} />
+                  <Route path="invite" element={<InviteTeamPage />} />
+                  <Route path="team-invite" element={<OnboardingTeamInvite />} />
                 </Route>
-                
+
+                {/* Protected routes */}
                 <Route element={<ProtectedRoute />}>
                   <Route element={<AppLayout />}>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/ideas" element={<IdeasPage />} />
-                    <Route path="/idea-details/:ideaId" element={<IdeaDetailsPage />} />
-                    <Route path="/create-hypothesis/:ideaId" element={<CreateHypothesisPage />} />
+                    <Route path="/idea-details/:id" element={<IdeaDetailsPage />} />
                     <Route path="/hypotheses" element={<HypothesesPage />} />
-                    <Route path="/hypothesis-details/:hypothesisId" element={<HypothesisDetailsPage />} />
-                    <Route path="/create-experiment/:hypothesisId" element={<CreateExperimentPage />} />
+                    <Route path="/hypothesis-details/:id" element={<HypothesisDetailsPage />} />
+                    <Route path="/create-hypothesis" element={<CreateHypothesisPage />} />
+                    <Route path="/create-hypothesis/:ideaId" element={<CreateHypothesisPage />} />
                     <Route path="/experiments" element={<ExperimentsPage />} />
-                    <Route path="/experiment-details/:experimentId" element={<ExperimentDetailsPage />} />
-                    
-                    {/* Admin-only routes */}
-                    <Route element={<AdminRoute />}>
-                      <Route path="/departments" element={<DepartmentsPage />} />
-                      <Route path="/categories" element={<CategoriesPage />} />
-                      <Route path="/team-settings" element={<TeamSettingsPage />} />
-                    </Route>
-                    
+                    <Route path="/experiment-details/:id" element={<ExperimentDetailsPage />} />
+                    <Route path="/create-experiment" element={<CreateExperimentPage />} />
+                    <Route path="/create-experiment/:hypothesisId" element={<CreateExperimentPage />} />
+                    <Route path="/team-settings" element={<TeamSettingsPage />} />
                     <Route path="/account-settings" element={<AccountSettingsPage />} />
+                    
+                    {/* Admin routes */}
+                    <Route element={<AdminRoute />}>
+                      <Route path="/categories" element={<CategoriesPage />} />
+                      <Route path="/departments" element={<DepartmentsPage />} />
+                    </Route>
                   </Route>
-                  <Route path="*" element={<NotFound />} />
                 </Route>
+                
+                {/* Not found */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
-            </ThemeProvider>
+
+              <Toaster position="top-right" />
+            </CompanyProvider>
           </AppProvider>
         </AuthProvider>
-      </QueryClientProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

@@ -10,19 +10,33 @@ export const fetchUserTeam = async (userId: string) => {
   console.log("Fetching team for user ID:", userId);
   
   try {
-    // Use explicit type annotation to avoid deep inference
-    const { data, error } = await supabase
-      .from('teams')
-      .select('id')
-      .eq('created_by', userId)
+    // Get the user's company from company_members
+    const { data: companyMember, error: companyError } = await supabase
+      .from('company_members')
+      .select('company_id')
+      .eq('user_id', userId)
       .single();
       
-    if (error) {
-      console.error('Error fetching team:', error);
-      return null;
+    if (companyError) {
+      console.error('Error fetching company:', companyError);
+      
+      // Fallback to team
+      const { data: teamData, error: teamError } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('created_by', userId)
+        .single();
+        
+      if (teamError) {
+        console.error('Error fetching team:', teamError);
+        return null;
+      }
+      
+      return teamData;
     }
     
-    return data;
+    // Map company to team format for backward compatibility
+    return { id: companyMember.company_id };
   } catch (error) {
     console.error('Error in fetchUserTeam:', error);
     return null;
