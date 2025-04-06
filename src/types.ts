@@ -1,3 +1,4 @@
+
 // Common types used across the application
 
 export type Department = {
@@ -60,7 +61,7 @@ export interface Hypothesis {
   userId?: string;
   userName?: string;
   responsibleUserId?: string;
-  pectiScore?: PectiScore;
+  pectiScore?: PECTI;
   company_id?: string;
 }
 
@@ -122,9 +123,9 @@ export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   return Math.round((totalScore / maxPossibleScore) * 100);
 };
 
-export type TeamMemberRole = 'Admin' | 'Manager' | 'Team Member';
+export type TeamMemberRole = 'owner' | 'manager' | 'member';
 
-export const ALL_TEAM_MEMBER_ROLES: TeamMemberRole[] = ['Admin', 'Manager', 'Team Member'];
+export const ALL_TEAM_MEMBER_ROLES: TeamMemberRole[] = ['owner', 'manager', 'member'];
 
 export type CompanyRole = 'owner' | 'manager' | 'member';
 

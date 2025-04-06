@@ -33,7 +33,7 @@ import OnboardingTeamInvite from './pages/OnboardingTeamInvite';
 
 // Auth Context
 import { AuthProvider } from './context/AuthContext';
-import { AppProvider } from './context/AppContext';
+import { AppProvider } from './context/app';
 import { ThemeProvider } from './components/ui/theme-provider';
 import { CompanyProvider } from './context/CompanyContext';
 
@@ -46,8 +46,8 @@ function App() {
     <BrowserRouter>
       <ThemeProvider defaultTheme="light">
         <AuthProvider>
-          <AppProvider>
-            <CompanyProvider>
+          <CompanyProvider>
+            <AppProvider>
               <Routes>
                 {/* Public routes */}
                 <Route path="/" element={<Index />} />
@@ -92,8 +92,8 @@ function App() {
               </Routes>
 
               <Toaster position="top-right" />
-            </CompanyProvider>
-          </AppProvider>
+            </AppProvider>
+          </CompanyProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

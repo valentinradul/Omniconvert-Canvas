@@ -3,7 +3,7 @@ import React from 'react';
 import { Control } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TeamMemberFormData, ALL_COMPANY_ROLES } from '@/types';
+import { TeamMemberFormData } from '@/types';
 
 interface TeamMemberRoleFieldProps {
   control: Control<TeamMemberFormData>;
