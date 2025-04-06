@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,14 +69,7 @@ const TeamMembersSection: React.FC = () => {
         // Then, get team members for this team
         const { data: membersData, error: membersError } = await supabase
           .from('team_members')
-          .select(`
-            id,
-            user_id,
-            role,
-            profiles:user_id (
-              full_name
-            )
-          `)
+          .select('id, role, name, email, status')
           .eq('team_id', teamData.id);
           
         if (membersError) {
@@ -87,11 +79,11 @@ const TeamMembersSection: React.FC = () => {
           return;
         }
 
-        // Transform the data to match our TeamMember structure
+        // Convert the data to match our TeamMember structure
         const formattedMembers = membersData.map(member => ({
           id: member.id,
-          name: member.profiles?.full_name || 'Unknown',
-          email: member.profiles?.email || 'No email provided',
+          name: member.name || 'Unknown',
+          email: member.email || 'No email provided',
           role: member.role
         }));
         
