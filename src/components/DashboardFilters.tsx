@@ -34,72 +34,70 @@ const DashboardFilters: React.FC<DashboardFiltersProps> = ({
   const activeFiltersCount = Object.values(filters).filter(Boolean).length;
   
   return (
-    <div className="bg-white rounded-lg border p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-medium">Filters</h3>
-        {activeFiltersCount > 0 && (
+    <div>
+      {/* Active filters display */}
+      {activeFiltersCount > 0 && (
+        <div className="flex items-center mb-4">
+          <div className="text-sm font-medium mr-2">Active filters:</div>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(filters).map(([key, value]) => {
+              if (!value) return null;
+              
+              let label = "";
+              switch (key) {
+                case 'department':
+                  label = departments.find(d => d.id === value)?.name || 'Department';
+                  break;
+                case 'category':
+                  label = value;
+                  break;
+                case 'status':
+                  label = value;
+                  break;
+                case 'tag':
+                  label = value;
+                  break;
+                case 'userId':
+                  label = allUsers.find(u => u.id === value)?.name || 'User';
+                  break;
+                case 'timeframe':
+                  label = value.charAt(0).toUpperCase() + value.slice(1);
+                  break;
+              }
+              
+              return (
+                <Badge key={key} variant="secondary" className="flex items-center gap-1">
+                  {label}
+                  <X 
+                    size={12} 
+                    className="cursor-pointer" 
+                    onClick={() => onFilterChange(key, undefined)}
+                  />
+                </Badge>
+              );
+            })}
+          </div>
           <Button 
             variant="ghost" 
             onClick={onClearFilters} 
             size="sm" 
-            className="h-7 text-xs"
+            className="h-7 text-xs ml-auto"
           >
             Clear all
           </Button>
-        )}
-      </div>
-      
-      {/* Active filters */}
-      {activeFiltersCount > 0 && (
-        <div className="flex flex-wrap gap-2 py-2">
-          {Object.entries(filters).map(([key, value]) => {
-            if (!value) return null;
-            
-            let label = "";
-            switch (key) {
-              case 'department':
-                label = departments.find(d => d.id === value)?.name || 'Department';
-                break;
-              case 'category':
-                label = value;
-                break;
-              case 'status':
-                label = value;
-                break;
-              case 'tag':
-                label = value;
-                break;
-              case 'userId':
-                label = allUsers.find(u => u.id === value)?.name || 'User';
-                break;
-              case 'timeframe':
-                label = value.charAt(0).toUpperCase() + value.slice(1);
-                break;
-            }
-            
-            return (
-              <Badge key={key} variant="secondary" className="flex items-center gap-1">
-                {label}
-                <X 
-                  size={12} 
-                  className="cursor-pointer" 
-                  onClick={() => onFilterChange(key, undefined)}
-                />
-              </Badge>
-            );
-          })}
         </div>
       )}
       
-      <div className="space-y-3">
+      {/* Horizontal filter controls */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
         {/* Department filter */}
-        <div className="space-y-1">
-          <Label htmlFor="department-filter">Department</Label>
+        <div>
+          <Label htmlFor="department-filter" className="text-xs mb-1 block">Department</Label>
           <Select 
             value={filters.department} 
             onValueChange={(value) => onFilterChange('department', value)}
           >
-            <SelectTrigger id="department-filter">
+            <SelectTrigger id="department-filter" className="h-9 text-sm">
               <SelectValue placeholder="All Departments" />
             </SelectTrigger>
             <SelectContent>
@@ -113,13 +111,13 @@ const DashboardFilters: React.FC<DashboardFiltersProps> = ({
         </div>
         
         {/* Category filter */}
-        <div className="space-y-1">
-          <Label htmlFor="category-filter">Category</Label>
+        <div>
+          <Label htmlFor="category-filter" className="text-xs mb-1 block">Category</Label>
           <Select 
             value={filters.category} 
             onValueChange={(value) => onFilterChange('category', value as Category)}
           >
-            <SelectTrigger id="category-filter">
+            <SelectTrigger id="category-filter" className="h-9 text-sm">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -133,13 +131,13 @@ const DashboardFilters: React.FC<DashboardFiltersProps> = ({
         </div>
         
         {/* Status filter */}
-        <div className="space-y-1">
-          <Label htmlFor="status-filter">Status</Label>
+        <div>
+          <Label htmlFor="status-filter" className="text-xs mb-1 block">Status</Label>
           <Select 
             value={filters.status} 
             onValueChange={(value) => onFilterChange('status', value)}
           >
-            <SelectTrigger id="status-filter">
+            <SelectTrigger id="status-filter" className="h-9 text-sm">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -153,13 +151,13 @@ const DashboardFilters: React.FC<DashboardFiltersProps> = ({
         </div>
         
         {/* Tag filter */}
-        <div className="space-y-1">
-          <Label htmlFor="tag-filter">Tag</Label>
+        <div>
+          <Label htmlFor="tag-filter" className="text-xs mb-1 block">Tag</Label>
           <Select 
             value={filters.tag} 
             onValueChange={(value) => onFilterChange('tag', value)}
           >
-            <SelectTrigger id="tag-filter">
+            <SelectTrigger id="tag-filter" className="h-9 text-sm">
               <SelectValue placeholder="All Tags" />
             </SelectTrigger>
             <SelectContent>
@@ -173,13 +171,13 @@ const DashboardFilters: React.FC<DashboardFiltersProps> = ({
         </div>
         
         {/* User filter */}
-        <div className="space-y-1">
-          <Label htmlFor="user-filter">User</Label>
+        <div>
+          <Label htmlFor="user-filter" className="text-xs mb-1 block">User</Label>
           <Select 
             value={filters.userId} 
             onValueChange={(value) => onFilterChange('userId', value)}
           >
-            <SelectTrigger id="user-filter">
+            <SelectTrigger id="user-filter" className="h-9 text-sm">
               <SelectValue placeholder="All Users" />
             </SelectTrigger>
             <SelectContent>
@@ -193,13 +191,13 @@ const DashboardFilters: React.FC<DashboardFiltersProps> = ({
         </div>
         
         {/* Timeframe filter */}
-        <div className="space-y-1">
-          <Label htmlFor="timeframe-filter">Timeframe</Label>
+        <div>
+          <Label htmlFor="timeframe-filter" className="text-xs mb-1 block">Timeframe</Label>
           <Select 
             value={filters.timeframe} 
             onValueChange={(value) => onFilterChange('timeframe', value as 'today' | 'week' | 'month' | 'quarter' | 'year')}
           >
-            <SelectTrigger id="timeframe-filter">
+            <SelectTrigger id="timeframe-filter" className="h-9 text-sm">
               <SelectValue placeholder="All Time" />
             </SelectTrigger>
             <SelectContent>
