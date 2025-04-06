@@ -1,76 +1,100 @@
 
-import React from 'react';
-import { CompanyInvitation } from '@/services/company/types';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useCompanyInvitations } from '@/hooks/useCompanyInvitations';
-import { Check, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { Bell } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 
 export const InvitationsList: React.FC = () => {
-  const { userInvitations, isLoading, acceptInvitation, rejectInvitation } = useCompanyInvitations();
+  const { 
+    userInvitations, 
+    isLoading, 
+    acceptInvitation, 
+    rejectInvitation,
+    refreshUserInvitations
+  } = useCompanyInvitations();
 
-  if (isLoading) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-xl">Invitations</CardTitle>
-          <CardDescription>Company invitations are loading...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <Skeleton className="h-16 rounded-md" />
-            <Skeleton className="h-16 rounded-md" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  useEffect(() => {
+    refreshUserInvitations();
+  }, []);
+
+  const handleAccept = async (invitationId: string) => {
+    try {
+      const success = await acceptInvitation(invitationId);
+      if (success) {
+        toast.success('Invitation accepted successfully!');
+        refreshUserInvitations();
+      }
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      toast.error('Failed to accept invitation');
+    }
+  };
+
+  const handleReject = async (invitationId: string) => {
+    try {
+      const success = await rejectInvitation(invitationId);
+      if (success) {
+        toast.success('Invitation rejected');
+        refreshUserInvitations();
+      }
+    } catch (error) {
+      console.error('Error rejecting invitation:', error);
+      toast.error('Failed to reject invitation');
+    }
+  };
 
   if (userInvitations.length === 0) {
     return null;
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-xl">Pending Invitations</CardTitle>
-        <CardDescription>Invitations to join companies</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-5 w-5" />
+          <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80">
+        <div className="p-4">
+          <h3 className="text-lg font-semibold">Invitations</h3>
+          <p className="text-sm text-gray-500">You have {userInvitations.length} pending invitations</p>
+        </div>
+        <DropdownMenuSeparator />
+        <div className="max-h-[300px] overflow-y-auto">
           {userInvitations.map(invitation => (
-            <div 
-              key={invitation.id} 
-              className="flex items-center justify-between p-4 border rounded-md bg-muted/20"
-            >
-              <div>
+            <div key={invitation.id} className="p-4 border-b last:border-0">
+              <div className="mb-2">
                 <p className="font-medium">You've been invited to join a company</p>
-                <p className="text-sm text-muted-foreground">As: {invitation.role}</p>
+                <p className="text-sm text-gray-500">Role: {invitation.role}</p>
               </div>
-              <div className="flex space-x-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex gap-1 items-center"
-                  onClick={() => rejectInvitation(invitation.id)}
+              <div className="flex justify-end gap-2 mt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleReject(invitation.id)}
                 >
-                  <X className="h-4 w-4" />
                   Decline
                 </Button>
-                <Button
-                  size="sm"
-                  className="flex gap-1 items-center"
-                  onClick={() => acceptInvitation(invitation.id)}
+                <Button 
+                  size="sm" 
+                  onClick={() => handleAccept(invitation.id)}
                 >
-                  <Check className="h-4 w-4" />
                   Accept
                 </Button>
               </div>
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
-}
+};

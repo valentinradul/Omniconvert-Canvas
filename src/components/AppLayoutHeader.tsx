@@ -31,6 +31,7 @@ const AppLayoutHeader = () => {
         </div>
         <div className="flex items-center gap-4">
           <CompanySelector />
+          <InvitationsList />
           <UserMenu />
         </div>
       </div>

@@ -3,7 +3,6 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { CompanyInviteForm } from './CompanyInviteForm';
-import { toast } from 'sonner';
 
 interface AddTeamMemberDialogProps {
   isOpen: boolean;
@@ -21,8 +20,6 @@ export const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
   triggerButton
 }) => {
   const handleSuccess = () => {
-    toast.success("Team member invitation sent successfully!");
-    
     // Force dialog to close on successful submission
     onOpenChange(false);
     
