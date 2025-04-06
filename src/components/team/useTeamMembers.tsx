@@ -79,7 +79,8 @@ export function useTeamMembers() {
 
   const addTeamMember = async (data: TeamMemberFormData) => {
     try {
-      const { name, email, role, department, title, departmentVisibility, visibleDepartments, photoUrl } = data;
+      console.log("Adding team member with data:", data);
+      const { name, email, role, department } = data;
       
       // First, get the user's team
       const { data: teamData, error: teamError } = await supabase
@@ -99,8 +100,9 @@ export function useTeamMembers() {
         return null;
       }
       
+      console.log("Team found:", teamData);
+      
       // Create a new team member with the columns that exist in the table
-      // Using any() to bypass TypeScript errors since the types don't include all fields yet
       const { data: newMember, error: memberError } = await supabase
         .from('team_members')
         .insert({
@@ -108,8 +110,6 @@ export function useTeamMembers() {
           user_id: null, // Placeholder as we're inviting a user
           role: role,
           department: department
-          // Note: title, department_visibility, visible_departments, and photo_url 
-          // are not added to the insert since they're not in the database schema yet
         })
         .select()
         .single();
@@ -120,6 +120,8 @@ export function useTeamMembers() {
         return null;
       }
 
+      console.log("Member added successfully:", newMember);
+
       if (newMember) {
         const newTeamMember: TeamMember = {
           id: newMember.id,
@@ -127,10 +129,10 @@ export function useTeamMembers() {
           email: email, // Using provided email even though it's not in the DB
           role: newMember.role as TeamMemberRole,
           department: newMember.department,
-          title: title || '', // Use the title from the form data
-          departmentVisibility: (departmentVisibility || 'Own Department') as DepartmentVisibility, // Explicit cast
-          visibleDepartments: visibleDepartments || [],
-          photoUrl: photoUrl || ''
+          title: data.title || '', // Use the title from the form data
+          departmentVisibility: (data.departmentVisibility || 'Own Department') as DepartmentVisibility, // Explicit cast
+          visibleDepartments: data.visibleDepartments || [],
+          photoUrl: data.photoUrl || ''
         };
         
         setMembers([...members, newTeamMember]);

@@ -14,6 +14,7 @@ const TeamMembersSection: React.FC = () => {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
   const handleAddTeamMember = async (values: TeamMemberFormData) => {
+    console.log("Submitting team member data:", values);
     const result = await addTeamMember(values);
     if (result) {
       setIsAddDialogOpen(false);
