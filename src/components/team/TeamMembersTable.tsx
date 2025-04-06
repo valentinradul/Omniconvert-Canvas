@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Pencil, Trash } from 'lucide-react';
+import { Pencil, Trash, UserCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -12,14 +12,9 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  department?: string;
-}
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { TeamMember } from '@/types';
 
 interface TeamMembersTableProps {
   members: TeamMember[];
@@ -42,25 +37,56 @@ export const TeamMembersTable: React.FC<TeamMembersTableProps> = ({
     return <p className="text-center text-muted-foreground py-4">No team members yet.</p>;
   }
 
+  const getRoleBadgeVariant = (role: string) => {
+    switch(role) {
+      case 'Admin': return 'destructive';
+      case 'Manager': return 'default';
+      case 'Team Member': return 'outline';
+      default: return 'secondary';
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead></TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
+            <TableHead>Title</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Department</TableHead>
+            <TableHead>Access</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {members.map((member) => (
             <TableRow key={member.id}>
+              <TableCell>
+                <Avatar className="h-8 w-8">
+                  {member.photoUrl ? (
+                    <AvatarImage src={member.photoUrl} alt={member.name} />
+                  ) : (
+                    <AvatarFallback>
+                      {member.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+              </TableCell>
               <TableCell className="font-medium">{member.name}</TableCell>
               <TableCell>{member.email}</TableCell>
-              <TableCell>{member.role}</TableCell>
+              <TableCell>{member.title || 'Not specified'}</TableCell>
+              <TableCell>
+                <Badge variant={getRoleBadgeVariant(member.role)}>
+                  {member.role}
+                </Badge>
+              </TableCell>
               <TableCell>{member.department || 'Not assigned'}</TableCell>
+              <TableCell>
+                {member.departmentVisibility || 'Own Department'}
+              </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button 

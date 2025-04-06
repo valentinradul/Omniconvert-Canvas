@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AddTeamMemberForm } from './AddTeamMemberForm';
-import { TeamMemberFormData } from './useTeamMembers';
+import { TeamMemberFormData } from '@/types';
 
 interface AddTeamMemberDialogProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ export const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
       <DialogTrigger asChild>
         <Button>Add Team Member</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Team Member</DialogTitle>
           <DialogDescription>

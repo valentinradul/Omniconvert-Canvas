@@ -3,14 +3,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import type { TeamMember } from './TeamMembersTable';
-
-export type TeamMemberFormData = {
-  name: string;
-  email: string;
-  role: string;
-  department?: string;
-};
+import { TeamMember, TeamMemberFormData, TeamMemberRole } from '@/types';
 
 export function useTeamMembers() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -41,10 +34,10 @@ export function useTeamMembers() {
         return;
       }
       
-      // Using any() to bypass TypeScript errors since the types don't include the department field yet
+      // Using any() to bypass TypeScript errors since the types don't include all fields yet
       const { data, error: membersError } = await supabase
         .from('team_members')
-        .select('id, role, user_id, team_id, department')
+        .select('id, role, user_id, team_id, department, title, department_visibility, visible_departments, photo_url')
         .eq('team_id', teamData.id);
         
       if (membersError) {
@@ -60,8 +53,12 @@ export function useTeamMembers() {
           id: member.id,
           name: member.user_id || 'Invited User',  // Using user_id as placeholder
           email: `user-${member.id}@example.com`,  // Using a placeholder email
-          role: member.role,
-          department: member.department
+          role: member.role as TeamMemberRole || 'Team Member',
+          department: member.department,
+          title: member.title,
+          departmentVisibility: member.department_visibility,
+          visibleDepartments: member.visible_departments,
+          photoUrl: member.photo_url
         }));
         
         setMembers(formattedMembers);
@@ -82,7 +79,7 @@ export function useTeamMembers() {
 
   const addTeamMember = async (data: TeamMemberFormData) => {
     try {
-      const { name, email, role, department } = data;
+      const { name, email, role, department, title, departmentVisibility, visibleDepartments, photoUrl } = data;
       
       // First, get the user's team
       const { data: teamData, error: teamError } = await supabase
@@ -103,14 +100,18 @@ export function useTeamMembers() {
       }
       
       // Create a new team member with the columns that exist in the table
-      // Using any() to bypass TypeScript errors since the types don't include the department field yet
+      // Using any() to bypass TypeScript errors since the types don't include all fields yet
       const { data: newMember, error: memberError } = await supabase
         .from('team_members')
         .insert({
           team_id: teamData.id,
           user_id: null, // Placeholder as we're inviting a user
           role: role,
-          department: department
+          department: department,
+          title: title,
+          department_visibility: departmentVisibility,
+          visible_departments: visibleDepartments,
+          photo_url: photoUrl
         })
         .select()
         .single();
@@ -127,7 +128,11 @@ export function useTeamMembers() {
           name: name, // Using provided name even though it's not in the DB
           email: email, // Using provided email even though it's not in the DB
           role: newMember.role,
-          department: newMember.department
+          department: newMember.department,
+          title: newMember.title,
+          departmentVisibility: newMember.department_visibility,
+          visibleDepartments: newMember.visible_departments,
+          photoUrl: newMember.photo_url
         };
         
         setMembers([...members, newTeamMember]);
@@ -145,12 +150,16 @@ export function useTeamMembers() {
 
   const updateTeamMember = async (id: string, data: Partial<TeamMemberFormData>) => {
     try {
-      // Using any() to bypass TypeScript errors since the types don't include the department field yet
+      // Using any() to bypass TypeScript errors since the types don't include all fields yet
       const { data: updatedMember, error } = await supabase
         .from('team_members')
         .update({
           role: data.role,
-          department: data.department
+          department: data.department,
+          title: data.title,
+          department_visibility: data.departmentVisibility,
+          visible_departments: data.visibleDepartments,
+          photo_url: data.photoUrl
         })
         .eq('id', id)
         .select()
@@ -169,6 +178,10 @@ export function useTeamMembers() {
             ...member,
             role: data.role || member.role,
             department: data.department || member.department,
+            title: data.title || member.title,
+            departmentVisibility: data.departmentVisibility || member.departmentVisibility,
+            visibleDepartments: data.visibleDepartments || member.visibleDepartments,
+            photoUrl: data.photoUrl || member.photoUrl,
             name: data.name || member.name,
             email: data.email || member.email
           };

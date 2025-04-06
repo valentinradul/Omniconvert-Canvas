@@ -1,4 +1,3 @@
-
 // Common types used across the application
 
 export type Department = {
@@ -129,3 +128,46 @@ export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   const maxPossibleScore = 25; // 5 points max for each of the 5 categories
   return Math.round((totalScore / maxPossibleScore) * 100);
 };
+
+// Defined roles for team members
+export type TeamMemberRole = "Admin" | "Manager" | "Team Member";
+
+export const ALL_TEAM_MEMBER_ROLES: TeamMemberRole[] = [
+  "Admin",
+  "Manager",
+  "Team Member"
+];
+
+// Department visibility level for team members
+export type DepartmentVisibility = "Own Department" | "Selected Departments" | "All Departments";
+
+export const ALL_DEPARTMENT_VISIBILITY_OPTIONS: DepartmentVisibility[] = [
+  "Own Department", 
+  "Selected Departments", 
+  "All Departments"
+];
+
+// Extended TeamMember type with more properties
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: TeamMemberRole;
+  department?: string;
+  title?: string;
+  visibleDepartments?: string[];
+  departmentVisibility?: DepartmentVisibility;
+  photoUrl?: string;
+}
+
+// Data structure for team member form
+export interface TeamMemberFormData {
+  name: string;
+  email: string;
+  role: TeamMemberRole;
+  department?: string;
+  title?: string;
+  visibleDepartments?: string[];
+  departmentVisibility?: DepartmentVisibility;
+  photoUrl?: string;
+}

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,13 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { DialogFooter } from '@/components/ui/dialog';
-import { TeamMemberFormData } from './useTeamMembers';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { useApp } from '@/context/AppContext';
+import { TeamMemberFormData, ALL_TEAM_MEMBER_ROLES, ALL_DEPARTMENT_VISIBILITY_OPTIONS } from '@/types';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ImagePlus } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
-  role: z.string().min(2, { message: "Role must be at least 2 characters" }),
-  department: z.string().optional()
+  role: z.enum(["Admin", "Manager", "Team Member"] as const),
+  department: z.string().optional(),
+  title: z.string().min(2, { message: "Title must be at least 2 characters" }).optional(),
+  departmentVisibility: z.enum(["Own Department", "Selected Departments", "All Departments"] as const).default("Own Department"),
+  visibleDepartments: z.array(z.string()).optional(),
+  photoUrl: z.string().optional()
 });
 
 interface AddTeamMemberFormProps {
@@ -21,19 +31,42 @@ interface AddTeamMemberFormProps {
 }
 
 export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }) => {
+  const { departments } = useApp();
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  
   const form = useForm<TeamMemberFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       email: '',
-      role: 'Member',
-      department: ''
+      role: 'Team Member',
+      department: '',
+      title: '',
+      departmentVisibility: 'Own Department',
+      visibleDepartments: []
     },
   });
+
+  const selectedVisibility = form.watch('departmentVisibility');
+  const selectedDepartment = form.watch('department');
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="flex items-center justify-center mb-4">
+          <div className="relative">
+            <Avatar className="h-20 w-20">
+              {photoPreview ? (
+                <AvatarImage src={photoPreview} alt="User photo" />
+              ) : (
+                <AvatarFallback className="text-lg">
+                  <ImagePlus className="h-8 w-8" />
+                </AvatarFallback>
+              )}
+            </Avatar>
+          </div>
+        </div>
+        
         <FormField
           control={form.control}
           name="name"
@@ -68,6 +101,24 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="e.g., Growth Marketer, Product Manager" 
+                  {...field} 
+                  value={field.value || ''}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <FormField
           control={form.control}
@@ -75,12 +126,25 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
           render={({ field }) => (
             <FormItem>
               <FormLabel>Role</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Enter role (e.g., Admin, Member)" 
-                  {...field} 
-                />
-              </FormControl>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {ALL_TEAM_MEMBER_ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role} {role === 'Admin' && '(full access)'}
+                      {role === 'Manager' && '(can edit all experiments)'}
+                      {role === 'Team Member' && '(standard access)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -92,17 +156,90 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
           render={({ field }) => (
             <FormItem>
               <FormLabel>Department</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a department" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="departmentVisibility"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Department Visibility</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Enter department (e.g., Marketing, Engineering)" 
-                  {...field} 
-                  value={field.value || ''}
-                />
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-col space-y-1"
+                >
+                  {ALL_DEPARTMENT_VISIBILITY_OPTIONS.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <RadioGroupItem value={option} id={`visibility-${option}`} />
+                      <Label htmlFor={`visibility-${option}`}>{option}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        
+        {selectedVisibility === "Selected Departments" && (
+          <FormField
+            control={form.control}
+            name="visibleDepartments"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Visible Departments</FormLabel>
+                <div className="flex flex-wrap gap-2">
+                  {departments
+                    .filter((dept) => dept.id !== selectedDepartment)
+                    .map((dept) => {
+                      const isSelected = field.value?.includes(dept.id);
+                      return (
+                        <Button
+                          key={dept.id}
+                          type="button"
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            const current = field.value || [];
+                            field.onChange(
+                              isSelected
+                                ? current.filter((id) => id !== dept.id)
+                                : [...current, dept.id]
+                            );
+                          }}
+                        >
+                          {dept.name}
+                        </Button>
+                      );
+                  })}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         
         <DialogFooter className="pt-4">
           <Button type="submit">Add Member</Button>
