@@ -15,11 +15,13 @@ import {
 export function useTeamMembers() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
 
   const fetchTeamMembers = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       if (!user || !user.id) {
         console.error('No authenticated user found');
@@ -34,6 +36,7 @@ export function useTeamMembers() {
       const teamData = await fetchUserTeam(user.id);
       if (!teamData) {
         console.log('No team found for this user');
+        setError(new Error('No team found for this user'));
         setIsLoading(false);
         return;
       }
@@ -43,6 +46,7 @@ export function useTeamMembers() {
       // Then fetch the team members
       const data = await fetchTeamMembersForTeam(teamData.id);
       if (!data) {
+        setError(new Error('Failed to fetch team members'));
         setIsLoading(false);
         return;
       }
@@ -54,6 +58,7 @@ export function useTeamMembers() {
       setMembers(formattedMembers);
     } catch (error) {
       console.error('Unexpected error fetching team members:', error);
+      setError(error instanceof Error ? error : new Error('An unexpected error occurred'));
       toast.error('Failed to load team members');
     } finally {
       setIsLoading(false);
@@ -165,7 +170,8 @@ export function useTeamMembers() {
 
   return { 
     members, 
-    isLoading, 
+    isLoading,
+    error,
     addTeamMember, 
     updateTeamMember,
     deleteTeamMember,
