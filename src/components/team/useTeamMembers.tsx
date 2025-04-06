@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -37,7 +36,7 @@ export function useTeamMembers() {
       // Using any() to bypass TypeScript errors since the types don't include all fields yet
       const { data, error: membersError } = await supabase
         .from('team_members')
-        .select('id, role, user_id, team_id, department, title, department_visibility, visible_departments, photo_url')
+        .select('id, role, user_id, team_id, department')
         .eq('team_id', teamData.id);
         
       if (membersError) {
@@ -55,10 +54,10 @@ export function useTeamMembers() {
           email: `user-${member.id}@example.com`,  // Using a placeholder email
           role: (member.role as TeamMemberRole) || 'Team Member',
           department: member.department,
-          title: member.title || '',
-          departmentVisibility: member.department_visibility || 'Own Department',
-          visibleDepartments: member.visible_departments || [],
-          photoUrl: member.photo_url || ''
+          title: '', // Default empty string since title isn't in the database yet
+          departmentVisibility: 'Own Department', // Default value
+          visibleDepartments: [], // Default empty array
+          photoUrl: '' // Default empty string
         }));
         
         setMembers(formattedMembers);
@@ -107,11 +106,9 @@ export function useTeamMembers() {
           team_id: teamData.id,
           user_id: null, // Placeholder as we're inviting a user
           role: role,
-          department: department,
-          title: title,
-          department_visibility: departmentVisibility,
-          visible_departments: visibleDepartments,
-          photo_url: photoUrl
+          department: department
+          // Note: title, department_visibility, visible_departments, and photo_url 
+          // are not added to the insert since they're not in the database schema yet
         })
         .select()
         .single();
@@ -129,10 +126,10 @@ export function useTeamMembers() {
           email: email, // Using provided email even though it's not in the DB
           role: newMember.role as TeamMemberRole,
           department: newMember.department,
-          title: newMember.title || '',
-          departmentVisibility: newMember.department_visibility || 'Own Department',
-          visibleDepartments: newMember.visible_departments || [],
-          photoUrl: newMember.photo_url || ''
+          title: title || '', // Use the title from the form data
+          departmentVisibility: departmentVisibility || 'Own Department',
+          visibleDepartments: visibleDepartments || [],
+          photoUrl: photoUrl || ''
         };
         
         setMembers([...members, newTeamMember]);
@@ -150,17 +147,16 @@ export function useTeamMembers() {
 
   const updateTeamMember = async (id: string, data: Partial<TeamMemberFormData>) => {
     try {
-      // Using any() to bypass TypeScript errors since the types don't include all fields yet
+      // Only update fields that exist in the database
+      const updateData: any = {
+        role: data.role,
+        department: data.department
+        // Other fields are not included as they don't exist in the database yet
+      };
+      
       const { data: updatedMember, error } = await supabase
         .from('team_members')
-        .update({
-          role: data.role,
-          department: data.department,
-          title: data.title,
-          department_visibility: data.departmentVisibility,
-          visible_departments: data.visibleDepartments,
-          photo_url: data.photoUrl
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
