@@ -24,39 +24,35 @@ export const addTeamMemberToTeam = async (
     let hasEmailColumn = false;
     
     try {
-      // Instead of using RPC, let's check if we can query with the email field
-      // This is a simple way to check if the column exists
-      const testQuery = await supabase
+      // Simple check for email column existence
+      const testResult = await supabase
         .from('team_members')
         .select('email')
         .limit(1);
       
-      // If no error, email column exists
-      hasEmailColumn = !testQuery.error;
+      hasEmailColumn = !testResult.error;
     } catch {
-      // If this fails, email column doesn't exist
       hasEmailColumn = false;
     }
     
     // If email column exists, check for existing member
-    let existingMember = null;
-    
     if (hasEmailColumn && data.email) {
-      // Execute query separately to avoid type inference issues
-      const { data: members, error: checkError } = await supabase
+      // Query for existing team member with the same email
+      const existingMemberQuery = await supabase
         .from('team_members')
         .select('id, team_id, user_id, role, department')
         .eq('team_id', teamId)
         .eq('email', data.email);
         
-      if (checkError) {
-        console.error('Error checking existing team member:', checkError);
-        return { error: checkError.message };
+      if (existingMemberQuery.error) {
+        console.error('Error checking existing team member:', existingMemberQuery.error);
+        return { error: existingMemberQuery.error.message };
       }
       
       // Check if we found an existing member
+      const members = existingMemberQuery.data;
       if (members && members.length > 0) {
-        existingMember = members[0];
+        const existingMember = members[0];
         console.log(`Email ${data.email} is already a team member`);
         return {
           id: existingMember.id,
@@ -84,23 +80,29 @@ export const addTeamMemberToTeam = async (
         custom_message: data.customMessage || null 
       } : requiredFields;
     
-    // Create a new team member with simplified approach
-    const result = await supabase
+    // Insert new team member with explicit approach
+    const insertResponse = await supabase
       .from('team_members')
-      .insert(insertData)
-      .select('id, team_id, user_id, role, department');
+      .insert(insertData);
       
-    if (result.error) {
-      console.error('Error adding team member:', result.error);
-      return { error: result.error.message };
+    if (insertResponse.error) {
+      console.error('Error adding team member:', insertResponse.error);
+      return { error: insertResponse.error.message };
     }
-
-    const newMember = result.data;
     
-    if (!newMember || newMember.length === 0) {
-      return { error: 'No data returned after adding team member' };
+    // Fetch the created member to return its data
+    const fetchResponse = await supabase
+      .from('team_members')
+      .select('id, team_id, user_id, role, department')
+      .eq('team_id', teamId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    if (fetchResponse.error || !fetchResponse.data || fetchResponse.data.length === 0) {
+      return { error: 'Failed to retrieve the added team member' };
     }
 
+    const newMember = fetchResponse.data[0];
     console.log("Member added successfully:", newMember);
     
     // Send invitation email if the email is provided
@@ -116,11 +118,11 @@ export const addTeamMemberToTeam = async (
 
     // Create a TeamMemberData object with the returned data
     const memberData: TeamMemberData = {
-      id: newMember[0].id,
-      team_id: newMember[0].team_id,
-      user_id: newMember[0].user_id,
-      role: newMember[0].role,
-      department: newMember[0].department,
+      id: newMember.id,
+      team_id: newMember.team_id,
+      user_id: newMember.user_id,
+      role: newMember.role,
+      department: newMember.department,
       // Add email and custom_message only if they exist in the DB
       ...(hasEmailColumn ? { 
         email: data.email || null,
