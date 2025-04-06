@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } from '@/types';
 import { toast } from 'sonner';
@@ -40,24 +39,22 @@ export const addTeamMemberToTeam = async (
     
     // If email column exists, check for existing member
     if (hasEmailColumn && data.email) {
-      // Use explicit typing for Supabase query result
-      type ExistingMemberResult = {
-        data: {
-          id: string;
-          team_id: string;
-          user_id: string | null;
-          role: string;
-          department: string | null;
-        } | null;
-        error: any;
-      };
+      // Define explicit type for the existing member result
+      interface ExistingMemberResult {
+        id: string;
+        team_id: string;
+        user_id: string | null;
+        role: string;
+        department: string | null;
+      }
       
+      // Use explicit typing for query
       const { data: existingMember, error: checkError } = await supabase
         .from('team_members')
         .select('id, team_id, user_id, role, department')
         .eq('team_id', teamId)
         .eq('email', data.email)
-        .maybeSingle() as ExistingMemberResult;
+        .maybeSingle<ExistingMemberResult>();
         
       if (checkError) {
         console.error('Error checking existing team member:', checkError);
@@ -92,17 +89,21 @@ export const addTeamMemberToTeam = async (
         custom_message: data.customMessage || null 
       } : requiredFields;
     
-    // Define explicit return type for insert operation
-    type InsertResult = {
-      data: MemberQueryResult[] | null;
-      error: any;
-    };
+    // Define explicit type for the insert operation result
+    interface InsertMemberResult {
+      id: string;
+      team_id: string;
+      user_id: string | null;
+      role: string;
+      department: string | null;
+    }
     
-    // Create a new team member with proper type annotation to avoid infinite recursion
+    // Create a new team member with explicit type annotation
     const { data: newMember, error: memberError } = await supabase
       .from('team_members')
       .insert(insertData)
-      .select('id, team_id, user_id, role, department') as InsertResult;
+      .select('id, team_id, user_id, role, department')
+      .returns<InsertMemberResult[]>();
       
     if (memberError) {
       console.error('Error adding team member:', memberError);
