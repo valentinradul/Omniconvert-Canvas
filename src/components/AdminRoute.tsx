@@ -30,6 +30,12 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ fallbackPath = '/dashboard' }) 
     }
   }, [isLoading, isAdmin, error, location.pathname, user, roles]);
   
+  // If not authenticated, redirect to login
+  if (!user) {
+    console.log('User not authenticated, redirecting to login');
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  
   // Show loading state while checking admin status
   if (isLoading) {
     return <LoadingCard />;
@@ -59,10 +65,10 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ fallbackPath = '/dashboard' }) 
     );
   }
   
-  // If not admin, redirect to fallback
+  // If not admin, show access denied message directly
   if (!isAdmin) {
-    console.log('Not an admin, redirecting from', location.pathname, 'to', fallbackPath, 'Roles:', roles);
-    return <Navigate to={fallbackPath} replace state={{ from: location, accessDenied: true }} />;
+    console.log('Not an admin, access denied to', location.pathname, 'Roles:', roles);
+    return <AccessDeniedCard />;
   }
   
   // User is admin, render outlet

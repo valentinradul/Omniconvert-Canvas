@@ -18,7 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 
 const CategoriesPage: React.FC = () => {
   const { categories, addCategory, editCategory, deleteCategory } = useApp();
-  const { isAdmin, isLoading, roles } = useUserRole();
+  const { isAdmin, isLoading, roles, error, refetch } = useUserRole();
   const { user } = useAuth();
   
   const [newCategory, setNewCategory] = useState('');
@@ -33,9 +33,16 @@ const CategoriesPage: React.FC = () => {
       userEmail: user?.email,
       isAdmin, 
       roles,
-      isLoading
+      isLoading,
+      error
     });
-  }, [user, isAdmin, roles, isLoading]);
+    
+    // Auto-refresh permissions if there's an error
+    if (error) {
+      console.log('Permission error detected, automatically retrying...');
+      refetch();
+    }
+  }, [user, isAdmin, roles, isLoading, error, refetch]);
   
   if (isLoading) {
     return <LoadingCard />;

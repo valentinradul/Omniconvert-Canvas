@@ -47,7 +47,7 @@ export function useUserRole() {
           const normalizedRole = (item.role || '').toLowerCase() as Role;
           console.log(`Found role: ${normalizedRole} (original: ${item.role})`);
           return normalizedRole;
-        });
+        }).filter(Boolean);
         
         console.log(`User ${user.id} roles:`, userRoles);
         setRoles(userRoles);
@@ -85,7 +85,6 @@ export function useUserRole() {
 
   useEffect(() => {
     let isMounted = true;
-    let retryTimeout: NodeJS.Timeout;
     
     setIsLoading(true);
     
@@ -93,7 +92,6 @@ export function useUserRole() {
     
     return () => {
       isMounted = false;
-      clearTimeout(retryTimeout);
     };
   }, [user, fetchUserRoles]);
 
@@ -112,9 +110,9 @@ export function useUserRole() {
   }, [roles]);
 
   // Make sure we're checking 'admin' in a case-insensitive way
-  const isAdmin = roles.some(role => role === 'admin');
-  const isManager = roles.some(role => role === 'manager') || isAdmin;
-  const isMember = roles.some(role => role === 'member') || isManager;
+  const isAdmin = roles.some(role => role.toLowerCase() === 'admin');
+  const isManager = roles.some(role => role.toLowerCase() === 'manager') || isAdmin;
+  const isMember = roles.some(role => role.toLowerCase() === 'member') || isManager;
 
   return { 
     roles,
