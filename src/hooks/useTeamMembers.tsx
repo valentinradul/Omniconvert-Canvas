@@ -81,6 +81,13 @@ export function useTeamMembers() {
         return null;
       }
       
+      // Validate required fields
+      if (!data.name || !data.email || !data.role) {
+        console.error('Missing required fields for team member');
+        toast.error('Please fill in all required fields');
+        return null;
+      }
+      
       // First, get the user's team
       const teamData = await fetchUserTeam(user.id);
       if (!teamData) {
@@ -119,7 +126,7 @@ export function useTeamMembers() {
     } catch (error) {
       console.error('Error adding team member:', error);
       toast.error(`Failed to add team member: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return null;
+      throw error; // Re-throw to be caught by the dialog component
     }
   };
 

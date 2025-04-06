@@ -45,13 +45,15 @@ const TeamMembersSection: React.FC = () => {
       
       if (result) {
         toast.success(`Team member ${values.name} added successfully!`);
-        setIsAddDialogOpen(false);
+        return Promise.resolve();
       } else {
         toast.error("Failed to add team member");
+        return Promise.reject(new Error("Failed to add team member"));
       }
     } catch (error) {
       console.error("Error adding team member:", error);
       toast.error(`Error adding team member: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Promise.reject(error);
     } finally {
       setIsSubmitting(false);
     }

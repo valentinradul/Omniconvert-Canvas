@@ -23,7 +23,8 @@ export const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
   const handleSubmit = async (values: TeamMemberFormData) => {
     try {
       await onSubmit(values);
-      // Dialog will be closed by the parent component on successful submission
+      // Force dialog to close on successful submission
+      onOpenChange(false);
     } catch (error) {
       console.error("Error in AddTeamMemberDialog handleSubmit:", error);
       // Keep dialog open on error

@@ -10,7 +10,8 @@ import ExperimentNoData from '@/components/experiments/ExperimentNoData';
 const ExperimentsPage: React.FC = () => {
   const { experiments, hypotheses, getAllUserNames, getHypothesisById, getIdeaById, getExperimentDuration } = useApp();
   
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  // Changed the default view to 'list' instead of 'grid'
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [filterStatus, setFilterStatus] = useState<string | undefined>(undefined);
   const [filterResponsible, setFilterResponsible] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');

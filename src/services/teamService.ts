@@ -107,10 +107,11 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
     // Send invitation email if the email is provided
     if (data.email) {
       try {
-        await sendTeamInvitationEmail(data.email, data.customMessage || undefined);
+        await sendTeamInvitationEmail(data.email, data.name, data.customMessage || undefined);
       } catch (emailError) {
         console.error('Error sending invitation email:', emailError);
         // Don't throw here, we still created the team member successfully
+        toast.warning("Team member created, but failed to send invitation email");
       }
     }
 
@@ -125,10 +126,10 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
 /**
  * Sends an invitation email to a team member
  */
-export const sendTeamInvitationEmail = async (email: string, customMessage?: string) => {
+export const sendTeamInvitationEmail = async (email: string, name: string, customMessage?: string) => {
   // This would typically call a backend API to send an email
   // For now, we'll just simulate success
-  console.log(`[MOCK] Sending invitation email to: ${email}`);
+  console.log(`[MOCK] Sending invitation email to: ${email} for ${name}`);
   console.log(`[MOCK] Custom message: ${customMessage || 'No custom message'}`);
   
   // In a real implementation, you would call a backend API or use a service like SendGrid

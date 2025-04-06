@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ALL_STATUSES, ExperimentStatus } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
@@ -17,6 +18,7 @@ import { format, formatDistance } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import ObservationContentEditor from '@/components/ObservationContentEditor';
 
 const ExperimentDetailsPage: React.FC = () => {
   const { experimentId } = useParams();
@@ -42,6 +44,9 @@ const ExperimentDetailsPage: React.FC = () => {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [notes, setNotes] = useState('');
   const [responsibleUserId, setResponsibleUserId] = useState<string | undefined>(undefined);
+  const [totalCost, setTotalCost] = useState<string>('');
+  const [totalReturn, setTotalReturn] = useState<string>('');
+  const [observationContent, setObservationContent] = useState<any>({ text: '', imageUrls: [], externalUrls: [] });
   
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const allUsers = getAllUserNames();
@@ -53,6 +58,9 @@ const ExperimentDetailsPage: React.FC = () => {
       setEndDate(experiment.endDate);
       setNotes(experiment.notes);
       setResponsibleUserId(experiment.responsibleUserId);
+      setTotalCost(experiment.totalCost?.toString() || '');
+      setTotalReturn(experiment.totalReturn?.toString() || '');
+      setObservationContent(experiment.observationContent || { text: '', imageUrls: [], externalUrls: [] });
     } else {
       navigate('/experiments');
     }
@@ -61,6 +69,20 @@ const ExperimentDetailsPage: React.FC = () => {
   if (!experiment || !hypothesis || !idea) {
     return <div>Loading...</div>;
   }
+
+  // Calculate ROI when both cost and return are available
+  const calculateROI = () => {
+    const cost = parseFloat(totalCost);
+    const returnValue = parseFloat(totalReturn);
+
+    if (isNaN(cost) || isNaN(returnValue) || cost === 0) {
+      return null;
+    }
+
+    return ((returnValue - cost) / cost * 100).toFixed(2);
+  };
+
+  const roi = calculateROI();
   
   const handleEdit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,12 +99,18 @@ const ExperimentDetailsPage: React.FC = () => {
     }
     
     try {
+      const parsedCost = totalCost ? parseFloat(totalCost) : undefined;
+      const parsedReturn = totalReturn ? parseFloat(totalReturn) : undefined;
+
       editExperiment(experiment.id, {
         status: status as ExperimentStatus,
         startDate,
         endDate,
         notes,
-        responsibleUserId
+        responsibleUserId,
+        totalCost: parsedCost,
+        totalReturn: parsedReturn,
+        observationContent
       });
       
       setEditDialogOpen(false);
@@ -121,7 +149,7 @@ const ExperimentDetailsPage: React.FC = () => {
             <DialogTrigger asChild>
               <Button variant="outline">Edit Experiment</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-3xl">
               <form onSubmit={handleEdit}>
                 <DialogHeader>
                   <DialogTitle>Edit Experiment</DialogTitle>
@@ -129,7 +157,7 @@ const ExperimentDetailsPage: React.FC = () => {
                     Update your experiment details and status.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto">
                   <div className="grid gap-3">
                     <Label htmlFor="status">Status</Label>
                     <Select 
@@ -222,6 +250,41 @@ const ExperimentDetailsPage: React.FC = () => {
                       </Popover>
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="totalCost">Total Cost (optional)</Label>
+                      <Input 
+                        id="totalCost"
+                        type="number"
+                        step="0.01"
+                        value={totalCost} 
+                        onChange={(e) => setTotalCost(e.target.value)} 
+                        placeholder="Enter total cost" 
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="totalReturn">Total Return (optional)</Label>
+                      <Input 
+                        id="totalReturn"
+                        type="number"
+                        step="0.01"
+                        value={totalReturn} 
+                        onChange={(e) => setTotalReturn(e.target.value)} 
+                        placeholder="Enter total return" 
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>ROI</Label>
+                      <Input 
+                        readOnly
+                        value={roi ? `${roi}%` : "N/A"}
+                        className="bg-gray-50"
+                      />
+                    </div>
+                  </div>
                   
                   <div className="grid gap-3">
                     <Label htmlFor="notes">Notes</Label>
@@ -230,6 +293,15 @@ const ExperimentDetailsPage: React.FC = () => {
                       value={notes} 
                       onChange={(e) => setNotes(e.target.value)} 
                       placeholder="Add any details about the experiment"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="grid gap-3">
+                    <Label>Documentation & References</Label>
+                    <ObservationContentEditor 
+                      value={observationContent} 
+                      onChange={setObservationContent} 
                     />
                   </div>
                 </div>
@@ -290,6 +362,37 @@ const ExperimentDetailsPage: React.FC = () => {
         </div>
       </div>
       
+      {/* Financial metrics card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Financial Metrics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Total Cost</h3>
+              <p className="text-2xl font-semibold">
+                {experiment.totalCost !== undefined ? `$${experiment.totalCost.toFixed(2)}` : '—'}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Total Return</h3>
+              <p className="text-2xl font-semibold">
+                {experiment.totalReturn !== undefined ? `$${experiment.totalReturn.toFixed(2)}` : '—'}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">ROI</h3>
+              <p className="text-2xl font-semibold">
+                {experiment.totalCost && experiment.totalReturn ? 
+                  `${((experiment.totalReturn - experiment.totalCost) / experiment.totalCost * 100).toFixed(2)}%` : 
+                  '—'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle>Experiment Goal</CardTitle>
@@ -311,6 +414,62 @@ const ExperimentDetailsPage: React.FC = () => {
             <p>{experiment.notes}</p>
           ) : (
             <p className="text-muted-foreground">No notes added yet.</p>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Documentation & References Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Documentation & References</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {experiment.observationContent?.text || 
+           (experiment.observationContent?.imageUrls && experiment.observationContent.imageUrls.length > 0) ||
+           (experiment.observationContent?.externalUrls && experiment.observationContent.externalUrls.length > 0) ? (
+            <div className="space-y-4">
+              {experiment.observationContent.text && (
+                <div className="prose max-w-none">
+                  {experiment.observationContent.text}
+                </div>
+              )}
+              
+              {experiment.observationContent.imageUrls && experiment.observationContent.imageUrls.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
+                  {experiment.observationContent.imageUrls.map((url, i) => (
+                    <div key={i} className="relative aspect-video rounded-md overflow-hidden">
+                      <img 
+                        src={url} 
+                        alt={`Documentation image ${i+1}`}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {experiment.observationContent.externalUrls && experiment.observationContent.externalUrls.length > 0 && (
+                <div className="pt-4">
+                  <h3 className="text-sm font-medium mb-2">External Links</h3>
+                  <ul className="space-y-2">
+                    {experiment.observationContent.externalUrls.map((link, i) => (
+                      <li key={i}>
+                        <a 
+                          href={link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline break-all"
+                        >
+                          {link}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No documentation or references added yet.</p>
           )}
         </CardContent>
       </Card>
