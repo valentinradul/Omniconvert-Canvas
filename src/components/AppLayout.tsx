@@ -46,8 +46,8 @@ const AppLayout: React.FC = () => {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full">
-        <Sidebar variant="sidebar" collapsible="offcanvas">
-          <SidebarContent>
+        <Sidebar variant="sidebar" collapsible="offcanvas" className="bg-white">
+          <SidebarContent className="bg-white">
             <div className="py-6 px-4 border-b border-gray-200 bg-white">
               <Logo className="flex items-center" />
               <p className="text-xs text-gray-600 mt-1">Growth experimentation platform</p>
