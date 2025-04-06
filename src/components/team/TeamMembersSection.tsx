@@ -6,7 +6,7 @@ import { TeamMembersTable } from './TeamMembersTable';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { TeamMemberFormData, TeamMemberRole } from '@/types';
+import { TeamMemberFormData, TeamMemberRole, TeamMember } from '@/types';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 
 const TeamMembersSection: React.FC = () => {
@@ -14,17 +14,35 @@ const TeamMembersSection: React.FC = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<{ id: string; data: TeamMemberFormData } | null>(null);
 
-  const handleEditClick = (id: string, data: TeamMemberFormData) => {
-    // Make sure role is properly typed as TeamMemberRole
-    const formattedData: TeamMemberFormData = {
-      ...data,
-      role: data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase() as TeamMemberRole
+  const handleEditClick = (member: TeamMember) => {
+    // Convert TeamMember to TeamMemberFormData
+    const formData: TeamMemberFormData = {
+      name: member.name,
+      email: member.email,
+      role: member.role,
+      department: member.department,
+      title: member.title || '',
+      departmentVisibility: member.departmentVisibility,
+      visibleDepartments: member.visibleDepartments,
+      photoUrl: member.photoUrl
     };
-    setEditingMember({ id, data: formattedData });
+    
+    setEditingMember({ id: member.id, data: formData });
   };
 
   const handleRetryLoad = () => {
     refreshMembers();
+  };
+
+  const handleAddMember = async (values: TeamMemberFormData): Promise<void> => {
+    await addTeamMember(values);
+  };
+
+  const handleUpdateMember = async (values: Partial<TeamMemberFormData>): Promise<void> => {
+    if (editingMember) {
+      await updateTeamMember(editingMember.id, values);
+      setEditingMember(null);
+    }
   };
 
   return (
@@ -57,7 +75,7 @@ const TeamMembersSection: React.FC = () => {
         <AddTeamMemberDialog 
           isOpen={isAddDialogOpen}
           onOpenChange={setIsAddDialogOpen}
-          onSubmit={addTeamMember}
+          onSubmit={handleAddMember}
           isSubmitting={false}
         />
 
@@ -66,12 +84,7 @@ const TeamMembersSection: React.FC = () => {
             isOpen={!!editingMember}
             onOpenChange={(open) => !open && setEditingMember(null)}
             member={editingMember.data}
-            onSubmit={(data) => {
-              if (editingMember) {
-                updateTeamMember(editingMember.id, data);
-                setEditingMember(null);
-              }
-            }}
+            onSubmit={handleUpdateMember}
             isSubmitting={false}
           />
         )}
