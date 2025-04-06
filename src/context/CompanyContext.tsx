@@ -14,6 +14,7 @@ interface CompanyContextProps {
   createCompany: (name: string) => Promise<Company | null>;
   switchCompany: (companyId: string) => void;
   refreshCompanies: () => void;
+  updateCompanyName: (companyId: string, name: string) => Promise<Company | null>;
 }
 
 const CompanyContext = createContext<CompanyContextProps | undefined>(undefined);
@@ -29,7 +30,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isManager,
     createNewCompany,
     switchCompany,
-    refreshCompanies
+    refreshCompanies,
+    updateCompanyName
   } = useCompany();
 
   return (
@@ -42,7 +44,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       isManager,
       createCompany: createNewCompany,
       switchCompany,
-      refreshCompanies
+      refreshCompanies,
+      updateCompanyName
     }}>
       {children}
     </CompanyContext.Provider>

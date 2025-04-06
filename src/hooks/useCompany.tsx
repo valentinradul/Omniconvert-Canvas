@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -8,6 +9,7 @@ import {
   createCompany, 
   getUserCompanies,
   getCurrentUserCompanyRole,
+  updateCompany,
 } from '@/services/company/companyService';
 import { getCompanyMembers } from '@/services/company/membersService';
 
@@ -96,6 +98,30 @@ export function useCompany() {
     }
   };
 
+  const updateCompanyName = async (companyId: string, name: string) => {
+    try {
+      const updatedCompany = await updateCompany(companyId, { name });
+      if (updatedCompany) {
+        // Update companies list with the updated company
+        const updatedCompanies = companies.map(c => 
+          c.id === companyId ? { ...c, name } : c
+        );
+        setCompanies(updatedCompanies);
+        
+        // If this is the active company, update that too
+        if (activeCompany && activeCompany.id === companyId) {
+          setActiveCompany({ ...activeCompany, name });
+        }
+        
+        return updatedCompany;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error updating company:', error);
+      throw error;
+    }
+  };
+
   const switchCompany = (companyId: string) => {
     const company = companies.find(c => c.id === companyId);
     if (company) {
@@ -117,6 +143,7 @@ export function useCompany() {
     createNewCompany,
     switchCompany,
     refreshCompanies: fetchCompanies,
-    refreshMembers: fetchCompanyMembers
+    refreshMembers: fetchCompanyMembers,
+    updateCompanyName
   };
 }

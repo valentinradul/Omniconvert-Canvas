@@ -1,74 +1,109 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { Company } from './types';
 
-export async function createCompany(name: string): Promise<Company | null> {
+/**
+ * Creates a new company for the current user
+ */
+export const createCompany = async (name: string): Promise<Company | null> => {
   try {
-    // Get the current user
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) {
-      toast.error('You must be logged in to create a company');
-      return null;
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError) throw userError;
+
+    if (!userData.user) {
+      throw new Error('No authenticated user');
     }
-    
+
     const { data, error } = await supabase
       .from('companies')
-      .insert({ 
+      .insert({
         name,
-        created_by: userData.user.id 
+        created_by: userData.user.id
       })
-      .select()
+      .select('*')
       .single();
-      
-    if (error) {
-      console.error('Error creating company:', error);
-      toast.error('Failed to create company');
-      return null;
-    }
-    
+
+    if (error) throw error;
     return data as Company;
   } catch (error) {
-    console.error('Exception in createCompany:', error);
-    toast.error('An unexpected error occurred');
-    return null;
+    console.error('Error creating company:', error);
+    throw error;
   }
-}
+};
 
-export async function getUserCompanies(): Promise<Company[]> {
+/**
+ * Update a company
+ */
+export const updateCompany = async (companyId: string, updates: { name?: string }): Promise<Company | null> => {
   try {
     const { data, error } = await supabase
       .from('companies')
-      .select('*');
-      
-    if (error) {
-      console.error('Error fetching user companies:', error);
-      return [];
-    }
-    
-    return data as Company[];
-  } catch (error) {
-    console.error('Exception in getUserCompanies:', error);
-    return [];
-  }
-}
+      .update(updates)
+      .eq('id', companyId)
+      .select('*')
+      .single();
 
-export async function getCurrentUserCompanyRole(companyId: string): Promise<string | null> {
+    if (error) throw error;
+    return data as Company;
+  } catch (error) {
+    console.error('Error updating company:', error);
+    throw error;
+  }
+};
+
+/**
+ * Gets all companies for the current user
+ */
+export const getUserCompanies = async (): Promise<Company[]> => {
   try {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError) throw userError;
+
+    if (!userData.user) {
+      throw new Error('No authenticated user');
+    }
+
     const { data, error } = await supabase
       .from('company_members')
-      .select('role')
-      .eq('company_id', companyId)
-      .single();
-      
-    if (error || !data) {
-      console.error('Error fetching user role:', error);
-      return null;
-    }
-    
-    return data.role;
+      .select('company_id, companies:company_id(*)')
+      .eq('user_id', userData.user.id);
+
+    if (error) throw error;
+
+    // Extract the company data from the joined results
+    const companies = data.map(item => item.companies) as Company[];
+    return companies;
   } catch (error) {
-    console.error('Exception in getCurrentUserCompanyRole:', error);
+    console.error('Error getting user companies:', error);
+    throw error;
+  }
+};
+
+/**
+ * Gets the role of the current user in a company
+ */
+export const getCurrentUserCompanyRole = async (companyId: string): Promise<string | null> => {
+  try {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError) throw userError;
+
+    if (!userData.user) {
+      throw new Error('No authenticated user');
+    }
+
+    const { data, error } = await supabase.rpc(
+      'get_user_company_role',
+      {
+        user_id: userData.user.id,
+        company_id: companyId
+      }
+    );
+
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error('Error getting user company role:', error);
     return null;
   }
-}
+};
