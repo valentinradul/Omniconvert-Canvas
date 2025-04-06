@@ -1,62 +1,80 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { UserPlus } from 'lucide-react';
+import { TeamInviteDialogContent } from '@/components/team/TeamInviteDialogContent';
 import { useAuth } from '@/context/AuthContext';
-import { useTeamInvitations } from '@/hooks/useTeamInvitations';
-import OnboardingInviteForm from '@/components/onboarding/OnboardingInviteForm';
-import OnboardingInvitationSuccess from '@/components/onboarding/OnboardingInvitationSuccess';
+import { fetchUserTeam, addTeamMemberToTeam } from '@/services/teamService';
+import { TeamMemberFormData } from '@/types';
 import { toast } from 'sonner';
+import { CheckCircle } from 'lucide-react';
 
 const OnboardingTeamInvite: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { handleInvitations, isSubmitting, sentEmails } = useTeamInvitations();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sentEmails, setSentEmails] = useState<string[]>([]);
   const [showInviteForm, setShowInviteForm] = useState(true);
-
-  // Ensure the user is authenticated before processing invitations
-  useEffect(() => {
-    if (!user) {
-      console.log("No authenticated user found in onboarding");
-    }
-  }, [user]);
 
   const defaultMessage = `Hey, I've just started using ExperimentFlow and I think it would be great for our team to collaborate on growth experiments. Join me!`;
 
-  const onInvitationsSubmit = async (emails: string[], message: string) => {
+  const handleInvitations = async (emails: string[], message: string) => {
+    setIsSubmitting(true);
+    
     try {
-      console.log("Submitting invitations for emails:", emails);
-      console.log("With message:", message);
-      
-      // Ensure we have a valid user
       if (!user) {
-        toast.error("You must be logged in to invite team members");
-        return;
+        throw new Error('User not authenticated');
       }
       
-      const result = await handleInvitations(emails, message);
-      console.log("Invitation result:", result);
+      const teamData = await fetchUserTeam(user.id);
       
-      if (result && result.success) {
-        toast.success(`${result.sentEmails.length} invitation(s) sent successfully!`);
-        setShowInviteForm(false);
-      } else {
-        toast.error("Failed to send invitations. Please try again.");
+      if (!teamData || !teamData.id) {
+        throw new Error('Team not found');
+      }
+      
+      const teamId = teamData.id;
+      const successfulInvites: string[] = [];
+      
+      // Process invites one by one
+      for (const email of emails) {
+        try {
+          const memberData: TeamMemberFormData = {
+            email,
+            name: email.split('@')[0],
+            role: 'Team Member',
+            department: '',
+            customMessage: message
+          };
+          
+          await addTeamMemberToTeam(teamId, memberData);
+          successfulInvites.push(email);
+        } catch (err) {
+          console.error(`Failed to invite ${email}:`, err);
+          toast.error(`Failed to invite ${email}`);
+        }
+      }
+      
+      setSentEmails(successfulInvites);
+      setShowInviteForm(false);
+      
+      if (successfulInvites.length > 0) {
+        toast.success(`Successfully invited ${successfulInvites.length} team members`);
       }
     } catch (error) {
-      console.error('Failed to send invitations:', error);
-      toast.error(`Failed to send invitations: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error inviting team members:', error);
+      toast.error('Failed to invite team members');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSkip = () => {
-    toast.info("Skipped team invitations");
     navigate('/dashboard');
   };
 
   const handleContinue = () => {
-    toast.success("Proceeding to dashboard");
     navigate('/dashboard');
   };
 
@@ -79,17 +97,47 @@ const OnboardingTeamInvite: React.FC = () => {
           </CardHeader>
           <CardContent>
             {!showInviteForm && sentEmails.length > 0 ? (
-              <OnboardingInvitationSuccess 
-                sentEmails={sentEmails} 
-                onContinue={handleContinue}
-              />
+              <div className="space-y-4">
+                <div className="rounded-md bg-green-50 p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <CheckCircle className="h-5 w-5 text-green-400" />
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-green-800">Invitations sent successfully!</h3>
+                      <div className="mt-2 text-sm text-green-700">
+                        <ul className="list-disc pl-5 space-y-1">
+                          {sentEmails.map(email => (
+                            <li key={email}>{email}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Button 
+                  variant="default" 
+                  className="w-full" 
+                  onClick={handleContinue}
+                >
+                  Continue to Dashboard
+                </Button>
+              </div>
             ) : (
-              <OnboardingInviteForm
-                onInvitations={onInvitationsSubmit}
-                isSubmitting={isSubmitting}
-                defaultMessage={defaultMessage}
-                onSkip={handleSkip}
-              />
+              <>
+                <div className="text-center mb-6">
+                  <UserPlus className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+                  <p>
+                    Invite your team members to get the most out of ExperimentFlow.
+                  </p>
+                </div>
+                <TeamInviteDialogContent
+                  onSubmit={handleInvitations}
+                  isSubmitting={isSubmitting}
+                  defaultMessage={defaultMessage}
+                  onCancel={handleSkip}
+                />
+              </>
             )}
           </CardContent>
           {showInviteForm && (
