@@ -26,36 +26,37 @@ export const addTeamMemberToTeam = async (
     try {
       // Instead of using RPC, let's check if we can query with the email field
       // This is a simple way to check if the column exists
-      const { error } = await supabase
+      const testQuery = await supabase
         .from('team_members')
         .select('email')
         .limit(1);
       
       // If no error, email column exists
-      hasEmailColumn = !error;
+      hasEmailColumn = !testQuery.error;
     } catch {
       // If this fails, email column doesn't exist
       hasEmailColumn = false;
     }
     
     // If email column exists, check for existing member
+    let existingMember = null;
+    
     if (hasEmailColumn && data.email) {
-      // Using a simple query without return type specification
-      const checkResult = await supabase
+      // Execute query separately to avoid type inference issues
+      const { data: members, error: checkError } = await supabase
         .from('team_members')
         .select('id, team_id, user_id, role, department')
         .eq('team_id', teamId)
         .eq('email', data.email);
-
-      const checkError = checkResult.error;
-      const existingMember = checkResult.data?.[0] || null;
         
       if (checkError) {
         console.error('Error checking existing team member:', checkError);
         return { error: checkError.message };
       }
       
-      if (existingMember) {
+      // Check if we found an existing member
+      if (members && members.length > 0) {
+        existingMember = members[0];
         console.log(`Email ${data.email} is already a team member`);
         return {
           id: existingMember.id,
@@ -83,20 +84,19 @@ export const addTeamMemberToTeam = async (
         custom_message: data.customMessage || null 
       } : requiredFields;
     
-    // Create a new team member without complex type annotations
-    const insertResult = await supabase
+    // Create a new team member with simplified approach
+    const result = await supabase
       .from('team_members')
       .insert(insertData)
       .select('id, team_id, user_id, role, department');
       
-    const memberError = insertResult.error;
-    const newMember = insertResult.data;
-      
-    if (memberError) {
-      console.error('Error adding team member:', memberError);
-      return { error: memberError.message };
+    if (result.error) {
+      console.error('Error adding team member:', result.error);
+      return { error: result.error.message };
     }
 
+    const newMember = result.data;
+    
     if (!newMember || newMember.length === 0) {
       return { error: 'No data returned after adding team member' };
     }
