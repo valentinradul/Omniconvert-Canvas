@@ -48,7 +48,11 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     if (project) {
-      await onEditProject(project.id, values);
+      // Ensure name is always provided as required by ProjectFormValues
+      await onEditProject(project.id, {
+        name: values.name, // Always present due to form validation
+        description: values.description,
+      });
       onOpenChange(false);
     }
   };

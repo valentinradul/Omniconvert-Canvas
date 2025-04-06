@@ -36,7 +36,11 @@ const AddProjectDialog: React.FC<AddProjectDialogProps> = ({
   });
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    await onAddProject(values);
+    // Ensure name is always provided as required by ProjectFormValues
+    await onAddProject({
+      name: values.name, // Always present due to form validation
+      description: values.description,
+    });
     form.reset();
     onOpenChange(false);
   };
