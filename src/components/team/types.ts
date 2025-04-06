@@ -16,3 +16,8 @@ export interface TeamMemberOperations {
   deleteTeamMember: (id: string) => Promise<boolean>;
   refreshMembers: () => Promise<void>;
 }
+
+export interface TeamMembersData {
+  teamId: string;
+  members: any[];
+}

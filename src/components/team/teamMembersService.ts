@@ -1,13 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { TeamMemberFormData } from './types';
+import type { TeamMemberFormData, TeamMembersData } from './types';
 import type { TeamMember } from './TeamMembersTable';
 
 /**
  * Fetches team members for a specific user's team
  */
-export async function fetchTeamMembersData(userId: string | undefined) {
+export async function fetchTeamMembersData(userId: string | undefined): Promise<TeamMembersData | null> {
   try {
     if (!userId) {
       console.log('No user ID provided, cannot fetch team members');
@@ -30,7 +30,7 @@ export async function fetchTeamMembersData(userId: string | undefined) {
     
     if (!teamData) {
       console.log('No team found for this user');
-      return [];
+      return null;
     }
     
     console.log('Found team with ID:', teamData.id);

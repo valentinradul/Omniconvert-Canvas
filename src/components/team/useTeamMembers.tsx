@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -10,8 +9,6 @@ import {
   updateExistingTeamMember, 
   deleteExistingTeamMember 
 } from './teamMembersService';
-
-export type { TeamMemberFormData } from './types';
 
 export function useTeamMembers(): TeamMemberOperations {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -41,9 +38,7 @@ export function useTeamMembers(): TeamMemberOperations {
         return;
       }
       
-      if (result.teamId) {
-        setTeamId(result.teamId);
-      }
+      setTeamId(result.teamId);
 
       if (result.members && result.members.length > 0) {
         // Convert the data to match our TeamMember structure
