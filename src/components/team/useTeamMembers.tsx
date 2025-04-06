@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,16 +17,19 @@ export function useTeamMembers() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  const fetchTeamMembers = async () => {
+  const fetchTeamMembers = useCallback(async () => {
     try {
       setIsLoading(true);
+      console.log('Fetching team members...');
       
       if (!user) {
-        // If no user is logged in, don't attempt to fetch team members
+        console.log('No user found, skipping team members fetch');
         setMembers([]);
         setIsLoading(false);
         return;
       }
+      
+      console.log('User ID for team fetch:', user.id);
       
       // First, get the user's team
       const { data: teamData, error: teamError } = await supabase
@@ -44,13 +47,14 @@ export function useTeamMembers() {
       
       if (!teamData) {
         console.log('No team found for this user');
+        setMembers([]);
         setIsLoading(false);
         return;
       }
       
       console.log('Found team with ID:', teamData.id);
       
-      // Using any() to bypass TypeScript errors since the types don't include the department field yet
+      // Fetch team members with department info
       const { data, error: membersError } = await supabase
         .from('team_members')
         .select('id, role, user_id, team_id, department')
@@ -65,19 +69,21 @@ export function useTeamMembers() {
 
       console.log('Team members data:', data);
 
-      if (data) {
+      if (data && data.length > 0) {
         // Convert the data to match our TeamMember structure
         const formattedMembers = data.map((member: any) => ({
           id: member.id,
           name: member.user_id || 'Invited User',  // Using user_id as placeholder
           email: `user-${member.id}@example.com`,  // Using a placeholder email
-          role: member.role,
-          department: member.department
+          role: member.role || 'member',
+          department: member.department || ''
         }));
         
         setMembers(formattedMembers);
+        console.log('Formatted members:', formattedMembers);
       } else {
         // If no data returned but also no error, set empty array
+        console.log('No team members found, setting empty array');
         setMembers([]);
       }
     } catch (error) {
@@ -86,17 +92,18 @@ export function useTeamMembers() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     if (user) {
       fetchTeamMembers();
     }
-  }, [user]);
+  }, [user, fetchTeamMembers]);
 
   const addTeamMember = async (data: TeamMemberFormData) => {
     try {
       const { name, email, role, department } = data;
+      console.log('Adding team member with data:', data);
       
       // First, get the user's team
       const { data: teamData, error: teamError } = await supabase
@@ -116,8 +123,9 @@ export function useTeamMembers() {
         return null;
       }
       
+      console.log('Adding member to team:', teamData.id);
+      
       // Create a new team member with the columns that exist in the table
-      // Using any() to bypass TypeScript errors since the types don't include the department field yet
       const { data: newMember, error: memberError } = await supabase
         .from('team_members')
         .insert({
@@ -136,16 +144,16 @@ export function useTeamMembers() {
       }
 
       if (newMember) {
+        console.log('New member added successfully:', newMember);
         const newTeamMember: TeamMember = {
           id: newMember.id,
           name: name, // Using provided name even though it's not in the DB
           email: email, // Using provided email even though it's not in the DB
-          role: newMember.role,
-          department: newMember.department
+          role: newMember.role || 'member',
+          department: newMember.department || ''
         };
         
-        setMembers([...members, newTeamMember]);
-        toast.success('Team member invited successfully!');
+        setMembers(prevMembers => [...prevMembers, newTeamMember]);
         return newMember;
       }
       
@@ -159,7 +167,8 @@ export function useTeamMembers() {
 
   const updateTeamMember = async (id: string, data: Partial<TeamMemberFormData>) => {
     try {
-      // Using any() to bypass TypeScript errors since the types don't include the department field yet
+      console.log(`Updating team member ${id} with data:`, data);
+      
       const { data: updatedMember, error } = await supabase
         .from('team_members')
         .update({
@@ -176,8 +185,10 @@ export function useTeamMembers() {
         return null;
       }
 
+      console.log('Member updated successfully:', updatedMember);
+
       // Update the members state with the updated member
-      setMembers(members.map(member => {
+      setMembers(prevMembers => prevMembers.map(member => {
         if (member.id === id) {
           return {
             ...member,
@@ -190,7 +201,6 @@ export function useTeamMembers() {
         return member;
       }));
 
-      toast.success('Team member updated successfully!');
       return updatedMember;
     } catch (error) {
       console.error('Error updating team member:', error);
@@ -201,6 +211,8 @@ export function useTeamMembers() {
 
   const deleteTeamMember = async (id: string) => {
     try {
+      console.log(`Deleting team member ${id}`);
+      
       const { error } = await supabase
         .from('team_members')
         .delete()
@@ -212,9 +224,10 @@ export function useTeamMembers() {
         return false;
       }
 
+      console.log('Member deleted successfully');
+      
       // Update the members state by filtering out the deleted member
-      setMembers(members.filter(member => member.id !== id));
-      toast.success('Team member deleted successfully!');
+      setMembers(prevMembers => prevMembers.filter(member => member.id !== id));
       return true;
     } catch (error) {
       console.error('Error deleting team member:', error);

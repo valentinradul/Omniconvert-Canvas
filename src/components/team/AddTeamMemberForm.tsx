@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,8 +44,14 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
     },
   });
 
+  // Log departments when they change
+  useEffect(() => {
+    console.log('Available departments:', departments);
+  }, [departments]);
+
   const handleSubmit = async (values: FormValues) => {
     try {
+      console.log('Form values before submission:', values);
       await onSubmit(values);
       form.reset();
     } catch (error) {
@@ -97,7 +103,7 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="z-50">
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="member">Member</SelectItem>
@@ -123,7 +129,7 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
                     <SelectValue placeholder="Select a department" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="z-[100]">
+                <SelectContent className="z-50">
                   <SelectItem value="">No Department</SelectItem>
                   {departments && departments.length > 0 ? (
                     departments.map(dept => (

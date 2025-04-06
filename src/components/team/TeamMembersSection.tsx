@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTeamMembers } from './useTeamMembers';
 import { TeamMembersTable, TeamMember } from './TeamMembersTable';
@@ -9,17 +9,26 @@ import { toast } from 'sonner';
 import type { TeamMemberFormData } from './useTeamMembers';
 
 const TeamMembersSection: React.FC = () => {
-  const { members, isLoading, addTeamMember, updateTeamMember, deleteTeamMember } = useTeamMembers();
+  const { members, isLoading, addTeamMember, updateTeamMember, deleteTeamMember, refreshMembers } = useTeamMembers();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
+  // Ensure we refresh members on component mount
+  useEffect(() => {
+    console.log('TeamMembersSection mounted, refreshing members');
+    refreshMembers();
+  }, [refreshMembers]);
+
   const handleAddTeamMember = async (values: TeamMemberFormData) => {
     try {
+      console.log('Adding team member with values:', values);
       const result = await addTeamMember(values);
       if (result) {
         setIsAddDialogOpen(false);
         toast.success(`Team member ${values.name} invited successfully!`);
+        // Refresh members list after adding
+        await refreshMembers();
       } else {
         toast.error('Failed to add team member');
       }
@@ -37,6 +46,8 @@ const TeamMembersSection: React.FC = () => {
           setIsEditDialogOpen(false);
           setSelectedMember(null);
           toast.success('Team member updated successfully!');
+          // Refresh members list after updating
+          await refreshMembers();
         } else {
           toast.error('Failed to update team member');
         }
@@ -52,6 +63,8 @@ const TeamMembersSection: React.FC = () => {
       const result = await deleteTeamMember(id);
       if (result) {
         toast.success('Team member deleted successfully!');
+        // Refresh members list after deleting
+        await refreshMembers();
       } else {
         toast.error('Failed to delete team member');
       }
