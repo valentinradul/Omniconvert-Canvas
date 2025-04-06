@@ -123,6 +123,7 @@ export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   return Math.round((totalScore / maxPossibleScore) * 100);
 };
 
+// Updated TeamMemberRole to include "member", "manager", "owner" and remove "Team Member"
 export type TeamMemberRole = 'owner' | 'manager' | 'member';
 
 export const ALL_TEAM_MEMBER_ROLES: TeamMemberRole[] = ['owner', 'manager', 'member'];

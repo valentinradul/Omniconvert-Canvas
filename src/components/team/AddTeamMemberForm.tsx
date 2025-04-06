@@ -15,7 +15,7 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
   const defaultValues: Partial<TeamMemberFormData> = {
     name: '',
     email: '',
-    role: 'Team Member',
+    role: 'member',
     department: '',
     title: '',
     departmentVisibility: 'Own Department',

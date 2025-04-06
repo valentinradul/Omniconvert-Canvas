@@ -18,7 +18,7 @@ import { VisibleDepartmentsField } from './form-fields/VisibleDepartmentsField';
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
-  role: z.enum(["Admin", "Manager", "Team Member"] as const),
+  role: z.enum(["owner", "manager", "member"] as const),
   department: z.string().optional(),
   title: z.string().min(2, { message: "Title must be at least 2 characters" }).optional(),
   departmentVisibility: z.enum(["Own Department", "Selected Departments", "All Departments"] as const).default("Own Department"),
@@ -48,7 +48,7 @@ export const TeamMemberForm: React.FC<TeamMemberFormProps> = ({
     defaultValues: {
       name: defaultValues.name || '',
       email: defaultValues.email || '',
-      role: defaultValues.role || 'Team Member',
+      role: defaultValues.role || 'member',
       department: defaultValues.department || '',
       title: defaultValues.title || '',
       departmentVisibility: defaultValues.departmentVisibility || 'Own Department',

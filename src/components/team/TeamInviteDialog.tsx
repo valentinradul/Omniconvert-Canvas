@@ -53,7 +53,7 @@ export const TeamInviteDialog: React.FC<TeamInviteDialogProps> = ({
           const memberData: TeamMemberFormData = {
             email,
             name: email.split('@')[0],
-            role: 'Team Member',
+            role: 'member',
             department: '',
             customMessage: message
           };

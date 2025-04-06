@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,10 +39,12 @@ const OnboardingTeamInvite: React.FC = () => {
       // Process invites one by one
       for (const email of emails) {
         try {
+          const memberName = email.split('@')[0];
+          const memberEmail = email;
           const memberData: TeamMemberFormData = {
-            email,
-            name: email.split('@')[0],
-            role: 'Team Member',
+            name: memberName,
+            email: memberEmail,
+            role: 'member',
             department: '',
             customMessage: message
           };
