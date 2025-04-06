@@ -1,14 +1,15 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { 
   Company, 
   CompanyMember,
+} from '@/services/company/types';
+import { 
   createCompany, 
   getUserCompanies,
   getCurrentUserCompanyRole,
-  getCompanyMembers
-} from '@/services/companyService';
+} from '@/services/company/companyService';
+import { getCompanyMembers } from '@/services/company/membersService';
 
 export function useCompany() {
   const [companies, setCompanies] = useState<Company[]>([]);

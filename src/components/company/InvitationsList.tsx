@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CompanyInvitation } from '@/services/companyService';
+import { CompanyInvitation } from '@/services/company/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';

@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Company } from '@/services/companyService';
+import { Company } from '@/services/company/types';
 import { useCompany } from '@/hooks/useCompany';
 import { useAuth } from '@/context/AuthContext';
 

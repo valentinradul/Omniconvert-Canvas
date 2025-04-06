@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -9,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useCompanyContext } from '@/context/CompanyContext';
-import { inviteTeamMember } from '@/services/companyService';
+import { inviteTeamMember } from '@/services/company/invitationsService';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email" }),

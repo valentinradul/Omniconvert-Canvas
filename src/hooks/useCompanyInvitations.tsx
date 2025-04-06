@@ -3,12 +3,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { 
   CompanyInvitation,
+} from '@/services/company/types';
+import {
   getUserInvitations,
   getCompanyInvitations,
   inviteTeamMember,
   acceptInvitation,
   rejectInvitation
-} from '@/services/companyService';
+} from '@/services/company/invitationsService';
 import { toast } from 'sonner';
 
 export function useCompanyInvitations(companyId?: string) {
