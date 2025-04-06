@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { TeamMemberFormData } from '@/types';
-import { fetchUserTeam, addTeamMemberToTeam } from '@/services/teamService';
+import { fetchUserTeam } from '@/services/teamService';
+import { addTeamMemberToTeam } from '@/services/teamMemberService';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useTeamInvitations = () => {

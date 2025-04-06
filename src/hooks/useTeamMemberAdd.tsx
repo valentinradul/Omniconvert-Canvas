@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { TeamMember, TeamMemberFormData, DepartmentVisibility, TeamMemberRole } from '@/types';
-import { fetchUserTeam, addTeamMemberToTeam, TeamMemberData, TeamMemberError } from '@/services/teamService';
+import { fetchUserTeam } from '@/services/teamService';
+import { addTeamMemberToTeam } from '@/services/teamMemberService';
+import { TeamMemberData, TeamMemberError } from '@/services/types/teamTypes';
 
 // Helper type guard to check if the result is a TeamMemberError
 function isTeamMemberError(result: TeamMemberData | TeamMemberError): result is TeamMemberError {

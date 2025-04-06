@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { TeamMember } from '@/types';
+import { fetchUserTeam } from '@/services/teamService';
 import { 
-  fetchUserTeam,
-  fetchTeamMembersForTeam,
-  mapToTeamMembers
-} from '@/services/teamService';
+  fetchTeamMembersForTeam, 
+  mapToTeamMembers 
+} from '@/services/teamMemberService';
 
 export function useTeamMembersFetch() {
   const [members, setMembers] = useState<TeamMember[]>([]);

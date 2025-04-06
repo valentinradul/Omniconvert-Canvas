@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { TeamMemberFormData, TeamMember } from '@/types';
-import { updateExistingTeamMember } from '@/services/teamService';
+import { updateExistingTeamMember } from '@/services/teamMemberUpdateService';
 
 export function useTeamMemberUpdate(
   members: TeamMember[],

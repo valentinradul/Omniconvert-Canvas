@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { TeamMember } from '@/types';
-import { deleteTeamMemberById } from '@/services/teamService';
+import { deleteTeamMemberById } from '@/services/teamMemberUpdateService';
 
 export function useTeamMemberDelete(
   members: TeamMember[],
