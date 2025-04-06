@@ -12,6 +12,7 @@ import { useCompanyContext } from '@/context/CompanyContext';
 import { useCompanyInvitations } from '@/hooks/useCompanyInvitations';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email" }),
@@ -21,7 +22,7 @@ const formSchema = z.object({
 });
 
 export default function InviteTeamPage() {
-  const { activeCompany } = useCompanyContext();
+  const { activeCompany, refreshCompanies } = useCompanyContext();
   const { sendInvitation } = useCompanyInvitations(activeCompany?.id);
   const [sentEmails, setSentEmails] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -34,16 +35,30 @@ export default function InviteTeamPage() {
     }
   });
 
+  // Try to refresh companies on component mount to ensure we have the latest data
+  React.useEffect(() => {
+    refreshCompanies();
+  }, []);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!activeCompany?.id) {
       console.error('No active company found');
+      toast.error("No active company selected");
       return;
     }
     
-    const result = await sendInvitation(values.email, values.role);
-    if (result) {
-      setSentEmails([...sentEmails, values.email]);
-      form.reset();
+    try {
+      const result = await sendInvitation(values.email, values.role);
+      if (result) {
+        setSentEmails([...sentEmails, values.email]);
+        form.reset();
+        toast.success(`Invitation sent to ${values.email}`);
+      } else {
+        toast.error("Failed to send invitation");
+      }
+    } catch (error) {
+      console.error("Error sending invitation:", error);
+      toast.error("Failed to send invitation");
     }
   };
 

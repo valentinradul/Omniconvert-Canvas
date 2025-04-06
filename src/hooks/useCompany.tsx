@@ -36,6 +36,7 @@ export function useCompany() {
   // When active company changes, fetch role and members
   useEffect(() => {
     if (activeCompany && user) {
+      console.log("Active company changed, fetching role and members:", activeCompany.id);
       fetchUserRole();
       fetchCompanyMembers();
     } else {
@@ -47,11 +48,14 @@ export function useCompany() {
   const fetchCompanies = async () => {
     setIsLoading(true);
     try {
+      console.log("Fetching companies for user");
       const companiesData = await getUserCompanies();
+      console.log("Fetched companies:", companiesData);
       setCompanies(companiesData);
       
-      // Set first company as active if there's at least one
+      // Set first company as active if there's at least one and no active company is set
       if (companiesData.length > 0 && !activeCompany) {
+        console.log("Setting first company as active:", companiesData[0].name);
         setActiveCompany(companiesData[0]);
       }
     } catch (error) {
@@ -65,7 +69,9 @@ export function useCompany() {
     if (!activeCompany) return;
     
     try {
+      console.log("Fetching user role for company:", activeCompany.id);
       const role = await getCurrentUserCompanyRole(activeCompany.id);
+      console.log("User role:", role);
       setUserRole(role);
     } catch (error) {
       console.error('Error fetching user role:', error);
@@ -76,7 +82,9 @@ export function useCompany() {
     if (!activeCompany) return;
     
     try {
+      console.log("Fetching company members for company:", activeCompany.id);
       const membersData = await getCompanyMembers(activeCompany.id);
+      console.log("Company members:", membersData);
       setMembers(membersData);
     } catch (error) {
       console.error('Error fetching company members:', error);
@@ -85,8 +93,10 @@ export function useCompany() {
 
   const createNewCompany = async (name: string) => {
     try {
+      console.log("Creating new company:", name);
       const newCompany = await createCompany(name);
       if (newCompany) {
+        console.log("New company created:", newCompany);
         setCompanies([...companies, newCompany]);
         setActiveCompany(newCompany);
         return newCompany;
@@ -100,8 +110,10 @@ export function useCompany() {
 
   const updateCompanyName = async (companyId: string, name: string) => {
     try {
+      console.log("Updating company name:", companyId, name);
       const updatedCompany = await updateCompany(companyId, { name });
       if (updatedCompany) {
+        console.log("Company updated:", updatedCompany);
         // Update companies list with the updated company
         const updatedCompanies = companies.map(c => 
           c.id === companyId ? { ...c, name } : c
@@ -110,6 +122,7 @@ export function useCompany() {
         
         // If this is the active company, update that too
         if (activeCompany && activeCompany.id === companyId) {
+          console.log("Updating active company name");
           setActiveCompany({ ...activeCompany, name });
         }
         
@@ -123,9 +136,13 @@ export function useCompany() {
   };
 
   const switchCompany = (companyId: string) => {
+    console.log("Switching to company:", companyId);
     const company = companies.find(c => c.id === companyId);
     if (company) {
+      console.log("Found company to switch to:", company.name);
       setActiveCompany(company);
+    } else {
+      console.error("Company not found:", companyId);
     }
   };
 

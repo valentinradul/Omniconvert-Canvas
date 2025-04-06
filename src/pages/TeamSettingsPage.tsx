@@ -20,6 +20,9 @@ const TeamSettingsPage = () => {
   useEffect(() => {
     if (activeCompany) {
       setCompanyName(activeCompany.name);
+      console.log("Active company loaded:", activeCompany);
+    } else {
+      console.log("No active company available");
     }
   }, [activeCompany]);
 
@@ -29,11 +32,13 @@ const TeamSettingsPage = () => {
     
     try {
       setIsSubmitting(true);
+      console.log("Updating company name to:", companyName);
       await updateCompanyName(activeCompany.id, companyName);
       toast.success("Company settings updated", {
         description: "Your company settings have been updated successfully.",
       });
     } catch (error) {
+      console.error("Failed to update company:", error);
       toast.error("Failed to update company settings", {
         description: error instanceof Error ? error.message : "An unexpected error occurred",
       });

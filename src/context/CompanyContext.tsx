@@ -38,6 +38,15 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Admin is the same as owner in this context
   const isAdmin = isOwner;
 
+  // Debug active company when it changes
+  useEffect(() => {
+    if (activeCompany) {
+      console.log("CompanyContext: Active company:", activeCompany.name, "User role:", userRole);
+    } else {
+      console.log("CompanyContext: No active company");
+    }
+  }, [activeCompany, userRole]);
+
   return (
     <CompanyContext.Provider value={{
       companies,

@@ -157,7 +157,7 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
               Cancel
             </Button>
           )}
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || !activeCompany}>
             {isSubmitting ? 'Sending...' : 'Send Invitation'}
           </Button>
         </DialogFooter>
