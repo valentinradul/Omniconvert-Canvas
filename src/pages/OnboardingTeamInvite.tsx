@@ -17,7 +17,7 @@ const OnboardingTeamInvite: React.FC = () => {
   const onInvitationsSubmit = async (emails: string[], message: string) => {
     try {
       const result = await handleInvitations(emails, message);
-      if (result.success) {
+      if (result && result.success) {
         setShowInviteForm(false);
       }
     } catch (error) {

@@ -1,140 +1,119 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, X, Mail } from 'lucide-react';
-import { toast } from 'sonner';
+import { DialogFooter } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { Plus, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface TeamInviteDialogContentProps {
   onSubmit: (emails: string[], message: string) => Promise<void>;
-  isSubmitting: boolean;
+  onCancel?: () => void;
+  isSubmitting?: boolean;
   defaultMessage?: string;
-  onCancel: () => void;
 }
 
 export const TeamInviteDialogContent: React.FC<TeamInviteDialogContentProps> = ({
   onSubmit,
-  isSubmitting,
-  defaultMessage,
-  onCancel
+  onCancel,
+  isSubmitting = false,
+  defaultMessage = ''
 }) => {
-  const [emails, setEmails] = useState<string[]>([]);
-  const [currentEmail, setCurrentEmail] = useState('');
-  const [message, setMessage] = useState(
-    defaultMessage || 
-    `Hey, I'm using ExperimentFlow to manage growth experiments. Join me to collaborate!`
-  );
+  const [emails, setEmails] = useState<string[]>(['']);
+  const [message, setMessage] = useState<string>(defaultMessage);
+
+  const handleEmailChange = (index: number, value: string) => {
+    const newEmails = [...emails];
+    newEmails[index] = value.trim();
+    setEmails(newEmails);
+  };
 
   const handleAddEmail = () => {
-    if (!currentEmail) return;
-    
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentEmail)) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-    
-    if (emails.includes(currentEmail)) {
-      toast.error('This email is already in the list');
-      return;
-    }
-    
-    setEmails([...emails, currentEmail]);
-    setCurrentEmail('');
+    setEmails([...emails, '']);
   };
 
-  const handleRemoveEmail = (emailToRemove: string) => {
-    setEmails(emails.filter(email => email !== emailToRemove));
+  const handleRemoveEmail = (index: number) => {
+    const newEmails = [...emails];
+    newEmails.splice(index, 1);
+    setEmails(newEmails);
   };
 
-  const handleSubmit = async () => {
-    if (emails.length === 0) {
-      toast.error('Please add at least one email to invite');
-      return;
-    }
-
-    try {
-      await onSubmit(emails, message);
-    } catch (error) {
-      console.error('Error in invitation submission:', error);
-      // Error handling is done at the parent component
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const validEmails = emails.filter(email => email && validateEmail(email));
+    if (validEmails.length > 0) {
+      onSubmit(validEmails, message);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddEmail();
-    }
+  const validateEmail = (email: string): boolean => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
   };
 
   return (
-    <div>
-      <div className="space-y-4 py-4">
-        <div className="flex gap-2">
-          <Input
-            placeholder="colleague@company.com"
-            value={currentEmail}
-            onChange={(e) => setCurrentEmail(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-          <Button variant="secondary" onClick={handleAddEmail}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Email addresses</label>
+          {emails.map((email, index) => (
+            <div key={index} className="flex items-center space-x-2 mb-2">
+              <Input
+                type="email"
+                placeholder="colleague@example.com"
+                value={email}
+                onChange={(e) => handleEmailChange(index, e.target.value)}
+                required={index === 0}
+                className="flex-1"
+              />
+              {emails.length > 1 && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => handleRemoveEmail(index)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-1"
+            onClick={handleAddEmail}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add another
           </Button>
         </div>
-        
-        {emails.length > 0 && (
-          <div className="bg-gray-50 p-3 rounded-md">
-            <Label className="text-sm text-gray-500 mb-2 block">
-              Emails to invite ({emails.length}):
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {emails.map(email => (
-                <div 
-                  key={email} 
-                  className="bg-white rounded-full px-3 py-1 text-sm flex items-center border"
-                >
-                  <Mail className="h-3 w-3 mr-2 text-blue-500" />
-                  {email}
-                  <button 
-                    onClick={() => handleRemoveEmail(email)}
-                    className="ml-2 text-gray-500 hover:text-gray-700"
-                    type="button"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        <div>
-          <Label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-            Customize your invitation message:
-          </Label>
+
+        <Separator />
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">Add a personal message</label>
           <Textarea
-            id="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            placeholder="Write a message to include in the invitation email..."
             rows={4}
           />
         </div>
       </div>
-      
-      <div className="flex justify-between sm:justify-end space-x-2 mt-4">
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
+
+      <DialogFooter className="pt-4 space-x-2">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        <Button type="submit" disabled={isSubmitting || !emails[0]}>
+          {isSubmitting ? 'Sending...' : 'Send Invitations'}
         </Button>
-        <Button 
-          onClick={handleSubmit}
-          disabled={isSubmitting || emails.length === 0}
-        >
-          {isSubmitting ? 'Sending...' : 'Send Invites'}
-        </Button>
-      </div>
-    </div>
+      </DialogFooter>
+    </form>
   );
 };
