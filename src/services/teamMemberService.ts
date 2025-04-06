@@ -1,7 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } from '@/types';
 import { toast } from 'sonner';
-import { TeamMemberData, TeamMemberError, MemberQueryResult } from './types/teamTypes';
+import { TeamMemberData, TeamMemberError } from './types/teamTypes';
 import { sendTeamInvitationEmail } from './teamInvitationService';
 
 /**
@@ -39,12 +40,15 @@ export const addTeamMemberToTeam = async (
     
     // If email column exists, check for existing member
     if (hasEmailColumn && data.email) {
-      const { data: existingMember, error: checkError } = await supabase
+      // Using a simple query without return type specification
+      const checkResult = await supabase
         .from('team_members')
         .select('id, team_id, user_id, role, department')
         .eq('team_id', teamId)
-        .eq('email', data.email)
-        .maybeSingle();
+        .eq('email', data.email);
+
+      const checkError = checkResult.error;
+      const existingMember = checkResult.data?.[0] || null;
         
       if (checkError) {
         console.error('Error checking existing team member:', checkError);
@@ -80,10 +84,13 @@ export const addTeamMemberToTeam = async (
       } : requiredFields;
     
     // Create a new team member without complex type annotations
-    const { data: newMember, error: memberError } = await supabase
+    const insertResult = await supabase
       .from('team_members')
       .insert(insertData)
       .select('id, team_id, user_id, role, department');
+      
+    const memberError = insertResult.error;
+    const newMember = insertResult.data;
       
     if (memberError) {
       console.error('Error adding team member:', memberError);
