@@ -12,7 +12,8 @@ import { TeamMemberFormData } from './useTeamMembers';
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
-  role: z.string().min(2, { message: "Role must be at least 2 characters" })
+  role: z.string().min(2, { message: "Role must be at least 2 characters" }),
+  department: z.string().optional()
 });
 
 interface AddTeamMemberFormProps {
@@ -25,7 +26,8 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
     defaultValues: {
       name: '',
       email: '',
-      role: 'Member'
+      role: 'Member',
+      department: ''
     },
   });
 
@@ -77,6 +79,24 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
                 <Input 
                   placeholder="Enter role (e.g., Admin, Member)" 
                   {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="department"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Department</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Enter department (e.g., Marketing, Engineering)" 
+                  {...field} 
+                  value={field.value || ''}
                 />
               </FormControl>
               <FormMessage />

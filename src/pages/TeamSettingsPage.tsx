@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import TeamMembersSection from '@/components/team/TeamMembersSection';
 import DepartmentsSection from '@/components/team/DepartmentsSection';
+import PersonalProjects from '@/components/projects/PersonalProjects';
 
 const TeamSettingsPage = () => {
   const handleTeamNameChange = (e: React.FormEvent) => {
@@ -53,6 +54,8 @@ const TeamSettingsPage = () => {
         <TeamMembersSection />
         
         <DepartmentsSection />
+        
+        <PersonalProjects />
       </div>
     </div>
   );

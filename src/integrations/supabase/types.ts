@@ -33,9 +33,51 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_personal: boolean
+          name: string
+          team_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_personal?: boolean
+          name: string
+          team_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_personal?: boolean
+          name?: string
+          team_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           created_at: string
+          department: string | null
           id: string
           role: string
           team_id: string
@@ -43,6 +85,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          department?: string | null
           id?: string
           role: string
           team_id: string
@@ -50,6 +93,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          department?: string | null
           id?: string
           role?: string
           team_id?: string
