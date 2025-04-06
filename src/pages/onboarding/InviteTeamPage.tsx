@@ -35,6 +35,11 @@ export default function InviteTeamPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!activeCompany?.id) {
+      console.error('No active company found');
+      return;
+    }
+    
     const result = await sendInvitation(values.email, values.role);
     if (result) {
       setSentEmails([...sentEmails, values.email]);
@@ -47,7 +52,23 @@ export default function InviteTeamPage() {
   };
 
   if (!activeCompany) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">No Company Selected</CardTitle>
+            <CardDescription>
+              Please create or select a company before inviting team members.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="flex justify-center">
+            <Button onClick={() => navigate('/onboarding/create-company')}>
+              Create Company
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
   }
 
   return (

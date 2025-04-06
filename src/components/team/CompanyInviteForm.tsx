@@ -63,10 +63,13 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
         return;
       }
       
+      // Map 'owner' role to 'manager' when sending to API as the backend expects
+      const roleToSend = values.role === 'owner' ? 'manager' : values.role;
+      
       // Use sendInvitation from useCompanyInvitations hook
       const result = await sendInvitation(
         values.email,
-        values.role === 'owner' ? 'manager' : values.role // Convert 'owner' to 'manager' for API call
+        roleToSend 
       );
       
       console.log('CompanyInviteForm: Invitation result:', result);

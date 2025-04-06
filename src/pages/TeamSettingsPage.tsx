@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,12 @@ import TeamMembersSection from '@/components/team/TeamMembersSection';
 import DepartmentsSection from '@/components/team/DepartmentsSection';
 import PersonalProjects from '@/components/projects/PersonalProjects';
 import { useCompanyContext } from '@/context/CompanyContext';
-import { useEffect } from 'react';
 import { Building } from 'lucide-react';
 
 const TeamSettingsPage = () => {
   const [activeTab, setActiveTab] = useState('company');
   const [companyName, setCompanyName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { activeCompany, updateCompanyName } = useCompanyContext();
   
   useEffect(() => {
@@ -28,6 +28,7 @@ const TeamSettingsPage = () => {
     if (!activeCompany || !companyName.trim()) return;
     
     try {
+      setIsSubmitting(true);
       await updateCompanyName(activeCompany.id, companyName);
       toast.success("Company settings updated", {
         description: "Your company settings have been updated successfully.",
@@ -36,6 +37,8 @@ const TeamSettingsPage = () => {
       toast.error("Failed to update company settings", {
         description: error instanceof Error ? error.message : "An unexpected error occurred",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -83,7 +86,12 @@ const TeamSettingsPage = () => {
                     </div>
                   </div>
                 </div>
-                <Button type="submit" disabled={!activeCompany || !companyName.trim()}>Save Changes</Button>
+                <Button 
+                  type="submit" 
+                  disabled={!activeCompany || !companyName.trim() || isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </Button>
               </form>
             </CardContent>
           </Card>
