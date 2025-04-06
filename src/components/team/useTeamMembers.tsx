@@ -1,95 +1,157 @@
-import { useState, useEffect, useCallback } from 'react';
+
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import type { TeamMember } from './TeamMembersTable';
-import type { TeamMemberFormData, TeamMemberOperations } from './types';
-import { 
-  fetchTeamMembersData, 
-  addNewTeamMember, 
-  updateExistingTeamMember, 
-  deleteExistingTeamMember 
-} from './teamMembersService';
 
-export function useTeamMembers(): TeamMemberOperations {
+export type TeamMemberFormData = {
+  name: string;
+  email: string;
+  role: string;
+  department?: string;
+};
+
+export function useTeamMembers() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const [teamId, setTeamId] = useState<string | null>(null);
 
-  const fetchTeamMembers = useCallback(async () => {
+  const fetchTeamMembers = async () => {
     try {
       setIsLoading(true);
-      console.log('Fetching team members...');
       
       if (!user) {
-        console.log('No user found, skipping team members fetch');
+        // If no user is logged in, don't attempt to fetch team members
         setMembers([]);
         setIsLoading(false);
         return;
       }
       
-      const result = await fetchTeamMembersData(user.id);
-      
-      if (!result) {
+      // First, get the user's team
+      const { data: teamData, error: teamError } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('created_by', user.id)
+        .single();
+        
+      if (teamError) {
+        console.error('Error fetching team:', teamError);
         toast.error('Failed to load team members');
-        setMembers([]);
-        setTeamId(null);
         setIsLoading(false);
         return;
       }
       
-      setTeamId(result.teamId);
+      if (!teamData) {
+        console.log('No team found for this user');
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('Found team with ID:', teamData.id);
+      
+      // Using any() to bypass TypeScript errors since the types don't include the department field yet
+      const { data, error: membersError } = await supabase
+        .from('team_members')
+        .select('id, role, user_id, team_id, department')
+        .eq('team_id', teamData.id);
+        
+      if (membersError) {
+        console.error('Error fetching team members:', membersError);
+        toast.error('Failed to load team members');
+        setIsLoading(false);
+        return;
+      }
 
-      if (result.members && result.members.length > 0) {
+      console.log('Team members data:', data);
+
+      if (data) {
         // Convert the data to match our TeamMember structure
-        const formattedMembers = result.members.map((member: any) => ({
+        const formattedMembers = data.map((member: any) => ({
           id: member.id,
           name: member.user_id || 'Invited User',  // Using user_id as placeholder
           email: `user-${member.id}@example.com`,  // Using a placeholder email
-          role: member.role || 'member',
-          department: member.department || ''
+          role: member.role,
+          department: member.department
         }));
         
         setMembers(formattedMembers);
-        console.log('Formatted members:', formattedMembers);
       } else {
         // If no data returned but also no error, set empty array
-        console.log('No team members found, setting empty array');
         setMembers([]);
       }
     } catch (error) {
       console.error('Unexpected error fetching team members:', error);
       toast.error('Failed to load team members');
-      setMembers([]);
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  };
 
   useEffect(() => {
     if (user) {
       fetchTeamMembers();
     }
-  }, [user, fetchTeamMembers]);
+  }, [user]);
 
   const addTeamMember = async (data: TeamMemberFormData) => {
     try {
-      if (!teamId) {
-        console.error('No team ID available');
-        toast.error('Failed to add team member: No team available');
+      const { name, email, role, department } = data;
+      
+      // First, get the user's team
+      const { data: teamData, error: teamError } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('created_by', user?.id)
+        .single();
+        
+      if (teamError) {
+        console.error('Error fetching team:', teamError);
+        toast.error('Failed to add team member');
         return null;
       }
       
-      const newMember = await addNewTeamMember(teamId, data);
+      if (!teamData) {
+        toast.error('No team found');
+        return null;
+      }
       
+      // Create a new team member with the columns that exist in the table
+      // Using any() to bypass TypeScript errors since the types don't include the department field yet
+      const { data: newMember, error: memberError } = await supabase
+        .from('team_members')
+        .insert({
+          team_id: teamData.id,
+          user_id: null, // Placeholder as we're inviting a user
+          role: role,
+          department: department
+        })
+        .select()
+        .single();
+        
+      if (memberError) {
+        console.error('Error adding team member:', memberError);
+        toast.error('Failed to add team member');
+        return null;
+      }
+
       if (newMember) {
-        setMembers(prevMembers => [...prevMembers, newMember]);
+        const newTeamMember: TeamMember = {
+          id: newMember.id,
+          name: name, // Using provided name even though it's not in the DB
+          email: email, // Using provided email even though it's not in the DB
+          role: newMember.role,
+          department: newMember.department
+        };
+        
+        setMembers([...members, newTeamMember]);
+        toast.success('Team member invited successfully!');
         return newMember;
       }
       
       return null;
     } catch (error) {
-      console.error('Error in addTeamMember:', error);
+      console.error('Error adding team member:', error);
       toast.error('Failed to add team member');
       return null;
     }
@@ -97,27 +159,41 @@ export function useTeamMembers(): TeamMemberOperations {
 
   const updateTeamMember = async (id: string, data: Partial<TeamMemberFormData>) => {
     try {
-      const updatedMember = await updateExistingTeamMember(id, data);
+      // Using any() to bypass TypeScript errors since the types don't include the department field yet
+      const { data: updatedMember, error } = await supabase
+        .from('team_members')
+        .update({
+          role: data.role,
+          department: data.department
+        })
+        .eq('id', id)
+        .select()
+        .single();
       
-      if (updatedMember) {
-        // Update the members state with the updated member
-        setMembers(prevMembers => prevMembers.map(member => {
-          if (member.id === id) {
-            return {
-              ...member,
-              role: data.role || member.role,
-              department: data.department || member.department,
-              name: data.name || member.name,
-              email: data.email || member.email
-            };
-          }
-          return member;
-        }));
+      if (error) {
+        console.error('Error updating team member:', error);
+        toast.error('Failed to update team member');
+        return null;
       }
 
+      // Update the members state with the updated member
+      setMembers(members.map(member => {
+        if (member.id === id) {
+          return {
+            ...member,
+            role: data.role || member.role,
+            department: data.department || member.department,
+            name: data.name || member.name,
+            email: data.email || member.email
+          };
+        }
+        return member;
+      }));
+
+      toast.success('Team member updated successfully!');
       return updatedMember;
     } catch (error) {
-      console.error('Error in updateTeamMember:', error);
+      console.error('Error updating team member:', error);
       toast.error('Failed to update team member');
       return null;
     }
@@ -125,16 +201,23 @@ export function useTeamMembers(): TeamMemberOperations {
 
   const deleteTeamMember = async (id: string) => {
     try {
-      const success = await deleteExistingTeamMember(id);
-      
-      if (success) {
-        // Update the members state by filtering out the deleted member
-        setMembers(prevMembers => prevMembers.filter(member => member.id !== id));
+      const { error } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting team member:', error);
+        toast.error('Failed to delete team member');
+        return false;
       }
-      
-      return success;
+
+      // Update the members state by filtering out the deleted member
+      setMembers(members.filter(member => member.id !== id));
+      toast.success('Team member deleted successfully!');
+      return true;
     } catch (error) {
-      console.error('Error in deleteTeamMember:', error);
+      console.error('Error deleting team member:', error);
       toast.error('Failed to delete team member');
       return false;
     }

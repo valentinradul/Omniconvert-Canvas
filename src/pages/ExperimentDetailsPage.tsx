@@ -185,7 +185,7 @@ const ExperimentDetailsPage: React.FC = () => {
                             {startDate ? format(startDate, "PPP") : "No start date"}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 z-50" align="start">
+                        <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
                             selected={startDate || undefined}
@@ -211,7 +211,7 @@ const ExperimentDetailsPage: React.FC = () => {
                             {endDate ? format(endDate, "PPP") : "No end date"}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 z-50" align="start">
+                        <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
                             selected={endDate || undefined}

@@ -1,68 +1,39 @@
 
-import React, { useEffect } from 'react';
-import { z } from 'zod';
+import React from 'react';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useApp } from '@/context/AppContext';
-import { toast } from 'sonner';
+import { TeamMemberFormData } from './useTeamMembers';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
   role: z.string().min(2, { message: "Role must be at least 2 characters" }),
-  department: z.string().optional(),
+  department: z.string().optional()
 });
 
-type FormValues = z.infer<typeof formSchema>;
-
 interface AddTeamMemberFormProps {
-  onSubmit: (values: FormValues) => Promise<void>;
+  onSubmit: (values: TeamMemberFormData) => Promise<void>;
 }
 
 export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }) => {
-  const { departments } = useApp();
-  
-  const form = useForm<FormValues>({
+  const form = useForm<TeamMemberFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      role: "member",
-      department: "",
+      name: '',
+      email: '',
+      role: 'Member',
+      department: ''
     },
   });
 
-  // Log departments when they change
-  useEffect(() => {
-    console.log('Available departments:', departments);
-  }, [departments]);
-
-  const handleSubmit = async (values: FormValues) => {
-    try {
-      console.log('Form values before submission:', values);
-      await onSubmit(values);
-      form.reset();
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      toast.error("Failed to add team member");
-    }
-  };
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -70,7 +41,10 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter name" {...field} />
+                <Input 
+                  placeholder="Enter name" 
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -84,7 +58,11 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="Enter email" type="email" {...field} />
+                <Input 
+                  placeholder="Enter email" 
+                  type="email" 
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -97,18 +75,12 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
           render={({ field }) => (
             <FormItem>
               <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="z-50">
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="member">Member</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <Input 
+                  placeholder="Enter role (e.g., Admin, Member)" 
+                  {...field} 
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -120,35 +92,20 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
           render={({ field }) => (
             <FormItem>
               <FormLabel>Department</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                value={field.value || ""}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a department" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="z-50">
-                  <SelectItem value="">No Department</SelectItem>
-                  {departments && departments.length > 0 ? (
-                    departments.map(dept => (
-                      <SelectItem key={dept.id} value={dept.name}>
-                        {dept.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="" disabled>No departments available</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <Input 
+                  placeholder="Enter department (e.g., Marketing, Engineering)" 
+                  {...field} 
+                  value={field.value || ''}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         
-        <DialogFooter>
-          <Button type="submit">Add Team Member</Button>
+        <DialogFooter className="pt-4">
+          <Button type="submit">Add Member</Button>
         </DialogFooter>
       </form>
     </Form>
