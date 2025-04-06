@@ -68,6 +68,8 @@ export function useTeamMembers() {
   useEffect(() => {
     if (user) {
       fetchTeamMembers();
+    } else {
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -87,11 +89,16 @@ export function useTeamMembers() {
         return null;
       }
       
+      console.log("Adding team member to team:", teamData.id, "with data:", data);
+      
       // Create a new team member
       const addedMember = await addTeamMemberToTeam(teamData.id, data);
       if (!addedMember) {
+        toast.error('Failed to add team member');
         return null;
       }
+
+      console.log("Added member:", addedMember);
 
       // Add the new member to the state
       const newTeamMember: TeamMember = {
@@ -106,8 +113,8 @@ export function useTeamMembers() {
         photoUrl: data.photoUrl || ''
       };
       
-      setMembers([...members, newTeamMember]);
-      toast.success('Team member invited successfully!');
+      setMembers(prevMembers => [...prevMembers, newTeamMember]);
+      toast.success('Team member added successfully!');
       return addedMember;
     } catch (error) {
       console.error('Error adding team member:', error);

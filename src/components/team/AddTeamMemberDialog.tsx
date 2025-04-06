@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,16 @@ export const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
   onSubmit,
   isSubmitting = false
 }) => {
+  const handleSubmit = async (values: TeamMemberFormData) => {
+    try {
+      await onSubmit(values);
+      // Dialog will be closed by the parent component on successful submission
+    } catch (error) {
+      console.error("Error in AddTeamMemberDialog handleSubmit:", error);
+      // Keep dialog open on error
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
@@ -30,7 +39,7 @@ export const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
             Invite a new member to join your team.
           </DialogDescription>
         </DialogHeader>
-        <AddTeamMemberForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
+        <AddTeamMemberForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
       </DialogContent>
     </Dialog>
   );
