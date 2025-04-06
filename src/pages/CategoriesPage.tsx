@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -16,7 +16,7 @@ import { Category } from '@/types';
 const CategoriesPage: React.FC = () => {
   const { categories, addCategory, editCategory, deleteCategory } = useApp();
   const { user } = useAuth();
-  const { members } = useTeamMembers();
+  const { isAdmin, isLoading } = useUserRole();
   
   const [newCategory, setNewCategory] = useState('');
   const [editingCategory, setEditingCategory] = useState<{ oldValue: Category; newValue: Category } | null>(null);
@@ -24,9 +24,18 @@ const CategoriesPage: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   
-  // Check if the current user is an admin
-  const currentMember = members.find(member => member.email === user?.email);
-  const isAdmin = currentMember?.role === 'Admin';
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[70vh]">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>Loading...</CardTitle>
+            <CardDescription>Please wait while we check your permissions.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
   
   if (!isAdmin) {
     return (
