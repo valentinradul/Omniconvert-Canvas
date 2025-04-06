@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./context/AuthContext";
 import { AppProvider } from "./context/AppContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 import AppLayout from "./components/AppLayout";
 
 import Index from "./pages/Index";
@@ -53,9 +54,14 @@ function App() {
                     <Route path="/create-experiment/:hypothesisId" element={<CreateExperimentPage />} />
                     <Route path="/experiments" element={<ExperimentsPage />} />
                     <Route path="/experiment-details/:experimentId" element={<ExperimentDetailsPage />} />
-                    <Route path="/departments" element={<DepartmentsPage />} />
-                    <Route path="/categories" element={<CategoriesPage />} />
-                    <Route path="/team-settings" element={<TeamSettingsPage />} />
+                    
+                    {/* Admin-only routes */}
+                    <Route element={<AdminRoute />}>
+                      <Route path="/departments" element={<DepartmentsPage />} />
+                      <Route path="/categories" element={<CategoriesPage />} />
+                      <Route path="/team-settings" element={<TeamSettingsPage />} />
+                    </Route>
+                    
                     <Route path="/account-settings" element={<AccountSettingsPage />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
