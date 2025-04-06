@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -99,28 +100,27 @@ export function useTeamMembers() {
       
       // Create a new team member
       const result = await addTeamMemberToTeam(teamData.id, data);
-      if (!result) {
-        toast.error('Failed to add team member');
-        return null;
-      }
       
-      // Type guard to check if result is an error
-      if ('error' in result) {
+      // Check if the result is an error object
+      if (result && 'error' in result) {
         console.error("Error adding team member:", result.error);
         toast.error(`Failed to add team member: ${result.error}`);
         return null;
       }
-
-      const addedMember = result;
-      console.log("Added member:", addedMember);
+      
+      // If we got here, result should be a valid team member
+      if (!result) {
+        toast.error('Failed to add team member');
+        return null;
+      }
 
       // Add the new member to the state
       const newTeamMember: TeamMember = {
-        id: addedMember.id,
+        id: result.id,
         name: data.name,
         email: data.email, 
-        role: addedMember.role as TeamMemberRole,
-        department: addedMember.department,
+        role: result.role as TeamMemberRole,
+        department: result.department || '',
         title: data.title || '',
         departmentVisibility: (data.departmentVisibility || 'Own Department') as DepartmentVisibility,
         visibleDepartments: data.visibleDepartments || [],
@@ -129,7 +129,7 @@ export function useTeamMembers() {
       
       setMembers(prevMembers => [...prevMembers, newTeamMember]);
       toast.success('Team member added successfully!');
-      return addedMember;
+      return result;
     } catch (error) {
       console.error('Error adding team member:', error);
       toast.error(`Failed to add team member: ${error instanceof Error ? error.message : 'Unknown error'}`);

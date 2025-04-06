@@ -71,10 +71,14 @@ export const useTeamInvitations = () => {
             customMessage: message
           };
           
-          const addedMember = await addTeamMemberToTeam(teamId, memberData);
-          if (addedMember) {
+          const result = await addTeamMemberToTeam(teamId, memberData);
+          
+          // Check if the result is an error object
+          if (result && !('error' in result)) {
             console.log(`Successfully invited: ${email}`);
             successfulInvites.push(email);
+          } else {
+            console.error(`Failed to invite ${email}: ${result && 'error' in result ? result.error : 'Unknown error'}`);
           }
         } catch (err) {
           console.error(`Failed to invite ${email}:`, err);

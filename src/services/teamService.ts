@@ -1,16 +1,20 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } from '@/types';
 import { toast } from 'sonner';
 
-type TeamMemberResult = {
+// Define better types for our results to avoid recursive type issues
+type TeamMemberData = {
   id: string;
   team_id: string;
   user_id: string | null;
   role: string;
   department: string | null;
-  email?: string;
-  custom_message?: string;
-} | null;
+  email?: string | null;
+  custom_message?: string | null;
+};
+
+type TeamMemberResult = TeamMemberData | null;
 
 type TeamMemberError = {
   error: string;
@@ -136,7 +140,7 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
       }
     }
 
-    return newMember[0] as TeamMemberResult;
+    return newMember[0] as TeamMemberData;
   } catch (error) {
     console.error('Exception when adding team member:', error);
     return { error: error instanceof Error ? error.message : 'Unknown error adding team member' };
