@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { TeamMember, TeamMemberFormData, DepartmentVisibility, TeamMemberRole } from '@/types';
-import { fetchUserTeam, addTeamMemberToTeam } from '@/services/teamService';
+import { fetchUserTeam, addTeamMemberToTeam, TeamMemberData, TeamMemberError } from '@/services/teamService';
 
 // Helper type guard to check if the result is a TeamMemberError
-function isTeamMemberError(result: any): result is { error: string } {
+function isTeamMemberError(result: TeamMemberData | TeamMemberError): result is TeamMemberError {
   return result && typeof result === 'object' && 'error' in result;
 }
 

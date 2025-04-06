@@ -90,35 +90,59 @@ export const addTeamMemberToTeam = async (
     }
 
     // First, check if this email is already a team member
-    const { data: existingMember, error: checkError } = await supabase
-      .from('team_members')
-      .select('id, team_id, user_id, role, department, email, custom_message')
-      .eq('team_id', teamId)
-      .eq('email', data.email)
-      .maybeSingle();
-      
-    if (checkError) {
-      console.error('Error checking existing team member:', checkError);
-      return { error: checkError.message };
+    // Check if team_members table has an email column
+    const { data: tableInfo } = await supabase.rpc('get_column_info', {
+      table_name: 'team_members'
+    });
+
+    let emailExists = false;
+    if (tableInfo && Array.isArray(tableInfo)) {
+      emailExists = tableInfo.some(col => col.column_name === 'email');
     }
     
-    if (existingMember) {
-      console.log(`Email ${data.email} is already a team member`);
-      return existingMember as TeamMemberData;
+    // If email column doesn't exist, we need to handle it differently
+    if (!emailExists) {
+      console.warn("Email column doesn't exist in team_members table");
+      // Just proceed with creating the member without checking for existing email
+    } else {
+      // Check for existing member by email
+      const { data: existingMember, error: checkError } = await supabase
+        .from('team_members')
+        .select('id, team_id, user_id, role, department')
+        .eq('team_id', teamId)
+        .eq('email', data.email)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error('Error checking existing team member:', checkError);
+        return { error: checkError.message };
+      }
+      
+      if (existingMember) {
+        console.log(`Email ${data.email} is already a team member`);
+        return existingMember as TeamMemberData;
+      }
+    }
+    
+    // Prepare the data to insert based on what columns actually exist
+    const insertData: Record<string, any> = {
+      team_id: teamId,
+      user_id: null, // We're inviting a user that may not exist in the system yet
+      role: data.role || 'Team Member',
+      department: data.department || null, // Ensure department is not undefined
+    };
+    
+    // Only add email and custom_message if they exist in the table
+    if (emailExists) {
+      insertData.email = data.email || null;
+      insertData.custom_message = data.customMessage || null;
     }
     
     // Create a new team member with the columns that exist in the table
     const { data: newMember, error: memberError } = await supabase
       .from('team_members')
-      .insert({
-        team_id: teamId,
-        user_id: null, // We're inviting a user that may not exist in the system yet
-        role: data.role || 'Team Member',
-        department: data.department || null, // Ensure department is not undefined
-        email: data.email || null, // Store the email for invitation
-        custom_message: data.customMessage || null // Store the custom invitation message
-      })
-      .select('id, team_id, user_id, role, department, email, custom_message');
+      .insert(insertData)
+      .select('id, team_id, user_id, role, department');
       
     if (memberError) {
       console.error('Error adding team member:', memberError);
@@ -142,7 +166,21 @@ export const addTeamMemberToTeam = async (
       }
     }
 
-    return newMember[0] as TeamMemberData;
+    // Create a TeamMemberData object with the returned data
+    const memberData: TeamMemberData = {
+      id: newMember[0].id,
+      team_id: newMember[0].team_id,
+      user_id: newMember[0].user_id,
+      role: newMember[0].role,
+      department: newMember[0].department,
+      // Add email and custom_message only if they exist in the DB
+      ...(emailExists ? { 
+        email: data.email || null,
+        custom_message: data.customMessage || null 
+      } : {})
+    };
+
+    return memberData;
   } catch (error) {
     console.error('Exception when adding team member:', error);
     return { error: error instanceof Error ? error.message : 'Unknown error adding team member' };
