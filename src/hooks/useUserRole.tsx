@@ -6,10 +6,6 @@ import { toast } from '@/components/ui/use-toast';
 
 type Role = 'admin' | 'manager' | 'member';
 
-interface UserRoleRecord {
-  role: Role;
-}
-
 export function useUserRole() {
   const { user } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);

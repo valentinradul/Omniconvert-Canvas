@@ -15,14 +15,16 @@ const AccessDeniedCard: React.FC = () => {
       <Card className="max-w-md w-full">
         <CardHeader>
           <CardTitle>Access Denied</CardTitle>
-          <CardDescription>You do not have permission to manage categories.</CardDescription>
+          <CardDescription>You do not have permission to access this area.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="mb-4">Only administrators can manage the categories. Please contact your team administrator for assistance.</p>
+          <p className="mb-4">Only administrators can access this section. Please contact your team administrator for assistance.</p>
           <div className="bg-muted p-4 rounded-lg text-sm">
             <p className="font-semibold mb-2">Debug Information:</p>
             <p>User: {user?.email || 'Not logged in'}</p>
+            <p>User ID: {user?.id || 'Unknown'}</p>
             <p>Current Roles: {roles?.length ? roles.join(', ') : 'No roles assigned'}</p>
+            <p>Admin Required: Yes</p>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
