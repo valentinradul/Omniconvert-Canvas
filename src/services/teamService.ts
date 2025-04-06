@@ -110,13 +110,24 @@ export const addTeamMemberToTeam = async (
     
     // If email column exists, check for existing member
     if (hasEmailColumn && data.email) {
-      // Use explicit type annotation for the query result
+      // Define the return type explicitly to avoid TypeScript's excessive type inference
+      interface MemberQueryResult {
+        id: string;
+        team_id: string;
+        user_id: string | null;
+        role: string;
+        department: string | null;
+      }
+      
       const { data: existingMember, error: checkError } = await supabase
         .from('team_members')
-        .select<'id, team_id, user_id, role, department'>('id, team_id, user_id, role, department')
+        .select('id, team_id, user_id, role, department')
         .eq('team_id', teamId)
         .eq('email', data.email)
-        .maybeSingle();
+        .maybeSingle() as { 
+          data: MemberQueryResult | null; 
+          error: any 
+        };
         
       if (checkError) {
         console.error('Error checking existing team member:', checkError);
@@ -152,10 +163,22 @@ export const addTeamMemberToTeam = async (
       } : requiredFields;
     
     // Create a new team member
+    // Define the return type explicitly to avoid TypeScript's excessive type inference
+    interface MemberInsertResult {
+      id: string;
+      team_id: string;
+      user_id: string | null;
+      role: string;
+      department: string | null;
+    }
+    
     const { data: newMember, error: memberError } = await supabase
       .from('team_members')
       .insert(insertData)
-      .select<'id, team_id, user_id, role, department'>('id, team_id, user_id, role, department');
+      .select('id, team_id, user_id, role, department') as {
+        data: MemberInsertResult[] | null;
+        error: any;
+      };
       
     if (memberError) {
       console.error('Error adding team member:', memberError);
