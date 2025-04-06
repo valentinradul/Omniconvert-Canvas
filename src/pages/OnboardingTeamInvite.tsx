@@ -1,55 +1,26 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { UserPlus } from 'lucide-react';
+import { TeamInviteDialogContent } from '@/components/team/TeamInviteDialogContent';
 import { useAuth } from '@/context/AuthContext';
-import { PlusCircle, X, Mail, CheckCircle } from 'lucide-react';
-import { addTeamMemberToTeam, fetchUserTeam } from '@/services/teamService';
+import { fetchUserTeam, addTeamMemberToTeam } from '@/services/teamService';
 import { TeamMemberFormData } from '@/types';
+import { toast } from 'sonner';
+import { CheckCircle } from 'lucide-react';
 
 const OnboardingTeamInvite: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [emails, setEmails] = useState<string[]>([]);
-  const [currentEmail, setCurrentEmail] = useState('');
-  const [message, setMessage] = useState(
-    `Hey, I've just started using ExperimentFlow and I think it would be great for our team to collaborate on growth experiments. Join me!`
-  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sentEmails, setSentEmails] = useState<string[]>([]);
+  const [showInviteForm, setShowInviteForm] = useState(true);
 
-  const handleAddEmail = () => {
-    if (!currentEmail) return;
-    
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentEmail)) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-    
-    if (emails.includes(currentEmail)) {
-      toast.error('This email is already in the list');
-      return;
-    }
-    
-    setEmails([...emails, currentEmail]);
-    setCurrentEmail('');
-  };
+  const defaultMessage = `Hey, I've just started using ExperimentFlow and I think it would be great for our team to collaborate on growth experiments. Join me!`;
 
-  const handleRemoveEmail = (emailToRemove: string) => {
-    setEmails(emails.filter(email => email !== emailToRemove));
-  };
-
-  const handleInviteTeam = async () => {
-    if (emails.length === 0) {
-      navigate('/dashboard');
-      return;
-    }
-
+  const handleInvitations = async (emails: string[], message: string) => {
     setIsSubmitting(true);
     
     try {
@@ -86,6 +57,7 @@ const OnboardingTeamInvite: React.FC = () => {
       }
       
       setSentEmails(successfulInvites);
+      setShowInviteForm(false);
       
       if (successfulInvites.length > 0) {
         toast.success(`Successfully invited ${successfulInvites.length} team members`);
@@ -99,6 +71,10 @@ const OnboardingTeamInvite: React.FC = () => {
   };
 
   const handleSkip = () => {
+    navigate('/dashboard');
+  };
+
+  const handleContinue = () => {
     navigate('/dashboard');
   };
 
@@ -120,7 +96,7 @@ const OnboardingTeamInvite: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {sentEmails.length > 0 ? (
+            {!showInviteForm && sentEmails.length > 0 ? (
               <div className="space-y-4">
                 <div className="rounded-md bg-green-50 p-4">
                   <div className="flex">
@@ -142,75 +118,32 @@ const OnboardingTeamInvite: React.FC = () => {
                 <Button 
                   variant="default" 
                   className="w-full" 
-                  onClick={() => navigate('/dashboard')}
+                  onClick={handleContinue}
                 >
                   Continue to Dashboard
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="colleague@company.com"
-                    value={currentEmail}
-                    onChange={(e) => setCurrentEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddEmail()}
-                  />
-                  <Button variant="secondary" onClick={handleAddEmail}>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Add
-                  </Button>
+              <>
+                <div className="text-center mb-6">
+                  <UserPlus className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+                  <p>
+                    Invite your team members to get the most out of ExperimentFlow.
+                  </p>
                 </div>
-                
-                {emails.length > 0 && (
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <Label className="text-sm text-gray-500 mb-2 block">
-                      Emails to invite ({emails.length}):
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {emails.map(email => (
-                        <div 
-                          key={email} 
-                          className="bg-white rounded-full px-3 py-1 text-sm flex items-center border"
-                        >
-                          <Mail className="h-3 w-3 mr-2 text-blue-500" />
-                          {email}
-                          <button 
-                            onClick={() => handleRemoveEmail(email)}
-                            className="ml-2 text-gray-500 hover:text-gray-700"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <div>
-                  <Label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                    Personalize your invitation:
-                  </Label>
-                  <Textarea
-                    id="message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    rows={4}
-                  />
-                </div>
-              </div>
+                <TeamInviteDialogContent
+                  onSubmit={handleInvitations}
+                  isSubmitting={isSubmitting}
+                  defaultMessage={defaultMessage}
+                  onCancel={handleSkip}
+                />
+              </>
             )}
           </CardContent>
-          {sentEmails.length === 0 && (
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={handleSkip}>
-                Skip for now
-              </Button>
-              <Button 
-                onClick={handleInviteTeam} 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Sending...' : emails.length > 0 ? 'Send Invites' : 'Continue'}
+          {showInviteForm && (
+            <CardFooter className="justify-center">
+              <Button variant="link" onClick={handleSkip}>
+                Skip for now and explore on your own
               </Button>
             </CardFooter>
           )}
