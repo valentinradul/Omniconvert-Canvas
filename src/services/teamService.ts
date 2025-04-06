@@ -10,17 +10,49 @@ export const fetchUserTeam = async (userId: string) => {
   console.log("Fetching team for user ID:", userId);
   
   try {
-    const { data: teamData, error: teamError } = await supabase
+    // First try to get a team where the user is the creator
+    let { data: teamData, error: teamError } = await supabase
       .from('teams')
-      .select('id')
+      .select('id, name')
       .eq('created_by', userId)
-      .single();
+      .maybeSingle();
       
     if (teamError) {
       console.error('Error fetching team:', teamError);
       return null;
     }
     
+    // If no team is found where the user is the creator, try to find a team where the user is a member
+    if (!teamData) {
+      const { data: memberTeamData, error: memberTeamError } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+        
+      if (memberTeamError) {
+        console.error('Error fetching team membership:', memberTeamError);
+        return null;
+      }
+      
+      if (memberTeamData && memberTeamData.team_id) {
+        // Get the team details
+        const { data: foundTeam, error: foundTeamError } = await supabase
+          .from('teams')
+          .select('id, name')
+          .eq('id', memberTeamData.team_id)
+          .single();
+          
+        if (foundTeamError) {
+          console.error('Error fetching team details:', foundTeamError);
+          return null;
+        }
+        
+        teamData = foundTeam;
+      }
+    }
+    
+    console.log("Team data found:", teamData);
     return teamData;
   } catch (error) {
     console.error('Error in fetchUserTeam:', error);
@@ -79,9 +111,30 @@ export const mapToTeamMembers = (data: any[]): TeamMember[] => {
  * Adds a new team member
  */
 export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormData) => {
-  console.log("Adding team member with data:", data);
+  console.log("Adding team member with data:", data, "to team:", teamId);
   
   try {
+    if (!teamId) {
+      throw new Error('Team ID is required');
+    }
+
+    // First, check if this email is already a team member
+    const { data: existingMember, error: checkError } = await supabase
+      .from('team_members')
+      .select('id, email')
+      .eq('team_id', teamId)
+      .eq('email', data.email)
+      .maybeSingle();
+      
+    if (checkError) {
+      console.error('Error checking existing team member:', checkError);
+    }
+    
+    if (existingMember) {
+      console.log(`Email ${data.email} is already a team member`);
+      return existingMember;
+    }
+    
     // Create a new team member with the columns that exist in the table
     const { data: newMember, error: memberError } = await supabase
       .from('team_members')
@@ -104,10 +157,12 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
       throw new Error('No data returned after adding team member');
     }
 
+    console.log("Member added successfully:", newMember);
+    
     // Send invitation email if the email is provided
     if (data.email) {
       try {
-        await sendTeamInvitationEmail(data.email, data.name, data.customMessage || undefined);
+        await sendTeamInvitationEmail(data.email, data.name || data.email.split('@')[0], data.customMessage || undefined);
       } catch (emailError) {
         console.error('Error sending invitation email:', emailError);
         // Don't throw here, we still created the team member successfully
@@ -115,7 +170,6 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
       }
     }
 
-    console.log("Member added successfully:", newMember);
     return newMember[0];
   } catch (error) {
     console.error('Exception when adding team member:', error);

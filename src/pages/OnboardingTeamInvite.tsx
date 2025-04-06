@@ -1,35 +1,62 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
 import { useTeamInvitations } from '@/hooks/useTeamInvitations';
 import OnboardingInviteForm from '@/components/onboarding/OnboardingInviteForm';
 import OnboardingInvitationSuccess from '@/components/onboarding/OnboardingInvitationSuccess';
+import { toast } from 'sonner';
 
 const OnboardingTeamInvite: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { handleInvitations, isSubmitting, sentEmails } = useTeamInvitations();
   const [showInviteForm, setShowInviteForm] = useState(true);
+
+  // Ensure the user is authenticated before processing invitations
+  useEffect(() => {
+    if (!user) {
+      console.log("No authenticated user found in onboarding");
+    }
+  }, [user]);
 
   const defaultMessage = `Hey, I've just started using ExperimentFlow and I think it would be great for our team to collaborate on growth experiments. Join me!`;
 
   const onInvitationsSubmit = async (emails: string[], message: string) => {
     try {
+      console.log("Submitting invitations for emails:", emails);
+      console.log("With message:", message);
+      
+      // Ensure we have a valid user
+      if (!user) {
+        toast.error("You must be logged in to invite team members");
+        return;
+      }
+      
       const result = await handleInvitations(emails, message);
+      console.log("Invitation result:", result);
+      
       if (result && result.success) {
+        toast.success(`${result.sentEmails.length} invitation(s) sent successfully!`);
         setShowInviteForm(false);
+      } else {
+        toast.error("Failed to send invitations. Please try again.");
       }
     } catch (error) {
       console.error('Failed to send invitations:', error);
+      toast.error(`Failed to send invitations: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const handleSkip = () => {
+    toast.info("Skipped team invitations");
     navigate('/dashboard');
   };
 
   const handleContinue = () => {
+    toast.success("Proceeding to dashboard");
     navigate('/dashboard');
   };
 
