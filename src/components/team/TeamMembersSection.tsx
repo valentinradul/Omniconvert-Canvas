@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTeamMembers } from './useTeamMembers';
-import { TeamMembersTable, TeamMember } from './TeamMembersTable';
+import { TeamMembersTable } from './TeamMembersTable';
 import { AddTeamMemberDialog } from './AddTeamMemberDialog';
 import { EditTeamMemberDialog } from './EditTeamMemberDialog';
-import type { TeamMemberFormData } from './useTeamMembers';
+import { TeamMember, TeamMemberFormData } from '@/types';
 
 const TeamMembersSection: React.FC = () => {
   const { members, isLoading, addTeamMember, updateTeamMember, deleteTeamMember } = useTeamMembers();

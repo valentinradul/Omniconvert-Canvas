@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Pencil, Trash, UserCircle } from 'lucide-react';
+import { Pencil, Trash } from 'lucide-react';
 import {
   Table,
   TableBody,

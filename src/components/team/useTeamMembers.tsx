@@ -53,12 +53,12 @@ export function useTeamMembers() {
           id: member.id,
           name: member.user_id || 'Invited User',  // Using user_id as placeholder
           email: `user-${member.id}@example.com`,  // Using a placeholder email
-          role: member.role as TeamMemberRole || 'Team Member',
+          role: (member.role as TeamMemberRole) || 'Team Member',
           department: member.department,
-          title: member.title,
-          departmentVisibility: member.department_visibility,
-          visibleDepartments: member.visible_departments,
-          photoUrl: member.photo_url
+          title: member.title || '',
+          departmentVisibility: member.department_visibility || 'Own Department',
+          visibleDepartments: member.visible_departments || [],
+          photoUrl: member.photo_url || ''
         }));
         
         setMembers(formattedMembers);
@@ -127,12 +127,12 @@ export function useTeamMembers() {
           id: newMember.id,
           name: name, // Using provided name even though it's not in the DB
           email: email, // Using provided email even though it's not in the DB
-          role: newMember.role,
+          role: newMember.role as TeamMemberRole,
           department: newMember.department,
-          title: newMember.title,
-          departmentVisibility: newMember.department_visibility,
-          visibleDepartments: newMember.visible_departments,
-          photoUrl: newMember.photo_url
+          title: newMember.title || '',
+          departmentVisibility: newMember.department_visibility || 'Own Department',
+          visibleDepartments: newMember.visible_departments || [],
+          photoUrl: newMember.photo_url || ''
         };
         
         setMembers([...members, newTeamMember]);

@@ -12,8 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useApp } from '@/context/AppContext';
 import { TeamMemberFormData, ALL_TEAM_MEMBER_ROLES, ALL_DEPARTMENT_VISIBILITY_OPTIONS } from '@/types';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ImagePlus } from 'lucide-react';
+import { UserPhotoUpload } from './UserPhotoUpload';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -50,21 +49,18 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
   const selectedVisibility = form.watch('departmentVisibility');
   const selectedDepartment = form.watch('department');
 
+  const handlePhotoChange = (photoUrl: string | null) => {
+    form.setValue('photoUrl', photoUrl || undefined);
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="flex items-center justify-center mb-4">
-          <div className="relative">
-            <Avatar className="h-20 w-20">
-              {photoPreview ? (
-                <AvatarImage src={photoPreview} alt="User photo" />
-              ) : (
-                <AvatarFallback className="text-lg">
-                  <ImagePlus className="h-8 w-8" />
-                </AvatarFallback>
-              )}
-            </Avatar>
-          </div>
+        <div className="flex justify-center mb-4">
+          <UserPhotoUpload 
+            userName={form.watch('name')}
+            onPhotoChange={handlePhotoChange}
+          />
         </div>
         
         <FormField
