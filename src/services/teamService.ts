@@ -110,9 +110,10 @@ export const addTeamMemberToTeam = async (
     
     // If email column exists, check for existing member
     if (hasEmailColumn && data.email) {
+      // Use explicit type annotation for the query result
       const { data: existingMember, error: checkError } = await supabase
         .from('team_members')
-        .select('id, team_id, user_id, role, department')
+        .select<'id, team_id, user_id, role, department'>('id, team_id, user_id, role, department')
         .eq('team_id', teamId)
         .eq('email', data.email)
         .maybeSingle();
@@ -154,7 +155,7 @@ export const addTeamMemberToTeam = async (
     const { data: newMember, error: memberError } = await supabase
       .from('team_members')
       .insert(insertData)
-      .select('id, team_id, user_id, role, department');
+      .select<'id, team_id, user_id, role, department'>('id, team_id, user_id, role, department');
       
     if (memberError) {
       console.error('Error adding team member:', memberError);
