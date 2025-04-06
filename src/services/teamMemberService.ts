@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } from '@/types';
 import { toast } from 'sonner';
@@ -90,16 +89,7 @@ export const addTeamMemberToTeam = async (
         custom_message: data.customMessage || null 
       } : requiredFields;
     
-    // Define explicit type for the insert operation result
-    type InsertMemberResult = {
-      id: string;
-      team_id: string;
-      user_id: string | null;
-      role: string;
-      department: string | null;
-    }
-    
-    // Create a new team member with explicit type annotation
+    // Create a new team member without complex type annotations
     const { data: newMember, error: memberError } = await supabase
       .from('team_members')
       .insert(insertData)
