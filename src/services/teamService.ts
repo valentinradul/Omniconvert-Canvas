@@ -91,21 +91,25 @@ export const addTeamMemberToTeam = async (
 
     // First, check if this email is already a team member
     // Check if team_members table has an email column
-    const { data: tableInfo } = await supabase.rpc('get_column_info', {
-      table_name: 'team_members'
-    });
-
-    let emailExists = false;
-    if (tableInfo && Array.isArray(tableInfo)) {
-      emailExists = tableInfo.some(col => col.column_name === 'email');
+    let hasEmailColumn = false;
+    
+    try {
+      // Instead of using RPC, let's check if we can query with the email field
+      // This is a simple way to check if the column exists
+      const { error } = await supabase
+        .from('team_members')
+        .select('email')
+        .limit(1);
+      
+      // If no error, email column exists
+      hasEmailColumn = !error;
+    } catch {
+      // If this fails, email column doesn't exist
+      hasEmailColumn = false;
     }
     
-    // If email column doesn't exist, we need to handle it differently
-    if (!emailExists) {
-      console.warn("Email column doesn't exist in team_members table");
-      // Just proceed with creating the member without checking for existing email
-    } else {
-      // Check for existing member by email
+    // If email column exists, check for existing member
+    if (hasEmailColumn && data.email) {
       const { data: existingMember, error: checkError } = await supabase
         .from('team_members')
         .select('id, team_id, user_id, role, department')
@@ -120,25 +124,33 @@ export const addTeamMemberToTeam = async (
       
       if (existingMember) {
         console.log(`Email ${data.email} is already a team member`);
-        return existingMember as TeamMemberData;
+        return {
+          id: existingMember.id,
+          team_id: existingMember.team_id,
+          user_id: existingMember.user_id,
+          role: existingMember.role,
+          department: existingMember.department
+        };
       }
     }
     
-    // Prepare the data to insert based on what columns actually exist
-    const insertData: Record<string, any> = {
+    // Create the required fields for the team member
+    const requiredFields = {
       team_id: teamId,
       user_id: null, // We're inviting a user that may not exist in the system yet
       role: data.role || 'Team Member',
-      department: data.department || null, // Ensure department is not undefined
+      department: data.department || null // Ensure department is not undefined
     };
     
-    // Only add email and custom_message if they exist in the table
-    if (emailExists) {
-      insertData.email = data.email || null;
-      insertData.custom_message = data.customMessage || null;
-    }
+    // Add email and custom_message if the column exists
+    const insertData = hasEmailColumn ? 
+      { 
+        ...requiredFields,
+        email: data.email || null,
+        custom_message: data.customMessage || null 
+      } : requiredFields;
     
-    // Create a new team member with the columns that exist in the table
+    // Create a new team member
     const { data: newMember, error: memberError } = await supabase
       .from('team_members')
       .insert(insertData)
@@ -174,7 +186,7 @@ export const addTeamMemberToTeam = async (
       role: newMember[0].role,
       department: newMember[0].department,
       // Add email and custom_message only if they exist in the DB
-      ...(emailExists ? { 
+      ...(hasEmailColumn ? { 
         email: data.email || null,
         custom_message: data.customMessage || null 
       } : {})
@@ -257,7 +269,23 @@ export const updateExistingTeamMember = async (id: string, data: Partial<TeamMem
     
     if (data.role) updateData.role = data.role;
     if (data.department !== undefined) updateData.department = data.department;
-    if (data.email) updateData.email = data.email;
+    
+    // Check if email column exists before trying to update it
+    let hasEmailColumn = false;
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .select('email')
+        .limit(1);
+      
+      hasEmailColumn = !error;
+    } catch {
+      hasEmailColumn = false;
+    }
+    
+    if (hasEmailColumn && data.email) {
+      updateData.email = data.email;
+    }
     
     console.log("Updating team member with ID:", id, "with data:", updateData);
     
