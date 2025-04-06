@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } from '@/types';
 import { toast } from 'sonner';
 import { TeamMemberData, TeamMemberError, MemberQueryResult, MemberInsertResult } from './types/teamTypes';
+import { sendTeamInvitationEmail } from './teamInvitationService';
 
 /**
  * Adds a new team member
@@ -79,11 +80,14 @@ export const addTeamMemberToTeam = async (
         custom_message: data.customMessage || null 
       } : requiredFields;
     
-    // Create a new team member
+    // Create a new team member with proper type annotation to avoid infinite recursion
     const { data: newMember, error: memberError } = await supabase
       .from('team_members')
       .insert(insertData)
-      .select('id, team_id, user_id, role, department');
+      .select('id, team_id, user_id, role, department') as { 
+        data: MemberQueryResult[] | null; 
+        error: any 
+      };
       
     if (memberError) {
       console.error('Error adding team member:', memberError);

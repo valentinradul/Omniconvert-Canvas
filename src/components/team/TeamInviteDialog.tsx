@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from 'sonner';
 import { TeamMemberFormData } from '@/types';
 import { useAuth } from '@/context/AuthContext';
-import { fetchUserTeam, addTeamMemberToTeam } from '@/services/teamService';
+import { fetchUserTeam } from '@/services/teamService';
+import { addTeamMemberToTeam } from '@/services/teamMemberService';
 import { TeamInviteDialogContent } from './TeamInviteDialogContent';
 import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';

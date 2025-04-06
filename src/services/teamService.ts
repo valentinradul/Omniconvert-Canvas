@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { mapToTeamMembers } from './teamMemberService';
-export { TeamMemberData, TeamMemberError } from './types/teamTypes';
+export type { TeamMemberData, TeamMemberError } from './types/teamTypes';
 
 /**
  * Fetches the team ID for the current user
