@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import AddTeamMemberDialog from './AddTeamMemberDialog';
-import EditTeamMemberDialog from './EditTeamMemberDialog';
-import TeamMembersTable from './TeamMembersTable';
+import { AddTeamMemberDialog } from './AddTeamMemberDialog';
+import { EditTeamMemberDialog } from './EditTeamMemberDialog';
+import { TeamMembersTable } from './TeamMembersTable';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { TeamMemberFormData } from '@/types';
+import { TeamMemberFormData, TeamMemberRole } from '@/types';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 
 const TeamMembersSection: React.FC = () => {
@@ -15,10 +15,10 @@ const TeamMembersSection: React.FC = () => {
   const [editingMember, setEditingMember] = useState<{ id: string; data: TeamMemberFormData } | null>(null);
 
   const handleEditClick = (id: string, data: TeamMemberFormData) => {
-    // Make sure role is properly capitalized to match the expected enum values
-    const formattedData = {
+    // Make sure role is properly typed as TeamMemberRole
+    const formattedData: TeamMemberFormData = {
       ...data,
-      role: data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase()
+      role: data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase() as TeamMemberRole
     };
     setEditingMember({ id, data: formattedData });
   };
@@ -57,7 +57,8 @@ const TeamMembersSection: React.FC = () => {
         <AddTeamMemberDialog 
           isOpen={isAddDialogOpen}
           onOpenChange={setIsAddDialogOpen}
-          onAdd={addTeamMember}
+          onSubmit={addTeamMember}
+          isSubmitting={false}
         />
 
         {editingMember && (
@@ -65,12 +66,13 @@ const TeamMembersSection: React.FC = () => {
             isOpen={!!editingMember}
             onOpenChange={(open) => !open && setEditingMember(null)}
             member={editingMember.data}
-            onSave={(data) => {
+            onSubmit={(data) => {
               if (editingMember) {
                 updateTeamMember(editingMember.id, data);
                 setEditingMember(null);
               }
             }}
+            isSubmitting={false}
           />
         )}
       </CardContent>
