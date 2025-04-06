@@ -1,3 +1,4 @@
+
 // Common types used across the application
 
 export type Department = {
@@ -109,6 +110,8 @@ export type Experiment = {
   userName?: string;
   responsibleUserId?: string;
   statusUpdatedAt?: Date;
+  totalCost?: number;
+  totalReturn?: number;
 };
 
 export const calculatePectiPercentage = (pectiScore: PECTI): number => {
