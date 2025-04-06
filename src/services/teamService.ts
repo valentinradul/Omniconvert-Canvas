@@ -80,7 +80,7 @@ export const fetchUserTeam = async (userId: string) => {
 /**
  * Adds a new team member
  */
-export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormData): Promise<TeamMemberResult | TeamMemberError> => {
+export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormData): Promise<TeamMemberData | TeamMemberError> => {
   console.log("Adding team member with data:", data, "to team:", teamId);
   
   try {
@@ -102,7 +102,8 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
     
     if (existingMember) {
       console.log(`Email ${data.email} is already a team member`);
-      return existingMember as TeamMemberResult;
+      // Type assertion here since we know the structure at this point
+      return existingMember as unknown as TeamMemberData;
     }
     
     // Create a new team member with the columns that exist in the table
@@ -140,6 +141,7 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
       }
     }
 
+    // Type assertion here since we know the structure at this point
     return newMember[0] as TeamMemberData;
   } catch (error) {
     console.error('Exception when adding team member:', error);

@@ -22,9 +22,9 @@ export const useTeamInvitations = () => {
       }
       
       console.log("Fetching team for user:", user.id);
-      let teamData = await fetchUserTeam(user.id);
+      let currentTeam = await fetchUserTeam(user.id);
       
-      if (!teamData || !teamData.id) {
+      if (!currentTeam || !currentTeam.id) {
         console.error('No team found for user');
         
         // Attempt to create a team for the user if one doesn't exist
@@ -44,7 +44,7 @@ export const useTeamInvitations = () => {
           }
           
           console.log("Created new team:", newTeam);
-          teamData = newTeam;
+          currentTeam = newTeam;
         } catch (teamCreateError) {
           console.error('Failed to create team:', teamCreateError);
           toast.error('Failed to create team');
@@ -52,7 +52,7 @@ export const useTeamInvitations = () => {
         }
       }
       
-      const teamId = teamData.id;
+      const teamId = currentTeam.id;
       console.log("Using team ID:", teamId);
       
       const successfulInvites: string[] = [];
