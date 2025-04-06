@@ -21,11 +21,18 @@ export function useTeamMembers() {
     try {
       setIsLoading(true);
       
+      if (!user) {
+        // If no user is logged in, don't attempt to fetch team members
+        setMembers([]);
+        setIsLoading(false);
+        return;
+      }
+      
       // First, get the user's team
       const { data: teamData, error: teamError } = await supabase
         .from('teams')
         .select('id')
-        .eq('created_by', user?.id)
+        .eq('created_by', user.id)
         .single();
         
       if (teamError) {
@@ -41,6 +48,8 @@ export function useTeamMembers() {
         return;
       }
       
+      console.log('Found team with ID:', teamData.id);
+      
       // Using any() to bypass TypeScript errors since the types don't include the department field yet
       const { data, error: membersError } = await supabase
         .from('team_members')
@@ -54,6 +63,8 @@ export function useTeamMembers() {
         return;
       }
 
+      console.log('Team members data:', data);
+
       if (data) {
         // Convert the data to match our TeamMember structure
         const formattedMembers = data.map((member: any) => ({
@@ -65,6 +76,9 @@ export function useTeamMembers() {
         }));
         
         setMembers(formattedMembers);
+      } else {
+        // If no data returned but also no error, set empty array
+        setMembers([]);
       }
     } catch (error) {
       console.error('Unexpected error fetching team members:', error);
