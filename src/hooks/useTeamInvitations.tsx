@@ -22,7 +22,7 @@ export const useTeamInvitations = () => {
       }
       
       console.log("Fetching team for user:", user.id);
-      const teamData = await fetchUserTeam(user.id);
+      let teamData = await fetchUserTeam(user.id);
       
       if (!teamData || !teamData.id) {
         console.error('No team found for user');

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -99,23 +98,31 @@ export function useTeamMembers() {
       console.log("Adding team member to team:", teamData.id, "with data:", data);
       
       // Create a new team member
-      const addedMember = await addTeamMemberToTeam(teamData.id, data);
-      if (!addedMember) {
+      const result = await addTeamMemberToTeam(teamData.id, data);
+      if (!result) {
         toast.error('Failed to add team member');
         return null;
       }
+      
+      // Type guard to check if result is an error
+      if ('error' in result) {
+        console.error("Error adding team member:", result.error);
+        toast.error(`Failed to add team member: ${result.error}`);
+        return null;
+      }
 
+      const addedMember = result;
       console.log("Added member:", addedMember);
 
       // Add the new member to the state
       const newTeamMember: TeamMember = {
         id: addedMember.id,
-        name: data.name, // Using provided name even though it's not in the DB
-        email: data.email, // Using provided email even though it's not in the DB
+        name: data.name,
+        email: data.email, 
         role: addedMember.role as TeamMemberRole,
         department: addedMember.department,
-        title: data.title || '', // Use the title from the form data
-        departmentVisibility: (data.departmentVisibility || 'Own Department') as DepartmentVisibility, // Explicit cast
+        title: data.title || '',
+        departmentVisibility: (data.departmentVisibility || 'Own Department') as DepartmentVisibility,
         visibleDepartments: data.visibleDepartments || [],
         photoUrl: data.photoUrl || ''
       };
@@ -126,7 +133,7 @@ export function useTeamMembers() {
     } catch (error) {
       console.error('Error adding team member:', error);
       toast.error(`Failed to add team member: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      throw error; // Re-throw to be caught by the dialog component
+      throw error;
     }
   };
 
@@ -145,7 +152,7 @@ export function useTeamMembers() {
             role: data.role || member.role,
             department: data.department || member.department,
             title: data.title || member.title,
-            departmentVisibility: (data.departmentVisibility || member.departmentVisibility) as DepartmentVisibility, // Explicit cast
+            departmentVisibility: (data.departmentVisibility || member.departmentVisibility) as DepartmentVisibility,
             visibleDepartments: data.visibleDepartments || member.visibleDepartments,
             photoUrl: data.photoUrl || member.photoUrl,
             name: data.name || member.name,

@@ -1,7 +1,20 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } from '@/types';
 import { toast } from 'sonner';
+
+type TeamMemberResult = {
+  id: string;
+  team_id: string;
+  user_id: string | null;
+  role: string;
+  department: string | null;
+  email?: string;
+  custom_message?: string;
+} | null;
+
+type TeamMemberError = {
+  error: string;
+};
 
 /**
  * Fetches the team ID for the current user
@@ -61,6 +74,76 @@ export const fetchUserTeam = async (userId: string) => {
 };
 
 /**
+ * Adds a new team member
+ */
+export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormData): Promise<TeamMemberResult | TeamMemberError> => {
+  console.log("Adding team member with data:", data, "to team:", teamId);
+  
+  try {
+    if (!teamId) {
+      return { error: 'Team ID is required' };
+    }
+
+    // First, check if this email is already a team member
+    const { data: existingMember, error: checkError } = await supabase
+      .from('team_members')
+      .select('id, email')
+      .eq('team_id', teamId)
+      .eq('email', data.email)
+      .maybeSingle();
+      
+    if (checkError) {
+      console.error('Error checking existing team member:', checkError);
+    }
+    
+    if (existingMember) {
+      console.log(`Email ${data.email} is already a team member`);
+      return existingMember as TeamMemberResult;
+    }
+    
+    // Create a new team member with the columns that exist in the table
+    const { data: newMember, error: memberError } = await supabase
+      .from('team_members')
+      .insert({
+        team_id: teamId,
+        user_id: null, // We're inviting a user that may not exist in the system yet
+        role: data.role || 'Team Member',
+        department: data.department || null, // Ensure department is not undefined
+        email: data.email || null, // Store the email for invitation
+        custom_message: data.customMessage || null // Store the custom invitation message
+      })
+      .select();
+      
+    if (memberError) {
+      console.error('Error adding team member:', memberError);
+      return { error: memberError.message };
+    }
+
+    if (!newMember || newMember.length === 0) {
+      return { error: 'No data returned after adding team member' };
+    }
+
+    console.log("Member added successfully:", newMember);
+    
+    // Send invitation email if the email is provided
+    if (data.email) {
+      try {
+        await sendTeamInvitationEmail(data.email, data.name || data.email.split('@')[0], data.customMessage || undefined);
+      } catch (emailError) {
+        console.error('Error sending invitation email:', emailError);
+        // Don't throw here, we still created the team member successfully
+        toast.warning("Team member created, but failed to send invitation email");
+      }
+    }
+
+    return newMember[0] as TeamMemberResult;
+  } catch (error) {
+    console.error('Exception when adding team member:', error);
+    return { error: error instanceof Error ? error.message : 'Unknown error adding team member' };
+  }
+};
+
+/**
  * Fetches team members for a specific team
  */
 export const fetchTeamMembersForTeam = async (teamId: string) => {
@@ -105,76 +188,6 @@ export const mapToTeamMembers = (data: any[]): TeamMember[] => {
     visibleDepartments: member.visibleDepartments || [], // Default empty array
     photoUrl: member.photoUrl || '' // Default empty string
   }));
-};
-
-/**
- * Adds a new team member
- */
-export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormData) => {
-  console.log("Adding team member with data:", data, "to team:", teamId);
-  
-  try {
-    if (!teamId) {
-      throw new Error('Team ID is required');
-    }
-
-    // First, check if this email is already a team member
-    const { data: existingMember, error: checkError } = await supabase
-      .from('team_members')
-      .select('id, email')
-      .eq('team_id', teamId)
-      .eq('email', data.email)
-      .maybeSingle();
-      
-    if (checkError) {
-      console.error('Error checking existing team member:', checkError);
-    }
-    
-    if (existingMember) {
-      console.log(`Email ${data.email} is already a team member`);
-      return existingMember;
-    }
-    
-    // Create a new team member with the columns that exist in the table
-    const { data: newMember, error: memberError } = await supabase
-      .from('team_members')
-      .insert({
-        team_id: teamId,
-        user_id: null, // We're inviting a user that may not exist in the system yet
-        role: data.role || 'Team Member',
-        department: data.department || null, // Ensure department is not undefined
-        email: data.email || null, // Store the email for invitation
-        custom_message: data.customMessage || null // Store the custom invitation message
-      })
-      .select();
-      
-    if (memberError) {
-      console.error('Error adding team member:', memberError);
-      throw new Error(memberError.message);
-    }
-
-    if (!newMember || newMember.length === 0) {
-      throw new Error('No data returned after adding team member');
-    }
-
-    console.log("Member added successfully:", newMember);
-    
-    // Send invitation email if the email is provided
-    if (data.email) {
-      try {
-        await sendTeamInvitationEmail(data.email, data.name || data.email.split('@')[0], data.customMessage || undefined);
-      } catch (emailError) {
-        console.error('Error sending invitation email:', emailError);
-        // Don't throw here, we still created the team member successfully
-        toast.warning("Team member created, but failed to send invitation email");
-      }
-    }
-
-    return newMember[0];
-  } catch (error) {
-    console.error('Exception when adding team member:', error);
-    throw error;
-  }
 };
 
 /**
