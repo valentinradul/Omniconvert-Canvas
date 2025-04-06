@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
@@ -11,7 +10,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { TeamMember, TeamMemberFormData, ALL_TEAM_MEMBER_ROLES, ALL_DEPARTMENT_VISIBILITY_OPTIONS } from '@/types';
+import { TeamMemberFormData, ALL_TEAM_MEMBER_ROLES, ALL_DEPARTMENT_VISIBILITY_OPTIONS } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { UserPhotoUpload } from './UserPhotoUpload';
 
@@ -30,7 +29,7 @@ interface EditTeamMemberDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: Partial<TeamMemberFormData>) => Promise<void>;
-  member: TeamMember;
+  member: TeamMemberFormData;
   isSubmitting?: boolean;
 }
 
