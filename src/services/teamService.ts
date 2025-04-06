@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } from '@/types';
 import { toast } from 'sonner';
@@ -52,17 +53,27 @@ export const mapToTeamMembers = (data: any[]): TeamMember[] => {
     return [];
   }
   
-  return data.map(member => ({
-    id: member.id,
-    name: member.name,
-    email: member.email,
-    role: member.role === 'Team Member' ? 'member' : member.role,
-    department: member.department,
-    title: member.title,
-    departmentVisibility: member.departmentVisibility,
-    visibleDepartments: member.visibleDepartments,
-    photoUrl: member.photoUrl
-  }));
+  return data.map(member => {
+    // Ensure role is one of the valid TeamMemberRole values
+    let role: TeamMemberRole = 'member';
+    if (member.role === 'owner' || member.role === 'manager' || member.role === 'member') {
+      role = member.role as TeamMemberRole;
+    } else if (member.role === 'Team Member') {
+      role = 'member';
+    }
+    
+    return {
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      role: role,
+      department: member.department,
+      title: member.title,
+      departmentVisibility: member.departmentVisibility,
+      visibleDepartments: member.visibleDepartments,
+      photoUrl: member.photoUrl
+    };
+  });
 };
 
 export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormData) => {
@@ -74,7 +85,7 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
       .insert({
         team_id: teamId,
         user_id: null,
-        role: data.role || 'Team Member',
+        role: data.role,
         department: data.department || null,
         email: data.email || null,
         custom_message: data.customMessage || null

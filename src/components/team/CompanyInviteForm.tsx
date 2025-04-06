@@ -11,6 +11,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { useCompanyContext } from '@/context/CompanyContext';
 import { useCompanyInvitations } from '@/hooks/useCompanyInvitations';
 import { toast } from 'sonner';
+import { CompanyRole } from '@/types';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email" }),
@@ -21,7 +22,7 @@ const formSchema = z.object({
 
 type InviteFormData = {
   email: string;
-  role: 'owner' | 'manager' | 'member';
+  role: CompanyRole;
 };
 
 interface CompanyInviteFormProps {
@@ -65,7 +66,7 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
       // Use sendInvitation from useCompanyInvitations hook
       const result = await sendInvitation(
         values.email,
-        values.role
+        values.role === 'owner' ? 'manager' : values.role // Convert 'owner' to 'manager' for API call
       );
       
       console.log('CompanyInviteForm: Invitation result:', result);

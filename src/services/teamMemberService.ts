@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } from '@/types';
 import { toast } from 'sonner';
@@ -79,17 +80,27 @@ export const mapToTeamMembers = (data: any[]): TeamMember[] => {
     return [];
   }
   
-  return data.map((member: any) => ({
-    id: member.id,
-    name: member.user_id || 'Invited User',
-    email: member.email || `user-${member.id}@example.com`,
-    role: (member.role as TeamMemberRole) || 'Team Member',
-    department: member.department || '',
-    title: member.title || '',
-    departmentVisibility: (member.departmentVisibility || 'Own Department') as DepartmentVisibility,
-    visibleDepartments: member.visibleDepartments || [],
-    photoUrl: member.photoUrl || ''
-  }));
+  return data.map((member: any) => {
+    // Ensure role is one of the valid TeamMemberRole values
+    let role: TeamMemberRole = 'member';
+    if (member.role === 'owner' || member.role === 'manager' || member.role === 'member') {
+      role = member.role as TeamMemberRole;
+    } else if (member.role === 'Team Member') {
+      role = 'member';
+    }
+
+    return {
+      id: member.id,
+      name: member.user_id || 'Invited User',
+      email: member.email || `user-${member.id}@example.com`,
+      role: role,
+      department: member.department || '',
+      title: member.title || '',
+      departmentVisibility: (member.departmentVisibility || 'Own Department') as DepartmentVisibility,
+      visibleDepartments: member.visibleDepartments || [],
+      photoUrl: member.photoUrl || ''
+    };
+  });
 };
 
 /**
@@ -105,7 +116,7 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
       .insert({
         team_id: teamId,
         user_id: null, // We're inviting a user that may not exist in the system yet
-        role: data.role || 'Team Member',
+        role: data.role,
         department: data.department || null, // Ensure department is not undefined
         email: data.email || null, // Store the email for invitation
         custom_message: data.customMessage || null // Store the custom invitation message

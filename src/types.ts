@@ -18,6 +18,7 @@ export interface GrowthIdea {
   departmentId?: string;
   userId?: string;
   userName?: string;
+  responsibleUserId?: string;
   createdAt: Date;
   tags?: Tag[];
   company_id?: string;
@@ -99,7 +100,7 @@ export const ALL_STATUSES: ExperimentStatus[] = [
 
 export interface Experiment {
   id: string;
-  hypothesisId?: string;
+  hypothesisId: string;
   status?: ExperimentStatus;
   startDate?: Date;
   endDate?: Date;
