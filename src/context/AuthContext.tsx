@@ -16,6 +16,8 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
 };
 
 // Create the context with a default value
@@ -45,6 +47,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (event === 'SIGNED_OUT') {
           console.log('User signed out');
+        }
+
+        if (event === 'PASSWORD_RECOVERY') {
+          console.log('Password recovery event received');
         }
       }
     );
@@ -123,6 +129,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Reset password function
+  const resetPassword = async (email: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: 'Password reset email sent',
+        description: 'Check your email for the reset link',
+      });
+    } catch (error: any) {
+      console.error('Password reset failed:', error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Password reset failed',
+        description: error.message || 'There was an error sending the reset email',
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update password function
+  const updatePassword = async (newPassword: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: 'Password updated',
+        description: 'Your password has been successfully updated',
+      });
+    } catch (error: any) {
+      console.error('Password update failed:', error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Password update failed',
+        description: error.message || 'There was an error updating your password',
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Logout function
   const logout = async (): Promise<void> => {
     setIsLoading(true);
@@ -160,6 +224,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         signup,
         logout,
+        resetPassword,
+        updatePassword,
       }}
     >
       {children}

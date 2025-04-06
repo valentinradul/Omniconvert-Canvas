@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import NotFound from './pages/NotFound';
 import Index from './pages/Index';
+import ResetPassword from './pages/ResetPassword';
 
 // Main Pages
 import Dashboard from './pages/Dashboard';
@@ -52,6 +53,7 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
 
                 {/* Onboarding routes */}
                 <Route path="/onboarding">
