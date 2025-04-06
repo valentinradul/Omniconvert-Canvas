@@ -2,7 +2,8 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AddTeamMemberForm, TeamMemberFormData } from './AddTeamMemberForm';
+import { AddTeamMemberForm } from './AddTeamMemberForm';
+import { TeamMemberFormData } from './useTeamMembers';
 
 interface AddTeamMemberDialogProps {
   isOpen: boolean;

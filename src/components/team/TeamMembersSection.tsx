@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useTeamMembers } from './useTeamMembers';
 import { TeamMembersTable } from './TeamMembersTable';
 import { AddTeamMemberDialog } from './AddTeamMemberDialog';
-import type { TeamMemberFormData } from './AddTeamMemberForm';
+import type { TeamMemberFormData } from './useTeamMembers';
 
 const TeamMembersSection: React.FC = () => {
   const { members, isLoading, addTeamMember } = useTeamMembers();

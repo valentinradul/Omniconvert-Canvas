@@ -7,14 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { DialogFooter } from '@/components/ui/dialog';
+import { TeamMemberFormData } from './useTeamMembers';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
   role: z.string().min(2, { message: "Role must be at least 2 characters" })
 });
-
-export type TeamMemberFormData = z.infer<typeof formSchema>;
 
 interface AddTeamMemberFormProps {
   onSubmit: (values: TeamMemberFormData) => Promise<void>;
