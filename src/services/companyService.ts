@@ -29,9 +29,19 @@ export interface CompanyInvitation {
 
 export async function createCompany(name: string): Promise<Company | null> {
   try {
+    // Get the current user
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      toast.error('You must be logged in to create a company');
+      return null;
+    }
+    
     const { data, error } = await supabase
       .from('companies')
-      .insert({ name })
+      .insert({ 
+        name,
+        created_by: userData.user.id 
+      })
       .select()
       .single();
       
@@ -89,12 +99,20 @@ export async function getCurrentUserCompanyRole(companyId: string): Promise<stri
 
 export async function inviteTeamMember(companyId: string, email: string, role: 'manager' | 'member'): Promise<boolean> {
   try {
+    // Get the current user
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      toast.error('You must be logged in to invite team members');
+      return false;
+    }
+    
     const { error } = await supabase
       .from('company_invitations')
       .insert({
         company_id: companyId,
         email,
-        role
+        role,
+        invited_by: userData.user.id
       });
       
     if (error) {
@@ -132,13 +150,13 @@ export async function getCompanyInvitations(companyId: string): Promise<CompanyI
 
 export async function getUserInvitations(): Promise<CompanyInvitation[]> {
   try {
-    const { user } = await supabase.auth.getUser();
-    if (!user) return [];
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) return [];
     
     const { data, error } = await supabase
       .from('company_invitations')
       .select('*')
-      .eq('email', user.email);
+      .eq('email', userData.user.email);
       
     if (error) {
       console.error('Error fetching user invitations:', error);
@@ -154,6 +172,13 @@ export async function getUserInvitations(): Promise<CompanyInvitation[]> {
 
 export async function acceptInvitation(invitationId: string): Promise<boolean> {
   try {
+    // Get the current user
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      toast.error('You must be logged in to accept invitations');
+      return false;
+    }
+    
     // First update the invitation to accepted
     const { error: updateError } = await supabase
       .from('company_invitations')
@@ -184,7 +209,8 @@ export async function acceptInvitation(invitationId: string): Promise<boolean> {
       .from('company_members')
       .insert({
         company_id: invitation.company_id,
-        role: invitation.role
+        role: invitation.role,
+        user_id: userData.user.id
       });
       
     if (memberError) {
