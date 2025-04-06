@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { 
@@ -6,7 +7,8 @@ import {
   SidebarContent, 
   SidebarMenu, 
   SidebarMenuItem, 
-  SidebarMenuButton 
+  SidebarMenuButton,
+  SidebarTrigger 
 } from '@/components/ui/sidebar';
 import UserMenu from '@/components/UserMenu';
 import { useAuth } from '@/context/AuthContext';
@@ -22,15 +24,6 @@ import {
   Building,
   FolderTree
 } from 'lucide-react';
-
-// Add custom CSS to force white background for sidebar
-const sidebarStyles = document.createElement('style');
-sidebarStyles.innerHTML = `
-  [data-sidebar="sidebar"] {
-    background-color: white !important;
-  }
-`;
-document.head.appendChild(sidebarStyles);
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -53,8 +46,8 @@ const AppLayout: React.FC = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <Sidebar className="z-10 border-r border-gray-200 !bg-white">
-          <SidebarContent className="!bg-white">
+        <Sidebar className="border-r border-gray-200">
+          <SidebarContent>
             <div className="py-6 px-4 border-b border-gray-200 bg-white">
               <Logo className="flex items-center" />
               <p className="text-xs text-gray-600 mt-1">Growth experimentation platform</p>
@@ -80,11 +73,12 @@ const AppLayout: React.FC = () => {
         </Sidebar>
 
         <main className="flex-1 overflow-auto bg-white">
-          {isAuthenticated && (
-            <div className="p-4 border-b border-gray-200 bg-white flex justify-end">
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
+            <SidebarTrigger />
+            {isAuthenticated && (
               <UserMenu />
-            </div>
-          )}
+            )}
+          </div>
           <div className="p-6">
             <Outlet />
           </div>
