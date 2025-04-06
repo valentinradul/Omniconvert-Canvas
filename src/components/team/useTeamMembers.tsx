@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -14,11 +13,20 @@ export function useTeamMembers() {
     try {
       setIsLoading(true);
       
+      if (!user || !user.id) {
+        console.error('No authenticated user found');
+        toast.error('You must be logged in to view team members');
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Fetching team members for user ID:", user.id);
+      
       // First, get the user's team
       const { data: teamData, error: teamError } = await supabase
         .from('teams')
         .select('id')
-        .eq('created_by', user?.id)
+        .eq('created_by', user.id)
         .single();
         
       if (teamError) {
@@ -34,6 +42,8 @@ export function useTeamMembers() {
         return;
       }
       
+      console.log("Found team ID:", teamData.id);
+      
       // Using any() to bypass TypeScript errors since the types don't include all fields yet
       const { data, error: membersError } = await supabase
         .from('team_members')
@@ -46,6 +56,8 @@ export function useTeamMembers() {
         setIsLoading(false);
         return;
       }
+
+      console.log("Team members data:", data);
 
       if (data) {
         // Convert the data to match our TeamMember structure
@@ -82,11 +94,19 @@ export function useTeamMembers() {
       console.log("Adding team member with data:", data);
       const { name, email, role, department } = data;
       
+      if (!user || !user.id) {
+        console.error('No authenticated user found');
+        toast.error('You must be logged in to add team members');
+        return null;
+      }
+      
+      console.log("Current user ID:", user.id);
+      
       // First, get the user's team
       const { data: teamData, error: teamError } = await supabase
         .from('teams')
         .select('id')
-        .eq('created_by', user?.id)
+        .eq('created_by', user.id)
         .single();
         
       if (teamError) {
@@ -96,6 +116,7 @@ export function useTeamMembers() {
       }
       
       if (!teamData) {
+        console.error('No team found for current user');
         toast.error('No team found');
         return null;
       }
@@ -109,26 +130,26 @@ export function useTeamMembers() {
           team_id: teamData.id,
           user_id: null, // Placeholder as we're inviting a user
           role: role,
-          department: department
+          department: department || null // Ensure department is not undefined
         })
-        .select()
-        .single();
+        .select();
         
       if (memberError) {
         console.error('Error adding team member:', memberError);
-        toast.error('Failed to add team member');
+        toast.error(`Failed to add team member: ${memberError.message}`);
         return null;
       }
 
       console.log("Member added successfully:", newMember);
 
-      if (newMember) {
+      if (newMember && newMember.length > 0) {
+        const addedMember = newMember[0];
         const newTeamMember: TeamMember = {
-          id: newMember.id,
+          id: addedMember.id,
           name: name, // Using provided name even though it's not in the DB
           email: email, // Using provided email even though it's not in the DB
-          role: newMember.role as TeamMemberRole,
-          department: newMember.department,
+          role: addedMember.role as TeamMemberRole,
+          department: addedMember.department,
           title: data.title || '', // Use the title from the form data
           departmentVisibility: (data.departmentVisibility || 'Own Department') as DepartmentVisibility, // Explicit cast
           visibleDepartments: data.visibleDepartments || [],
@@ -137,13 +158,15 @@ export function useTeamMembers() {
         
         setMembers([...members, newTeamMember]);
         toast.success('Team member invited successfully!');
-        return newMember;
+        return addedMember;
+      } else {
+        console.error('No member data returned after insert');
+        toast.error('Failed to add team member: No data returned');
+        return null;
       }
-      
-      return null;
     } catch (error) {
       console.error('Error adding team member:', error);
-      toast.error('Failed to add team member');
+      toast.error(`Failed to add team member: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return null;
     }
   };
