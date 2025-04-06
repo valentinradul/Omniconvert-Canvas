@@ -5,6 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 import { TeamMember, TeamMemberFormData, DepartmentVisibility, TeamMemberRole } from '@/types';
 import { fetchUserTeam, addTeamMemberToTeam } from '@/services/teamService';
 
+// Helper type guard to check if the result is a TeamMemberError
+function isTeamMemberError(result: any): result is { error: string } {
+  return result && typeof result === 'object' && 'error' in result;
+}
+
 export function useTeamMemberAdd(onMemberAdded: (member: TeamMember) => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
@@ -40,18 +45,13 @@ export function useTeamMemberAdd(onMemberAdded: (member: TeamMember) => void) {
       const result = await addTeamMemberToTeam(teamData.id, data);
       
       // Check if the result is an error object
-      if (result && 'error' in result) {
+      if (isTeamMemberError(result)) {
         console.error("Error adding team member:", result.error);
         toast.error(`Failed to add team member: ${result.error}`);
         return null;
       }
       
       // If we got here, result should be a valid team member
-      if (!result) {
-        toast.error('Failed to add team member');
-        return null;
-      }
-
       // Create a TeamMember object from the result
       const newTeamMember: TeamMember = {
         id: result.id,

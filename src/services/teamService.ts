@@ -4,7 +4,7 @@ import { TeamMemberFormData, TeamMember, TeamMemberRole, DepartmentVisibility } 
 import { toast } from 'sonner';
 
 // Define better types for our results to avoid recursive type issues
-type TeamMemberData = {
+export type TeamMemberData = {
   id: string;
   team_id: string;
   user_id: string | null;
@@ -14,9 +14,7 @@ type TeamMemberData = {
   custom_message?: string | null;
 };
 
-type TeamMemberResult = TeamMemberData | null;
-
-type TeamMemberError = {
+export type TeamMemberError = {
   error: string;
 };
 
@@ -80,7 +78,10 @@ export const fetchUserTeam = async (userId: string) => {
 /**
  * Adds a new team member
  */
-export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormData): Promise<TeamMemberData | TeamMemberError> => {
+export const addTeamMemberToTeam = async (
+  teamId: string, 
+  data: TeamMemberFormData
+): Promise<TeamMemberData | TeamMemberError> => {
   console.log("Adding team member with data:", data, "to team:", teamId);
   
   try {
@@ -91,19 +92,19 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
     // First, check if this email is already a team member
     const { data: existingMember, error: checkError } = await supabase
       .from('team_members')
-      .select('id, email')
+      .select('id, team_id, user_id, role, department, email, custom_message')
       .eq('team_id', teamId)
       .eq('email', data.email)
       .maybeSingle();
       
     if (checkError) {
       console.error('Error checking existing team member:', checkError);
+      return { error: checkError.message };
     }
     
     if (existingMember) {
       console.log(`Email ${data.email} is already a team member`);
-      // Type assertion here since we know the structure at this point
-      return existingMember as unknown as TeamMemberData;
+      return existingMember as TeamMemberData;
     }
     
     // Create a new team member with the columns that exist in the table
@@ -117,7 +118,7 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
         email: data.email || null, // Store the email for invitation
         custom_message: data.customMessage || null // Store the custom invitation message
       })
-      .select();
+      .select('id, team_id, user_id, role, department, email, custom_message');
       
     if (memberError) {
       console.error('Error adding team member:', memberError);
@@ -141,7 +142,6 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
       }
     }
 
-    // Type assertion here since we know the structure at this point
     return newMember[0] as TeamMemberData;
   } catch (error) {
     console.error('Exception when adding team member:', error);
