@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApp } from '@/context/AppContext';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -44,8 +45,13 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
   });
 
   const handleSubmit = async (values: FormValues) => {
-    await onSubmit(values);
-    form.reset();
+    try {
+      await onSubmit(values);
+      form.reset();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast.error("Failed to add team member");
+    }
   };
 
   return (
@@ -117,13 +123,17 @@ export const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSubmit }
                     <SelectValue placeholder="Select a department" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="z-[100]">
                   <SelectItem value="">No Department</SelectItem>
-                  {departments.map(dept => (
-                    <SelectItem key={dept.id} value={dept.name}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
+                  {departments && departments.length > 0 ? (
+                    departments.map(dept => (
+                      <SelectItem key={dept.id} value={dept.name}>
+                        {dept.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>No departments available</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
