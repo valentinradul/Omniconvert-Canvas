@@ -64,9 +64,20 @@ export const TeamMemberForm: React.FC<TeamMemberFormProps> = ({
     form.setValue('photoUrl', photoUrl || undefined);
   };
 
+  const handleFormSubmit = async (values: TeamMemberFormData) => {
+    console.log("TeamMemberForm: Starting form submission with values:", values);
+    try {
+      await onSubmit(values);
+      console.log("TeamMemberForm: Form submission successful");
+    } catch (error) {
+      console.error("TeamMemberForm: Form submission failed:", error);
+      // Form error handling is handled by the parent component
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <div className="flex justify-center mb-4">
           <UserPhotoUpload 
             userName={form.watch('name')}

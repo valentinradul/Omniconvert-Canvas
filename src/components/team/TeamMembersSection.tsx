@@ -38,15 +38,19 @@ const TeamMembersSection: React.FC = () => {
 
   const handleAddMember = async (values: TeamMemberFormData): Promise<void> => {
     try {
-      console.log("Adding team member with values:", values);
+      console.log("Starting add team member process with values:", values);
       setIsSubmitting(true);
       
       const result = await addTeamMember(values);
       
+      console.log("Add team member result:", result);
+      
       if (result) {
         toast.success(`Team member ${values.name} added successfully!`);
+        setIsAddDialogOpen(false);
         return Promise.resolve();
       } else {
+        console.error("Failed to add team member - no result returned");
         toast.error("Failed to add team member");
         return Promise.reject(new Error("Failed to add team member"));
       }

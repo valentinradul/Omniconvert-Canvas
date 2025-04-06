@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AddTeamMemberForm } from './AddTeamMemberForm';
 import { TeamMemberFormData } from '@/types';
+import { toast } from 'sonner';
 
 interface AddTeamMemberDialogProps {
   isOpen: boolean;
@@ -22,11 +22,15 @@ export const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
 }) => {
   const handleSubmit = async (values: TeamMemberFormData) => {
     try {
+      console.log("AddTeamMemberDialog: Starting submission with values:", values);
       await onSubmit(values);
+      console.log("AddTeamMemberDialog: Submission successful");
+      
       // Force dialog to close on successful submission
       onOpenChange(false);
     } catch (error) {
       console.error("Error in AddTeamMemberDialog handleSubmit:", error);
+      toast.error("Failed to add team member. Please try again.");
       // Keep dialog open on error
     }
   };

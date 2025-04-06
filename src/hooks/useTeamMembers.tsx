@@ -10,7 +10,7 @@ import {
   addTeamMemberToTeam,
   updateExistingTeamMember,
   deleteTeamMemberById
-} from '@/services/teamService';
+} from '@/services/teamMemberService';
 
 export function useTeamMembers() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -113,7 +113,7 @@ export function useTeamMembers() {
         name: data.name, // Using provided name even though it's not in the DB
         email: data.email, // Using provided email even though it's not in the DB
         role: addedMember.role as TeamMemberRole,
-        department: addedMember.department,
+        department: addedMember.department || '',
         title: data.title || '', // Use the title from the form data
         departmentVisibility: (data.departmentVisibility || 'Own Department') as DepartmentVisibility, // Explicit cast
         visibleDepartments: data.visibleDepartments || [],
