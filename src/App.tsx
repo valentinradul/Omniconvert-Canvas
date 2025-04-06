@@ -14,6 +14,7 @@ import AppLayout from "./components/AppLayout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import OnboardingTeamInvite from "./pages/OnboardingTeamInvite";
 import Dashboard from "./pages/Dashboard";
 import IdeasPage from "./pages/IdeasPage";
 import IdeaDetailsPage from "./pages/IdeaDetailsPage";
@@ -43,6 +44,12 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                
+                {/* New onboarding route */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/onboarding-team-invite" element={<OnboardingTeamInvite />} />
+                </Route>
+                
                 <Route element={<ProtectedRoute />}>
                   <Route element={<AppLayout />}>
                     <Route path="/dashboard" element={<Dashboard />} />

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,13 +10,15 @@ interface AddTeamMemberDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: TeamMemberFormData) => Promise<void>;
   isSubmitting?: boolean;
+  triggerButton?: React.ReactNode;
 }
 
 export const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({ 
   isOpen, 
   onOpenChange, 
   onSubmit,
-  isSubmitting = false
+  isSubmitting = false,
+  triggerButton
 }) => {
   const handleSubmit = async (values: TeamMemberFormData) => {
     try {
@@ -30,7 +33,7 @@ export const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button>Add Team Member</Button>
+        {triggerButton || <Button>Add Team Member</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

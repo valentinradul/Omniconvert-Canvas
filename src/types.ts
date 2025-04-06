@@ -148,11 +148,12 @@ export interface TeamMember {
 
 export interface TeamMemberFormData {
   name: string;
-  email: string;
+  email?: string;
   role: TeamMemberRole;
-  department?: string;
+  department: string;
   title?: string;
-  visibleDepartments?: string[];
   departmentVisibility?: DepartmentVisibility;
+  visibleDepartments?: string[];
   photoUrl?: string;
+  customMessage?: string; // Added for invitation emails
 }

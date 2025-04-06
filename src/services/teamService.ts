@@ -65,7 +65,7 @@ export const mapToTeamMembers = (data: any[]): TeamMember[] => {
   return data.map((member: any) => ({
     id: member.id,
     name: member.user_id || 'Invited User',  // Using user_id as placeholder
-    email: `user-${member.id}@example.com`,  // Using a placeholder email
+    email: member.email || `user-${member.id}@example.com`,  // Use actual email if available
     role: (member.role as TeamMemberRole) || 'Team Member',
     department: member.department || '',
     title: member.title || '', // Default empty string since title isn't in the database yet
@@ -89,7 +89,9 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
         team_id: teamId,
         user_id: null, // We're inviting a user that may not exist in the system yet
         role: data.role || 'Team Member',
-        department: data.department || null // Ensure department is not undefined
+        department: data.department || null, // Ensure department is not undefined
+        email: data.email || null, // Store the email for invitation
+        custom_message: data.customMessage || null // Store the custom invitation message
       })
       .select();
       
@@ -102,12 +104,35 @@ export const addTeamMemberToTeam = async (teamId: string, data: TeamMemberFormDa
       throw new Error('No data returned after adding team member');
     }
 
+    // Send invitation email if the email is provided
+    if (data.email) {
+      try {
+        await sendTeamInvitationEmail(data.email, data.customMessage || undefined);
+      } catch (emailError) {
+        console.error('Error sending invitation email:', emailError);
+        // Don't throw here, we still created the team member successfully
+      }
+    }
+
     console.log("Member added successfully:", newMember);
     return newMember[0];
   } catch (error) {
     console.error('Exception when adding team member:', error);
     throw error;
   }
+};
+
+/**
+ * Sends an invitation email to a team member
+ */
+export const sendTeamInvitationEmail = async (email: string, customMessage?: string) => {
+  // This would typically call a backend API to send an email
+  // For now, we'll just simulate success
+  console.log(`[MOCK] Sending invitation email to: ${email}`);
+  console.log(`[MOCK] Custom message: ${customMessage || 'No custom message'}`);
+  
+  // In a real implementation, you would call a backend API or use a service like SendGrid
+  return true;
 };
 
 /**
@@ -120,6 +145,7 @@ export const updateExistingTeamMember = async (id: string, data: Partial<TeamMem
     
     if (data.role) updateData.role = data.role;
     if (data.department !== undefined) updateData.department = data.department;
+    if (data.email) updateData.email = data.email;
     
     console.log("Updating team member with ID:", id, "with data:", updateData);
     
