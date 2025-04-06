@@ -14,14 +14,14 @@ import { toast } from 'sonner';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email" }),
-  role: z.enum(['manager', 'member'], {
+  role: z.enum(['owner', 'manager', 'member'], {
     required_error: "You need to select a role",
   })
 });
 
 type InviteFormData = {
   email: string;
-  role: 'manager' | 'member';
+  role: 'owner' | 'manager' | 'member';
 };
 
 interface CompanyInviteFormProps {
@@ -35,7 +35,7 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
   onCancel,
   isSubmitting = false
 }) => {
-  const { activeCompany } = useCompanyContext();
+  const { activeCompany, isAdmin } = useCompanyContext();
   const { sendInvitation } = useCompanyInvitations(activeCompany?.id);
   
   const form = useForm<InviteFormData>({
@@ -53,6 +53,12 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
       if (!activeCompany?.id) {
         console.error('No active company found');
         toast.error("No active company selected");
+        return;
+      }
+      
+      // Only admin users can add other admins
+      if (values.role === 'owner' && !isAdmin) {
+        toast.error("Only company admins can add new admins");
         return;
       }
       
@@ -108,6 +114,16 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
                   defaultValue={field.value}
                   className="flex flex-col space-y-1"
                 >
+                  {isAdmin && (
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="owner" />
+                      </FormControl>
+                      <FormLabel className="font-normal">
+                        Admin (full access)
+                      </FormLabel>
+                    </FormItem>
+                  )}
                   <FormItem className="flex items-center space-x-3 space-y-0">
                     <FormControl>
                       <RadioGroupItem value="manager" />

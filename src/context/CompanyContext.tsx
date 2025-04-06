@@ -11,6 +11,7 @@ interface CompanyContextProps {
   isLoading: boolean;
   isOwner: boolean;
   isManager: boolean;
+  isAdmin: boolean;
   createCompany: (name: string) => Promise<Company | null>;
   switchCompany: (companyId: string) => void;
   refreshCompanies: () => void;
@@ -33,6 +34,9 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     refreshCompanies,
     updateCompanyName
   } = useCompany();
+  
+  // Admin is the same as owner in this context
+  const isAdmin = isOwner;
 
   return (
     <CompanyContext.Provider value={{
@@ -42,6 +46,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       isLoading,
       isOwner,
       isManager,
+      isAdmin,
       createCompany: createNewCompany,
       switchCompany,
       refreshCompanies,

@@ -1,4 +1,3 @@
-
 // Common types used across the application
 
 export type Department = {
@@ -10,18 +9,18 @@ export type Tag = string;
 
 export type Category = string;
 
-export type GrowthIdea = {
+export interface GrowthIdea {
   id: string;
   title: string;
-  description: string;
-  category: Category;
-  departmentId: string;
-  createdAt: Date;
+  description?: string;
+  category?: string;
+  departmentId?: string;
   userId?: string;
   userName?: string;
+  createdAt: Date;
   tags?: Tag[];
-  responsibleUserId?: string;
-};
+  company_id?: string;
+}
 
 export const ALL_CATEGORIES: Category[] = [
   "Outreach",
@@ -49,20 +48,21 @@ export type ObservationContent = {
   externalUrls?: string[];
 };
 
-export type Hypothesis = {
+export interface Hypothesis {
   id: string;
-  ideaId: string;
-  observation: string;
-  observationContent?: ObservationContent;
-  initiative: string;
-  metric: string;
-  pectiScore: PECTI;
+  ideaId?: string;
+  observation?: string;
+  observationContent?: any;
+  initiative?: string;
+  metric?: string;
   createdAt: Date;
+  status?: HypothesisStatus;
   userId?: string;
   userName?: string;
-  status?: HypothesisStatus;
   responsibleUserId?: string;
-};
+  pectiScore?: PectiScore;
+  company_id?: string;
+}
 
 export type HypothesisStatus = 
   | "Backlog"
@@ -96,23 +96,24 @@ export const ALL_STATUSES: ExperimentStatus[] = [
   "Inconclusive"
 ];
 
-export type Experiment = {
+export interface Experiment {
   id: string;
-  hypothesisId: string;
-  startDate: Date | null;
-  endDate: Date | null;
-  status: ExperimentStatus;
-  notes: string;
-  observationContent?: ObservationContent;
+  hypothesisId?: string;
+  status?: ExperimentStatus;
+  startDate?: Date;
+  endDate?: Date;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  statusUpdatedAt: Date | null;
+  totalCost?: number;
+  totalReturn?: number;
   userId?: string;
   userName?: string;
   responsibleUserId?: string;
-  statusUpdatedAt?: Date;
-  totalCost?: number;
-  totalReturn?: number;
-};
+  observationContent?: any;
+  company_id?: string;
+}
 
 export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   const { potential, ease, cost, time, impact } = pectiScore;
@@ -121,13 +122,13 @@ export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   return Math.round((totalScore / maxPossibleScore) * 100);
 };
 
-export type TeamMemberRole = "Admin" | "Manager" | "Team Member";
+export type TeamMemberRole = 'Admin' | 'Manager' | 'Team Member';
 
-export const ALL_TEAM_MEMBER_ROLES: TeamMemberRole[] = [
-  "Admin",
-  "Manager",
-  "Team Member"
-];
+export const ALL_TEAM_MEMBER_ROLES: TeamMemberRole[] = ['Admin', 'Manager', 'Team Member'];
+
+export type CompanyRole = 'owner' | 'manager' | 'member';
+
+export const ALL_COMPANY_ROLES: CompanyRole[] = ['owner', 'manager', 'member'];
 
 export type DepartmentVisibility = "Own Department" | "Selected Departments" | "All Departments";
 

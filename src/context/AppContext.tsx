@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag, Category } from '../types';
 import { useAuth } from './AuthContext';
+import { useCompanyContext } from './CompanyContext';
 
 // Define the shape of our context
 type AppContextType = {
@@ -54,6 +55,8 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 // Create a provider component
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const { activeCompany } = useCompanyContext();
+  
   const [departments, setDepartments] = useState<Department[]>(() => 
     getInitialData('departments', [
       { id: generateId(), name: 'Marketing' },
@@ -88,6 +91,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ])
   );
   
+  // Filter displayed data based on the active company
+  const filteredIdeas = ideas.filter(idea => 
+    !activeCompany || idea.company_id === activeCompany.id
+  );
+  
+  const filteredHypotheses = hypotheses.filter(hypothesis => 
+    !activeCompany || hypothesis.company_id === activeCompany.id
+  );
+  
+  const filteredExperiments = experiments.filter(experiment => 
+    !activeCompany || experiment.company_id === activeCompany.id
+  );
+
   // Update localStorage when state changes
   useEffect(() => {
     localStorage.setItem('departments', JSON.stringify(departments));
@@ -113,7 +129,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const getAllTags = (): Tag[] => {
     const tagsSet = new Set<Tag>();
     
-    ideas.forEach(idea => {
+    filteredIdeas.forEach(idea => {
       if (idea.tags) {
         idea.tags.forEach(tag => tagsSet.add(tag));
       }
@@ -126,7 +142,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const getAllUserNames = () => {
     const usersMap = new Map<string, string>();
     
-    [...ideas, ...hypotheses, ...experiments].forEach(item => {
+    [...filteredIdeas, ...filteredHypotheses, ...filteredExperiments].forEach(item => {
       if (item.userId && item.userName) {
         usersMap.set(item.userId, item.userName);
       }
@@ -201,7 +217,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: generateId(),
         createdAt: new Date(),
         userId: user?.id || undefined,
-        userName: user?.user_metadata?.full_name || user?.email || undefined
+        userName: user?.user_metadata?.full_name || user?.email || undefined,
+        company_id: activeCompany?.id
       }
     ]);
   };
@@ -234,7 +251,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createdAt: new Date(),
         status: hypothesis.status || 'Backlog',
         userId: hypothesis.userId || user?.id,
-        userName: hypothesis.userName || user?.user_metadata?.full_name || user?.email
+        userName: hypothesis.userName || user?.user_metadata?.full_name || user?.email,
+        company_id: activeCompany?.id
       }
     ]);
   };
@@ -269,7 +287,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updatedAt: now,
         statusUpdatedAt: now,
         userId: experiment.userId || user?.id,
-        userName: experiment.userName || user?.user_metadata?.full_name || user?.email
+        userName: experiment.userName || user?.user_metadata?.full_name || user?.email,
+        company_id: activeCompany?.id
       }
     ]);
   };
@@ -335,9 +354,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider value={{
       departments,
-      ideas,
-      hypotheses,
-      experiments,
+      ideas: filteredIdeas,
+      hypotheses: filteredHypotheses,
+      experiments: filteredExperiments,
       categories,
       addDepartment,
       editDepartment,
