@@ -1,183 +1,79 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTeamMembers } from '@/hooks/useTeamMembers';
-import { TeamMembersTable } from './TeamMembersTable';
-import { AddTeamMemberDialog } from './AddTeamMemberDialog';
-import { EditTeamMemberDialog } from './EditTeamMemberDialog';
-import { TeamMember, TeamMemberFormData } from '@/types';
-import { useAuth } from '@/context/AuthContext';
-import { toast } from 'sonner';
+import React, { useState } from 'react';
+import AddTeamMemberDialog from './AddTeamMemberDialog';
+import EditTeamMemberDialog from './EditTeamMemberDialog';
+import TeamMembersTable from './TeamMembersTable';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
+import { TeamMemberFormData } from '@/types';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
 
 const TeamMembersSection: React.FC = () => {
-  const { members, isLoading, addTeamMember, updateTeamMember, deleteTeamMember, refreshMembers, error: membersError } = useTeamMembers();
+  const { members, isLoading, error, addTeamMember, updateTeamMember, deleteTeamMember, refreshMembers } = useTeamMembers();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
-  
-  useEffect(() => {
-    // Check authentication status when component mounts
-    if (!user) {
-      console.log("User not authenticated");
-    } else {
-      console.log("TeamMembersSection - Authenticated as:", user.email);
-    }
-    
-    if (membersError) {
-      console.error("Error loading team members:", membersError);
-    }
-  }, [user, membersError]);
+  const [editingMember, setEditingMember] = useState<{ id: string; data: TeamMemberFormData } | null>(null);
 
-  const handleAddTeamMember = async (values: TeamMemberFormData) => {
-    console.log("Submitting team member data:", values);
-    setIsSubmitting(true);
-    
-    try {
-      // Make sure role is in expected format (enum string)
-      const normalizedValues = {
-        ...values,
-        role: values.role.toLowerCase().replace(' ', '_') as any
-      };
-      
-      console.log("Normalized team member data:", normalizedValues);
-      
-      const result = await addTeamMember(normalizedValues);
-      if (result) {
-        setIsAddDialogOpen(false);
-        toast.success("Team member added successfully!");
-      } else {
-        toast.error("Failed to add team member. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error in handleAddTeamMember:", error);
-      toast.error(`An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleEditClick = (id: string, data: TeamMemberFormData) => {
+    // Make sure role is properly capitalized to match the expected enum values
+    const formattedData = {
+      ...data,
+      role: data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase()
+    };
+    setEditingMember({ id, data: formattedData });
   };
 
-  const handleEditTeamMember = async (values: Partial<TeamMemberFormData>) => {
-    if (selectedMember) {
-      setIsSubmitting(true);
-      
-      try {
-        // Normalize role if it's being updated
-        const normalizedValues = {...values};
-        if (values.role) {
-          normalizedValues.role = values.role.toLowerCase().replace(' ', '_') as any;
-        }
-        
-        console.log("Updating team member with normalized data:", normalizedValues);
-        
-        const result = await updateTeamMember(selectedMember.id, normalizedValues);
-        if (result) {
-          setIsEditDialogOpen(false);
-          setSelectedMember(null);
-          toast.success("Team member updated successfully!");
-        } else {
-          toast.error("Failed to update team member. Please try again.");
-        }
-      } catch (error) {
-        console.error("Error in handleEditTeamMember:", error);
-        toast.error(`An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-
-  const handleDeleteTeamMember = async (id: string) => {
-    try {
-      const result = await deleteTeamMember(id);
-      if (result) {
-        toast.success("Team member deleted successfully!");
-      } else {
-        toast.error("Failed to delete team member. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error in handleDeleteTeamMember:", error);
-      toast.error(`An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
-  const openEditDialog = (member: TeamMember) => {
-    setSelectedMember(member);
-    setIsEditDialogOpen(true);
-  };
-  
-  const handleRetry = () => {
-    console.log("Retrying team members fetch");
+  const handleRetryLoad = () => {
     refreshMembers();
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="mt-6">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
-          <CardTitle>Team Members</CardTitle>
-          <CardDescription>
-            Manage your team members, their roles, and departments.
-          </CardDescription>
+          <CardTitle className="text-xl">Team Members</CardTitle>
+          <CardDescription>Manage your team members and their permissions</CardDescription>
         </div>
-        <AddTeamMemberDialog 
-          isOpen={isAddDialogOpen} 
-          onOpenChange={setIsAddDialogOpen} 
-          onSubmit={handleAddTeamMember}
-          isSubmitting={isSubmitting}
-        />
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Team Member
+        </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <p>Loading team members...</p>
-            </div>
-          ) : membersError ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center gap-4 border rounded-md">
-              <AlertTriangle className="h-10 w-10 text-red-500" />
-              <p>Error loading team members</p>
-              <p className="text-sm text-muted-foreground">
-                {membersError instanceof Error ? membersError.message : 'An unknown error occurred'}
-              </p>
-              <Button size="sm" variant="outline" onClick={handleRetry}>
-                Retry
-              </Button>
-            </div>
-          ) : members.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center gap-4 border rounded-md">
-              <AlertTriangle className="h-10 w-10 text-yellow-500" />
-              <p>No team members found.</p>
-              <p className="text-sm text-muted-foreground">
-                Start by adding team members using the "Add Team Member" button above.
-              </p>
-              <Button size="sm" variant="outline" onClick={handleRetry}>
-                Retry
-              </Button>
-            </div>
-          ) : (
-            <TeamMembersTable 
-              members={members} 
-              isLoading={isLoading} 
-              onEdit={openEditDialog}
-              onDelete={handleDeleteTeamMember}
-            />
-          )}
-        </div>
-      </CardContent>
-      
-      {selectedMember && (
-        <EditTeamMemberDialog
-          isOpen={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          onSubmit={handleEditTeamMember}
-          member={selectedMember}
-          isSubmitting={isSubmitting}
+        {error ? (
+          <div className="p-4 text-center">
+            <p className="text-red-500 mb-2">Failed to load team members</p>
+            <Button variant="outline" onClick={handleRetryLoad}>Retry</Button>
+          </div>
+        ) : (
+          <TeamMembersTable 
+            members={members}
+            isLoading={isLoading}
+            onEdit={handleEditClick}
+            onDelete={deleteTeamMember}
+          />
+        )}
+
+        <AddTeamMemberDialog 
+          isOpen={isAddDialogOpen}
+          onOpenChange={setIsAddDialogOpen}
+          onAdd={addTeamMember}
         />
-      )}
+
+        {editingMember && (
+          <EditTeamMemberDialog
+            isOpen={!!editingMember}
+            onOpenChange={(open) => !open && setEditingMember(null)}
+            member={editingMember.data}
+            onSave={(data) => {
+              if (editingMember) {
+                updateTeamMember(editingMember.id, data);
+                setEditingMember(null);
+              }
+            }}
+          />
+        )}
+      </CardContent>
     </Card>
   );
 };

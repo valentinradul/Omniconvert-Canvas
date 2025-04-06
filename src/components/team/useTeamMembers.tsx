@@ -1,7 +1,4 @@
 
-// This file is now just a re-export for backward compatibility
-// Import the new hook from its new location
-import { useTeamMembers } from '@/hooks/useTeamMembers';
-
-// Re-export the hook to maintain backward compatibility
-export { useTeamMembers };
+// Re-export the hook from the src/hooks/useTeamMembers.tsx location
+// This avoids breaking changes for components importing from this location
+export { useTeamMembers } from '@/hooks/useTeamMembers';

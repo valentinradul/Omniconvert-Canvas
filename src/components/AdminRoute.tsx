@@ -12,7 +12,7 @@ type AdminRouteProps = {
 };
 
 const AdminRoute: React.FC<AdminRouteProps> = ({ fallbackPath = '/dashboard' }) => {
-  const { isAdmin, isLoading, error, refetch } = useUserRole();
+  const { isAdmin, isLoading, error, refetch, roles } = useUserRole();
   const { user } = useAuth();
   const location = useLocation();
   
@@ -23,11 +23,12 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ fallbackPath = '/dashboard' }) 
         userId: user?.id,
         email: user?.email,
         isAdmin,
+        roles,
         isLoading,
         hasError: !!error
       });
     }
-  }, [isLoading, isAdmin, error, location.pathname, user]);
+  }, [isLoading, isAdmin, error, location.pathname, user, roles]);
   
   // Show loading state while checking admin status
   if (isLoading) {
@@ -60,7 +61,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ fallbackPath = '/dashboard' }) 
   
   // If not admin, redirect to fallback
   if (!isAdmin) {
-    console.log('Not an admin, redirecting from', location.pathname, 'to', fallbackPath);
+    console.log('Not an admin, redirecting from', location.pathname, 'to', fallbackPath, 'Roles:', roles);
     return <Navigate to={fallbackPath} replace state={{ from: location, accessDenied: true }} />;
   }
   

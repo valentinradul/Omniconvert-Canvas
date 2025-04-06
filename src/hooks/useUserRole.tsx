@@ -34,17 +34,21 @@ export function useUserRole() {
       const { data, error: supabaseError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id) as unknown as {
-          data: UserRoleRecord[] | null;
-          error: Error | null;
-        };
+        .eq('user_id', user.id);
 
       if (supabaseError) {
         throw supabaseError;
       } 
       
-      if (data) {
-        const userRoles = data.map(item => item.role as Role);
+      if (data && Array.isArray(data)) {
+        // Ensure consistent casing for role values
+        const userRoles = data.map(item => {
+          // Normalize role case: lowercase for internal processing
+          const normalizedRole = (item.role || '').toLowerCase() as Role;
+          console.log(`Found role: ${normalizedRole} (original: ${item.role})`);
+          return normalizedRole;
+        });
+        
         console.log(`User ${user.id} roles:`, userRoles);
         setRoles(userRoles);
         setError(null);
@@ -107,9 +111,10 @@ export function useUserRole() {
     }
   }, [roles]);
 
-  const isAdmin = roles.includes('admin');
-  const isManager = roles.includes('manager') || isAdmin;
-  const isMember = roles.includes('member') || isManager;
+  // Make sure we're checking 'admin' in a case-insensitive way
+  const isAdmin = roles.some(role => role === 'admin');
+  const isManager = roles.some(role => role === 'manager') || isAdmin;
+  const isMember = roles.some(role => role === 'member') || isManager;
 
   return { 
     roles,
