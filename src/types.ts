@@ -1,72 +1,24 @@
 
-// Add missing types required by GrowthIdea & Experiment
-export interface GrowthIdea {
+// Common types used across the application
+
+export type Department = {
   id: string;
-  title: string;
-  description?: string;
-  category?: string;
-  departmentId: string;
-  createdAt: Date;
-  userId?: string;
-  userName?: string;
-  tags?: string[];
-  responsibleUserId?: string;
-}
+  name: string;
+};
 
-export interface Experiment {
-  id: string;
-  hypothesisId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  statusUpdatedAt: Date;
-  userId?: string;
-  userName?: string;
-  status?: ExperimentStatus;
-  startDate?: Date;
-  endDate?: Date;
-  notes?: string;
-  observationContent?: ObservationContent;
-  totalCost?: number;
-  totalReturn?: number;
-  responsibleUserId?: string;
-}
+export type Tag = string;
 
-// Add missing team-related types as stubs
-export interface TeamMemberFormData {
-  name?: string;
-  email: string;
-  role: string;
-  departmentVisibility?: string;
-  visibleDepartments?: string[];
-  department?: string; // Added for TeamMemberDepartmentField
-}
-
-export interface TeamMember {
-  id: string;
-  userId: string;
-  teamId: string;
-  role: TeamMemberRole;
-  departmentVisibility: DepartmentVisibility;
-  visibleDepartments?: string[];
-}
-
-export type TeamMemberRole = "admin" | "member" | "viewer";
-export type DepartmentVisibility = "all" | "selected" | "none";
-
-export const ALL_DEPARTMENT_VISIBILITY_OPTIONS = ["all", "selected", "none"] as const;
-
-export type Category =
-  | "Outreach"
-  | "Paid Ads"
-  | "Events"
-  | "Onboarding"
-  | "Product-led"
+export type Category = 
+  | "Outreach" 
+  | "Paid Ads" 
+  | "Events" 
+  | "Onboarding" 
+  | "Product-led" 
   | "Content Marketing"
   | "SEO"
   | "Partnerships"
   | "Other";
 
-// Adding ALL_CATEGORIES for use in filters
 export const ALL_CATEGORIES: Category[] = [
   "Outreach",
   "Paid Ads",
@@ -79,97 +31,97 @@ export const ALL_CATEGORIES: Category[] = [
   "Other"
 ];
 
-export interface Department {
+export type GrowthIdea = {
   id: string;
-  name: string;
-}
-
-export interface Hypothesis {
-  id: string;
-  ideaId: string;
+  title: string;
+  description: string;
+  category: Category;
+  departmentId: string;
   createdAt: Date;
   userId?: string;
   userName?: string;
+  tags?: Tag[];
+};
+
+export type PECTI = {
+  potential: 1 | 2 | 3 | 4 | 5;
+  ease: 1 | 2 | 3 | 4 | 5;
+  cost: 1 | 2 | 3 | 4 | 5;
+  time: 1 | 2 | 3 | 4 | 5;
+  impact: 1 | 2 | 3 | 4 | 5;
+};
+
+// Extended type for observation content that supports text, URLs, and images
+export type ObservationContent = {
+  text: string;
+  imageUrls?: string[];
+  externalUrls?: string[];
+};
+
+export type Hypothesis = {
+  id: string;
+  ideaId: string;
   observation: string;
-  hypothesis?: string;
+  observationContent?: ObservationContent;
   initiative: string;
   metric: string;
-  target?: string;
-  status: HypothesisStatus;
-  confidenceScore?: number;
-  easeScore?: number;
-  impactScore?: number;
-  confidence?: number;
-  ease?: number;
-  impact?: number;
-  userIdResponsible?: string;
   pectiScore: PECTI;
-  observationContent?: ObservationContent;
-}
+  createdAt: Date;
+  userId?: string;
+  userName?: string;
+  status?: HypothesisStatus;
+};
 
-export type HypothesisStatus =
+export type HypothesisStatus = 
   | "Backlog"
   | "Selected For Testing"
   | "Testing"
   | "Completed"
-  | "On Hold"
-  | "Rejected";
+  | "Archived";
 
-// Adding ALL_HYPOTHESIS_STATUSES for KanbanBoard
 export const ALL_HYPOTHESIS_STATUSES: HypothesisStatus[] = [
   "Backlog",
   "Selected For Testing",
   "Testing",
   "Completed",
-  "On Hold",
-  "Rejected"
+  "Archived"
 ];
 
-export type ExperimentStatus =
-  | "Planned"
-  | "Running"
-  | "Paused"
-  | "Completed"
-  | "Winning"
-  | "Losing"
+export type ExperimentStatus = 
+  | "Planned" 
+  | "In Progress" 
+  | "Blocked" 
+  | "Winning" 
+  | "Losing" 
   | "Inconclusive";
 
-// Adding ALL_STATUSES for experiment filters
 export const ALL_STATUSES: ExperimentStatus[] = [
   "Planned",
-  "Running",
-  "Paused",
-  "Completed",
+  "In Progress",
+  "Blocked",
   "Winning",
   "Losing",
   "Inconclusive"
 ];
 
-// Updated PECTI interface to include both expense and cost for compatibility
-export interface PECTI {
-  potential: number;
-  expense: number; // Original property
-  cost: number;   // Added for compatibility
-  ease: number;   // Added for compatibility
-  confidence: number;
-  time: number;
-  impact: number;
-}
+export type Experiment = {
+  id: string;
+  hypothesisId: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  status: ExperimentStatus;
+  notes: string;
+  observationContent?: ObservationContent;
+  createdAt: Date;
+  updatedAt: Date;
+  userId?: string;
+  userName?: string;
+};
 
-// Updated ObservationContent interface to include the fields used in components
-export interface ObservationContent {
-  blocks?: any[];
-  entityMap?: Record<string, any>;
-  text?: string;
-  imageUrls?: string[];
-  externalUrls?: string[];
-}
-
-export type Tag = string;
-
-export const calculatePectiPercentage = (pecti: PECTI): number => {
-  const { potential, expense, confidence, time, impact } = pecti;
-  const totalScore = potential + expense + confidence + time + impact;
-  const maxTotalScore = 5 * 10; // Assuming each category is rated out of 10
-  return (totalScore / maxTotalScore) * 100;
+// Helper function to calculate PECTI percentage score
+export const calculatePectiPercentage = (pectiScore: PECTI): number => {
+  const { potential, ease, cost, time, impact } = pectiScore;
+  const totalScore = potential + ease + cost + time + impact;
+  const maxPossibleScore = 25; // 5 points max for each of the 5 categories
+  return Math.round((totalScore / maxPossibleScore) * 100);
 };

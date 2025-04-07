@@ -51,18 +51,8 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
     setIsEditing(true);
   };
 
-  const handleViewDetails = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate(`/hypothesis-details/${hypothesis.id}`);
-  };
-
-  const handleCreateExperiment = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate(`/create-experiment/${hypothesis.id}`);
-  };
-
   return (
-    <TableRow className="group cursor-pointer" onClick={handleViewDetails}>
+    <TableRow className="group">
       <TableCell className="font-medium">
         <div className="space-y-2">
           <div className="font-medium">{idea?.title || 'Unknown Idea'}</div>
@@ -95,9 +85,8 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
           ${hypothesis.status === 'Selected For Testing' ? 'bg-blue-100 text-blue-800' : ''}
           ${hypothesis.status === 'Testing' ? 'bg-amber-100 text-amber-800' : ''}
           ${hypothesis.status === 'Completed' ? 'bg-green-100 text-green-800' : ''}
-          ${hypothesis.status === 'Rejected' ? 'bg-red-100 text-red-800' : ''}
+          ${hypothesis.status === 'Archived' ? 'bg-red-100 text-red-800' : ''}
           ${hypothesis.status === 'Backlog' ? 'bg-gray-100 text-gray-800' : ''}
-          ${hypothesis.status === 'On Hold' ? 'bg-purple-100 text-purple-800' : ''}
         `}>
           {hypothesis.status}
         </Badge>
@@ -124,10 +113,7 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEditPecti();
-              }}
+              onClick={handleEditPecti}
             >
               Edit PECTI
             </Button>
@@ -135,14 +121,14 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
           <Button 
             variant="outline" 
             size="sm"
-            onClick={handleViewDetails}
+            onClick={() => navigate(`/hypothesis-details/${hypothesis.id}`)}
           >
             View Details
           </Button>
           {!hasExperiment && (
             <Button
               size="sm"
-              onClick={handleCreateExperiment}
+              onClick={() => navigate(`/create-experiment/${hypothesis.id}`)}
             >
               Create Experiment
             </Button>

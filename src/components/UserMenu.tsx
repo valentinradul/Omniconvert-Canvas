@@ -51,6 +51,9 @@ const UserMenu: React.FC = () => {
         <DropdownMenuItem asChild>
           <Link to="/account-settings">Account Settings</Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/team-settings">Team Settings</Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => logout()}>
           Log out

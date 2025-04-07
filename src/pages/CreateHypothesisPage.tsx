@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -40,10 +41,8 @@ const CreateHypothesisPage: React.FC = () => {
     potential: potential as 1 | 2 | 3 | 4 | 5,
     ease: ease as 1 | 2 | 3 | 4 | 5,
     cost: cost as 1 | 2 | 3 | 4 | 5,
-    expense: cost as 1 | 2 | 3 | 4 | 5,
     time: time as 1 | 2 | 3 | 4 | 5,
     impact: impact as 1 | 2 | 3 | 4 | 5,
-    confidence: 3
   });
   
   useEffect(() => {
@@ -82,21 +81,12 @@ const CreateHypothesisPage: React.FC = () => {
         observationContent,
         initiative,
         metric,
-        status: "Backlog" as const,
-        confidence: 3,
-        impact: impact,
-        target: "",
-        confidenceScore: 3,
-        easeScore: ease,
-        impactScore: impact,
         pectiScore: {
           potential: potential as 1 | 2 | 3 | 4 | 5,
           ease: ease as 1 | 2 | 3 | 4 | 5,
           cost: cost as 1 | 2 | 3 | 4 | 5,
-          expense: cost as 1 | 2 | 3 | 4 | 5,
           time: time as 1 | 2 | 3 | 4 | 5,
           impact: impact as 1 | 2 | 3 | 4 | 5,
-          confidence: 3
         }
       };
       
