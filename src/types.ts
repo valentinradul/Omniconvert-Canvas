@@ -18,10 +18,8 @@ export interface GrowthIdea {
   departmentId?: string;
   userId?: string;
   userName?: string;
-  responsibleUserId?: string;
   createdAt: Date;
   tags?: Tag[];
-  company_id?: string;
 }
 
 export const ALL_CATEGORIES: Category[] = [
@@ -61,9 +59,7 @@ export interface Hypothesis {
   status?: HypothesisStatus;
   userId?: string;
   userName?: string;
-  responsibleUserId?: string;
   pectiScore?: PECTI;
-  company_id?: string;
 }
 
 export type HypothesisStatus = 
@@ -112,9 +108,7 @@ export interface Experiment {
   totalReturn?: number;
   userId?: string;
   userName?: string;
-  responsibleUserId?: string;
   observationContent?: any;
-  company_id?: string;
 }
 
 export const calculatePectiPercentage = (pectiScore: PECTI): number => {
@@ -123,44 +117,3 @@ export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   const maxPossibleScore = 25; // 5 points max for each of the 5 categories
   return Math.round((totalScore / maxPossibleScore) * 100);
 };
-
-// Updated TeamMemberRole to include "member", "manager", "owner" and remove "Team Member"
-export type TeamMemberRole = 'owner' | 'manager' | 'member';
-
-export const ALL_TEAM_MEMBER_ROLES: TeamMemberRole[] = ['owner', 'manager', 'member'];
-
-export type CompanyRole = 'owner' | 'manager' | 'member';
-
-export const ALL_COMPANY_ROLES: CompanyRole[] = ['owner', 'manager', 'member'];
-
-export type DepartmentVisibility = "Own Department" | "Selected Departments" | "All Departments";
-
-export const ALL_DEPARTMENT_VISIBILITY_OPTIONS: DepartmentVisibility[] = [
-  "Own Department", 
-  "Selected Departments", 
-  "All Departments"
-];
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: TeamMemberRole;
-  department?: string;
-  title?: string;
-  visibleDepartments?: string[];
-  departmentVisibility?: DepartmentVisibility;
-  photoUrl?: string;
-}
-
-export interface TeamMemberFormData {
-  name: string;
-  email?: string;
-  role: TeamMemberRole;
-  department: string;
-  title?: string;
-  departmentVisibility?: DepartmentVisibility;
-  visibleDepartments?: string[];
-  photoUrl?: string;
-  customMessage?: string; // Added for invitation emails
-}

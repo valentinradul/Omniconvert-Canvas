@@ -18,8 +18,8 @@ const Signup = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      // Redirect to onboarding for new users to create their company
-      navigate("/onboarding/company");
+      // Redirect to dashboard after successful signup
+      navigate("/dashboard");
     }
   }, [isAuthenticated, isLoading, navigate]);
   
@@ -27,7 +27,7 @@ const Signup = () => {
     try {
       setIsSubmitting(true);
       await signup(values.email, values.password, values.name);
-      // User will be redirected to onboarding page after successful signup
+      // User will be redirected to dashboard after successful signup
       // (handled in the useEffect above)
     } catch (error) {
       // Error is handled in the auth context
@@ -42,7 +42,7 @@ const Signup = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/onboarding/company` // Redirect to company creation
+          redirectTo: `${window.location.origin}/dashboard` // Redirect to dashboard
         }
       });
       
