@@ -35,9 +35,12 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           <Input
             id="edit-category-name"
             value={editingCategory?.newValue || ''}
-            onChange={(e) => onEditingCategoryChange(
-              editingCategory ? { ...editingCategory, newValue: e.target.value } : null
-            )}
+            onChange={(e) => {
+              // Ensure we're passing the correct type (Category) for newValue
+              onEditingCategoryChange(
+                editingCategory ? { ...editingCategory, newValue: e.target.value as Category } : null
+              );
+            }}
             placeholder="Enter category name"
             className="mt-1"
           />

@@ -25,7 +25,7 @@ export interface Experiment {
   startDate?: Date;
   endDate?: Date;
   notes?: string;
-  observationContent?: any;
+  observationContent?: ObservationContent;
   totalCost?: number;
   totalReturn?: number;
   responsibleUserId?: string;
@@ -91,19 +91,20 @@ export interface Hypothesis {
   userId?: string;
   userName?: string;
   observation: string;
-  hypothesis: string;
+  hypothesis?: string;
   initiative: string;
   metric: string;
-  target: string;
+  target?: string;
   status: HypothesisStatus;
-  confidenceScore: number;
-  easeScore: number;
-  impactScore: number;
-  confidence: number;
-  ease: number;
-  impact: number;
+  confidenceScore?: number;
+  easeScore?: number;
+  impactScore?: number;
+  confidence?: number;
+  ease?: number;
+  impact?: number;
   userIdResponsible?: string;
   pectiScore: PECTI;
+  observationContent?: ObservationContent;
 }
 
 export type HypothesisStatus =
@@ -144,17 +145,24 @@ export const ALL_STATUSES: ExperimentStatus[] = [
   "Inconclusive"
 ];
 
+// Updated PECTI interface to include both expense and cost for compatibility
 export interface PECTI {
   potential: number;
-  expense: number; // Using expense instead of cost
+  expense: number; // Original property
+  cost: number;   // Added for compatibility
+  ease: number;   // Added for compatibility
   confidence: number;
   time: number;
   impact: number;
 }
 
+// Updated ObservationContent interface to include the fields used in components
 export interface ObservationContent {
   blocks?: any[];
   entityMap?: Record<string, any>;
+  text?: string;
+  imageUrls?: string[];
+  externalUrls?: string[];
 }
 
 export type Tag = string;

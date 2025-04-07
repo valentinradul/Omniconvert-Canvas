@@ -59,10 +59,12 @@ const CreateHypothesisModal: React.FC<CreateHypothesisModalProps> = ({
       metric,
       pectiScore: {
         potential,
-        ease,
-        cost,
+        ease,             // Use both ease and expense for compatibility
+        expense: cost,     // Map cost to expense
+        cost,              // Add cost as well
         time,
-        impact
+        impact,
+        confidence: 3      // Default value
       },
       status: "Backlog",
       userId: user?.id,

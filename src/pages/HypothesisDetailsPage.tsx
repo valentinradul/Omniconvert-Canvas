@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -60,8 +59,8 @@ const HypothesisDetailsPage: React.FC = () => {
   
   const totalPectiScore = 
     hypothesis.pectiScore.potential + 
-    hypothesis.pectiScore.ease + 
-    hypothesis.pectiScore.cost + 
+    (hypothesis.pectiScore.expense || hypothesis.pectiScore.cost) + 
+    hypothesis.pectiScore.confidence + 
     hypothesis.pectiScore.time + 
     hypothesis.pectiScore.impact;
   

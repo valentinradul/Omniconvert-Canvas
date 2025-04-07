@@ -8,7 +8,6 @@ import EditCategoryDialog from '@/components/categories/EditCategoryDialog';
 import CategoryHeader from '@/components/categories/CategoryHeader';
 import CategoryList from '@/components/categories/CategoryList';
 import LoadingCard from '@/components/categories/LoadingCard';
-import AccessDeniedCard from '@/components/categories/AccessDeniedCard';
 import { Category } from '@/types';
 
 const CategoriesPage: React.FC = () => {
@@ -17,7 +16,7 @@ const CategoriesPage: React.FC = () => {
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<{ oldValue: Category; newValue: Category } | null>(null);
   
   const handleAddCategory = (categoryName: string) => {
     // Convert the string to Category type
@@ -25,9 +24,12 @@ const CategoriesPage: React.FC = () => {
     setIsAddDialogOpen(false);
   };
   
-  const handleEditCategory = ({ oldValue, newValue }: { oldValue: Category; newValue: string }) => {
-    editCategory(oldValue, newValue as Category);
+  const handleEditCategory = () => {
+    if (editingCategory) {
+      editCategory(editingCategory.oldValue, editingCategory.newValue);
+    }
     setIsEditDialogOpen(false);
+    setEditingCategory(null);
   };
   
   const handleDeleteCategory = (category: Category) => {
@@ -39,6 +41,7 @@ const CategoriesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <CategoryHeader 
+        // Assuming these are the expected props for CategoryHeader based on errors
         onAddClick={() => setIsAddDialogOpen(true)} 
         isAdmin={isAdmin}
       />
@@ -48,7 +51,7 @@ const CategoriesPage: React.FC = () => {
           <CategoryList 
             categories={categories} 
             onEditCategory={(category) => {
-              setSelectedCategory(category);
+              setEditingCategory({ oldValue: category, newValue: category });
               setIsEditDialogOpen(true);
             }}
             onDeleteCategory={handleDeleteCategory}
@@ -63,14 +66,13 @@ const CategoriesPage: React.FC = () => {
         onAdd={handleAddCategory}
       />
       
-      {selectedCategory && (
-        <EditCategoryDialog 
-          open={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          onEdit={handleEditCategory}
-          initialCategory={selectedCategory}
-        />
-      )}
+      <EditCategoryDialog 
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        editingCategory={editingCategory}
+        onEditingCategoryChange={setEditingCategory}
+        onSave={handleEditCategory}
+      />
     </div>
   );
 };
