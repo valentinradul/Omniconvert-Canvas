@@ -15,28 +15,47 @@ const TeamSettingsPage = () => {
   const [activeTab, setActiveTab] = useState('company');
   const [companyName, setCompanyName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { activeCompany, updateCompanyName } = useCompanyContext();
+  const { activeCompany, updateCompanyName, refreshCompanies, isAdmin } = useCompanyContext();
+  
+  useEffect(() => {
+    // Refresh companies to ensure we have the latest data
+    refreshCompanies();
+  }, []);
   
   useEffect(() => {
     if (activeCompany) {
       setCompanyName(activeCompany.name);
-      console.log("Active company loaded:", activeCompany);
+      console.log("TeamSettingsPage: Active company loaded:", activeCompany);
     } else {
-      console.log("No active company available");
+      console.log("TeamSettingsPage: No active company available");
     }
   }, [activeCompany]);
 
   const handleCompanyNameChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeCompany || !companyName.trim()) return;
+    if (!activeCompany) {
+      toast.error("No company selected");
+      return;
+    }
+    
+    if (!companyName.trim()) {
+      toast.error("Company name cannot be empty");
+      return;
+    }
     
     try {
       setIsSubmitting(true);
-      console.log("Updating company name to:", companyName);
-      await updateCompanyName(activeCompany.id, companyName);
-      toast.success("Company settings updated", {
-        description: "Your company settings have been updated successfully.",
-      });
+      console.log("Updating company name to:", companyName, "for company ID:", activeCompany.id);
+      
+      const result = await updateCompanyName(activeCompany.id, companyName);
+      
+      if (result) {
+        toast.success("Company settings updated", {
+          description: "Your company settings have been updated successfully.",
+        });
+      } else {
+        toast.error("Failed to update company settings");
+      }
     } catch (error) {
       console.error("Failed to update company:", error);
       toast.error("Failed to update company settings", {
@@ -46,6 +65,8 @@ const TeamSettingsPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  const canEditCompanyInfo = isAdmin;
 
   return (
     <div className="space-y-6">
@@ -75,7 +96,7 @@ const TeamSettingsPage = () => {
               <form onSubmit={handleCompanyNameChange} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium" htmlFor="companyName">
-                    Company Name
+                    Company Name {!canEditCompanyInfo && "(Only admins can edit)"}
                   </label>
                   <div className="flex">
                     <div className="relative flex-grow">
@@ -87,13 +108,15 @@ const TeamSettingsPage = () => {
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
                         className="pl-8"
+                        disabled={!canEditCompanyInfo}
                       />
                     </div>
                   </div>
                 </div>
                 <Button 
                   type="submit" 
-                  disabled={!activeCompany || !companyName.trim() || isSubmitting}
+                  disabled={(!activeCompany || !companyName.trim() || isSubmitting || !canEditCompanyInfo)}
+                  className={!canEditCompanyInfo ? "opacity-50 cursor-not-allowed" : ""}
                 >
                   {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </Button>

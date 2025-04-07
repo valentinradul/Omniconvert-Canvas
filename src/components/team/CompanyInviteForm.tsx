@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,10 +34,16 @@ interface CompanyInviteFormProps {
 export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
   onSuccess,
   onCancel,
-  isSubmitting = false
+  isSubmitting: externalIsSubmitting = false
 }) => {
-  const { activeCompany, isAdmin } = useCompanyContext();
+  const { activeCompany, isAdmin, refreshCompanies } = useCompanyContext();
   const { sendInvitation } = useCompanyInvitations(activeCompany?.id);
+  const [isSubmitting, setIsSubmitting] = React.useState(externalIsSubmitting);
+  
+  useEffect(() => {
+    // Refresh companies when component mounts
+    refreshCompanies();
+  }, []);
   
   const form = useForm<InviteFormData>({
     resolver: zodResolver(formSchema),
@@ -46,6 +52,14 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
       role: 'member'
     }
   });
+  
+  useEffect(() => {
+    if (!activeCompany) {
+      console.log("CompanyInviteForm: No active company found");
+    } else {
+      console.log("CompanyInviteForm: Active company:", activeCompany.name);
+    }
+  }, [activeCompany]);
   
   const handleSubmit = async (values: InviteFormData) => {
     try {
@@ -57,30 +71,38 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
         return;
       }
       
+      setIsSubmitting(true);
+      
       // Only admin users can add other admins
       if (values.role === 'owner' && !isAdmin) {
         toast.error("Only company admins can add new admins");
+        setIsSubmitting(false);
         return;
       }
       
-      // Map 'owner' role to 'manager' when sending to API as the backend expects
+      console.log("Sending invitation with role:", values.role);
+      
+      // If role is owner, send as manager to the API since the backend expects
+      // manager as the highest role
       const roleToSend = values.role === 'owner' ? 'manager' : values.role;
       
-      // Use sendInvitation from useCompanyInvitations hook
-      const result = await sendInvitation(
-        values.email,
-        roleToSend 
-      );
+      // Send invitation
+      const result = await sendInvitation(values.email, roleToSend as 'manager' | 'member');
       
       console.log('CompanyInviteForm: Invitation result:', result);
       
       if (result) {
         form.reset();
+        toast.success(`Invitation sent to ${values.email}`);
         onSuccess();
+      } else {
+        toast.error("Failed to send invitation");
       }
     } catch (error) {
       console.error('Error in CompanyInviteForm handleSubmit:', error);
       toast.error("Failed to send invitation");
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -157,7 +179,11 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
               Cancel
             </Button>
           )}
-          <Button type="submit" disabled={isSubmitting || !activeCompany}>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting || !activeCompany}
+            className={!activeCompany ? "opacity-50" : ""}
+          >
             {isSubmitting ? 'Sending...' : 'Send Invitation'}
           </Button>
         </DialogFooter>

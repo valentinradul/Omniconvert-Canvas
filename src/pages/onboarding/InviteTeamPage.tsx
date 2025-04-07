@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCompanyContext } from '@/context/CompanyContext';
 import { useCompanyInvitations } from '@/hooks/useCompanyInvitations';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const formSchema = z.object({
@@ -22,9 +22,10 @@ const formSchema = z.object({
 });
 
 export default function InviteTeamPage() {
-  const { activeCompany, refreshCompanies } = useCompanyContext();
+  const { activeCompany, refreshCompanies, isLoading } = useCompanyContext();
   const { sendInvitation } = useCompanyInvitations(activeCompany?.id);
   const [sentEmails, setSentEmails] = useState<string[]>([]);
+  const [localIsLoading, setLocalIsLoading] = useState(true);
   const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -36,9 +37,32 @@ export default function InviteTeamPage() {
   });
 
   // Try to refresh companies on component mount to ensure we have the latest data
-  React.useEffect(() => {
+  useEffect(() => {
+    console.log("InviteTeamPage mounted, refreshing companies");
     refreshCompanies();
+    
+    // After a short delay, set loading to false
+    const timer = setTimeout(() => {
+      setLocalIsLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
   }, []);
+  
+  // Update local loading state based on context loading
+  useEffect(() => {
+    if (!isLoading) {
+      setLocalIsLoading(false);
+    }
+  }, [isLoading]);
+  
+  useEffect(() => {
+    if (activeCompany) {
+      console.log("InviteTeamPage: Active company loaded:", activeCompany.name);
+    } else if (!localIsLoading && !isLoading) {
+      console.log("InviteTeamPage: No active company available after loading");
+    }
+  }, [activeCompany, localIsLoading, isLoading]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!activeCompany?.id) {
@@ -65,19 +89,46 @@ export default function InviteTeamPage() {
   const handleFinish = () => {
     navigate('/dashboard');
   };
+  
+  const handleCreateCompany = () => {
+    navigate('/onboarding/create-company');
+  };
 
+  // Show loading state
+  if (localIsLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Loading...</CardTitle>
+            <CardDescription>
+              Please wait while we load your company information.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show "no company" state when loading is complete but no company is found
   if (!activeCompany) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <AlertCircle className="h-12 w-12 text-amber-500" />
+            </div>
             <CardTitle className="text-2xl">No Company Selected</CardTitle>
             <CardDescription>
               Please create or select a company before inviting team members.
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Button onClick={() => navigate('/onboarding/create-company')}>
+            <Button onClick={handleCreateCompany}>
               Create Company
             </Button>
           </CardFooter>

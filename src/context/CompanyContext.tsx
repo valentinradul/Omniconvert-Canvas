@@ -41,26 +41,28 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Debug active company when it changes
   useEffect(() => {
     if (activeCompany) {
-      console.log("CompanyContext: Active company:", activeCompany.name, "User role:", userRole);
+      console.log("CompanyContext: Active company:", activeCompany.name, "User role:", userRole, "isOwner:", isOwner, "isAdmin:", isAdmin);
     } else {
       console.log("CompanyContext: No active company");
     }
-  }, [activeCompany, userRole]);
+  }, [activeCompany, userRole, isOwner, isAdmin]);
+
+  const contextValue = {
+    companies,
+    activeCompany,
+    userRole,
+    isLoading,
+    isOwner,
+    isManager,
+    isAdmin,
+    createCompany: createNewCompany,
+    switchCompany,
+    refreshCompanies,
+    updateCompanyName
+  };
 
   return (
-    <CompanyContext.Provider value={{
-      companies,
-      activeCompany,
-      userRole,
-      isLoading,
-      isOwner,
-      isManager,
-      isAdmin,
-      createCompany: createNewCompany,
-      switchCompany,
-      refreshCompanies,
-      updateCompanyName
-    }}>
+    <CompanyContext.Provider value={contextValue}>
       {children}
     </CompanyContext.Provider>
   );

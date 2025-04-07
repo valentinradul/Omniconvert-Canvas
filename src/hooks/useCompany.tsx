@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { 
   Company, 
@@ -12,6 +12,7 @@ import {
   updateCompany,
 } from '@/services/company/companyService';
 import { getCompanyMembers } from '@/services/company/membersService';
+import { toast } from 'sonner';
 
 export function useCompany() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -22,15 +23,38 @@ export function useCompany() {
   const { user } = useAuth();
 
   // Fetch user's companies
-  useEffect(() => {
-    if (user) {
-      fetchCompanies();
-    } else {
+  const fetchCompanies = useCallback(async () => {
+    if (!user) {
       setCompanies([]);
       setActiveCompany(null);
       setUserRole(null);
       setIsLoading(false);
+      return;
     }
+
+    setIsLoading(true);
+    try {
+      console.log("Fetching companies for user", user.id);
+      const companiesData = await getUserCompanies();
+      console.log("Fetched companies:", companiesData);
+      setCompanies(companiesData);
+      
+      // Set first company as active if there's at least one and no active company is set
+      if (companiesData.length > 0 && (!activeCompany || !companiesData.some(c => c.id === activeCompany.id))) {
+        console.log("Setting first company as active:", companiesData[0].name);
+        setActiveCompany(companiesData[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      toast.error('Failed to load companies');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, activeCompany]);
+
+  // Initial fetch when component mounts or user changes
+  useEffect(() => {
+    fetchCompanies();
   }, [user]);
 
   // When active company changes, fetch role and members
@@ -45,28 +69,8 @@ export function useCompany() {
     }
   }, [activeCompany, user]);
 
-  const fetchCompanies = async () => {
-    setIsLoading(true);
-    try {
-      console.log("Fetching companies for user");
-      const companiesData = await getUserCompanies();
-      console.log("Fetched companies:", companiesData);
-      setCompanies(companiesData);
-      
-      // Set first company as active if there's at least one and no active company is set
-      if (companiesData.length > 0 && !activeCompany) {
-        console.log("Setting first company as active:", companiesData[0].name);
-        setActiveCompany(companiesData[0]);
-      }
-    } catch (error) {
-      console.error('Error fetching companies:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const fetchUserRole = async () => {
-    if (!activeCompany) return;
+    if (!activeCompany || !user) return;
     
     try {
       console.log("Fetching user role for company:", activeCompany.id);
@@ -104,6 +108,7 @@ export function useCompany() {
       return null;
     } catch (error) {
       console.error('Error creating company:', error);
+      toast.error('Failed to create company');
       return null;
     }
   };
@@ -143,6 +148,7 @@ export function useCompany() {
       setActiveCompany(company);
     } else {
       console.error("Company not found:", companyId);
+      toast.error("Company not found");
     }
   };
 
