@@ -43,7 +43,7 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
   useEffect(() => {
     // Refresh companies when component mounts
     refreshCompanies();
-  }, []);
+  }, [refreshCompanies]);
   
   const form = useForm<InviteFormData>({
     resolver: zodResolver(formSchema),
@@ -57,16 +57,16 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
     if (!activeCompany) {
       console.log("CompanyInviteForm: No active company found");
     } else {
-      console.log("CompanyInviteForm: Active company:", activeCompany.name);
+      console.log("CompanyInviteForm: Active company:", activeCompany.name, "isAdmin:", isAdmin);
     }
-  }, [activeCompany]);
+  }, [activeCompany, isAdmin]);
   
   const handleSubmit = async (values: InviteFormData) => {
     try {
       console.log('CompanyInviteForm: Starting submission with values:', values);
       
       if (!activeCompany?.id) {
-        console.error('No active company found');
+        console.error('CompanyInviteForm: No active company found');
         toast.error("No active company selected");
         return;
       }
@@ -80,7 +80,7 @@ export const CompanyInviteForm: React.FC<CompanyInviteFormProps> = ({
         return;
       }
       
-      console.log("Sending invitation with role:", values.role);
+      console.log("Sending invitation with role:", values.role, "isAdmin:", isAdmin);
       
       // If role is owner, send as manager to the API since the backend expects
       // manager as the highest role

@@ -50,6 +50,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const hypotheses = filterByCompany(allHypotheses, activeCompany?.id);
   const experiments = filterByCompany(allExperiments, activeCompany?.id);
   
+  // Log what data is being filtered by company
+  React.useEffect(() => {
+    if (activeCompany) {
+      console.log(`AppProvider: Filtering data for company ${activeCompany.id}`);
+      console.log(`- Ideas: ${allIdeas.length} total, ${ideas.length} for active company`);
+      console.log(`- Hypotheses: ${allHypotheses.length} total, ${hypotheses.length} for active company`);
+      console.log(`- Experiments: ${allExperiments.length} total, ${experiments.length} for active company`);
+    }
+  }, [activeCompany, allIdeas, ideas, allHypotheses, hypotheses, allExperiments, experiments]);
+  
   const {
     departments,
     addDepartment,

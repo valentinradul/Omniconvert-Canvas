@@ -18,18 +18,18 @@ const TeamSettingsPage = () => {
   const { activeCompany, updateCompanyName, refreshCompanies, isAdmin } = useCompanyContext();
   
   useEffect(() => {
-    // Refresh companies to ensure we have the latest data
+    // Refresh companies when component mounts to ensure we have the latest data
     refreshCompanies();
-  }, []);
+  }, [refreshCompanies]);
   
   useEffect(() => {
     if (activeCompany) {
       setCompanyName(activeCompany.name);
-      console.log("TeamSettingsPage: Active company loaded:", activeCompany);
+      console.log("TeamSettingsPage: Active company loaded:", activeCompany, "isAdmin:", isAdmin);
     } else {
       console.log("TeamSettingsPage: No active company available");
     }
-  }, [activeCompany]);
+  }, [activeCompany, isAdmin]);
 
   const handleCompanyNameChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +45,7 @@ const TeamSettingsPage = () => {
     
     try {
       setIsSubmitting(true);
-      console.log("Updating company name to:", companyName, "for company ID:", activeCompany.id);
+      console.log("Updating company name to:", companyName, "for company ID:", activeCompany.id, "isAdmin:", isAdmin);
       
       const result = await updateCompanyName(activeCompany.id, companyName);
       
@@ -67,6 +67,7 @@ const TeamSettingsPage = () => {
   };
 
   const canEditCompanyInfo = isAdmin;
+  const isSaveDisabled = !activeCompany || !companyName.trim() || isSubmitting || !canEditCompanyInfo;
 
   return (
     <div className="space-y-6">
@@ -115,8 +116,8 @@ const TeamSettingsPage = () => {
                 </div>
                 <Button 
                   type="submit" 
-                  disabled={(!activeCompany || !companyName.trim() || isSubmitting || !canEditCompanyInfo)}
-                  className={!canEditCompanyInfo ? "opacity-50 cursor-not-allowed" : ""}
+                  disabled={isSaveDisabled}
+                  className={isSaveDisabled ? "opacity-50 cursor-not-allowed" : ""}
                 >
                   {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </Button>

@@ -47,7 +47,7 @@ export default function InviteTeamPage() {
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [refreshCompanies]);
   
   // Update local loading state based on context loading
   useEffect(() => {
@@ -67,11 +67,12 @@ export default function InviteTeamPage() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!activeCompany?.id) {
       console.error('No active company found');
-      toast.error("No active company selected");
+      toast.error("No active company selected. Please create a company first.");
       return;
     }
     
     try {
+      console.log("Sending invitation for company:", activeCompany.id);
       const result = await sendInvitation(values.email, values.role);
       if (result) {
         setSentEmails([...sentEmails, values.email]);

@@ -55,7 +55,7 @@ export function useCompany() {
   // Initial fetch when component mounts or user changes
   useEffect(() => {
     fetchCompanies();
-  }, [user]);
+  }, [user, fetchCompanies]);
 
   // When active company changes, fetch role and members
   useEffect(() => {
@@ -101,7 +101,9 @@ export function useCompany() {
       const newCompany = await createCompany(name);
       if (newCompany) {
         console.log("New company created:", newCompany);
-        setCompanies([...companies, newCompany]);
+        // Refresh companies list to include the new one
+        await fetchCompanies();
+        // Set the newly created company as active
         setActiveCompany(newCompany);
         return newCompany;
       }
@@ -152,6 +154,7 @@ export function useCompany() {
     }
   };
 
+  // Determine user roles based on the role string from the database
   const isOwner = userRole === 'owner';
   const isManager = userRole === 'owner' || userRole === 'manager';
 
