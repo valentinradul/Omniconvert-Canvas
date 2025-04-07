@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +32,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [companyInvitations, setCompanyInvitations] = useState<CompanyInvitation[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load user's companies when authenticated
   useEffect(() => {
     if (user) {
       loadUserCompanies();
@@ -47,18 +45,15 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [user]);
 
-  // Load company data when company is selected
   useEffect(() => {
     if (currentCompany) {
       loadCompanyMembers();
       loadUserRole();
       
-      // Store current company ID in localStorage
       localStorage.setItem('currentCompanyId', currentCompany.id);
     }
   }, [currentCompany]);
 
-  // Load company from local storage on init
   useEffect(() => {
     if (user && companies.length > 0) {
       const storedCompanyId = localStorage.getItem('currentCompanyId');
@@ -98,7 +93,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           
         if (companiesError) throw companiesError;
         
-        // Convert to our application type
         const formattedCompanies: Company[] = companiesData.map(c => ({
           id: c.id,
           name: c.name,
@@ -209,7 +203,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(true);
     
     try {
-      // Create the company
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert({ 
@@ -221,7 +214,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       if (companyError) throw companyError;
       
-      // Add user as company owner
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
@@ -277,7 +269,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return;
     }
     
-    // Check user permission
     if (userCompanyRole !== 'owner' && userCompanyRole !== 'admin') {
       toast({
         variant: 'destructive',
@@ -301,7 +292,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (error) throw error;
       
-      // Add to local state
       const newInvitation: CompanyInvitation = {
         id: data.id,
         companyId: data.company_id,
@@ -337,7 +327,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return;
     }
     
-    // Check if trying to remove owner (not allowed)
     const memberToRemove = companyMembers.find(m => m.userId === userId);
     if (memberToRemove?.role === 'owner') {
       toast({
@@ -357,7 +346,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (error) throw error;
       
-      // Update local state
       setCompanyMembers(companyMembers.filter(m => m.userId !== userId));
       
       toast({
@@ -393,7 +381,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (error) throw error;
       
-      // Update local state
       setCompanyMembers(companyMembers.map(member => 
         member.userId === userId ? { ...member, role } : member
       ));
@@ -428,7 +415,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(true);
     
     try {
-      // Update invitation to accepted
       const { error: inviteError } = await supabase
         .from('company_invitations')
         .update({ accepted: true })
@@ -436,7 +422,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (inviteError) throw inviteError;
       
-      // Create company member entry
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
@@ -447,7 +432,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (memberError) throw memberError;
       
-      // Get company details
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .select('*')
@@ -463,7 +447,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         createdBy: companyData.created_by
       };
       
-      // Update state
       setCompanies([...companies, company]);
       setCurrentCompany(company);
       setUserCompanyRole(invitation.role);
@@ -474,7 +457,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         description: `You've successfully joined ${company.name}.`,
       });
       
-      // Reload data
       loadUserCompanies();
       
     } catch (error: any) {
