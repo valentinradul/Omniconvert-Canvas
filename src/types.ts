@@ -120,3 +120,35 @@ export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   const maxPossibleScore = 25; // 5 points max for each of the 5 categories
   return Math.round((totalScore / maxPossibleScore) * 100);
 };
+
+// Team Member types (needed for now to prevent TypeScript errors)
+export type TeamMemberRole = 'owner' | 'manager' | 'member';
+export type DepartmentVisibility = 'Own Department' | 'All Departments' | 'Selected Departments';
+export const ALL_DEPARTMENT_VISIBILITY_OPTIONS: DepartmentVisibility[] = [
+  'Own Department',
+  'All Departments',
+  'Selected Departments'
+];
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: TeamMemberRole;
+  department?: string;
+  title?: string;
+  departmentVisibility: DepartmentVisibility;
+  visibleDepartments: string[];
+  photoUrl?: string;
+}
+
+export interface TeamMemberFormData {
+  name: string;
+  email?: string;
+  role: TeamMemberRole;
+  department?: string;
+  title?: string;
+  departmentVisibility: DepartmentVisibility;
+  visibleDepartments: string[];
+  customMessage?: string;
+}
