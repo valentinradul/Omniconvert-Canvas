@@ -1,79 +1,106 @@
 
 import React from 'react';
-import { PECTI, calculatePectiPercentage } from '@/types';
+import { PECTI } from '@/types';
 import { Progress } from '@/components/ui/progress';
 
 interface PectiScoreDisplayProps {
   pecti: PECTI;
-  showPercentage?: boolean;
   showProgressBar?: boolean;
-  className?: string;
+  showPercentage?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }
 
 const PectiScoreDisplay: React.FC<PectiScoreDisplayProps> = ({ 
-  pecti,
-  showPercentage = true,
-  showProgressBar = false,
-  className = '',
+  pecti, 
+  showProgressBar = true,
+  showPercentage = false,
   size = 'md'
 }) => {
-  const { potential, ease, cost, time, impact } = pecti;
-  const percentageScore = calculatePectiPercentage(pecti);
-
-  const scoreSize = {
-    sm: 'w-4 h-4 text-xs',
-    md: 'w-6 h-6 text-sm',
-    lg: 'w-8 h-8 text-base'
+  const getTotal = () => {
+    const { potential, expense, confidence, time, impact } = pecti;
+    return potential + expense + confidence + time + impact;
   };
   
-  const labelSize = {
-    sm: 'text-[10px]',
-    md: 'text-xs',
-    lg: 'text-sm'
+  const getPercentage = () => {
+    const total = getTotal();
+    const maxPossible = 50; // 5 categories, each with max value of 10
+    return Math.round((total / maxPossible) * 100);
   };
-
-  // Get percentage score color
-  const getScoreColor = () => {
-    if (percentageScore >= 70) return 'bg-green-500 text-white';
-    if (percentageScore >= 40) return 'bg-amber-500 text-white';
-    return 'bg-red-500 text-white';
+  
+  const getLabel = () => {
+    const percentage = getPercentage();
+    
+    if (percentage >= 80) return 'Excellent';
+    if (percentage >= 60) return 'Good';
+    if (percentage >= 40) return 'Moderate';
+    if (percentage >= 20) return 'Low';
+    return 'Very Low';
   };
-
-  const renderScoreBadge = (score: number, label: string) => (
-    <div className="flex flex-col items-center">
-      <span className={`${labelSize[size]} text-gray-500`}>{label}</span>
-      <span className={`font-bold rounded-full flex items-center justify-center pecti-score-${score} ${scoreSize[size]}`}>
-        {score}
-      </span>
-    </div>
-  );
-
+  
+  const getClassName = () => {
+    if (size === 'sm') return 'text-xs';
+    if (size === 'lg') return 'text-lg';
+    return 'text-sm';
+  };
+  
+  // Calculate base circle size based on the component size
+  const getCircleSize = () => {
+    if (size === 'sm') return 'w-12 h-12';
+    if (size === 'lg') return 'w-24 h-24';
+    return 'w-16 h-16';
+  };
+  
   return (
-    <div className={`space-y-2 ${className}`}>
-      <div className="flex gap-3 justify-center items-center">
-        {renderScoreBadge(potential, 'P')}
-        {renderScoreBadge(ease, 'E')}
-        {renderScoreBadge(cost, 'C')}
-        {renderScoreBadge(time, 'T')}
-        {renderScoreBadge(impact, 'I')}
-        
-        {showPercentage && (
-          <div className={`ml-1 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg ${getScoreColor()}`}>
-            {percentageScore}
+    <div className="flex flex-col items-center">
+      <div className={`${getCircleSize()} rounded-full bg-gray-100 flex items-center justify-center relative mb-2`}>
+        <div className={`text-center ${getClassName()}`}>
+          <div className="font-bold">
+            {getPercentage()}%
           </div>
-        )}
+          <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>
+            {getLabel()}
+          </div>
+        </div>
       </div>
-
+      
       {showProgressBar && (
-        <Progress 
-          value={percentageScore} 
-          className={`h-1.5 ${
-            percentageScore >= 70 ? 'bg-green-600' : 
-            percentageScore >= 40 ? 'bg-amber-600' : 
-            'bg-red-600'
-          }`}
-        />
+        <div className="w-full space-y-1">
+          <div className="flex justify-between text-xs">
+            <span>P</span>
+            <span>{pecti.potential}</span>
+          </div>
+          <Progress value={pecti.potential * 10} className="h-1" />
+          
+          <div className="flex justify-between text-xs">
+            <span>E</span>
+            <span>{pecti.expense}</span>
+          </div>
+          <Progress value={pecti.expense * 10} className="h-1" />
+          
+          <div className="flex justify-between text-xs">
+            <span>C</span>
+            <span>{pecti.confidence}</span>
+          </div>
+          <Progress value={pecti.confidence * 10} className="h-1" />
+          
+          <div className="flex justify-between text-xs">
+            <span>T</span>
+            <span>{pecti.time}</span>
+          </div>
+          <Progress value={pecti.time * 10} className="h-1" />
+          
+          <div className="flex justify-between text-xs">
+            <span>I</span>
+            <span>{pecti.impact}</span>
+          </div>
+          <Progress value={pecti.impact * 10} className="h-1" />
+        </div>
+      )}
+      
+      {showPercentage && !showProgressBar && (
+        <div className={`${size === 'sm' ? 'text-xs' : 'text-sm'}`}>
+          PECTI Score: {getPercentage()}%
+        </div>
       )}
     </div>
   );

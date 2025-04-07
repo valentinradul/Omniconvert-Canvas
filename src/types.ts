@@ -1,3 +1,4 @@
+
 // Add missing types required by GrowthIdea & Experiment
 export interface GrowthIdea {
   id: string;
@@ -37,6 +38,7 @@ export interface TeamMemberFormData {
   role: string;
   departmentVisibility?: string;
   visibleDepartments?: string[];
+  department?: string; // Added for TeamMemberDepartmentField
 }
 
 export interface TeamMember {
@@ -63,6 +65,19 @@ export type Category =
   | "SEO"
   | "Partnerships"
   | "Other";
+
+// Adding ALL_CATEGORIES for use in filters
+export const ALL_CATEGORIES: Category[] = [
+  "Outreach",
+  "Paid Ads",
+  "Events",
+  "Onboarding",
+  "Product-led",
+  "Content Marketing",
+  "SEO",
+  "Partnerships",
+  "Other"
+];
 
 export interface Department {
   id: string;
@@ -99,6 +114,16 @@ export type HypothesisStatus =
   | "On Hold"
   | "Rejected";
 
+// Adding ALL_HYPOTHESIS_STATUSES for KanbanBoard
+export const ALL_HYPOTHESIS_STATUSES: HypothesisStatus[] = [
+  "Backlog",
+  "Selected For Testing",
+  "Testing",
+  "Completed",
+  "On Hold",
+  "Rejected"
+];
+
 export type ExperimentStatus =
   | "Planned"
   | "Running"
@@ -108,12 +133,28 @@ export type ExperimentStatus =
   | "Losing"
   | "Inconclusive";
 
+// Adding ALL_STATUSES for experiment filters
+export const ALL_STATUSES: ExperimentStatus[] = [
+  "Planned",
+  "Running",
+  "Paused",
+  "Completed",
+  "Winning",
+  "Losing",
+  "Inconclusive"
+];
+
 export interface PECTI {
   potential: number;
-  expense: number;
+  expense: number; // Using expense instead of cost
   confidence: number;
   time: number;
   impact: number;
+}
+
+export interface ObservationContent {
+  blocks?: any[];
+  entityMap?: Record<string, any>;
 }
 
 export type Tag = string;

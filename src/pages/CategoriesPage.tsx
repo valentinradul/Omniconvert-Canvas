@@ -1,103 +1,76 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog } from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import { Category } from '@/types';
-
-// Import refactored components
-import CategoryList from '@/components/categories/CategoryList';
+import { Card, CardContent } from '@/components/ui/card';
+import { useUserRole } from '@/hooks/useUserRole';
 import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
 import EditCategoryDialog from '@/components/categories/EditCategoryDialog';
 import CategoryHeader from '@/components/categories/CategoryHeader';
+import CategoryList from '@/components/categories/CategoryList';
+import LoadingCard from '@/components/categories/LoadingCard';
+import AccessDeniedCard from '@/components/categories/AccessDeniedCard';
+import { Category } from '@/types';
 
 const CategoriesPage: React.FC = () => {
   const { categories, addCategory, editCategory, deleteCategory } = useApp();
-  const [newCategory, setNewCategory] = useState('');
-  const [editingCategory, setEditingCategory] = useState<{ oldValue: Category; newValue: Category } | null>(null);
+  const { isAdmin, isLoading } = useUserRole();
+  
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   
-  const handleAddCategory = () => {
-    if (!newCategory.trim()) {
-      toast.error('Category name cannot be empty');
-      return;
-    }
-    
-    if (categories.includes(newCategory)) {
-      toast.error('This category already exists');
-      return;
-    }
-    
-    addCategory(newCategory);
-    setNewCategory('');
+  const handleAddCategory = (categoryName: string) => {
+    // Convert the string to Category type
+    addCategory(categoryName as Category);
     setIsAddDialogOpen(false);
-    toast.success('Category added successfully');
   };
   
-  const handleEditCategory = () => {
-    if (!editingCategory) return;
-    
-    if (!editingCategory.newValue.trim()) {
-      toast.error('Category name cannot be empty');
-      return;
-    }
-    
-    if (categories.includes(editingCategory.newValue) && editingCategory.oldValue !== editingCategory.newValue) {
-      toast.error('This category already exists');
-      return;
-    }
-    
-    editCategory(editingCategory.oldValue, editingCategory.newValue);
-    setEditingCategory(null);
+  const handleEditCategory = ({ oldValue, newValue }: { oldValue: Category; newValue: string }) => {
+    editCategory(oldValue, newValue as Category);
     setIsEditDialogOpen(false);
-    toast.success('Category updated successfully');
   };
   
   const handleDeleteCategory = (category: Category) => {
     deleteCategory(category);
-    toast.success('Category deleted successfully');
   };
+  
+  if (isLoading) return <LoadingCard />;
   
   return (
     <div className="space-y-6">
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <CategoryHeader onOpenAddDialog={() => setIsAddDialogOpen(true)} />
-        
-        <AddCategoryDialog
-          isOpen={isAddDialogOpen}
-          onOpenChange={setIsAddDialogOpen}
-          categoryName={newCategory}
-          onCategoryNameChange={setNewCategory}
-          onAdd={handleAddCategory}
-        />
-      </Dialog>
+      <CategoryHeader 
+        onAddClick={() => setIsAddDialogOpen(true)} 
+        isAdmin={isAdmin}
+      />
       
       <Card>
-        <CardHeader>
-          <CardTitle>Category List</CardTitle>
-          <CardDescription>All available categories for growth ideas</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CategoryList
-            categories={categories}
-            onEdit={(category) => {
-              setEditingCategory({ oldValue: category, newValue: category });
+        <CardContent className="p-6">
+          <CategoryList 
+            categories={categories} 
+            onEditCategory={(category) => {
+              setSelectedCategory(category);
               setIsEditDialogOpen(true);
             }}
-            onDelete={handleDeleteCategory}
+            onDeleteCategory={handleDeleteCategory}
+            isAdmin={isAdmin}
           />
         </CardContent>
       </Card>
       
-      <EditCategoryDialog
-        isOpen={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        editingCategory={editingCategory}
-        onEditingCategoryChange={setEditingCategory}
-        onSave={handleEditCategory}
+      <AddCategoryDialog 
+        open={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onAdd={handleAddCategory}
       />
+      
+      {selectedCategory && (
+        <EditCategoryDialog 
+          open={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          onEdit={handleEditCategory}
+          initialCategory={selectedCategory}
+        />
+      )}
     </div>
   );
 };

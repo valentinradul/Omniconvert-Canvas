@@ -1,272 +1,215 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import TagInput from '@/components/TagInput';
 import { Category } from '@/types';
-import { toast } from 'sonner';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const IdeaDetailsPage: React.FC = () => {
-  const { ideaId } = useParams();
+  const { ideaId } = useParams<{ ideaId: string }>();
   const navigate = useNavigate();
-  const { 
-    getIdeaById, 
-    getDepartmentById, 
-    editIdea, 
-    deleteIdea, 
-    departments, 
-    getHypothesisByIdeaId, 
-    categories,
-    getAllUserNames
-  } = useApp();
+  const { ideas, departments, editIdea, categories, getAllUserNames } = useApp();
+  const { toast } = useToast();
   
-  const [idea, setIdea] = useState(getIdeaById(ideaId || ''));
-  const [department, setDepartment] = useState(idea ? getDepartmentById(idea.departmentId) : undefined);
-  const [hypothesis, setHypothesis] = useState(idea ? getHypothesisByIdeaId(idea.id) : undefined);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
+  const [category, setCategory] = useState<Category | ''>('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [responsibleUserId, setResponsibleUserId] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   
-  // Form state
-  const [title, setTitle] = useState(idea?.title || '');
-  const [description, setDescription] = useState(idea?.description || '');
-  const [category, setCategory] = useState<Category | ''>(idea?.category || '');
-  const [departmentId, setDepartmentId] = useState(idea?.departmentId || '');
-  const [responsibleUserId, setResponsibleUserId] = useState(idea?.responsibleUserId || '');
-  
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const allUsers = getAllUserNames();
   
+  const idea = ideas.find(i => i.id === ideaId);
+  
   useEffect(() => {
-    const currentIdea = getIdeaById(ideaId || '');
-    setIdea(currentIdea);
-    
-    if (currentIdea) {
-      setTitle(currentIdea.title);
-      setDescription(currentIdea.description);
-      setCategory(currentIdea.category);
-      setDepartmentId(currentIdea.departmentId);
-      setResponsibleUserId(currentIdea.responsibleUserId || '');
-      setDepartment(getDepartmentById(currentIdea.departmentId));
-      setHypothesis(getHypothesisByIdeaId(currentIdea.id));
-    } else {
-      navigate('/ideas');
+    if (idea) {
+      setTitle(idea.title || '');
+      setDescription(idea.description || '');
+      setDepartmentId(idea.departmentId || '');
+      setCategory(idea.category as Category || '');
+      setTags(idea.tags || []);
+      setResponsibleUserId(idea.responsibleUserId || '');
     }
-  }, [ideaId, getIdeaById, getDepartmentById, getHypothesisByIdeaId, navigate]);
+  }, [idea]);
   
-  if (!idea) {
-    return <div>Loading...</div>;
-  }
-  
-  const handleEdit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!title || !description || !category || !departmentId) {
-      toast.error('Please fill in all fields');
-      return;
-    }
+  const handleSave = () => {
+    if (!idea) return;
     
     editIdea(idea.id, {
       title,
       description,
-      category: category as Category,
       departmentId,
-      responsibleUserId: responsibleUserId || undefined
+      category: category as Category,
+      tags,
+      responsibleUserId
     });
     
-    setEditDialogOpen(false);
-    toast.success('Growth idea updated successfully!');
+    toast({
+      title: "Idea updated",
+      description: "Your changes have been saved."
+    });
+    
+    setIsEditing(false);
   };
   
-  const handleDelete = () => {
-    deleteIdea(idea.id);
-    navigate('/ideas');
-    toast.success('Growth idea deleted successfully!');
+  const handleBack = () => {
+    navigate(-1);
   };
   
-  const createHypothesis = () => {
-    navigate(`/create-hypothesis/${idea.id}`);
-  };
+  if (!idea) {
+    return <div>Idea not found</div>;
+  }
   
-  const responsibleUser = allUsers.find(user => user.id === idea.responsibleUserId);
-
+  const selectedDepartment = departments.find(d => d.id === idea.departmentId);
+  const responsibleUser = allUsers.find(u => u.id === idea.responsibleUserId);
+  
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <Button variant="outline" onClick={() => navigate('/ideas')} className="mb-4">
-            Back to Ideas
-          </Button>
-          <h1 className="text-3xl font-bold tracking-tight">{idea.title}</h1>
-          <p className="text-muted-foreground">
-            {department?.name} · {idea.category} · Created on {new Date(idea.createdAt).toLocaleDateString()}
-          </p>
-          {responsibleUser && (
-            <p className="text-muted-foreground mt-1">
-              Responsible: {responsibleUser.name}
-            </p>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">Edit Idea</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <form onSubmit={handleEdit}>
-                <DialogHeader>
-                  <DialogTitle>Edit Growth Idea</DialogTitle>
-                  <DialogDescription>
-                    Update the details of your growth idea.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="title">Idea Title</Label>
-                    <Input 
-                      id="title" 
-                      value={title} 
-                      onChange={(e) => setTitle(e.target.value)} 
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea 
-                      id="description" 
-                      value={description} 
-                      onChange={(e) => setDescription(e.target.value)} 
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select 
-                      value={category} 
-                      onValueChange={(value) => setCategory(value as Category)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {categories.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Select 
-                      value={departmentId} 
-                      onValueChange={(value) => setDepartmentId(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {departments.map(dept => (
-                            <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="responsible">Responsible Person</Label>
-                    <Select 
-                      value={responsibleUserId} 
-                      onValueChange={setResponsibleUserId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select responsible person" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="">Unassigned</SelectItem>
-                          {allUsers.map(user => (
-                            <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">Save Changes</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-          
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">Delete Idea</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete this
-                  growth idea from your backlog.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <Button variant="outline" onClick={handleBack}>Back</Button>
+        {isEditing ? (
+          <div className="space-x-2">
+            <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+            <Button onClick={handleSave}>Save Changes</Button>
+          </div>
+        ) : (
+          <Button onClick={() => setIsEditing(true)}>Edit Idea</Button>
+        )}
       </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>Idea Description</CardTitle>
+          <CardTitle>Idea Details</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p>{idea.description}</p>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Title</Label>
+            {isEditing ? (
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            ) : (
+              <div className="text-lg font-medium">{idea.title}</div>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Description</Label>
+            {isEditing ? (
+              <Textarea 
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)} 
+                rows={4}
+              />
+            ) : (
+              <div className="text-muted-foreground whitespace-pre-wrap">
+                {idea.description || "No description provided."}
+              </div>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Department</Label>
+              {isEditing ? (
+                <Select 
+                  value={departmentId} 
+                  onValueChange={setDepartmentId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map(department => (
+                      <SelectItem key={department.id} value={department.id}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div>{selectedDepartment ? selectedDepartment.name : "No department"}</div>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Category</Label>
+              {isEditing ? (
+                <Select 
+                  value={category} 
+                  onValueChange={(value) => setCategory(value as Category)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {categories.map(cat => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div>{idea.category || "Uncategorized"}</div>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              {isEditing ? (
+                <TagInput
+                  value={tags}
+                  onChange={setTags}
+                />
+              ) : (
+                <div className="flex flex-wrap gap-1">
+                  {idea.tags && idea.tags.length > 0 ? 
+                    idea.tags.map((tag, i) => (
+                      <span key={i} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
+                        {tag}
+                      </span>
+                    )) : 
+                    <span className="text-muted-foreground">No tags</span>
+                  }
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Responsible Person</Label>
+              {isEditing ? (
+                <Select 
+                  value={responsibleUserId} 
+                  onValueChange={setResponsibleUserId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Assign responsible person" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {allUsers.map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div>{responsibleUser ? responsibleUser.name : "Unassigned"}</div>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
-      
-      {hypothesis ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Hypothesis</CardTitle>
-            <CardDescription>
-              This idea has been developed into a hypothesis
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-md mb-2">
-              <strong>Because we observed:</strong> {hypothesis.observation}
-            </p>
-            <p className="text-md mb-2">
-              <strong>We will do:</strong> {hypothesis.initiative}
-            </p>
-            <p className="text-md">
-              <strong>With the measurable goal to improve:</strong> {hypothesis.metric}
-            </p>
-            <Button 
-              onClick={() => navigate(`/hypothesis-details/${hypothesis.id}`)}
-              className="mt-4"
-            >
-              View Hypothesis
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-8">
-          <h3 className="text-xl font-medium">No hypothesis yet</h3>
-          <p className="text-muted-foreground mb-4">Create a hypothesis to test this idea</p>
-          <Button onClick={createHypothesis}>Create Hypothesis</Button>
-        </div>
-      )}
     </div>
   );
 };

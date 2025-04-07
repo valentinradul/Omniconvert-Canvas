@@ -1,47 +1,46 @@
 
 import React from 'react';
-import { Control } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TeamMemberFormData } from '@/types';
-import { Department } from '@/types';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useFormContext } from "react-hook-form";
+import { TeamMemberFormData } from "@/types";
 
 interface TeamMemberDepartmentFieldProps {
-  control: Control<TeamMemberFormData>;
-  departments: Department[];
+  departments: { id: string; name: string }[];
 }
 
-export const TeamMemberDepartmentField: React.FC<TeamMemberDepartmentFieldProps> = ({ 
-  control,
-  departments 
-}) => {
+const TeamMemberDepartmentField: React.FC<TeamMemberDepartmentFieldProps> = ({ departments }) => {
+  const form = useFormContext<TeamMemberFormData>();
+
   return (
     <FormField
-      control={control}
+      control={form.control}
       name="department"
       render={({ field }) => (
         <FormItem>
           <FormLabel>Department</FormLabel>
-          <Select 
-            onValueChange={field.onChange} 
-            defaultValue={field.value}
-          >
-            <FormControl>
+          <FormControl>
+            <Select
+              onValueChange={(value) => field.onChange(value)}
+              value={field.value?.toString() || ""}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select a department" />
+                <SelectValue placeholder="Select department" />
               </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {departments.map((dept) => (
-                <SelectItem key={dept.id} value={dept.id}>
-                  {dept.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectContent>
+                {departments.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormControl>
           <FormMessage />
         </FormItem>
       )}
     />
   );
 };
+
+export default TeamMemberDepartmentField;

@@ -23,7 +23,7 @@ interface KanbanBoardProps {
 interface Column {
   id: HypothesisStatus;
   title: string;
-  items: (Hypothesis | (Hypothesis & { experiment: Experiment }))[];
+  items: (Hypothesis | (Hypothesis & { experiment?: Experiment }))[];
 }
 
 interface IdeaColumn {
@@ -77,7 +77,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       const relatedHypothesis = hypotheses.find(h => h.id === experiment.hypothesisId);
       
       if (relatedHypothesis) {
-        if (experiment.status === 'In Progress' || experiment.status === 'Blocked') {
+        if (experiment.status === 'Running' || experiment.status === 'Paused') {
           // Move the hypothesis to Testing column if not already there
           if (relatedHypothesis.status !== 'Testing') {
             // Make sure it's not already in another column before adding
@@ -295,9 +295,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                     size="sm"
                                   />
                                 </div>
-                                {hasExperiment && (
+                                {hasExperiment && hypothesis.experiment && (
                                   <div className="mt-2">
-                                    <StatusBadge status={hypothesis.experiment.status} />
+                                    <StatusBadge status={hypothesis.experiment.status || 'Planned'} />
                                   </div>
                                 )}
                                 {hypothesis.userName && (

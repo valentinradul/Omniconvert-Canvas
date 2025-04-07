@@ -25,11 +25,11 @@ const ExperimentNextStepsCard: React.FC<ExperimentNextStepsCardProps> = ({
               <li>Set a start date for the experiment</li>
               <li>Prepare necessary resources and tools</li>
               <li>Define clear metrics and tracking mechanisms</li>
-              <li>Update the status to "In Progress" once started</li>
+              <li>Update the status to "Running" once started</li>
             </ul>
           )}
           
-          {status === 'In Progress' && (
+          {status === 'Running' && (
             <ul className="list-disc ml-6 space-y-2">
               <li>Monitor results regularly</li>
               <li>Document observations and insights</li>
@@ -38,7 +38,7 @@ const ExperimentNextStepsCard: React.FC<ExperimentNextStepsCardProps> = ({
             </ul>
           )}
           
-          {status === 'Blocked' && (
+          {status === 'Paused' && (
             <ul className="list-disc ml-6 space-y-2">
               <li>Identify and document the blockers</li>
               <li>Develop action plan to resolve issues</li>

@@ -95,8 +95,9 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
           ${hypothesis.status === 'Selected For Testing' ? 'bg-blue-100 text-blue-800' : ''}
           ${hypothesis.status === 'Testing' ? 'bg-amber-100 text-amber-800' : ''}
           ${hypothesis.status === 'Completed' ? 'bg-green-100 text-green-800' : ''}
-          ${hypothesis.status === 'Archived' ? 'bg-red-100 text-red-800' : ''}
+          ${hypothesis.status === 'Rejected' ? 'bg-red-100 text-red-800' : ''}
           ${hypothesis.status === 'Backlog' ? 'bg-gray-100 text-gray-800' : ''}
+          ${hypothesis.status === 'On Hold' ? 'bg-purple-100 text-purple-800' : ''}
         `}>
           {hypothesis.status}
         </Badge>
