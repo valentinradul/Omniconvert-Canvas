@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog } from '@/components/ui/dialog';
 import { toast } from 'sonner';
@@ -11,8 +10,6 @@ import { Category } from '@/types';
 import CategoryList from '@/components/categories/CategoryList';
 import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
 import EditCategoryDialog from '@/components/categories/EditCategoryDialog';
-import AccessDeniedCard from '@/components/categories/AccessDeniedCard';
-import LoadingCard from '@/components/categories/LoadingCard';
 import CategoryHeader from '@/components/categories/CategoryHeader';
 
 const CategoriesPage: React.FC = () => {

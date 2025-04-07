@@ -1,154 +1,126 @@
-
-// Common types used across the application
-
-export type Department = {
-  id: string;
-  name: string;
-};
-
-export type Tag = string;
-
-export type Category = string;
-
+// Add missing types required by GrowthIdea & Experiment
 export interface GrowthIdea {
   id: string;
   title: string;
   description?: string;
   category?: string;
-  departmentId?: string;
+  departmentId: string;
+  createdAt: Date;
   userId?: string;
   userName?: string;
-  createdAt: Date;
-  tags?: Tag[];
+  tags?: string[];
   responsibleUserId?: string;
 }
-
-export const ALL_CATEGORIES: Category[] = [
-  "Outreach",
-  "Paid Ads",
-  "Events",
-  "Onboarding",
-  "Product-led",
-  "Content Marketing",
-  "SEO",
-  "Partnerships",
-  "Other"
-];
-
-export type PECTI = {
-  potential: 1 | 2 | 3 | 4 | 5;
-  ease: 1 | 2 | 3 | 4 | 5;
-  cost: 1 | 2 | 3 | 4 | 5;
-  time: 1 | 2 | 3 | 4 | 5;
-  impact: 1 | 2 | 3 | 4 | 5;
-};
-
-export type ObservationContent = {
-  text: string;
-  imageUrls?: string[];
-  externalUrls?: string[];
-};
-
-export interface Hypothesis {
-  id: string;
-  ideaId?: string;
-  observation?: string;
-  observationContent?: any;
-  initiative?: string;
-  metric?: string;
-  createdAt: Date;
-  status?: HypothesisStatus;
-  userId?: string;
-  userName?: string;
-  pectiScore?: PECTI;
-  responsibleUserId?: string;
-}
-
-export type HypothesisStatus = 
-  | "Backlog"
-  | "Selected For Testing"
-  | "Testing"
-  | "Completed"
-  | "Archived";
-
-export const ALL_HYPOTHESIS_STATUSES: HypothesisStatus[] = [
-  "Backlog",
-  "Selected For Testing",
-  "Testing",
-  "Completed",
-  "Archived"
-];
-
-export type ExperimentStatus = 
-  | "Planned" 
-  | "In Progress" 
-  | "Blocked" 
-  | "Winning" 
-  | "Losing" 
-  | "Inconclusive";
-
-export const ALL_STATUSES: ExperimentStatus[] = [
-  "Planned",
-  "In Progress",
-  "Blocked",
-  "Winning",
-  "Losing",
-  "Inconclusive"
-];
 
 export interface Experiment {
   id: string;
   hypothesisId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  statusUpdatedAt: Date;
+  userId?: string;
+  userName?: string;
   status?: ExperimentStatus;
   startDate?: Date;
   endDate?: Date;
   notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  statusUpdatedAt: Date | null;
+  observationContent?: any;
   totalCost?: number;
   totalReturn?: number;
-  userId?: string;
-  userName?: string;
-  observationContent?: any;
   responsibleUserId?: string;
 }
 
-export const calculatePectiPercentage = (pectiScore: PECTI): number => {
-  const { potential, ease, cost, time, impact } = pectiScore;
-  const totalScore = potential + ease + cost + time + impact;
-  const maxPossibleScore = 25; // 5 points max for each of the 5 categories
-  return Math.round((totalScore / maxPossibleScore) * 100);
-};
-
-// Team Member types (needed for now to prevent TypeScript errors)
-export type TeamMemberRole = 'owner' | 'manager' | 'member';
-export type DepartmentVisibility = 'Own Department' | 'All Departments' | 'Selected Departments';
-export const ALL_DEPARTMENT_VISIBILITY_OPTIONS: DepartmentVisibility[] = [
-  'Own Department',
-  'All Departments',
-  'Selected Departments'
-];
+// Add missing team-related types as stubs
+export interface TeamMemberFormData {
+  name?: string;
+  email: string;
+  role: string;
+  departmentVisibility?: string;
+  visibleDepartments?: string[];
+}
 
 export interface TeamMember {
   id: string;
-  name: string;
-  email: string;
+  userId: string;
+  teamId: string;
   role: TeamMemberRole;
-  department?: string;
-  title?: string;
   departmentVisibility: DepartmentVisibility;
-  visibleDepartments: string[];
-  photoUrl?: string;
+  visibleDepartments?: string[];
 }
 
-export interface TeamMemberFormData {
+export type TeamMemberRole = "admin" | "member" | "viewer";
+export type DepartmentVisibility = "all" | "selected" | "none";
+
+export const ALL_DEPARTMENT_VISIBILITY_OPTIONS = ["all", "selected", "none"] as const;
+
+export type Category =
+  | "Outreach"
+  | "Paid Ads"
+  | "Events"
+  | "Onboarding"
+  | "Product-led"
+  | "Content Marketing"
+  | "SEO"
+  | "Partnerships"
+  | "Other";
+
+export interface Department {
+  id: string;
   name: string;
-  email?: string;
-  role: TeamMemberRole;
-  department?: string;
-  title?: string;
-  departmentVisibility: DepartmentVisibility;
-  visibleDepartments: string[];
-  customMessage?: string;
 }
+
+export interface Hypothesis {
+  id: string;
+  ideaId: string;
+  createdAt: Date;
+  userId?: string;
+  userName?: string;
+  observation: string;
+  hypothesis: string;
+  initiative: string;
+  metric: string;
+  target: string;
+  status: HypothesisStatus;
+  confidenceScore: number;
+  easeScore: number;
+  impactScore: number;
+  confidence: number;
+  ease: number;
+  impact: number;
+  userIdResponsible?: string;
+  pectiScore: PECTI;
+}
+
+export type HypothesisStatus =
+  | "Backlog"
+  | "Selected For Testing"
+  | "Testing"
+  | "Completed"
+  | "On Hold"
+  | "Rejected";
+
+export type ExperimentStatus =
+  | "Planned"
+  | "Running"
+  | "Paused"
+  | "Completed"
+  | "Winning"
+  | "Losing"
+  | "Inconclusive";
+
+export interface PECTI {
+  potential: number;
+  expense: number;
+  confidence: number;
+  time: number;
+  impact: number;
+}
+
+export type Tag = string;
+
+export const calculatePectiPercentage = (pecti: PECTI): number => {
+  const { potential, expense, confidence, time, impact } = pecti;
+  const totalScore = potential + expense + confidence + time + impact;
+  const maxTotalScore = 5 * 10; // Assuming each category is rated out of 10
+  return (totalScore / maxTotalScore) * 100;
+};

@@ -13,16 +13,16 @@ const AccessDeniedCard: React.FC = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldAlert className="h-5 w-5 text-destructive" />
-          Access Denied
+          Page Not Available
         </CardTitle>
         <CardDescription>
-          You don't have permission to access this page.
+          This page is currently unavailable.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col items-center text-center space-y-4">
           <p className="text-muted-foreground">
-            This page is restricted to administrators only.
+            This feature is not available in the current version.
           </p>
           <Button onClick={() => navigate('/dashboard')}>
             Return to Dashboard

@@ -25,6 +25,8 @@ import ExperimentsPage from './pages/ExperimentsPage';
 import ExperimentDetailsPage from './pages/ExperimentDetailsPage';
 import CreateExperimentPage from './pages/CreateExperimentPage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
+import CategoriesPage from './pages/CategoriesPage';
+import DepartmentsPage from './pages/DepartmentsPage';
 
 // Auth Context
 import { AuthProvider } from './context/AuthContext';
@@ -59,6 +61,8 @@ function App() {
                   <Route path="/create-experiment" element={<CreateExperimentPage />} />
                   <Route path="/create-experiment/:hypothesisId" element={<CreateExperimentPage />} />
                   <Route path="/account-settings" element={<AccountSettingsPage />} />
+                  <Route path="/categories" element={<CategoriesPage />} />
+                  <Route path="/departments" element={<DepartmentsPage />} />
                 </Route>
               </Route>
               
