@@ -9,14 +9,14 @@ import { ExperimentStatus } from '@/types';
 interface ExperimentListRowProps {
   experiment: {
     id: string;
-    status: ExperimentStatus;
+    status?: ExperimentStatus; // Make status optional
     startDate?: Date;
     endDate?: Date;
     notes?: string;
   };
   hypothesis?: {
-    initiative: string;
-    metric: string;
+    initiative?: string; // Make initiative optional
+    metric?: string; // Make metric optional
   };
   idea?: {
     title: string;
@@ -58,15 +58,15 @@ const ExperimentListRow: React.FC<ExperimentListRowProps> = ({
       <TableCell>
         {hypothesis ? (
           <div>
-            <div className="mb-1">{hypothesis.initiative}</div>
-            <div className="text-xs text-muted-foreground">{hypothesis.metric}</div>
+            <div className="mb-1">{hypothesis.initiative || "No initiative defined"}</div>
+            <div className="text-xs text-muted-foreground">{hypothesis.metric || "No metric defined"}</div>
           </div>
         ) : (
           "Unknown"
         )}
       </TableCell>
       <TableCell>
-        <StatusBadge status={experiment.status} />
+        {experiment.status ? <StatusBadge status={experiment.status} /> : "No status"}
       </TableCell>
       <TableCell>{responsible || "Unassigned"}</TableCell>
       <TableCell>

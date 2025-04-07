@@ -9,14 +9,14 @@ import { ExperimentStatus } from '@/types';
 interface ExperimentCardProps {
   experiment: {
     id: string;
-    status: ExperimentStatus;
+    status?: ExperimentStatus; // Make status optional
     startDate?: Date;
     endDate?: Date;
     notes?: string;
   };
   hypothesis?: {
-    initiative: string;
-    metric: string;
+    initiative?: string; // Make initiative optional
+    metric?: string; // Make metric optional
   };
   idea?: {
     title: string;
@@ -50,13 +50,13 @@ const ExperimentCard: React.FC<ExperimentCardProps> = ({
       <CardContent className="py-4 flex-grow">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="font-medium">{idea?.title || "Unknown Idea"}</h3>
-          <StatusBadge status={experiment.status} />
+          {experiment.status && <StatusBadge status={experiment.status} />}
         </div>
         
         {hypothesis && (
           <div className="mb-4">
-            <p className="text-sm">{hypothesis.initiative}</p>
-            <p className="text-xs text-muted-foreground">{hypothesis.metric}</p>
+            <p className="text-sm">{hypothesis.initiative || "No initiative"}</p>
+            <p className="text-xs text-muted-foreground">{hypothesis.metric || "No metric"}</p>
           </div>
         )}
         
