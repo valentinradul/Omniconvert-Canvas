@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag } from '../types';
 import { useAuth } from './AuthContext';
+import { useCompany } from './CompanyContext';
 
 // Define the shape of our context
 type AppContextType = {
@@ -45,6 +46,8 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 // Create a provider component
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const { currentCompany } = useCompany();
+  
   const [departments, setDepartments] = useState<Department[]>(() => 
     getInitialData('departments', [
       { id: generateId(), name: 'Marketing' },
@@ -82,11 +85,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('experiments', JSON.stringify(experiments));
   }, [experiments]);
   
+  // Filter data based on current company
+  const filteredIdeas = ideas.filter(idea => 
+    !currentCompany || idea.companyId === currentCompany.id || !idea.companyId
+  );
+  
+  const filteredHypotheses = hypotheses.filter(hypothesis => 
+    !currentCompany || hypothesis.companyId === currentCompany.id || !hypothesis.companyId
+  );
+  
+  const filteredExperiments = experiments.filter(experiment => 
+    !currentCompany || experiment.companyId === currentCompany.id || !experiment.companyId
+  );
+  
   // Helper function to get all unique tags
   const getAllTags = (): Tag[] => {
     const tagsSet = new Set<Tag>();
     
-    ideas.forEach(idea => {
+    filteredIdeas.forEach(idea => {
       if (idea.tags) {
         idea.tags.forEach(tag => tagsSet.add(tag));
       }
@@ -99,7 +115,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const getAllUserNames = () => {
     const usersMap = new Map<string, string>();
     
-    [...ideas, ...hypotheses, ...experiments].forEach(item => {
+    [...filteredIdeas, ...filteredHypotheses, ...filteredExperiments].forEach(item => {
       if (item.userId && item.userName) {
         usersMap.set(item.userId, item.userName);
       }
@@ -140,7 +156,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: generateId(),
         createdAt: new Date(),
         userId: user?.id || undefined,
-        userName: user?.user_metadata?.full_name || user?.email || undefined
+        userName: user?.user_metadata?.full_name || user?.email || undefined,
+        companyId: currentCompany?.id
       }
     ]);
   };
@@ -173,7 +190,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createdAt: new Date(),
         status: hypothesis.status || 'Backlog',
         userId: hypothesis.userId || user?.id,
-        userName: hypothesis.userName || user?.user_metadata?.full_name || user?.email
+        userName: hypothesis.userName || user?.user_metadata?.full_name || user?.email,
+        companyId: currentCompany?.id
       }
     ]);
   };
@@ -207,7 +225,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createdAt: now,
         updatedAt: now,
         userId: experiment.userId || user?.id,
-        userName: experiment.userName || user?.user_metadata?.full_name || user?.email
+        userName: experiment.userName || user?.user_metadata?.full_name || user?.email,
+        companyId: currentCompany?.id
       }
     ]);
   };
@@ -223,18 +242,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   // Getter functions
-  const getIdeaById = (id: string) => ideas.find(idea => idea.id === id);
-  const getHypothesisByIdeaId = (ideaId: string) => hypotheses.find(h => h.ideaId === ideaId);
-  const getHypothesisById = (id: string) => hypotheses.find(h => h.id === id);
-  const getExperimentByHypothesisId = (hypothesisId: string) => experiments.find(e => e.hypothesisId === hypothesisId);
+  const getIdeaById = (id: string) => filteredIdeas.find(idea => idea.id === id);
+  const getHypothesisByIdeaId = (ideaId: string) => filteredHypotheses.find(h => h.ideaId === ideaId);
+  const getHypothesisById = (id: string) => filteredHypotheses.find(h => h.id === id);
+  const getExperimentByHypothesisId = (hypothesisId: string) => filteredExperiments.find(e => e.hypothesisId === hypothesisId);
   const getDepartmentById = (id: string) => departments.find(d => d.id === id);
   
   return (
     <AppContext.Provider value={{
       departments,
-      ideas,
-      hypotheses,
-      experiments,
+      ideas: filteredIdeas,
+      hypotheses: filteredHypotheses,
+      experiments: filteredExperiments,
       addDepartment,
       editDepartment,
       deleteDepartment,

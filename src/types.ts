@@ -41,6 +41,7 @@ export type GrowthIdea = {
   userId?: string;
   userName?: string;
   tags?: Tag[];
+  companyId?: string;
 };
 
 export type PECTI = {
@@ -70,6 +71,7 @@ export type Hypothesis = {
   userId?: string;
   userName?: string;
   status?: HypothesisStatus;
+  companyId?: string;
 };
 
 export type HypothesisStatus = 
@@ -116,6 +118,38 @@ export type Experiment = {
   updatedAt: Date;
   userId?: string;
   userName?: string;
+  companyId?: string;
+};
+
+// Company-related types
+export type Company = {
+  id: string;
+  name: string;
+  createdAt: Date;
+  createdBy: string;
+};
+
+export type CompanyMember = {
+  id: string;
+  companyId: string;
+  userId: string;
+  role: CompanyRole;
+  createdAt: Date;
+};
+
+export type CompanyRole = 
+  | "owner" 
+  | "admin" 
+  | "member";
+
+export type CompanyInvitation = {
+  id: string;
+  companyId: string;
+  email: string;
+  role: CompanyRole;
+  accepted: boolean;
+  invitedBy: string;
+  createdAt: Date;
 };
 
 // Helper function to calculate PECTI percentage score
