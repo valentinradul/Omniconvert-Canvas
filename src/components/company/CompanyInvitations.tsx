@@ -15,7 +15,7 @@ const CompanyInvitations: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 mb-8">
+    <div className="space-y-4 mb-8 font-fira">
       <h2 className="text-xl font-semibold">Company Invitations</h2>
       <div className="grid gap-4">
         {companyInvitations.map(invitation => (

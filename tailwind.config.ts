@@ -108,6 +108,7 @@ export default {
 			},
 			fontFamily: {
 				'inter': ['Inter', 'sans-serif'],
+				'fira': ['Fira Sans', 'sans-serif'],
 			}
 		}
 	},
