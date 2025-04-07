@@ -1,21 +1,30 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/StatusBadge';
-import { formatDistance } from 'date-fns';
-import { Experiment, Hypothesis, GrowthIdea } from '@/types';
-import { useNavigate } from 'react-router-dom';
+import { ExperimentStatus } from '@/types';
 
 interface ExperimentListRowProps {
-  experiment: Experiment;
-  hypothesis?: Hypothesis;
-  idea?: GrowthIdea;
+  experiment: {
+    id: string;
+    status: ExperimentStatus;
+    startDate?: Date;
+    endDate?: Date;
+    notes?: string;
+  };
+  hypothesis?: {
+    initiative: string;
+    metric: string;
+  };
+  idea?: {
+    title: string;
+  };
   responsible?: string;
   duration: {
     daysRunning: number;
     daysRemaining: number | null;
-    daysInStatus: number;
     daysTotal: number | null;
   };
 }
@@ -25,37 +34,61 @@ const ExperimentListRow: React.FC<ExperimentListRowProps> = ({
   hypothesis,
   idea,
   responsible,
-  duration,
+  duration
 }) => {
   const navigate = useNavigate();
-  
+
+  const handleClick = () => {
+    navigate(`/experiment-details/${experiment.id}`);
+  };
+
   return (
-    <TableRow key={experiment.id}>
+    <TableRow 
+      className="cursor-pointer hover:bg-muted/50"
+      onClick={handleClick}
+    >
       <TableCell>
-        <div className="font-medium">{idea?.title || 'Experiment'}</div>
-        <div className="text-sm text-muted-foreground">
-          Created {formatDistance(new Date(experiment.createdAt), new Date(), { addSuffix: true })}
+        <div className="font-medium">{idea?.title || "Unknown"}</div>
+        <div className="text-xs text-muted-foreground">
+          {experiment.notes && experiment.notes.length > 60 ? 
+            `${experiment.notes.substring(0, 60)}...` : 
+            experiment.notes || "No notes"}
         </div>
       </TableCell>
-      <TableCell>{hypothesis?.metric || 'N/A'}</TableCell>
-      <TableCell><StatusBadge status={experiment.status} /></TableCell>
-      <TableCell>{responsible || 'Unassigned'}</TableCell>
       <TableCell>
-        <div className="text-sm space-y-1">
-          <div>In status: {duration.daysInStatus} days</div>
-          <div>Running: {duration.daysRunning} days</div>
+        {hypothesis ? (
+          <div>
+            <div className="mb-1">{hypothesis.initiative}</div>
+            <div className="text-xs text-muted-foreground">{hypothesis.metric}</div>
+          </div>
+        ) : (
+          "Unknown"
+        )}
+      </TableCell>
+      <TableCell>
+        <StatusBadge status={experiment.status} />
+      </TableCell>
+      <TableCell>{responsible || "Unassigned"}</TableCell>
+      <TableCell>
+        <div className="text-sm">
+          {duration.daysRunning} days running
           {duration.daysRemaining !== null && (
-            <div className="font-medium">Remaining: {duration.daysRemaining} days</div>
+            <span className="text-xs block text-muted-foreground">
+              {duration.daysRemaining} days remaining
+            </span>
           )}
         </div>
       </TableCell>
       <TableCell>
-        <Button
-          variant="ghost"
+        <Button 
+          variant="outline" 
           size="sm"
-          onClick={() => navigate(`/experiment-details/${experiment.id}`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/experiment-details/${experiment.id}`);
+          }}
         >
-          View
+          View Details
         </Button>
       </TableCell>
     </TableRow>

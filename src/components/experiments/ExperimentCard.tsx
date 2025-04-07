@@ -1,21 +1,30 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/StatusBadge';
-import { format } from 'date-fns';
-import { Experiment, Hypothesis, GrowthIdea } from '@/types';
-import { useNavigate } from 'react-router-dom';
+import { ExperimentStatus } from '@/types';
 
 interface ExperimentCardProps {
-  experiment: Experiment;
-  hypothesis?: Hypothesis;
-  idea?: GrowthIdea;
+  experiment: {
+    id: string;
+    status: ExperimentStatus;
+    startDate?: Date;
+    endDate?: Date;
+    notes?: string;
+  };
+  hypothesis?: {
+    initiative: string;
+    metric: string;
+  };
+  idea?: {
+    title: string;
+  };
   responsible?: string;
   duration: {
     daysRunning: number;
     daysRemaining: number | null;
-    daysInStatus: number;
     daysTotal: number | null;
   };
 }
@@ -25,85 +34,58 @@ const ExperimentCard: React.FC<ExperimentCardProps> = ({
   hypothesis,
   idea,
   responsible,
-  duration,
+  duration
 }) => {
   const navigate = useNavigate();
-  
+
+  const handleCardClick = () => {
+    navigate(`/experiment-details/${experiment.id}`);
+  };
+
   return (
-    <Card key={experiment.id} className="relative">
-      <div className="absolute top-3 right-3">
-        <StatusBadge status={experiment.status} />
-      </div>
-      <CardHeader>
-        <CardTitle className="pr-24">
-          {idea?.title || 'Experiment'}
-        </CardTitle>
-        <CardDescription>
-          Created {format(new Date(experiment.createdAt), 'MMM d, yyyy')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Card 
+      className="h-full cursor-pointer flex flex-col hover:shadow-md transition-shadow"
+      onClick={handleCardClick}
+    >
+      <CardContent className="py-4 flex-grow">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="font-medium">{idea?.title || "Unknown Idea"}</h3>
+          <StatusBadge status={experiment.status} />
+        </div>
+        
         {hypothesis && (
-          <p className="text-sm">
-            <span className="font-medium">Goal:</span> {hypothesis.metric}
-          </p>
+          <div className="mb-4">
+            <p className="text-sm">{hypothesis.initiative}</p>
+            <p className="text-xs text-muted-foreground">{hypothesis.metric}</p>
+          </div>
         )}
         
-        {responsible && (
-          <p className="text-sm">
-            <span className="font-medium">Responsible:</span> {responsible}
-          </p>
-        )}
-        
-        <div className="space-y-1">
-          <div className="text-sm flex justify-between">
-            <span className="font-medium">Time in current status:</span>
-            <span>{duration.daysInStatus} days</span>
-          </div>
-          
-          <div className="text-sm flex justify-between">
-            <span className="font-medium">Running for:</span>
-            <span>{duration.daysRunning} days</span>
-          </div>
-          
+        <div className="text-xs space-y-1">
+          {responsible && (
+            <p className="text-muted-foreground">Responsible: {responsible}</p>
+          )}
+          <p>Running for {duration.daysRunning} days</p>
           {duration.daysRemaining !== null && (
-            <div className="text-sm flex justify-between">
-              <span className="font-medium">Days remaining:</span>
-              <span className="font-bold">{duration.daysRemaining} days</span>
-            </div>
-          )}
-          
-          {duration.daysTotal !== null && (
-            <div className="text-sm flex justify-between">
-              <span className="font-medium">Total duration:</span>
-              <span>{duration.daysTotal} days</span>
-            </div>
+            <p className="text-muted-foreground">{duration.daysRemaining} days remaining</p>
           )}
         </div>
         
-        <div className="flex justify-between text-sm">
-          <div>
-            <p className="font-medium">Start Date</p>
-            <p className="text-muted-foreground">
-              {experiment.startDate 
-                ? format(new Date(experiment.startDate), 'MMM d, yyyy') 
-                : 'Not set'}
-            </p>
+        {experiment.notes && (
+          <div className="mt-3 border-t pt-2">
+            <p className="text-xs line-clamp-2">{experiment.notes}</p>
           </div>
-          <div>
-            <p className="font-medium">End Date</p>
-            <p className="text-muted-foreground">
-              {experiment.endDate 
-                ? format(new Date(experiment.endDate), 'MMM d, yyyy') 
-                : 'Not set'}
-            </p>
-          </div>
-        </div>
+        )}
       </CardContent>
-      <CardFooter>
+      
+      <CardFooter className="pt-0">
         <Button 
-          onClick={() => navigate(`/experiment-details/${experiment.id}`)}
+          variant="outline" 
+          size="sm" 
           className="w-full"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/experiment-details/${experiment.id}`);
+          }}
         >
           View Details
         </Button>

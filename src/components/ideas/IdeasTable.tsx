@@ -22,6 +22,15 @@ const IdeasTable: React.FC<IdeasTableProps> = ({
     return null;
   }
 
+  const handleRowClick = (ideaId: string) => {
+    navigate(`/idea-details/${ideaId}`);
+  };
+
+  const handleViewClick = (e: React.MouseEvent, ideaId: string) => {
+    e.stopPropagation();
+    navigate(`/idea-details/${ideaId}`);
+  };
+
   return (
     <div className="rounded-md border overflow-hidden">
       <Table>
@@ -41,7 +50,7 @@ const IdeasTable: React.FC<IdeasTableProps> = ({
             <TableRow 
               key={idea.id} 
               className="cursor-pointer hover:bg-muted/50" 
-              onClick={() => navigate(`/idea-details/${idea.id}`)}
+              onClick={() => handleRowClick(idea.id)}
             >
               <TableCell className="font-medium">{idea.title}</TableCell>
               <TableCell>{idea.category}</TableCell>
@@ -69,10 +78,7 @@ const IdeasTable: React.FC<IdeasTableProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/idea-details/${idea.id}`);
-                  }}
+                  onClick={(e) => handleViewClick(e, idea.id)}
                 >
                   View
                 </Button>

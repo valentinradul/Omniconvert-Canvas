@@ -51,8 +51,18 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
     setIsEditing(true);
   };
 
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/hypothesis-details/${hypothesis.id}`);
+  };
+
+  const handleCreateExperiment = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/create-experiment/${hypothesis.id}`);
+  };
+
   return (
-    <TableRow className="group">
+    <TableRow className="group cursor-pointer" onClick={handleViewDetails}>
       <TableCell className="font-medium">
         <div className="space-y-2">
           <div className="font-medium">{idea?.title || 'Unknown Idea'}</div>
@@ -113,7 +123,10 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={handleEditPecti}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditPecti();
+              }}
             >
               Edit PECTI
             </Button>
@@ -121,14 +134,14 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => navigate(`/hypothesis-details/${hypothesis.id}`)}
+            onClick={handleViewDetails}
           >
             View Details
           </Button>
           {!hasExperiment && (
             <Button
               size="sm"
-              onClick={() => navigate(`/create-experiment/${hypothesis.id}`)}
+              onClick={handleCreateExperiment}
             >
               Create Experiment
             </Button>
