@@ -4,7 +4,6 @@ import { GrowthIdea } from '@/types';
 import { generateId, getInitialData } from './utils';
 
 export const useIdeas = (
-  activeCompany: { id: string } | null, 
   user: { id?: string; user_metadata?: { full_name?: string }; email?: string } | null
 ) => {
   const [ideas, setIdeas] = useState<GrowthIdea[]>(() => 
@@ -23,8 +22,7 @@ export const useIdeas = (
         id: generateId(),
         createdAt: new Date(),
         userId: user?.id || undefined,
-        userName: user?.user_metadata?.full_name || user?.email || undefined,
-        company_id: activeCompany?.id
+        userName: user?.user_metadata?.full_name || user?.email || undefined
       }
     ]);
   };

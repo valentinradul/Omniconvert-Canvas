@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useCompanyContext } from '@/context/CompanyContext';
 import { AppContextType } from './types';
 import { useDepartments } from './useDepartments';
 import { useIdeas } from './useIdeas';
@@ -9,7 +8,6 @@ import { useHypotheses } from './useHypotheses';
 import { useExperiments } from './useExperiments';
 import { useCategories } from './useCategories';
 import { extractAllTags, extractAllUserNames } from './utils';
-import { filterByCompany } from './utils';
 
 // Create the context
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -17,48 +15,32 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 // Create a provider component
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const { activeCompany } = useCompanyContext();
   
   const {
-    ideas: allIdeas,
+    ideas,
     addIdea,
     editIdea,
     deleteIdea,
     getIdeaById
-  } = useIdeas(activeCompany, user);
+  } = useIdeas(user);
   
   const {
-    hypotheses: allHypotheses,
+    hypotheses,
     addHypothesis,
     editHypothesis,
     deleteHypothesis,
     getHypothesisById,
     getHypothesisByIdeaId
-  } = useHypotheses(activeCompany, user);
+  } = useHypotheses(user);
   
   const {
-    experiments: allExperiments,
+    experiments,
     addExperiment,
     editExperiment,
     deleteExperiment,
     getExperimentByHypothesisId,
     getExperimentDuration
-  } = useExperiments(activeCompany, user);
-  
-  // Filter displayed data based on the active company
-  const ideas = filterByCompany(allIdeas, activeCompany?.id);
-  const hypotheses = filterByCompany(allHypotheses, activeCompany?.id);
-  const experiments = filterByCompany(allExperiments, activeCompany?.id);
-  
-  // Log what data is being filtered by company
-  React.useEffect(() => {
-    if (activeCompany) {
-      console.log(`AppProvider: Filtering data for company ${activeCompany.id}`);
-      console.log(`- Ideas: ${allIdeas.length} total, ${ideas.length} for active company`);
-      console.log(`- Hypotheses: ${allHypotheses.length} total, ${hypotheses.length} for active company`);
-      console.log(`- Experiments: ${allExperiments.length} total, ${experiments.length} for active company`);
-    }
-  }, [activeCompany, allIdeas, ideas, allHypotheses, hypotheses, allExperiments, experiments]);
+  } = useExperiments(user);
   
   const {
     departments,

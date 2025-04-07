@@ -1,89 +1,93 @@
 
-import { Department, GrowthIdea, Hypothesis, Experiment, Tag } from '@/types';
+import { GrowthIdea, Hypothesis, Experiment, Tag } from '@/types';
 
-// Helper to generate IDs
-export const generateId = () => Math.random().toString(36).substr(2, 9);
+// Generate random ID
+export const generateId = (): string => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
 
-// Helper function to get all unique tags
+// Get initial data from localStorage or provide defaults
+export const getInitialData = <T>(key: string, defaultValue: T): T => {
+  const savedData = localStorage.getItem(key);
+  if (savedData) {
+    try {
+      return JSON.parse(savedData) as T;
+    } catch (error) {
+      console.error(`Error parsing ${key} data from localStorage:`, error);
+      return defaultValue;
+    }
+  }
+  return defaultValue;
+};
+
+// Calculate experiment duration
+export const calculateExperimentDuration = (experiment: Experiment) => {
+  const today = new Date();
+  const startDate = experiment.startDate ? new Date(experiment.startDate) : new Date(experiment.createdAt);
+  const endDate = experiment.endDate ? new Date(experiment.endDate) : null;
+  
+  // Calculate days running
+  const daysRunning = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Calculate days remaining if end date is set
+  const daysRemaining = endDate ? Math.max(0, Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))) : null;
+  
+  // Calculate days total if end date is set
+  const daysTotal = endDate ? Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) : null;
+  
+  // Calculate days in current status
+  const statusDate = experiment.statusUpdatedAt ? new Date(experiment.statusUpdatedAt) : new Date(experiment.createdAt);
+  const daysInStatus = Math.floor((today.getTime() - statusDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  return {
+    daysRunning,
+    daysRemaining,
+    daysTotal,
+    daysInStatus
+  };
+};
+
+// Extract all unique tags from ideas
 export const extractAllTags = (ideas: GrowthIdea[]): Tag[] => {
   const tagsSet = new Set<Tag>();
-  
   ideas.forEach(idea => {
     if (idea.tags) {
-      idea.tags.forEach(tag => tagsSet.add(tag));
+      idea.tags.forEach(tag => {
+        tagsSet.add(tag);
+      });
     }
   });
-  
   return Array.from(tagsSet);
 };
 
-// Helper function to get all unique user names
+// Extract all user names from various entities
 export const extractAllUserNames = (
   ideas: GrowthIdea[], 
   hypotheses: Hypothesis[], 
   experiments: Experiment[]
-) => {
+): { id: string; name: string }[] => {
   const usersMap = new Map<string, string>();
   
-  [...ideas, ...hypotheses, ...experiments].forEach(item => {
-    if (item.userId && item.userName) {
-      usersMap.set(item.userId, item.userName);
+  // Add users from ideas
+  ideas.forEach(idea => {
+    if (idea.userId && idea.userName) {
+      usersMap.set(idea.userId, idea.userName);
+    }
+  });
+  
+  // Add users from hypotheses
+  hypotheses.forEach(hypothesis => {
+    if (hypothesis.userId && hypothesis.userName) {
+      usersMap.set(hypothesis.userId, hypothesis.userName);
+    }
+  });
+  
+  // Add users from experiments
+  experiments.forEach(experiment => {
+    if (experiment.userId && experiment.userName) {
+      usersMap.set(experiment.userId, experiment.userName);
     }
   });
   
   return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
-};
-
-// Helper function to calculate experiment durations and days in status
-export const calculateExperimentDuration = (experiment: Experiment) => {
-  const today = new Date();
-  const createdAt = new Date(experiment.createdAt);
-  const statusUpdatedAt = experiment.statusUpdatedAt ? new Date(experiment.statusUpdatedAt) : createdAt;
-  const startDate = experiment.startDate ? new Date(experiment.startDate) : null;
-  const endDate = experiment.endDate ? new Date(experiment.endDate) : null;
-  
-  // Calculate days running (from creation or start date, whichever is applicable)
-  const daysRunning = startDate 
-    ? Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
-    : Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Calculate days remaining to end date, if applicable
-  const daysRemaining = endDate 
-    ? Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    : null;
-  
-  // Calculate days in the current status
-  const daysInStatus = Math.floor((today.getTime() - statusUpdatedAt.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Calculate total planned days for the experiment
-  const daysTotal = startDate && endDate
-    ? Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
-    : null;
-    
-  return {
-    daysRunning,
-    daysRemaining, 
-    daysInStatus,
-    daysTotal
-  };
-};
-
-// Get stored data from localStorage or use default values
-export const getInitialData = <T extends unknown>(key: string, defaultValue: T): T => {
-  const storedValue = localStorage.getItem(key);
-  return storedValue ? JSON.parse(storedValue) : defaultValue;
-};
-
-// Filter data based on company ID
-export const filterByCompany = <T extends { company_id?: string }>(
-  items: T[], 
-  companyId: string | undefined
-): T[] => {
-  if (!companyId) return items;
-  return items.filter(item => !companyId || item.company_id === companyId);
-};
-
-// Helper to check if value exists in array
-export const itemExists = <T>(arr: T[], id: string, field: keyof T): boolean => {
-  return arr.some(item => (item[field] as unknown) === id);
 };

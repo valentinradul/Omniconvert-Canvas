@@ -4,7 +4,6 @@ import { Hypothesis } from '@/types';
 import { generateId, getInitialData } from './utils';
 
 export const useHypotheses = (
-  activeCompany: { id: string } | null, 
   user: { id?: string; user_metadata?: { full_name?: string }; email?: string } | null
 ) => {
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>(() => 
@@ -24,8 +23,7 @@ export const useHypotheses = (
         createdAt: new Date(),
         status: hypothesis.status || 'Backlog',
         userId: hypothesis.userId || user?.id,
-        userName: hypothesis.userName || user?.user_metadata?.full_name || user?.email,
-        company_id: activeCompany?.id
+        userName: hypothesis.userName || user?.user_metadata?.full_name || user?.email
       }
     ]);
   };

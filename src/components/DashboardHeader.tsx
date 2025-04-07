@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { InvitationsList } from './company/InvitationsList';
 
 const DashboardHeader: React.FC = () => {
   const { user } = useAuth();
@@ -14,8 +13,6 @@ const DashboardHeader: React.FC = () => {
           Here's an overview of your growth experiments.
         </p>
       </div>
-      
-      <InvitationsList />
     </div>
   );
 };

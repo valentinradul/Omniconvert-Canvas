@@ -4,7 +4,6 @@ import { Experiment } from '@/types';
 import { generateId, getInitialData, calculateExperimentDuration } from './utils';
 
 export const useExperiments = (
-  activeCompany: { id: string } | null, 
   user: { id?: string; user_metadata?: { full_name?: string }; email?: string } | null
 ) => {
   const [experiments, setExperiments] = useState<Experiment[]>(() => 
@@ -26,8 +25,7 @@ export const useExperiments = (
         updatedAt: now,
         statusUpdatedAt: now,
         userId: experiment.userId || user?.id,
-        userName: experiment.userName || user?.user_metadata?.full_name || user?.email,
-        company_id: activeCompany?.id
+        userName: experiment.userName || user?.user_metadata?.full_name || user?.email
       }
     ]);
   };

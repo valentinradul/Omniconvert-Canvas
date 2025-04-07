@@ -20,6 +20,7 @@ export interface GrowthIdea {
   userName?: string;
   createdAt: Date;
   tags?: Tag[];
+  responsibleUserId?: string;
 }
 
 export const ALL_CATEGORIES: Category[] = [
@@ -60,6 +61,7 @@ export interface Hypothesis {
   userId?: string;
   userName?: string;
   pectiScore?: PECTI;
+  responsibleUserId?: string;
 }
 
 export type HypothesisStatus = 
@@ -109,6 +111,7 @@ export interface Experiment {
   userId?: string;
   userName?: string;
   observationContent?: any;
+  responsibleUserId?: string;
 }
 
 export const calculatePectiPercentage = (pectiScore: PECTI): number => {

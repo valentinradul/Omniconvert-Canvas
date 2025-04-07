@@ -3,8 +3,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from './Logo';
 import UserMenu from './UserMenu';
-import { CompanySelector } from './company/CompanySelector';
-import { InvitationsList } from './company/InvitationsList';
 
 const AppLayoutHeader = () => {
   return (
@@ -15,10 +13,6 @@ const AppLayoutHeader = () => {
             <Logo className="h-8 w-8 mr-2" />
             <span className="font-bold hidden md:inline-block">Growth Lab</span>
           </Link>
-          
-          <div className="h-8 w-px bg-gray-200 mx-2 hidden md:block"></div>
-          
-          <CompanySelector className="hidden md:flex" />
           
           <div className="hidden md:flex items-center gap-6 ml-8">
             <nav className="flex items-center gap-4 md:gap-6">
@@ -35,8 +29,6 @@ const AppLayoutHeader = () => {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <CompanySelector className="md:hidden" iconOnly />
-          <InvitationsList />
           <UserMenu />
         </div>
       </div>
