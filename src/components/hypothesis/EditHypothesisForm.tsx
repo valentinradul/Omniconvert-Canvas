@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Hypothesis, PECTI } from '@/types';
+import { Hypothesis, PECTI, ObservationContent } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import ObservationContentEditor from '@/components/ObservationContentEditor';
 import { toast } from 'sonner';
@@ -28,7 +27,7 @@ const EditHypothesisForm: React.FC<EditHypothesisFormProps> = ({
   onSave, 
   onCancel 
 }) => {
-  const [observationContent, setObservationContent] = useState(
+  const [observationContent, setObservationContent] = useState<ObservationContent>(
     hypothesis.observationContent || { text: hypothesis.observation || '', externalUrls: [], imageUrls: [] }
   );
 
@@ -53,7 +52,7 @@ const EditHypothesisForm: React.FC<EditHypothesisFormProps> = ({
     toast.success('Hypothesis updated successfully');
   };
 
-  const handleObservationChange = (content: typeof observationContent) => {
+  const handleObservationChange = (content: ObservationContent) => {
     setObservationContent(content);
     form.setValue('observation', content.text);
   };
