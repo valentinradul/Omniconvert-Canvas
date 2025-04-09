@@ -22,6 +22,7 @@ type AppContextType = {
   editExperiment: (id: string, experiment: Partial<Experiment>) => void;
   deleteExperiment: (id: string) => void;
   updatePectiWeights: (weights: Partial<PECTIWeights>) => void;
+  updateAllHypothesesWeights: () => void;
   getIdeaById: (id: string) => GrowthIdea | undefined;
   getHypothesisByIdeaId: (ideaId: string) => Hypothesis | undefined;
   getHypothesisById: (id: string) => Hypothesis | undefined;
@@ -65,7 +66,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
   
   const [pectiWeights, setPectiWeights] = useState<PECTIWeights>(() =>
-    DEFAULT_PECTI_WEIGHTS
+    getInitialData('pectiWeights', DEFAULT_PECTI_WEIGHTS)
   );
   
   useEffect(() => {
@@ -129,6 +130,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...prev,
       ...weights
     }));
+  };
+  
+  const updateAllHypothesesWeights = () => {
+    setHypotheses(prevHypotheses => 
+      prevHypotheses.map(hypothesis => ({
+        ...hypothesis,
+        // We keep the original PECTI scores but apply the new weights when calculating percentages
+        // No need to modify the individual PECTI scores in the hypothesis
+      }))
+    );
   };
   
   const addDepartment = (name: string) => {
@@ -267,6 +278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       editExperiment,
       deleteExperiment,
       updatePectiWeights,
+      updateAllHypothesesWeights,
       getIdeaById,
       getHypothesisByIdeaId,
       getHypothesisById,

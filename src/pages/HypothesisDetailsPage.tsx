@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -23,6 +22,7 @@ const HypothesisDetailsPage: React.FC = () => {
     getExperimentByHypothesisId,
     pectiWeights,
     updatePectiWeights,
+    updateAllHypothesesWeights,
     editHypothesis
   } = useApp();
   
@@ -87,6 +87,11 @@ const HypothesisDetailsPage: React.FC = () => {
   const handleCancelPecti = () => {
     setTempPecti(hypothesis ? hypothesis.pectiScore : { potential: 3, ease: 3, cost: 3, time: 3, impact: 3 });
     setEditingPecti(false);
+  };
+  
+  const handleUpdateAllHypotheses = () => {
+    updateAllHypothesesWeights();
+    toast.success("All hypotheses now use the default weights");
   };
   
   if (!hypothesis || !idea) {
@@ -235,12 +240,27 @@ const HypothesisDetailsPage: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="weights" className="p-1">
-          <PectiWeightsEditor 
-            weights={pectiWeights}
-            onWeightsChange={handleWeightChange}
-            onSave={handleSaveWeights}
-            onReset={handleResetWeights}
-          />
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Weights Settings</CardTitle>
+                <Button 
+                  variant="outline" 
+                  onClick={handleUpdateAllHypotheses}
+                >
+                  Apply Weights To All Hypotheses
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <PectiWeightsEditor 
+                weights={pectiWeights}
+                onWeightsChange={handleWeightChange}
+                onSave={handleSaveWeights}
+                onReset={handleResetWeights}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
       
