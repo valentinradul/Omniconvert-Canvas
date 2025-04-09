@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -20,7 +22,7 @@
     --card: 0 0% 100%;
     --card-foreground: 222.2 47.4% 11.2%;
  
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 214 100% 52%; /* Changed to blue */
     --primary-foreground: 210 40% 98%;
  
     --secondary: 210 40% 96.1%;
@@ -63,8 +65,8 @@
     --card: 222.2 47.4% 6%;
     --card-foreground: 210 40% 98%;
  
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 10%;
+    --primary: 214 100% 52%; /* Changed to blue */
+    --primary-foreground: 0 0% 100%;
  
     --secondary: 240 30% 15%;
     --secondary-foreground: 210 40% 98%;
@@ -82,6 +84,10 @@
     --sidebar-border: 240 14% 29%;
     --sidebar-ring: 240 10% 90%;
   }
+
+  html {
+    font-family: 'Fira Sans', sans-serif;
+  }
 }
  
 @layer base {
@@ -89,7 +95,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-fira;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
