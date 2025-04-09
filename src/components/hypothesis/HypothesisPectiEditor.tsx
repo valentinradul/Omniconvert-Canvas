@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PECTI, PECTIWeights, DEFAULT_PECTI_WEIGHTS, calculatePectiPercentage } from '@/types';
+import { PECTI, PECTIWeights } from '@/types';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ interface HypothesisPectiEditorProps {
 
 const HypothesisPectiEditor: React.FC<HypothesisPectiEditorProps> = ({
   pectiValues,
-  weights = DEFAULT_PECTI_WEIGHTS,
+  weights = { potential: 1, ease: 1, cost: 1, time: 1, impact: 1 },
   onPectiChange,
   onSave,
   onCancel
@@ -29,13 +29,41 @@ const HypothesisPectiEditor: React.FC<HypothesisPectiEditorProps> = ({
     { key: 'impact', label: 'Impact', description: 'Business impact', weight: weights.impact }
   ];
   
-  const weightedScore = calculatePectiPercentage(pectiValues, weights);
+  // Calculate weighted score
+  const calculateWeightedScore = () => {
+    const { potential, ease, cost, time, impact } = pectiValues;
+    const totalWeight = weights.potential + weights.ease + weights.cost + weights.time + weights.impact;
+    const weightedTotal = 
+      potential * weights.potential + 
+      ease * weights.ease + 
+      cost * weights.cost + 
+      time * weights.time + 
+      impact * weights.impact;
+    
+    return Math.round((weightedTotal / (5 * totalWeight)) * 100);
+  };
+  
+  const weightedScore = calculateWeightedScore();
+  
+  // Function to get the badge styling based on score
+  const getBadgeVariant = (score: number) => {
+    if (score >= 70) return "success";
+    if (score >= 40) return "warning";
+    return "destructive";
+  };
+  
+  // Function to get a className for the badge based on score since we can't use custom variants
+  const getBadgeClassName = (score: number) => {
+    if (score >= 70) return "bg-green-100 text-green-800 hover:bg-green-100";
+    if (score >= 40) return "bg-amber-100 text-amber-800 hover:bg-amber-100";
+    return "bg-red-100 text-red-800 hover:bg-red-100";
+  };
   
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="font-medium text-sm">PECTI Score</h3>
-        <Badge variant={weightedScore >= 70 ? 'success' : weightedScore >= 40 ? 'warning' : 'destructive'}>
+        <Badge className={getBadgeClassName(weightedScore)}>
           {weightedScore}%
         </Badge>
       </div>
