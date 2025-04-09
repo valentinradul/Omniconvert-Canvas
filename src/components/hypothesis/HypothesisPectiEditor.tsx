@@ -1,15 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PECTI, PECTIWeights } from '@/types';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface HypothesisPectiEditorProps {
   pectiValues: PECTI;
   weights?: PECTIWeights;
   onPectiChange: (category: keyof PECTI, value: number) => void;
+  onWeightsChange?: (category: keyof PECTIWeights, value: number) => void;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -18,9 +20,12 @@ const HypothesisPectiEditor: React.FC<HypothesisPectiEditorProps> = ({
   pectiValues,
   weights = { potential: 1, ease: 1, cost: 1, time: 1, impact: 1 },
   onPectiChange,
+  onWeightsChange,
   onSave,
   onCancel
 }) => {
+  const [activeTab, setActiveTab] = useState<string>("scores");
+  
   const categories = [
     { key: 'potential', label: 'Potential', description: 'Growth potential', weight: weights.potential },
     { key: 'ease', label: 'Ease', description: 'Implementation ease', weight: weights.ease },
@@ -45,13 +50,6 @@ const HypothesisPectiEditor: React.FC<HypothesisPectiEditorProps> = ({
   
   const weightedScore = calculateWeightedScore();
   
-  // Function to get the badge styling based on score
-  const getBadgeVariant = (score: number) => {
-    if (score >= 70) return "success";
-    if (score >= 40) return "warning";
-    return "destructive";
-  };
-  
   // Function to get a className for the badge based on score since we can't use custom variants
   const getBadgeClassName = (score: number) => {
     if (score >= 70) return "bg-green-100 text-green-800 hover:bg-green-100";
@@ -68,32 +66,66 @@ const HypothesisPectiEditor: React.FC<HypothesisPectiEditorProps> = ({
         </Badge>
       </div>
       
-      <div className="space-y-3">
-        {categories.map((category) => (
-          <div key={category.key} className="space-y-1">
-            <div className="flex justify-between items-center">
-              <div>
-                <Label className="capitalize">{category.label}</Label>
-                {category.weight !== 1 && (
-                  <span className="text-xs ml-1 text-muted-foreground">
-                    (Weight: {category.weight.toFixed(1)})
-                  </span>
-                )}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-2 mb-4">
+          <TabsTrigger value="scores">PECTI Scores</TabsTrigger>
+          <TabsTrigger value="weights">Weights</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="scores" className="space-y-3">
+          {categories.map((category) => (
+            <div key={category.key} className="space-y-1">
+              <div className="flex justify-between items-center">
+                <div>
+                  <Label className="capitalize">{category.label}</Label>
+                  {category.weight !== 1 && (
+                    <span className="text-xs ml-1 text-muted-foreground">
+                      (Weight: {category.weight.toFixed(1)})
+                    </span>
+                  )}
+                </div>
+                <span className="text-sm font-medium">
+                  {pectiValues[category.key as keyof PECTI]}
+                </span>
               </div>
-              <span className="text-sm font-medium">
-                {pectiValues[category.key as keyof PECTI]}
-              </span>
+              <Slider 
+                value={[pectiValues[category.key as keyof PECTI]]}
+                min={1}
+                max={5}
+                step={1}
+                onValueChange={(value) => onPectiChange(category.key as keyof PECTI, value[0])}
+              />
             </div>
-            <Slider 
-              value={[pectiValues[category.key as keyof PECTI]]}
-              min={1}
-              max={5}
-              step={1}
-              onValueChange={(value) => onPectiChange(category.key as keyof PECTI, value[0])}
-            />
-          </div>
-        ))}
-      </div>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="weights" className="space-y-3">
+          {onWeightsChange && categories.map((category) => (
+            <div key={`weight-${category.key}`} className="space-y-1">
+              <div className="flex justify-between items-center">
+                <div>
+                  <Label className="capitalize">{category.label} Weight</Label>
+                  <p className="text-xs text-muted-foreground">{category.description}</p>
+                </div>
+                <span className="text-sm font-medium">
+                  {weights[category.key as keyof PECTIWeights].toFixed(1)}
+                </span>
+              </div>
+              <Slider 
+                value={[weights[category.key as keyof PECTIWeights]]}
+                min={0.1}
+                max={3}
+                step={0.1}
+                onValueChange={(value) => onWeightsChange(category.key as keyof PECTIWeights, value[0])}
+              />
+            </div>
+          ))}
+          {!onWeightsChange && (
+            <p className="text-sm text-muted-foreground italic">Weights cannot be edited for this hypothesis.</p>
+          )}
+        </TabsContent>
+      </Tabs>
+
       <div className="flex justify-between">
         <Button 
           variant="outline" 
