@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -10,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PectiWeightsEditor from '@/components/hypothesis/PectiWeightsEditor';
 import { DEFAULT_PECTI_WEIGHTS, PECTI, PECTIWeights } from '@/types';
 import HypothesisPectiEditor from '@/components/hypothesis/HypothesisPectiEditor';
-import { Pencil } from 'lucide-react';
+import { Edit, Pencil } from 'lucide-react';
+import EditHypothesisForm from '@/components/hypothesis/EditHypothesisForm';
 
 const HypothesisDetailsPage: React.FC = () => {
   const { hypothesisId } = useParams();
@@ -32,6 +34,7 @@ const HypothesisDetailsPage: React.FC = () => {
   const [editingPecti, setEditingPecti] = useState(false);
   const [tempPecti, setTempPecti] = useState<PECTI>(hypothesis ? hypothesis.pectiScore : { potential: 3, ease: 3, cost: 3, time: 3, impact: 3 });
   const [localWeights, setLocalWeights] = useState<PECTIWeights>(pectiWeights);
+  const [isEditing, setIsEditing] = useState(false);
   
   useEffect(() => {
     const currentHypothesis = getHypothesisById(hypothesisId || '');
@@ -93,6 +96,14 @@ const HypothesisDetailsPage: React.FC = () => {
     updateAllHypothesesWeights();
     toast.success("All hypotheses now use the default weights");
   };
+
+  const handleSaveEdits = (updatedHypothesis: Partial<typeof hypothesis>) => {
+    if (hypothesis) {
+      editHypothesis(hypothesis.id, updatedHypothesis);
+      setHypothesis(getHypothesisById(hypothesisId || ''));
+      setIsEditing(false);
+    }
+  };
   
   if (!hypothesis || !idea) {
     return <div>Loading...</div>;
@@ -128,6 +139,13 @@ const HypothesisDetailsPage: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsEditing(true)}
+            disabled={isEditing}
+          >
+            <Edit className="mr-2 h-4 w-4" /> Edit Hypothesis
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">Delete Hypothesis</Button>
@@ -154,117 +172,127 @@ const HypothesisDetailsPage: React.FC = () => {
           <CardTitle>Hypothesis Statement</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <p>
-              <span className="font-medium">Because we observed:</span> {hypothesis.observation}
-            </p>
-            <p>
-              <span className="font-medium">We will do:</span> {hypothesis.initiative}
-            </p>
-            <p>
-              <span className="font-medium">With the measurable goal to improve:</span> {hypothesis.metric}
-            </p>
-          </div>
+          {isEditing ? (
+            <EditHypothesisForm 
+              hypothesis={hypothesis} 
+              onSave={handleSaveEdits} 
+              onCancel={() => setIsEditing(false)} 
+            />
+          ) : (
+            <div className="space-y-4">
+              <p>
+                <span className="font-medium">Because we observed:</span> {hypothesis.observation}
+              </p>
+              <p>
+                <span className="font-medium">We will do:</span> {hypothesis.initiative}
+              </p>
+              <p>
+                <span className="font-medium">With the measurable goal to improve:</span> {hypothesis.metric}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
       
-      <Tabs defaultValue="score">
-        <TabsList className="grid grid-cols-2">
-          <TabsTrigger value="score">PECTI Score</TabsTrigger>
-          <TabsTrigger value="weights">Criteria Weights</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="score" className="p-1">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>PECTI Score: {totalPectiScore}/25</CardTitle>
-                  <CardDescription>
-                    Evaluating Potential, Ease, Cost, Time, and Impact with custom weights applied
-                  </CardDescription>
+      {!isEditing && (
+        <Tabs defaultValue="score">
+          <TabsList className="grid grid-cols-2">
+            <TabsTrigger value="score">PECTI Score</TabsTrigger>
+            <TabsTrigger value="weights">Criteria Weights</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="score" className="p-1">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>PECTI Score: {totalPectiScore}/25</CardTitle>
+                    <CardDescription>
+                      Evaluating Potential, Ease, Cost, Time, and Impact with custom weights applied
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => setEditingPecti(true)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={() => setEditingPecti(true)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {editingPecti ? (
-                <HypothesisPectiEditor
-                  pectiValues={tempPecti}
-                  weights={localWeights}
-                  onPectiChange={handlePectiChange}
-                  onWeightsChange={handleLocalWeightChange}
-                  onSave={handleSavePecti}
-                  onCancel={handleCancelPecti}
-                />
-              ) : (
-                <div className="flex flex-col items-center">
-                  <PectiScoreDisplay pecti={hypothesis.pectiScore} weights={pectiWeights} />
-                  <div className="grid grid-cols-5 gap-6 mt-6 text-center">
-                    <div>
-                      <p className="font-medium">Potential</p>
-                      <p className="text-muted-foreground text-sm">Growth potential</p>
-                      <p className="text-xs text-primary">Weight: {pectiWeights.potential.toFixed(1)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Ease</p>
-                      <p className="text-muted-foreground text-sm">Implementation ease</p>
-                      <p className="text-xs text-primary">Weight: {pectiWeights.ease.toFixed(1)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Cost</p>
-                      <p className="text-muted-foreground text-sm">Low cost = high score</p>
-                      <p className="text-xs text-primary">Weight: {pectiWeights.cost.toFixed(1)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Time</p>
-                      <p className="text-muted-foreground text-sm">Quick = high score</p>
-                      <p className="text-xs text-primary">Weight: {pectiWeights.time.toFixed(1)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Impact</p>
-                      <p className="text-muted-foreground text-sm">Business impact</p>
-                      <p className="text-xs text-primary">Weight: {pectiWeights.impact.toFixed(1)}</p>
+              </CardHeader>
+              <CardContent>
+                {editingPecti ? (
+                  <HypothesisPectiEditor
+                    pectiValues={tempPecti}
+                    weights={localWeights}
+                    onPectiChange={handlePectiChange}
+                    onWeightsChange={handleLocalWeightChange}
+                    onSave={handleSavePecti}
+                    onCancel={handleCancelPecti}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <PectiScoreDisplay pecti={hypothesis.pectiScore} weights={pectiWeights} />
+                    <div className="grid grid-cols-5 gap-6 mt-6 text-center">
+                      <div>
+                        <p className="font-medium">Potential</p>
+                        <p className="text-muted-foreground text-sm">Growth potential</p>
+                        <p className="text-xs text-primary">Weight: {pectiWeights.potential.toFixed(1)}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Ease</p>
+                        <p className="text-muted-foreground text-sm">Implementation ease</p>
+                        <p className="text-xs text-primary">Weight: {pectiWeights.ease.toFixed(1)}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Cost</p>
+                        <p className="text-muted-foreground text-sm">Low cost = high score</p>
+                        <p className="text-xs text-primary">Weight: {pectiWeights.cost.toFixed(1)}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Time</p>
+                        <p className="text-muted-foreground text-sm">Quick = high score</p>
+                        <p className="text-xs text-primary">Weight: {pectiWeights.time.toFixed(1)}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Impact</p>
+                        <p className="text-muted-foreground text-sm">Business impact</p>
+                        <p className="text-xs text-primary">Weight: {pectiWeights.impact.toFixed(1)}</p>
+                      </div>
                     </div>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="weights" className="p-1">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Weights Settings</CardTitle>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleUpdateAllHypotheses}
+                  >
+                    Apply Weights To All Hypotheses
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="weights" className="p-1">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Weights Settings</CardTitle>
-                <Button 
-                  variant="outline" 
-                  onClick={handleUpdateAllHypotheses}
-                >
-                  Apply Weights To All Hypotheses
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <PectiWeightsEditor 
-                weights={pectiWeights}
-                onWeightsChange={handleWeightChange}
-                onSave={handleSaveWeights}
-                onReset={handleResetWeights}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </CardHeader>
+              <CardContent>
+                <PectiWeightsEditor 
+                  weights={pectiWeights}
+                  onWeightsChange={handleWeightChange}
+                  onSave={handleSaveWeights}
+                  onReset={handleResetWeights}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
       
-      {experiment ? (
+      {experiment && !isEditing ? (
         <Card>
           <CardHeader>
             <CardTitle>Experiment</CardTitle>
@@ -286,13 +314,13 @@ const HypothesisDetailsPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : !isEditing ? (
         <div className="flex flex-col items-center justify-center py-8">
           <h3 className="text-xl font-medium">No experiment yet</h3>
           <p className="text-muted-foreground mb-4">Create an experiment to test this hypothesis</p>
           <Button onClick={createExperiment}>Create Experiment</Button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
