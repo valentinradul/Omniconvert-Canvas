@@ -130,7 +130,8 @@ const ExperimentsPage: React.FC = () => {
             {sortedExperiments.map(experiment => {
               const hypothesis = getHypothesisById(experiment.hypothesisId);
               const idea = hypothesis ? getIdeaById(hypothesis.ideaId) : undefined;
-              const responsibleName = experiment.responsibleUserName || experiment.userName || hypothesis?.userName || 'Unassigned';
+              // Use userName instead of responsibleUserName since that's what we have in the Experiment type
+              const responsibleName = experiment.userName || hypothesis?.userName || 'Unassigned';
               
               return (
                 <TableRow key={experiment.id}>
