@@ -1,17 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { 
-  GrowthIdea, 
-  Hypothesis, 
-  HypothesisStatus,
   Category,
   Tag,
-  ExperimentStatus,
+  HypothesisStatus,
 } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import KanbanBoard from '@/components/KanbanBoard';
@@ -19,6 +14,8 @@ import DashboardFilters from '@/components/DashboardFilters';
 import CreateHypothesisModal from '@/components/CreateHypothesisModal';
 import { useNavigate } from 'react-router-dom';
 import { subDays, startOfToday, startOfWeek, startOfMonth, startOfQuarter, startOfYear, isAfter } from 'date-fns';
+import StatisticsPanel from '@/components/dashboard/StatisticsPanel';
+import FilterBar from '@/components/dashboard/FilterBar';
 
 const Dashboard: React.FC = () => {
   const { ideas, hypotheses, experiments, editHypothesis, getIdeaById } = useApp();
@@ -37,16 +34,6 @@ const Dashboard: React.FC = () => {
   
   const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Calculate win rate
-  const completedExperiments = experiments.filter(e => 
-    e.status === 'Winning' || e.status === 'Losing' || e.status === 'Inconclusive'
-  );
-  
-  const winningExperiments = experiments.filter(e => e.status === 'Winning');
-  const winRate = completedExperiments.length > 0 
-    ? Math.round((winningExperiments.length / completedExperiments.length) * 100)
-    : 0;
   
   // Collect all unique tags from ideas
   const allTags = React.useMemo(() => {
@@ -72,7 +59,7 @@ const Dashboard: React.FC = () => {
     return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
   }, [ideas, hypotheses, experiments]);
   
-  // Apply filters to ideas and hypotheses
+  // Apply filters to ideas
   const filteredIdeas = React.useMemo(() => {
     return ideas.filter(idea => {
       // Search query
@@ -133,6 +120,7 @@ const Dashboard: React.FC = () => {
     });
   }, [ideas, filters, searchQuery]);
   
+  // Apply filters to hypotheses
   const filteredHypotheses = React.useMemo(() => {
     return hypotheses.filter(hypothesis => {
       // Search query
@@ -267,6 +255,8 @@ const Dashboard: React.FC = () => {
     setFilters({});
     setSearchQuery('');
   };
+
+  const hasActiveFilters = Object.values(filters).some(Boolean) || !!searchQuery;
   
   return (
     <div className="space-y-6">
@@ -278,72 +268,40 @@ const Dashboard: React.FC = () => {
         <Button onClick={() => navigate('/ideas')}>Add New Idea</Button>
       </div>
       
-      <div className="flex gap-6">
+      {/* Statistics Panel - Always Visible */}
+      <StatisticsPanel 
+        ideas={ideas}
+        hypotheses={hypotheses}
+        experiments={experiments}
+        filteredIdeas={filteredIdeas}
+        filteredHypotheses={filteredHypotheses}
+        filteredExperiments={filteredExperiments}
+      />
+      
+      <div className="flex flex-col lg:flex-row gap-6">
         <div className="flex-1">
-          <div className="bg-white rounded-lg border mb-4">
-            <div className="p-4">
-              <Input
-                placeholder="Search ideas, hypotheses, or experiments..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-xl"
-              />
-            </div>
+          <div className="bg-white rounded-lg border mb-4 p-4">
+            <FilterBar 
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onClearFilters={handleClearFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
           </div>
           
-          <Tabs defaultValue="progress">
-            <div className="mb-4 flex justify-between items-center">
-              <TabsList>
-                <TabsTrigger value="progress">Progress View</TabsTrigger>
-                <TabsTrigger value="stats">Statistics</TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <TabsContent value="progress" className="mt-0">
-              <KanbanBoard 
-                ideas={filteredIdeas}
-                hypotheses={filteredHypotheses}
-                experiments={filteredExperiments}
-                onHypothesisStatusChange={handleHypothesisStatusChange}
-                onIdeaToHypothesis={handleIdeaToHypothesis}
-              />
-            </TabsContent>
-            
-            <TabsContent value="stats" className="mt-0">
-              <div className="bg-white rounded-lg border p-6">
-                <h3 className="text-lg font-medium mb-4">Growth Metrics</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <p className="text-sm text-muted-foreground">Total Ideas</p>
-                    <p className="text-3xl font-bold">{filteredIdeas.length}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <p className="text-sm text-muted-foreground">Active Hypotheses</p>
-                    <p className="text-3xl font-bold">
-                      {filteredHypotheses.filter(h => 
-                        h.status === 'Selected For Testing' || h.status === 'Testing'
-                      ).length}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="text-3xl font-bold">
-                      {filteredHypotheses.filter(h => h.status === 'Completed').length}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <p className="text-sm text-muted-foreground">Win Rate</p>
-                    <p className="text-3xl font-bold">
-                      {winRate}%
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+          <div className="bg-white rounded-lg border p-4">
+            <h3 className="font-medium mb-4">Growth Pipeline</h3>
+            <KanbanBoard 
+              ideas={filteredIdeas}
+              hypotheses={filteredHypotheses}
+              experiments={filteredExperiments}
+              onHypothesisStatusChange={handleHypothesisStatusChange}
+              onIdeaToHypothesis={handleIdeaToHypothesis}
+            />
+          </div>
         </div>
         
-        <div className="w-80">
+        <div className="w-full lg:w-80">
           <DashboardFilters 
             departments={[]}
             allTags={allTags}
