@@ -5,14 +5,20 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import StatusBadge from '@/components/StatusBadge';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { ArrowUpDown, User, Edit } from 'lucide-react';
+import { ArrowUpDown, User, Edit, ChevronDown } from 'lucide-react';
 import PectiScoreDisplay from '@/components/PectiScoreDisplay';
-import { PECTI } from '@/types';
+import { PECTI, ExperimentStatus } from '@/types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type SortField = 'status' | 'createdAt' | 'pectiScore';
 
 const ExperimentsPage: React.FC = () => {
-  const { experiments, hypotheses, getHypothesisById, getIdeaById } = useApp();
+  const { experiments, hypotheses, getHypothesisById, getIdeaById, editExperiment } = useApp();
   const navigate = useNavigate();
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -48,6 +54,19 @@ const ExperimentsPage: React.FC = () => {
   const calculateTotalScore = (pecti: PECTI | undefined) => {
     if (!pecti) return 0;
     return pecti.potential + pecti.ease + pecti.cost + pecti.time + pecti.impact;
+  };
+
+  const statusOptions: ExperimentStatus[] = [
+    'Planned',
+    'In Progress',
+    'Blocked',
+    'Winning',
+    'Losing',
+    'Inconclusive'
+  ];
+
+  const handleStatusChange = (experimentId: string, newStatus: ExperimentStatus) => {
+    editExperiment(experimentId, { status: newStatus });
   };
   
   return (
@@ -125,7 +144,27 @@ const ExperimentsPage: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={experiment.status} />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 p-0 flex items-center gap-1">
+                          <StatusBadge status={experiment.status} />
+                          <ChevronDown className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {statusOptions.map(status => (
+                          <DropdownMenuItem 
+                            key={status}
+                            className={`
+                              status-dropdown-${status.toLowerCase().replace(' ', '-')}
+                            `}
+                            onClick={() => handleStatusChange(experiment.id, status)}
+                          >
+                            {status}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
                     {hypothesis?.pectiScore ? (
