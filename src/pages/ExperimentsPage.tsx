@@ -130,6 +130,7 @@ const ExperimentsPage: React.FC = () => {
             {sortedExperiments.map(experiment => {
               const hypothesis = getHypothesisById(experiment.hypothesisId);
               const idea = hypothesis ? getIdeaById(hypothesis.ideaId) : undefined;
+              const responsibleName = experiment.responsibleUserName || experiment.userName || hypothesis?.userName || 'Unassigned';
               
               return (
                 <TableRow key={experiment.id}>
@@ -177,9 +178,9 @@ const ExperimentsPage: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center text-sm">
-                      <User className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                      <span>{experiment.userName || hypothesis?.userName || 'Unassigned'}</span>
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="font-medium">{responsibleName}</span>
                     </div>
                   </TableCell>
                   <TableCell>
