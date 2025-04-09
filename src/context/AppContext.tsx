@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag } from '../types';
+import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag, PECTIWeights, DEFAULT_PECTI_WEIGHTS } from '../types';
 import { useAuth } from './AuthContext';
 import { useCompany } from './CompanyContext';
 
@@ -10,6 +10,7 @@ type AppContextType = {
   ideas: GrowthIdea[];
   hypotheses: Hypothesis[];
   experiments: Experiment[];
+  pectiWeights: PECTIWeights;
   addDepartment: (name: string) => void;
   editDepartment: (id: string, name: string) => void;
   deleteDepartment: (id: string) => void;
@@ -22,6 +23,7 @@ type AppContextType = {
   addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => void;
   editExperiment: (id: string, experiment: Partial<Experiment>) => void;
   deleteExperiment: (id: string) => void;
+  updatePectiWeights: (weights: Partial<PECTIWeights>) => void;
   getIdeaById: (id: string) => GrowthIdea | undefined;
   getHypothesisByIdeaId: (ideaId: string) => Hypothesis | undefined;
   getHypothesisById: (id: string) => Hypothesis | undefined;
@@ -68,6 +70,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getInitialData('experiments', [])
   );
   
+  // Add PECTI weights state
+  const [pectiWeights, setPectiWeights] = useState<PECTIWeights>(() =>
+    getInitialData('pectiWeights', DEFAULT_PECTI_WEIGHTS)
+  );
+  
   // Update localStorage when state changes
   useEffect(() => {
     localStorage.setItem('departments', JSON.stringify(departments));
@@ -84,6 +91,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('experiments', JSON.stringify(experiments));
   }, [experiments]);
+  
+  // Save PECTI weights to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('pectiWeights', JSON.stringify(pectiWeights));
+  }, [pectiWeights]);
   
   // Filter data based on current company
   const filteredIdeas = ideas.filter(idea => 
@@ -122,6 +134,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
     
     return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
+  };
+  
+  // Update PECTI weights
+  const updatePectiWeights = (weights: Partial<PECTIWeights>) => {
+    setPectiWeights(prev => ({
+      ...prev,
+      ...weights
+    }));
   };
   
   // Department CRUD operations
@@ -254,6 +274,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ideas: filteredIdeas,
       hypotheses: filteredHypotheses,
       experiments: filteredExperiments,
+      pectiWeights,
       addDepartment,
       editDepartment,
       deleteDepartment,
@@ -266,6 +287,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addExperiment,
       editExperiment,
       deleteExperiment,
+      updatePectiWeights,
       getIdeaById,
       getHypothesisByIdeaId,
       getHypothesisById,
