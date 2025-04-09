@@ -1,10 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag, PECTIWeights, DEFAULT_PECTI_WEIGHTS } from '../types';
 import { useAuth } from './AuthContext';
 import { useCompany } from './CompanyContext';
 
-// Define the shape of our context
 type AppContextType = {
   departments: Department[];
   ideas: GrowthIdea[];
@@ -33,19 +31,15 @@ type AppContextType = {
   getAllUserNames: () => {id: string; name: string}[];
 };
 
-// Create the context
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Get stored data from localStorage or use default values
 const getInitialData = <T extends unknown>(key: string, defaultValue: T): T => {
   const storedValue = localStorage.getItem(key);
   return storedValue ? JSON.parse(storedValue) : defaultValue;
 };
 
-// Helper to generate IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-// Create a provider component
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { currentCompany } = useCompany();
@@ -70,12 +64,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getInitialData('experiments', [])
   );
   
-  // Add PECTI weights state
   const [pectiWeights, setPectiWeights] = useState<PECTIWeights>(() =>
-    getInitialData('pectiWeights', DEFAULT_PECTI_WEIGHTS)
+    DEFAULT_PECTI_WEIGHTS
   );
   
-  // Update localStorage when state changes
   useEffect(() => {
     localStorage.setItem('departments', JSON.stringify(departments));
   }, [departments]);
@@ -92,12 +84,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('experiments', JSON.stringify(experiments));
   }, [experiments]);
   
-  // Save PECTI weights to localStorage when they change
   useEffect(() => {
     localStorage.setItem('pectiWeights', JSON.stringify(pectiWeights));
   }, [pectiWeights]);
   
-  // Filter data based on current company
   const filteredIdeas = ideas.filter(idea => 
     !currentCompany || idea.companyId === currentCompany.id || !idea.companyId
   );
@@ -110,7 +100,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     !currentCompany || experiment.companyId === currentCompany.id || !experiment.companyId
   );
   
-  // Helper function to get all unique tags
   const getAllTags = (): Tag[] => {
     const tagsSet = new Set<Tag>();
     
@@ -123,7 +112,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return Array.from(tagsSet);
   };
   
-  // Helper function to get all unique user names
   const getAllUserNames = () => {
     const usersMap = new Map<string, string>();
     
@@ -136,7 +124,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
   };
   
-  // Update PECTI weights
   const updatePectiWeights = (weights: Partial<PECTIWeights>) => {
     setPectiWeights(prev => ({
       ...prev,
@@ -144,7 +131,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
   
-  // Department CRUD operations
   const addDepartment = (name: string) => {
     setDepartments([...departments, { id: generateId(), name }]);
   };
@@ -156,7 +142,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   const deleteDepartment = (id: string) => {
-    // Check if any ideas are using this department
     const ideasUsingDepartment = ideas.some(idea => idea.departmentId === id);
     
     if (ideasUsingDepartment) {
@@ -167,7 +152,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDepartments(departments.filter(dept => dept.id !== id));
   };
   
-  // Growth Idea CRUD operations
   const addIdea = (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => {
     setIdeas([
       ...ideas,
@@ -189,7 +173,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   const deleteIdea = (id: string) => {
-    // Check if any hypotheses are associated with this idea
     const hypothesisWithIdea = hypotheses.find(h => h.ideaId === id);
     
     if (hypothesisWithIdea) {
@@ -200,7 +183,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIdeas(ideas.filter(idea => idea.id !== id));
   };
   
-  // Hypothesis CRUD operations
   const addHypothesis = (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => {
     setHypotheses([
       ...hypotheses,
@@ -223,7 +205,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   const deleteHypothesis = (id: string) => {
-    // Check if any experiments are associated with this hypothesis
     const experimentWithHypothesis = experiments.find(e => e.hypothesisId === id);
     
     if (experimentWithHypothesis) {
@@ -234,7 +215,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setHypotheses(hypotheses.filter(hypothesis => hypothesis.id !== id));
   };
   
-  // Experiment CRUD operations
   const addExperiment = (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => {
     const now = new Date();
     setExperiments([
@@ -261,7 +241,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setExperiments(experiments.filter(experiment => experiment.id !== id));
   };
   
-  // Getter functions
   const getIdeaById = (id: string) => filteredIdeas.find(idea => idea.id === id);
   const getHypothesisByIdeaId = (ideaId: string) => filteredHypotheses.find(h => h.ideaId === ideaId);
   const getHypothesisById = (id: string) => filteredHypotheses.find(h => h.id === id);
@@ -301,7 +280,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 };
 
-// Custom hook to use the context
 export const useApp = (): AppContextType => {
   const context = useContext(AppContext);
   if (context === undefined) {
