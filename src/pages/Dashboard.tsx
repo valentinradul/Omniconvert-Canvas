@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
@@ -7,6 +6,7 @@ import {
   Category,
   Tag,
   HypothesisStatus,
+  ALL_HYPOTHESIS_STATUSES
 } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import KanbanBoard from '@/components/KanbanBoard';
@@ -15,7 +15,12 @@ import CreateHypothesisModal from '@/components/CreateHypothesisModal';
 import { useNavigate } from 'react-router-dom';
 import { subDays, startOfToday, startOfWeek, startOfMonth, startOfQuarter, startOfYear, isAfter } from 'date-fns';
 import StatisticsPanel from '@/components/dashboard/StatisticsPanel';
+import StatisticsChart from '@/components/dashboard/StatisticsChart';
 import FilterBar from '@/components/dashboard/FilterBar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+// Add custom CSS variables for the colored backgrounds
+import '@/index.css';
 
 const Dashboard: React.FC = () => {
   const { ideas, hypotheses, experiments, editHypothesis, getIdeaById } = useApp();
@@ -34,8 +39,8 @@ const Dashboard: React.FC = () => {
   
   const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeView, setActiveView] = useState<'kanban' | 'chart'>('kanban');
   
-  // Collect all unique tags from ideas
   const allTags = React.useMemo(() => {
     const tagsSet = new Set<Tag>();
     ideas.forEach(idea => {
@@ -46,7 +51,6 @@ const Dashboard: React.FC = () => {
     return Array.from(tagsSet);
   }, [ideas]);
   
-  // Collect all unique users
   const allUsers = React.useMemo(() => {
     const usersMap = new Map<string, string>();
     
@@ -59,36 +63,29 @@ const Dashboard: React.FC = () => {
     return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
   }, [ideas, hypotheses, experiments]);
   
-  // Apply filters to ideas
   const filteredIdeas = React.useMemo(() => {
     return ideas.filter(idea => {
-      // Search query
       if (searchQuery && !idea.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
           !idea.description.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
       
-      // Department filter
       if (filters.department && idea.departmentId !== filters.department) {
         return false;
       }
       
-      // Category filter
       if (filters.category && idea.category !== filters.category) {
         return false;
       }
       
-      // Tag filter
       if (filters.tag && (!idea.tags || !idea.tags.includes(filters.tag))) {
         return false;
       }
       
-      // User filter
       if (filters.userId && idea.userId !== filters.userId) {
         return false;
       }
       
-      // Timeframe filter
       if (filters.timeframe) {
         const createdDate = new Date(idea.createdAt);
         let cutoffDate;
@@ -120,26 +117,21 @@ const Dashboard: React.FC = () => {
     });
   }, [ideas, filters, searchQuery]);
   
-  // Apply filters to hypotheses
   const filteredHypotheses = React.useMemo(() => {
     return hypotheses.filter(hypothesis => {
-      // Search query
       if (searchQuery && !hypothesis.metric.toLowerCase().includes(searchQuery.toLowerCase()) && 
           !hypothesis.initiative.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
       
-      // Status filter
       if (filters.status && hypothesis.status !== filters.status) {
         return false;
       }
       
-      // User filter
       if (filters.userId && hypothesis.userId !== filters.userId) {
         return false;
       }
       
-      // Department filter and Category filter (need to check related idea)
       if (filters.department || filters.category) {
         const relatedIdea = ideas.find(i => i.id === hypothesis.ideaId);
         if (!relatedIdea) return false;
@@ -152,13 +144,11 @@ const Dashboard: React.FC = () => {
           return false;
         }
         
-        // Tag filter (check related idea)
         if (filters.tag && (!relatedIdea.tags || !relatedIdea.tags.includes(filters.tag))) {
           return false;
         }
       }
       
-      // Timeframe filter
       if (filters.timeframe) {
         const createdDate = new Date(hypothesis.createdAt);
         let cutoffDate;
@@ -189,15 +179,13 @@ const Dashboard: React.FC = () => {
       return true;
     });
   }, [hypotheses, ideas, filters, searchQuery]);
-
-  // Filter experiments based on the same criteria
+  
   const filteredExperiments = React.useMemo(() => {
     return experiments.filter(experiment => {
       if (filters.userId && experiment.userId !== filters.userId) {
         return false;
       }
       
-      // Timeframe filter
       if (filters.timeframe) {
         const createdDate = new Date(experiment.createdAt);
         let cutoffDate;
@@ -228,7 +216,23 @@ const Dashboard: React.FC = () => {
       return true;
     });
   }, [experiments, filters]);
-
+  
+  const hypothesisByStatus = React.useMemo(() => {
+    const statusCounts: Record<HypothesisStatus, number> = {} as Record<HypothesisStatus, number>;
+    
+    ALL_HYPOTHESIS_STATUSES.forEach(status => {
+      statusCounts[status] = 0;
+    });
+    
+    filteredHypotheses.forEach(hypothesis => {
+      if (hypothesis.status) {
+        statusCounts[hypothesis.status]++;
+      }
+    });
+    
+    return statusCounts;
+  }, [filteredHypotheses]);
+  
   const handleHypothesisStatusChange = (hypothesisId: string, newStatus: HypothesisStatus) => {
     editHypothesis(hypothesisId, { status: newStatus });
     toast({
@@ -276,6 +280,20 @@ const Dashboard: React.FC = () => {
         filteredIdeas={filteredIdeas}
         filteredHypotheses={filteredHypotheses}
         filteredExperiments={filteredExperiments}
+      />
+      
+      {/* Statistics Chart */}
+      <StatisticsChart 
+        hypotheses={hypothesisByStatus}
+        experiments={filteredExperiments}
+        winRate={
+          filteredExperiments.filter(e => e.status === 'Winning' || e.status === 'Losing' || e.status === 'Inconclusive').length > 0
+          ? Math.round((filteredExperiments.filter(e => e.status === 'Winning').length / 
+              filteredExperiments.filter(e => 
+                e.status === 'Winning' || e.status === 'Losing' || e.status === 'Inconclusive'
+              ).length) * 100)
+          : 0
+        }
       />
       
       <div className="flex flex-col lg:flex-row gap-6">
