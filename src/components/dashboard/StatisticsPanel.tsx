@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { GrowthIdea, Hypothesis, Experiment } from '@/types';
-import { ArrowUpIcon, ArrowDownIcon, BarChart3, Brain, Lightbulb, Flask } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon, BarChart3, Brain, Lightbulb, Beaker } from 'lucide-react';
 
 interface StatisticsPanelProps {
   ideas: GrowthIdea[];
@@ -83,7 +82,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
       <Card>
         <CardContent className="p-4 flex items-center gap-4">
           <div className="bg-soft-green p-3 rounded-full">
-            <Flask size={20} className="text-green-600" />
+            <Beaker size={20} className="text-green-600" />
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Completed</p>
