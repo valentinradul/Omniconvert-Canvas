@@ -7,13 +7,22 @@ export const useExperiments = (
   user: any,
   currentCompany: any
 ) => {
-  const [experiments, setExperiments] = useState<Experiment[]>(() => 
-    getInitialData('experiments', [])
-  );
+  const [experiments, setExperiments] = useState<Experiment[]>(() => {
+    // Only load experiments if there's a user and associate with their ID
+    if (user?.id) {
+      const userKey = `experiments_${user.id}`;
+      return getInitialData(userKey, []);
+    }
+    return [];
+  });
   
   useEffect(() => {
-    localStorage.setItem('experiments', JSON.stringify(experiments));
-  }, [experiments]);
+    // Only save data if there's an authenticated user
+    if (user?.id) {
+      const userKey = `experiments_${user.id}`;
+      localStorage.setItem(userKey, JSON.stringify(experiments));
+    }
+  }, [experiments, user?.id]);
 
   const filteredExperiments = experiments.filter(experiment => 
     !currentCompany || experiment.companyId === currentCompany.id || !experiment.companyId
@@ -45,7 +54,8 @@ export const useExperiments = (
     setExperiments(experiments.filter(experiment => experiment.id !== id));
   };
 
-  const getExperimentByHypothesisId = (hypothesisId: string) => filteredExperiments.find(e => e.hypothesisId === hypothesisId);
+  const getExperimentByHypothesisId = (hypothesisId: string) => 
+    filteredExperiments.find(e => e.hypothesisId === hypothesisId);
   
   return {
     experiments: filteredExperiments,

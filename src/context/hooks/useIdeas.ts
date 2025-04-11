@@ -8,13 +8,22 @@ export const useIdeas = (
   currentCompany: any,
   hypotheses: Hypothesis[]
 ) => {
-  const [ideas, setIdeas] = useState<GrowthIdea[]>(() => 
-    getInitialData('ideas', [])
-  );
+  const [ideas, setIdeas] = useState<GrowthIdea[]>(() => {
+    // Only load ideas if there's a user and associate with their ID
+    if (user?.id) {
+      const userKey = `ideas_${user.id}`;
+      return getInitialData(userKey, []);
+    }
+    return [];
+  });
   
   useEffect(() => {
-    localStorage.setItem('ideas', JSON.stringify(ideas));
-  }, [ideas]);
+    // Only save data if there's an authenticated user
+    if (user?.id) {
+      const userKey = `ideas_${user.id}`;
+      localStorage.setItem(userKey, JSON.stringify(ideas));
+    }
+  }, [ideas, user?.id]);
 
   const filteredIdeas = ideas.filter(idea => 
     !currentCompany || idea.companyId === currentCompany.id || !idea.companyId
