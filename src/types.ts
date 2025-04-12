@@ -52,23 +52,6 @@ export type PECTI = {
   impact: 1 | 2 | 3 | 4 | 5;
 };
 
-export type PECTIWeights = {
-  potential: number;
-  ease: number;
-  cost: number;
-  time: number;
-  impact: number;
-};
-
-// Default weights (all equal)
-export const DEFAULT_PECTI_WEIGHTS: PECTIWeights = {
-  potential: 1,
-  ease: 1,
-  cost: 1,
-  time: 1,
-  impact: 1
-};
-
 // Extended type for observation content that supports text, URLs, and images
 export type ObservationContent = {
   text: string;
@@ -169,29 +152,10 @@ export type CompanyInvitation = {
   createdAt: Date;
 };
 
-// Helper function to calculate PECTI percentage score with weights
-export const calculatePectiPercentage = (
-  pectiScore: PECTI, 
-  weights: PECTIWeights = DEFAULT_PECTI_WEIGHTS
-): number => {
+// Helper function to calculate PECTI percentage score
+export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   const { potential, ease, cost, time, impact } = pectiScore;
-  const { potential: potentialWeight, ease: easeWeight, cost: costWeight, time: timeWeight, impact: impactWeight } = weights;
-  
-  // Calculate the sum of weighted scores
-  const weightedTotal = 
-    potential * potentialWeight + 
-    ease * easeWeight + 
-    cost * costWeight + 
-    time * timeWeight + 
-    impact * impactWeight;
-  
-  // Calculate the maximum possible weighted score
-  const maxWeightedScore = 
-    5 * potentialWeight + 
-    5 * easeWeight + 
-    5 * costWeight + 
-    5 * timeWeight + 
-    5 * impactWeight;
-  
-  return Math.round((weightedTotal / maxWeightedScore) * 100);
+  const totalScore = potential + ease + cost + time + impact;
+  const maxPossibleScore = 25; // 5 points max for each of the 5 categories
+  return Math.round((totalScore / maxPossibleScore) * 100);
 };

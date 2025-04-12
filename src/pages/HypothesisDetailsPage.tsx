@@ -7,9 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import PectiScoreDisplay from '@/components/PectiScoreDisplay';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import PectiWeightsEditor from '@/components/hypothesis/PectiWeightsEditor';
-import { DEFAULT_PECTI_WEIGHTS } from '@/types';
 
 const HypothesisDetailsPage: React.FC = () => {
   const { hypothesisId } = useParams();
@@ -18,9 +15,7 @@ const HypothesisDetailsPage: React.FC = () => {
     getHypothesisById, 
     getIdeaById, 
     deleteHypothesis,
-    getExperimentByHypothesisId,
-    pectiWeights,
-    updatePectiWeights
+    getExperimentByHypothesisId
   } = useApp();
   
   const [hypothesis, setHypothesis] = useState(getHypothesisById(hypothesisId || ''));
@@ -38,19 +33,6 @@ const HypothesisDetailsPage: React.FC = () => {
       navigate('/hypotheses');
     }
   }, [hypothesisId, getHypothesisById, getIdeaById, getExperimentByHypothesisId, navigate]);
-  
-  const handleWeightChange = (category: keyof typeof pectiWeights, value: number) => {
-    updatePectiWeights({ [category]: value });
-  };
-  
-  const handleResetWeights = () => {
-    updatePectiWeights(DEFAULT_PECTI_WEIGHTS);
-    toast.success("PECTI weights reset to default values");
-  };
-  
-  const handleSaveWeights = () => {
-    toast.success("PECTI weights saved successfully");
-  };
   
   if (!hypothesis || !idea) {
     return <div>Loading...</div>;
@@ -126,64 +108,41 @@ const HypothesisDetailsPage: React.FC = () => {
         </CardContent>
       </Card>
       
-      <Tabs defaultValue="score">
-        <TabsList className="grid grid-cols-2">
-          <TabsTrigger value="score">PECTI Score</TabsTrigger>
-          <TabsTrigger value="weights">Criteria Weights</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="score" className="p-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>PECTI Score: {totalPectiScore}/25</CardTitle>
-              <CardDescription>
-                Evaluating Potential, Ease, Cost, Time, and Impact with custom weights applied
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center">
-                <PectiScoreDisplay pecti={hypothesis.pectiScore} weights={pectiWeights} />
-                <div className="grid grid-cols-5 gap-6 mt-6 text-center">
-                  <div>
-                    <p className="font-medium">Potential</p>
-                    <p className="text-muted-foreground text-sm">Growth potential</p>
-                    <p className="text-xs text-primary">Weight: {pectiWeights.potential.toFixed(1)}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Ease</p>
-                    <p className="text-muted-foreground text-sm">Implementation ease</p>
-                    <p className="text-xs text-primary">Weight: {pectiWeights.ease.toFixed(1)}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Cost</p>
-                    <p className="text-muted-foreground text-sm">Low cost = high score</p>
-                    <p className="text-xs text-primary">Weight: {pectiWeights.cost.toFixed(1)}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Time</p>
-                    <p className="text-muted-foreground text-sm">Quick = high score</p>
-                    <p className="text-xs text-primary">Weight: {pectiWeights.time.toFixed(1)}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Impact</p>
-                    <p className="text-muted-foreground text-sm">Business impact</p>
-                    <p className="text-xs text-primary">Weight: {pectiWeights.impact.toFixed(1)}</p>
-                  </div>
-                </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>PECTI Score: {totalPectiScore}/25</CardTitle>
+          <CardDescription>
+            Evaluating Potential, Ease, Cost, Time, and Impact
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center">
+            <PectiScoreDisplay pecti={hypothesis.pectiScore} />
+            <div className="grid grid-cols-5 gap-6 mt-6 text-center">
+              <div>
+                <p className="font-medium">Potential</p>
+                <p className="text-muted-foreground text-sm">Growth potential</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="weights" className="p-1">
-          <PectiWeightsEditor 
-            weights={pectiWeights}
-            onWeightsChange={handleWeightChange}
-            onSave={handleSaveWeights}
-            onReset={handleResetWeights}
-          />
-        </TabsContent>
-      </Tabs>
+              <div>
+                <p className="font-medium">Ease</p>
+                <p className="text-muted-foreground text-sm">Implementation ease</p>
+              </div>
+              <div>
+                <p className="font-medium">Cost</p>
+                <p className="text-muted-foreground text-sm">Low cost = high score</p>
+              </div>
+              <div>
+                <p className="font-medium">Time</p>
+                <p className="text-muted-foreground text-sm">Quick = high score</p>
+              </div>
+              <div>
+                <p className="font-medium">Impact</p>
+                <p className="text-muted-foreground text-sm">Business impact</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       {experiment ? (
         <Card>
