@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCompany } from '@/context/CompanyContext';
 import { CompanyRole } from '@/types';
+import { toast } from '@/hooks/use-toast';
 
 interface InviteMemberDialogProps {
   open: boolean;
@@ -28,9 +29,18 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose }
       await inviteMember(email, role);
       setEmail('');
       setRole('member');
+      toast({
+        title: "Invitation Sent",
+        description: `An invitation has been sent to ${email}.`,
+      });
       onClose();
     } catch (error) {
       console.error('Error inviting member:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to send invitation",
+        description: "There was an error sending the invitation. Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }

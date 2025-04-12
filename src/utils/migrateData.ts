@@ -13,7 +13,6 @@ export const migrateDataToUser = async (targetEmail: string) => {
     
     if (authError) throw authError;
     
-    // Find the user with the matching email
     // Properly type the users array to avoid the 'never' type issue
     type UserType = { id: string; email?: string; };
     const users = usersData?.users as UserType[] || [];
@@ -30,10 +29,9 @@ export const migrateDataToUser = async (targetEmail: string) => {
     const userHypothesesKey = `user_${userId}_hypotheses`;
     const userExperimentsKey = `user_${userId}_experiments`;
 
-    // Get the company ID for OmniConvert
+    // Check if OmniConvert company already exists for this user
     let companyId = null;
     
-    // Check if OmniConvert company already exists for this user
     const { data: existingCompanies, error: companyError } = await supabase
       .from('companies')
       .select('*')
