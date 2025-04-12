@@ -1,3 +1,4 @@
+
 // Common types used across the application
 
 export type Department = {
@@ -59,14 +60,13 @@ export type PECTIWeights = {
   impact: number;
 };
 
-// Default weights based on specified percentages:
-// Potential - 25%, Ease - 15%, Cost - 15%, Time - 10%, Impact - 35%
+// Default weights (all equal)
 export const DEFAULT_PECTI_WEIGHTS: PECTIWeights = {
-  potential: 2.5,
-  ease: 1.5,
-  cost: 1.5,
-  time: 1.0,
-  impact: 3.5
+  potential: 1,
+  ease: 1,
+  cost: 1,
+  time: 1,
+  impact: 1
 };
 
 // Extended type for observation content that supports text, URLs, and images

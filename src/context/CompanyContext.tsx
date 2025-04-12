@@ -1,9 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
-import { createDefaultCompany } from './utils/dataUtils';
 
 type CompanyContextType = {
   companies: Company[];
@@ -32,7 +32,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [companyMembers, setCompanyMembers] = useState<CompanyMember[]>([]);
   const [companyInvitations, setCompanyInvitations] = useState<CompanyInvitation[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   useEffect(() => {
     if (user) {
@@ -48,13 +47,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [user]);
 
   useEffect(() => {
-    if (user && companies.length === 0 && !isInitialized) {
-      createDefaultCompanyForUser();
-      setIsInitialized(true);
-    }
-  }, [companies, user, isInitialized]);
-
-  useEffect(() => {
     if (currentCompany) {
       loadCompanyMembers();
       loadUserRole();
@@ -65,9 +57,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     if (user && companies.length > 0) {
-      const storedCompanyId = localStorage.getItem(`user_${user.id}_currentCompanyId`) || 
-                             localStorage.getItem('currentCompanyId');
-                             
+      const storedCompanyId = localStorage.getItem('currentCompanyId');
       if (storedCompanyId) {
         const company = companies.find(c => c.id === storedCompanyId);
         if (company) {
@@ -80,37 +70,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     }
   }, [companies, user]);
-
-  const createDefaultCompanyForUser = async () => {
-    if (!user) return;
-    
-    try {
-      const isOmniconvertEmail = user.email === 'valentin.radu@omniconvert.com';
-      const companyName = isOmniconvertEmail ? 'OmniConvert' : 'My Company';
-      
-      const companyData = await createDefaultCompany(supabase, user.id, companyName);
-      
-      if (companyData) {
-        const newCompany: Company = {
-          id: companyData.id,
-          name: companyData.name,
-          createdAt: new Date(companyData.created_at),
-          createdBy: companyData.created_by
-        };
-        
-        setCompanies([newCompany]);
-        setCurrentCompany(newCompany);
-        setUserCompanyRole(isOmniconvertEmail ? 'owner' : 'owner');
-        
-        toast({
-          title: isOmniconvertEmail ? 'OmniConvert company created' : 'Company created',
-          description: `${companyName} has been set up for your account.`,
-        });
-      }
-    } catch (error) {
-      console.error('Error creating default company:', error);
-    }
-  };
 
   const loadUserCompanies = async () => {
     if (!user) return;
@@ -143,6 +102,10 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }));
         
         setCompanies(formattedCompanies);
+        
+        if (formattedCompanies.length > 0 && !currentCompany) {
+          setCurrentCompany(formattedCompanies[0]);
+        }
       }
     } catch (error: any) {
       console.error('Error loading companies:', error.message);
@@ -252,6 +215,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       if (companyError) throw companyError;
       
+      // Add user as company owner - use explicit column name references to avoid ambiguity
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
@@ -293,9 +257,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const company = companies.find(c => c.id === companyId);
     if (company) {
       setCurrentCompany(company);
-      if (user) {
-        localStorage.setItem(`user_${user.id}_currentCompanyId`, company.id);
-      }
       localStorage.setItem('currentCompanyId', company.id);
     }
   };
@@ -463,6 +424,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (inviteError) throw inviteError;
       
+      // Use explicit column names to avoid ambiguity
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
