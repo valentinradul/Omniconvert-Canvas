@@ -21,7 +21,6 @@ const PectiScoreDisplay: React.FC<PectiScoreDisplayProps> = ({
   size = 'md'
 }) => {
   const { potential, ease, cost, time, impact } = pecti;
-  // Always use the provided weights
   const percentageScore = calculatePectiPercentage(pecti, weights);
 
   const scoreSize = {

@@ -1,89 +1,280 @@
-
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag, PECTIWeights, DEFAULT_PECTI_WEIGHTS } from '../types';
 import { useAuth } from './AuthContext';
 import { useCompany } from './CompanyContext';
-import { useDepartments } from './hooks/useDepartments';
-import { useIdeas } from './hooks/useIdeas';
-import { useHypotheses } from './hooks/useHypotheses';
-import { useExperiments } from './hooks/useExperiments';
-import { usePectiWeights } from './hooks/usePectiWeights';
-import { getAllTags, getAllUserNames } from './utils/dataUtils';
-import { AppContextType } from './types/AppContextTypes';
+
+type AppContextType = {
+  departments: Department[];
+  ideas: GrowthIdea[];
+  hypotheses: Hypothesis[];
+  experiments: Experiment[];
+  pectiWeights: PECTIWeights;
+  addDepartment: (name: string) => void;
+  editDepartment: (id: string, name: string) => void;
+  deleteDepartment: (id: string) => void;
+  addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => void;
+  editIdea: (id: string, idea: Partial<GrowthIdea>) => void;
+  deleteIdea: (id: string) => void;
+  addHypothesis: (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => void;
+  editHypothesis: (id: string, hypothesis: Partial<Hypothesis>) => void;
+  deleteHypothesis: (id: string) => void;
+  addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  editExperiment: (id: string, experiment: Partial<Experiment>) => void;
+  deleteExperiment: (id: string) => void;
+  updatePectiWeights: (weights: Partial<PECTIWeights>) => void;
+  getIdeaById: (id: string) => GrowthIdea | undefined;
+  getHypothesisByIdeaId: (ideaId: string) => Hypothesis | undefined;
+  getHypothesisById: (id: string) => Hypothesis | undefined;
+  getExperimentByHypothesisId: (hypothesisId: string) => Experiment | undefined;
+  getDepartmentById: (id: string) => Department | undefined;
+  getAllTags: () => Tag[];
+  getAllUserNames: () => {id: string; name: string}[];
+};
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+const getInitialData = <T extends unknown>(key: string, defaultValue: T): T => {
+  const storedValue = localStorage.getItem(key);
+  return storedValue ? JSON.parse(storedValue) : defaultValue;
+};
+
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { currentCompany } = useCompany();
-  const [isAppDataLoading, setIsAppDataLoading] = useState(true);
   
-  // Initialize our hooks
-  const { experiments, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId, isLoading: experimentsLoading } = 
-    useExperiments(user, currentCompany);
+  const [departments, setDepartments] = useState<Department[]>(() => 
+    getInitialData('departments', [
+      { id: generateId(), name: 'Marketing' },
+      { id: generateId(), name: 'Sales' },
+      { id: generateId(), name: 'Product' }
+    ])
+  );
   
-  const { hypotheses, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById, isLoading: hypothesesLoading } = 
-    useHypotheses(user, currentCompany, experiments);
+  const [ideas, setIdeas] = useState<GrowthIdea[]>(() => 
+    getInitialData('ideas', [])
+  );
   
-  const { ideas, addIdea, editIdea, deleteIdea, getIdeaById, isLoading: ideasLoading } = 
-    useIdeas(user, currentCompany, hypotheses);
+  const [hypotheses, setHypotheses] = useState<Hypothesis[]>(() => 
+    getInitialData('hypotheses', [])
+  );
   
-  const { departments, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = 
-    useDepartments();
+  const [experiments, setExperiments] = useState<Experiment[]>(() => 
+    getInitialData('experiments', [])
+  );
   
-  const { pectiWeights, updatePectiWeights } = usePectiWeights();
+  const [pectiWeights, setPectiWeights] = useState<PECTIWeights>(() =>
+    DEFAULT_PECTI_WEIGHTS
+  );
   
-  // Create wrapper functions that have access to all hooks
-  const allItems = [...ideas, ...hypotheses, ...experiments];
+  useEffect(() => {
+    localStorage.setItem('departments', JSON.stringify(departments));
+  }, [departments]);
   
-  const wrappedDeleteDepartment = (id: string) => {
-    deleteDepartment(id, ideas);
+  useEffect(() => {
+    localStorage.setItem('ideas', JSON.stringify(ideas));
+  }, [ideas]);
+  
+  useEffect(() => {
+    localStorage.setItem('hypotheses', JSON.stringify(hypotheses));
+  }, [hypotheses]);
+  
+  useEffect(() => {
+    localStorage.setItem('experiments', JSON.stringify(experiments));
+  }, [experiments]);
+  
+  useEffect(() => {
+    localStorage.setItem('pectiWeights', JSON.stringify(pectiWeights));
+  }, [pectiWeights]);
+  
+  const filteredIdeas = ideas.filter(idea => 
+    !currentCompany || idea.companyId === currentCompany.id || !idea.companyId
+  );
+  
+  const filteredHypotheses = hypotheses.filter(hypothesis => 
+    !currentCompany || hypothesis.companyId === currentCompany.id || !hypothesis.companyId
+  );
+  
+  const filteredExperiments = experiments.filter(experiment => 
+    !currentCompany || experiment.companyId === currentCompany.id || !experiment.companyId
+  );
+  
+  const getAllTags = (): Tag[] => {
+    const tagsSet = new Set<Tag>();
+    
+    filteredIdeas.forEach(idea => {
+      if (idea.tags) {
+        idea.tags.forEach(tag => tagsSet.add(tag));
+      }
+    });
+    
+    return Array.from(tagsSet);
   };
   
-  const updateAllHypothesesWeights = () => {
-    updateAllHypothesesWeightsBase(pectiWeights);
+  const getAllUserNames = () => {
+    const usersMap = new Map<string, string>();
+    
+    [...filteredIdeas, ...filteredHypotheses, ...filteredExperiments].forEach(item => {
+      if (item.userId && item.userName) {
+        usersMap.set(item.userId, item.userName);
+      }
+    });
+    
+    return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
   };
-
-  // Update loading state when all data fetching is complete
-  React.useEffect(() => {
-    if (!experimentsLoading && !hypothesesLoading && !ideasLoading) {
-      setIsAppDataLoading(false);
-    } else {
-      setIsAppDataLoading(true);
+  
+  const updatePectiWeights = (weights: Partial<PECTIWeights>) => {
+    setPectiWeights(prev => ({
+      ...prev,
+      ...weights
+    }));
+  };
+  
+  const addDepartment = (name: string) => {
+    setDepartments([...departments, { id: generateId(), name }]);
+  };
+  
+  const editDepartment = (id: string, name: string) => {
+    setDepartments(departments.map(dept => 
+      dept.id === id ? { ...dept, name } : dept
+    ));
+  };
+  
+  const deleteDepartment = (id: string) => {
+    const ideasUsingDepartment = ideas.some(idea => idea.departmentId === id);
+    
+    if (ideasUsingDepartment) {
+      alert('Cannot delete department that has ideas associated with it.');
+      return;
     }
-  }, [experimentsLoading, hypothesesLoading, ideasLoading]);
-  
-  const appContextValue: AppContextType = {
-    departments,
-    ideas,
-    hypotheses,
-    experiments,
-    pectiWeights,
-    isLoading: isAppDataLoading,
-    addDepartment,
-    editDepartment,
-    deleteDepartment: wrappedDeleteDepartment,
-    addIdea,
-    editIdea,
-    deleteIdea,
-    addHypothesis,
-    editHypothesis,
-    deleteHypothesis,
-    addExperiment,
-    editExperiment,
-    deleteExperiment,
-    updatePectiWeights,
-    updateAllHypothesesWeights,
-    getIdeaById,
-    getHypothesisByIdeaId,
-    getHypothesisById,
-    getExperimentByHypothesisId,
-    getDepartmentById,
-    getAllTags: () => getAllTags(ideas),
-    getAllUserNames: () => getAllUserNames(allItems)
+    
+    setDepartments(departments.filter(dept => dept.id !== id));
   };
+  
+  const addIdea = (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => {
+    setIdeas([
+      ...ideas,
+      {
+        ...idea,
+        id: generateId(),
+        createdAt: new Date(),
+        userId: user?.id || undefined,
+        userName: user?.user_metadata?.full_name || user?.email || undefined,
+        companyId: currentCompany?.id
+      }
+    ]);
+  };
+  
+  const editIdea = (id: string, ideaUpdates: Partial<GrowthIdea>) => {
+    setIdeas(ideas.map(idea => 
+      idea.id === id ? { ...idea, ...ideaUpdates } : idea
+    ));
+  };
+  
+  const deleteIdea = (id: string) => {
+    const hypothesisWithIdea = hypotheses.find(h => h.ideaId === id);
+    
+    if (hypothesisWithIdea) {
+      alert('Cannot delete idea that has a hypothesis associated with it.');
+      return;
+    }
+    
+    setIdeas(ideas.filter(idea => idea.id !== id));
+  };
+  
+  const addHypothesis = (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => {
+    setHypotheses([
+      ...hypotheses,
+      {
+        ...hypothesis,
+        id: generateId(),
+        createdAt: new Date(),
+        status: hypothesis.status || 'Backlog',
+        userId: hypothesis.userId || user?.id,
+        userName: hypothesis.userName || user?.user_metadata?.full_name || user?.email,
+        companyId: currentCompany?.id
+      }
+    ]);
+  };
+  
+  const editHypothesis = (id: string, hypothesisUpdates: Partial<Hypothesis>) => {
+    setHypotheses(hypotheses.map(hypothesis => 
+      hypothesis.id === id ? { ...hypothesis, ...hypothesisUpdates } : hypothesis
+    ));
+  };
+  
+  const deleteHypothesis = (id: string) => {
+    const experimentWithHypothesis = experiments.find(e => e.hypothesisId === id);
+    
+    if (experimentWithHypothesis) {
+      alert('Cannot delete hypothesis that has an experiment associated with it.');
+      return;
+    }
+    
+    setHypotheses(hypotheses.filter(hypothesis => hypothesis.id !== id));
+  };
+  
+  const addExperiment = (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const now = new Date();
+    setExperiments([
+      ...experiments,
+      {
+        ...experiment,
+        id: generateId(),
+        createdAt: now,
+        updatedAt: now,
+        userId: experiment.userId || user?.id,
+        userName: experiment.userName || user?.user_metadata?.full_name || user?.email,
+        companyId: currentCompany?.id
+      }
+    ]);
+  };
+  
+  const editExperiment = (id: string, experimentUpdates: Partial<Experiment>) => {
+    setExperiments(experiments.map(experiment => 
+      experiment.id === id ? { ...experiment, ...experimentUpdates, updatedAt: new Date() } : experiment
+    ));
+  };
+  
+  const deleteExperiment = (id: string) => {
+    setExperiments(experiments.filter(experiment => experiment.id !== id));
+  };
+  
+  const getIdeaById = (id: string) => filteredIdeas.find(idea => idea.id === id);
+  const getHypothesisByIdeaId = (ideaId: string) => filteredHypotheses.find(h => h.ideaId === ideaId);
+  const getHypothesisById = (id: string) => filteredHypotheses.find(h => h.id === id);
+  const getExperimentByHypothesisId = (hypothesisId: string) => filteredExperiments.find(e => e.hypothesisId === hypothesisId);
+  const getDepartmentById = (id: string) => departments.find(d => d.id === id);
   
   return (
-    <AppContext.Provider value={appContextValue}>
+    <AppContext.Provider value={{
+      departments,
+      ideas: filteredIdeas,
+      hypotheses: filteredHypotheses,
+      experiments: filteredExperiments,
+      pectiWeights,
+      addDepartment,
+      editDepartment,
+      deleteDepartment,
+      addIdea,
+      editIdea,
+      deleteIdea,
+      addHypothesis,
+      editHypothesis,
+      deleteHypothesis,
+      addExperiment,
+      editExperiment,
+      deleteExperiment,
+      updatePectiWeights,
+      getIdeaById,
+      getHypothesisByIdeaId,
+      getHypothesisById,
+      getExperimentByHypothesisId,
+      getDepartmentById,
+      getAllTags,
+      getAllUserNames
+    }}>
       {children}
     </AppContext.Provider>
   );

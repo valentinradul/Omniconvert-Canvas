@@ -26,16 +26,7 @@ import AccountSettingsPage from "./pages/AccountSettingsPage";
 import TeamSettingsPage from "./pages/TeamSettingsPage";
 import NotFound from "./pages/NotFound";
 
-// Configure the query client with retries and error handling
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
