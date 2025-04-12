@@ -1,32 +1,35 @@
+
 import { useState, useEffect } from 'react';
 import { Hypothesis, HypothesisStatus, PECTIWeights } from '@/types';
-import { generateId, getInitialData, saveData } from '../utils/dataUtils';
+import { generateId, getInitialData } from '../utils/dataUtils';
 
 export const useHypotheses = (
   user: any,
   currentCompany: any,
   experiments: any[]
 ) => {
-  const userId = user?.id;
-  
-  const [hypotheses, setHypotheses] = useState<Hypothesis[]>(() => 
-    getInitialData('hypotheses', [], userId)
-  );
+  const [hypotheses, setHypotheses] = useState<Hypothesis[]>(() => {
+    // Only load hypotheses if there's a user and associate with their ID
+    if (user?.id) {
+      const userKey = `hypotheses_${user.id}`;
+      return getInitialData(userKey, []);
+    }
+    return [];
+  });
   
   useEffect(() => {
-    // Only save data if we have a user ID
-    if (userId) {
-      saveData('hypotheses', hypotheses, userId);
+    // Only save data if there's an authenticated user
+    if (user?.id) {
+      const userKey = `hypotheses_${user.id}`;
+      localStorage.setItem(userKey, JSON.stringify(hypotheses));
     }
-  }, [hypotheses, userId]);
+  }, [hypotheses, user?.id]);
 
   const filteredHypotheses = hypotheses.filter(hypothesis => 
-    !currentCompany || hypothesis.companyId === currentCompany?.id || !hypothesis.companyId
+    !currentCompany || hypothesis.companyId === currentCompany.id || !hypothesis.companyId
   );
   
   const addHypothesis = (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => {
-    if (!userId) return;
-    
     setHypotheses([
       ...hypotheses,
       {
@@ -34,7 +37,7 @@ export const useHypotheses = (
         id: generateId(),
         createdAt: new Date(),
         status: hypothesis.status || 'Backlog',
-        userId: userId,
+        userId: hypothesis.userId || user?.id,
         userName: user?.user_metadata?.full_name || user?.email,
         companyId: currentCompany?.id
       }
@@ -42,16 +45,12 @@ export const useHypotheses = (
   };
   
   const editHypothesis = (id: string, hypothesisUpdates: Partial<Hypothesis>) => {
-    if (!userId) return;
-    
     setHypotheses(hypotheses.map(hypothesis => 
       hypothesis.id === id ? { ...hypothesis, ...hypothesisUpdates } : hypothesis
     ));
   };
   
   const deleteHypothesis = (id: string) => {
-    if (!userId) return;
-    
     const experimentWithHypothesis = experiments.find(e => e.hypothesisId === id);
     
     if (experimentWithHypothesis) {
@@ -63,8 +62,6 @@ export const useHypotheses = (
   };
 
   const updateAllHypothesesWeights = (pectiWeights: PECTIWeights) => {
-    if (!userId) return;
-    
     setHypotheses(prevHypotheses => 
       prevHypotheses.map(hypothesis => ({
         ...hypothesis,

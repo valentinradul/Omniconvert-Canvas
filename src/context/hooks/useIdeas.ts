@@ -1,41 +1,42 @@
 
 import { useState, useEffect } from 'react';
 import { GrowthIdea, Hypothesis } from '@/types';
-import { generateId, getInitialData, saveData } from '../utils/dataUtils';
+import { generateId, getInitialData } from '../utils/dataUtils';
 
 export const useIdeas = (
   user: any,
   currentCompany: any,
   hypotheses: Hypothesis[]
 ) => {
-  const userId = user?.id;
-  
-  const [ideas, setIdeas] = useState<GrowthIdea[]>(() => 
-    getInitialData('ideas', [], userId)
-  );
+  const [ideas, setIdeas] = useState<GrowthIdea[]>(() => {
+    // Only load ideas if there's a user and associate with their ID
+    if (user?.id) {
+      const userKey = `ideas_${user.id}`;
+      return getInitialData(userKey, []);
+    }
+    return [];
+  });
   
   useEffect(() => {
-    // Only save data if we have a user ID
-    if (userId) {
-      saveData('ideas', ideas, userId);
+    // Only save data if there's an authenticated user
+    if (user?.id) {
+      const userKey = `ideas_${user.id}`;
+      localStorage.setItem(userKey, JSON.stringify(ideas));
     }
-  }, [ideas, userId]);
+  }, [ideas, user?.id]);
 
-  // Make sure to filter ideas by the current company
   const filteredIdeas = ideas.filter(idea => 
-    !currentCompany || idea.companyId === currentCompany?.id || !idea.companyId
+    !currentCompany || idea.companyId === currentCompany.id || !idea.companyId
   );
   
   const addIdea = (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => {
-    if (!userId) return;
-    
     setIdeas([
       ...ideas,
       {
         ...idea,
         id: generateId(),
         createdAt: new Date(),
-        userId: userId,
+        userId: user?.id || undefined,
         userName: user?.user_metadata?.full_name || user?.email || undefined,
         companyId: currentCompany?.id
       }
@@ -43,16 +44,12 @@ export const useIdeas = (
   };
   
   const editIdea = (id: string, ideaUpdates: Partial<GrowthIdea>) => {
-    if (!userId) return;
-    
     setIdeas(ideas.map(idea => 
       idea.id === id ? { ...idea, ...ideaUpdates } : idea
     ));
   };
   
   const deleteIdea = (id: string) => {
-    if (!userId) return;
-    
     const hypothesisWithIdea = hypotheses.find(h => h.ideaId === id);
     
     if (hypothesisWithIdea) {
