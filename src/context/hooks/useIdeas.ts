@@ -1,20 +1,22 @@
 
 import { useState, useEffect } from 'react';
 import { GrowthIdea, Hypothesis } from '@/types';
-import { generateId, getInitialData } from '../utils/dataUtils';
+import { generateId, getInitialData, saveData } from '../utils/dataUtils';
 
 export const useIdeas = (
   user: any,
   currentCompany: any,
   hypotheses: Hypothesis[]
 ) => {
+  const userId = user?.id;
+  
   const [ideas, setIdeas] = useState<GrowthIdea[]>(() => 
-    getInitialData('ideas', [])
+    getInitialData('ideas', [], userId)
   );
   
   useEffect(() => {
-    localStorage.setItem('ideas', JSON.stringify(ideas));
-  }, [ideas]);
+    saveData('ideas', ideas, userId);
+  }, [ideas, userId]);
 
   const filteredIdeas = ideas.filter(idea => 
     !currentCompany || idea.companyId === currentCompany.id || !idea.companyId

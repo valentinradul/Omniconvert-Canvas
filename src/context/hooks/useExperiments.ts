@@ -1,19 +1,21 @@
 
 import { useState, useEffect } from 'react';
 import { Experiment } from '@/types';
-import { generateId, getInitialData } from '../utils/dataUtils';
+import { generateId, getInitialData, saveData } from '../utils/dataUtils';
 
 export const useExperiments = (
   user: any,
   currentCompany: any
 ) => {
+  const userId = user?.id;
+  
   const [experiments, setExperiments] = useState<Experiment[]>(() => 
-    getInitialData('experiments', [])
+    getInitialData('experiments', [], userId)
   );
   
   useEffect(() => {
-    localStorage.setItem('experiments', JSON.stringify(experiments));
-  }, [experiments]);
+    saveData('experiments', experiments, userId);
+  }, [experiments, userId]);
 
   const filteredExperiments = experiments.filter(experiment => 
     !currentCompany || experiment.companyId === currentCompany.id || !experiment.companyId

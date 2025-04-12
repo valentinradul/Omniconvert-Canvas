@@ -1,19 +1,22 @@
+
 import { useState, useEffect } from 'react';
 import { Hypothesis, HypothesisStatus, PECTIWeights } from '@/types';
-import { generateId, getInitialData } from '../utils/dataUtils';
+import { generateId, getInitialData, saveData } from '../utils/dataUtils';
 
 export const useHypotheses = (
   user: any,
   currentCompany: any,
   experiments: any[]
 ) => {
+  const userId = user?.id;
+  
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>(() => 
-    getInitialData('hypotheses', [])
+    getInitialData('hypotheses', [], userId)
   );
   
   useEffect(() => {
-    localStorage.setItem('hypotheses', JSON.stringify(hypotheses));
-  }, [hypotheses]);
+    saveData('hypotheses', hypotheses, userId);
+  }, [hypotheses, userId]);
 
   const filteredHypotheses = hypotheses.filter(hypothesis => 
     !currentCompany || hypothesis.companyId === currentCompany.id || !hypothesis.companyId
