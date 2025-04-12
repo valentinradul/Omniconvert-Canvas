@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -215,7 +214,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       if (companyError) throw companyError;
       
-      // Add user as company owner - use explicit column name references to avoid ambiguity
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
@@ -424,7 +422,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (inviteError) throw inviteError;
       
-      // Use explicit column names to avoid ambiguity
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
