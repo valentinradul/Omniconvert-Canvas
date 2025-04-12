@@ -1,13 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { GrowthIdea, Hypothesis, Category } from '@/types';
+import { GrowthIdea, Hypothesis } from '@/types';
 import { generateId, getInitialData } from '../utils/dataUtils';
-import { toast } from 'sonner';
-
-const isValidCategory = (value: any): value is Category => {
-  const validCategories = ['Acquisition', 'Activation', 'Retention', 'Revenue', 'Referral'];
-  return typeof value === 'string' && validCategories.includes(value);
-};
 
 export const useIdeas = (
   user: any,
@@ -17,21 +11,9 @@ export const useIdeas = (
   const [ideas, setIdeas] = useState<GrowthIdea[]>(() => {
     // Only load ideas if there's a user and associate with their ID
     if (user?.id) {
-      console.log(`Loading ideas for user: ${user.id}`);
       const userKey = `ideas_${user.id}`;
-      const loadedIdeas = getInitialData(userKey, []);
-      
-      // Validate and convert categories
-      const validatedIdeas = loadedIdeas.map((idea: any) => ({
-        ...idea,
-        category: isValidCategory(idea.category) ? idea.category : 'Activation',
-      }));
-      
-      console.log(`Loaded ${validatedIdeas.length} ideas for user ${user.id}`);
-      return validatedIdeas;
+      return getInitialData(userKey, []);
     }
-    
-    console.log('No user ID found, skipping ideas fetch');
     return [];
   });
   
@@ -40,9 +22,6 @@ export const useIdeas = (
     if (user?.id) {
       const userKey = `ideas_${user.id}`;
       localStorage.setItem(userKey, JSON.stringify(ideas));
-      console.log(`Saved ${ideas.length} ideas for user ${user.id}`);
-    } else {
-      console.log('No user ID found, skipping ideas save');
     }
   }, [ideas, user?.id]);
 
@@ -51,11 +30,6 @@ export const useIdeas = (
   );
   
   const addIdea = (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => {
-    if (!user?.id) {
-      toast.error('You must be logged in to add ideas');
-      return;
-    }
-    
     setIdeas([
       ...ideas,
       {
@@ -67,8 +41,6 @@ export const useIdeas = (
         companyId: currentCompany?.id
       }
     ]);
-    
-    toast.success('Idea added successfully!');
   };
   
   const editIdea = (id: string, ideaUpdates: Partial<GrowthIdea>) => {
@@ -86,7 +58,6 @@ export const useIdeas = (
     }
     
     setIdeas(ideas.filter(idea => idea.id !== id));
-    toast.success('Idea deleted successfully');
   };
 
   const getIdeaById = (id: string) => filteredIdeas.find(idea => idea.id === id);

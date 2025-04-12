@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { Hypothesis, HypothesisStatus, PECTIWeights, PECTI } from '@/types';
+import { Hypothesis, HypothesisStatus, PECTIWeights } from '@/types';
 import { generateId, getInitialData } from '../utils/dataUtils';
-import { toast } from 'sonner';
 
 export const useHypotheses = (
   user: any,
@@ -12,28 +11,9 @@ export const useHypotheses = (
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>(() => {
     // Only load hypotheses if there's a user and associate with their ID
     if (user?.id) {
-      console.log(`Loading hypotheses for user: ${user.id}`);
       const userKey = `hypotheses_${user.id}`;
-      const loadedHypotheses = getInitialData<any[]>(userKey, []);
-      
-      // Validate and normalize
-      const validatedHypotheses = loadedHypotheses.map(hypothesis => ({
-        ...hypothesis,
-        status: hypothesis.status || 'Backlog',
-        pectiScore: hypothesis.pectiScore || {
-          potential: 0,
-          ease: 0,
-          confidence: 0,
-          timebound: 0,
-          impact: 0
-        }
-      }));
-      
-      console.log(`Loaded ${validatedHypotheses.length} hypotheses for user ${user.id}`);
-      return validatedHypotheses;
+      return getInitialData(userKey, []);
     }
-    
-    console.log('No user ID found, skipping hypotheses fetch');
     return [];
   });
   
@@ -42,9 +22,6 @@ export const useHypotheses = (
     if (user?.id) {
       const userKey = `hypotheses_${user.id}`;
       localStorage.setItem(userKey, JSON.stringify(hypotheses));
-      console.log(`Saved ${hypotheses.length} hypotheses for user ${user.id}`);
-    } else {
-      console.log('No user ID found, skipping hypotheses save');
     }
   }, [hypotheses, user?.id]);
 
@@ -53,11 +30,6 @@ export const useHypotheses = (
   );
   
   const addHypothesis = (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => {
-    if (!user?.id) {
-      toast.error('You must be logged in to add hypotheses');
-      return;
-    }
-    
     setHypotheses([
       ...hypotheses,
       {
@@ -70,8 +42,6 @@ export const useHypotheses = (
         companyId: currentCompany?.id
       }
     ]);
-    
-    toast.success('Hypothesis added successfully!');
   };
   
   const editHypothesis = (id: string, hypothesisUpdates: Partial<Hypothesis>) => {
@@ -84,12 +54,11 @@ export const useHypotheses = (
     const experimentWithHypothesis = experiments.find(e => e.hypothesisId === id);
     
     if (experimentWithHypothesis) {
-      toast.error('Cannot delete hypothesis that has an experiment associated with it.');
+      alert('Cannot delete hypothesis that has an experiment associated with it.');
       return;
     }
     
     setHypotheses(hypotheses.filter(hypothesis => hypothesis.id !== id));
-    toast.success('Hypothesis deleted successfully');
   };
 
   const updateAllHypothesesWeights = (pectiWeights: PECTIWeights) => {

@@ -18,8 +18,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { checkAndMigrateLocalData } from "@/utils/dataRecovery";
-import { toast as sonnerToast } from "sonner";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -29,20 +27,14 @@ const formSchema = z.object({
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, isAuthenticated, isLoading, user } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      // Check and migrate any local data
-      if (user?.id) {
-        if (checkAndMigrateLocalData(user.id)) {
-          sonnerToast.success('Recovered your previously saved data!');
-        }
-      }
       navigate("/dashboard");
     }
-  }, [isAuthenticated, isLoading, navigate, user]);
+  }, [isAuthenticated, isLoading, navigate]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -59,9 +51,7 @@ const Login = () => {
         title: "Login successful",
         description: "Welcome back to ExperimentFlow!",
       });
-      
-      // After login, navigate to recovery page to check for old data
-      navigate("/recover-data");
+      navigate("/dashboard");
     } catch (error) {
       // Error is handled in the auth context
       console.error("Login submission error:", error);
@@ -73,7 +63,7 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/recover-data`
+          redirectTo: `${window.location.origin}/dashboard`
         }
       });
       
