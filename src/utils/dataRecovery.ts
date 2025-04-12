@@ -13,15 +13,17 @@ export const recoverOrphanedData = async (targetEmail: string) => {
       .single();
       
     if (userError) {
-      // Try to get user directly from auth
-      const { data: authUser, error: authError } = await supabase.auth.admin.getUserByEmail(targetEmail);
+      // Use a different approach since the getUserByEmail method doesn't exist
+      const { data: userAuth, error: authError } = await supabase.auth.admin.listUsers({
+        filter: `email=eq.${targetEmail}`
+      });
       
-      if (authError || !authUser) {
+      if (authError || !userAuth || userAuth.users.length === 0) {
         throw new Error(`Could not find user with email ${targetEmail}`);
       }
       
-      console.log('Found user from auth:', authUser);
-      return recoverLocalStorageData(authUser.id);
+      console.log('Found user from auth:', userAuth.users[0]);
+      return recoverLocalStorageData(userAuth.users[0].id);
     }
     
     return recoverLocalStorageData(userData.id);
