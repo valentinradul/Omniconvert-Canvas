@@ -1,69 +1,215 @@
 
 import { useState, useEffect } from 'react';
 import { GrowthIdea, Hypothesis } from '@/types';
-import { generateId, getInitialData } from '../utils/dataUtils';
+import { generateId } from '../utils/dataUtils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const useIdeas = (
   user: any,
   currentCompany: any,
   hypotheses: Hypothesis[]
 ) => {
-  const [ideas, setIdeas] = useState<GrowthIdea[]>(() => {
-    // Only load ideas if there's a user and associate with their ID
-    if (user?.id) {
-      const userKey = `ideas_${user.id}`;
-      return getInitialData(userKey, []);
-    }
-    return [];
-  });
+  const [ideas, setIdeas] = useState<GrowthIdea[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
+  // Fetch ideas from Supabase when the user or company changes
   useEffect(() => {
-    // Only save data if there's an authenticated user
-    if (user?.id) {
-      const userKey = `ideas_${user.id}`;
-      localStorage.setItem(userKey, JSON.stringify(ideas));
-    }
-  }, [ideas, user?.id]);
-
+    const fetchIdeas = async () => {
+      if (!user?.id) {
+        setIdeas([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      setIsLoading(true);
+      try {
+        // Try to fetch ideas from Supabase
+        let query = supabase.from('ideas')
+          .select('*')
+          .eq('userid', user.id);
+          
+        if (currentCompany?.id) {
+          query = query.eq('company_id', currentCompany.id);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          // Transform the data to match our GrowthIdea type
+          const formattedIdeas: GrowthIdea[] = data.map(idea => ({
+            id: idea.id,
+            title: idea.title,
+            description: idea.description || '',
+            category: idea.category,
+            departmentId: idea.departmentid,
+            tags: idea.tags,
+            createdAt: new Date(idea.createdat),
+            userId: idea.userid,
+            userName: idea.username,
+            companyId: idea.company_id
+          }));
+          
+          setIdeas(formattedIdeas);
+          console.log('Ideas fetched from Supabase:', formattedIdeas);
+        }
+      } catch (error: any) {
+        console.error('Error fetching ideas:', error.message);
+        toast.error('Failed to load ideas');
+        
+        // Fallback to localStorage if Supabase fetch fails
+        const userKey = `ideas_${user.id}`;
+        const savedIdeas = localStorage.getItem(userKey);
+        if (savedIdeas) {
+          setIdeas(JSON.parse(savedIdeas));
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchIdeas();
+  }, [user?.id, currentCompany?.id]);
+  
   const filteredIdeas = ideas.filter(idea => 
     !currentCompany || idea.companyId === currentCompany.id || !idea.companyId
   );
   
-  const addIdea = (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => {
-    setIdeas([
-      ...ideas,
-      {
+  const addIdea = async (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => {
+    try {
+      // First, add to Supabase
+      const { data, error } = await supabase.from('ideas').insert({
+        title: idea.title,
+        description: idea.description,
+        category: idea.category,
+        departmentid: idea.departmentId,
+        tags: idea.tags,
+        userid: user?.id,
+        username: user?.user_metadata?.full_name || user?.email,
+        company_id: currentCompany?.id
+      }).select();
+      
+      if (error) throw error;
+      
+      if (data && data[0]) {
+        const newIdea: GrowthIdea = {
+          id: data[0].id,
+          title: data[0].title,
+          description: data[0].description || '',
+          category: data[0].category,
+          departmentId: data[0].departmentid,
+          tags: data[0].tags,
+          createdAt: new Date(data[0].createdat),
+          userId: data[0].userid,
+          userName: data[0].username,
+          companyId: data[0].company_id
+        };
+        
+        setIdeas(prevIdeas => [...prevIdeas, newIdea]);
+        toast.success('Idea added successfully');
+      }
+    } catch (error: any) {
+      console.error('Error adding idea:', error.message);
+      toast.error('Failed to add idea');
+      
+      // Fallback to local storage
+      const newIdea = {
         ...idea,
         id: generateId(),
         createdAt: new Date(),
-        userId: user?.id || undefined,
-        userName: user?.user_metadata?.full_name || user?.email || undefined,
+        userId: user?.id,
+        userName: user?.user_metadata?.full_name || user?.email,
         companyId: currentCompany?.id
-      }
-    ]);
+      };
+      
+      setIdeas(prevIdeas => [...prevIdeas, newIdea]);
+      
+      // Update local storage
+      const userKey = `ideas_${user.id}`;
+      localStorage.setItem(userKey, JSON.stringify([...ideas, newIdea]));
+    }
   };
   
-  const editIdea = (id: string, ideaUpdates: Partial<GrowthIdea>) => {
-    setIdeas(ideas.map(idea => 
-      idea.id === id ? { ...idea, ...ideaUpdates } : idea
-    ));
+  const editIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) => {
+    try {
+      // First update in Supabase
+      const updates = {
+        title: ideaUpdates.title,
+        description: ideaUpdates.description,
+        category: ideaUpdates.category,
+        departmentid: ideaUpdates.departmentId,
+        tags: ideaUpdates.tags,
+      };
+      
+      // Remove undefined values
+      Object.keys(updates).forEach(key => {
+        if (updates[key as keyof typeof updates] === undefined) {
+          delete updates[key as keyof typeof updates];
+        }
+      });
+      
+      const { error } = await supabase
+        .from('ideas')
+        .update(updates)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Then update local state
+      setIdeas(prevIdeas => 
+        prevIdeas.map(idea => idea.id === id ? { ...idea, ...ideaUpdates } : idea)
+      );
+      
+      toast.success('Idea updated successfully');
+    } catch (error: any) {
+      console.error('Error updating idea:', error.message);
+      toast.error('Failed to update idea');
+      
+      // Still update the local state as fallback
+      setIdeas(ideas.map(idea => 
+        idea.id === id ? { ...idea, ...ideaUpdates } : idea
+      ));
+    }
   };
   
-  const deleteIdea = (id: string) => {
+  const deleteIdea = async (id: string) => {
     const hypothesisWithIdea = hypotheses.find(h => h.ideaId === id);
     
     if (hypothesisWithIdea) {
-      alert('Cannot delete idea that has a hypothesis associated with it.');
+      toast.error('Cannot delete idea that has a hypothesis associated with it.');
       return;
     }
     
-    setIdeas(ideas.filter(idea => idea.id !== id));
+    try {
+      // First delete from Supabase
+      const { error } = await supabase
+        .from('ideas')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Then update local state
+      setIdeas(prevIdeas => prevIdeas.filter(idea => idea.id !== id));
+      toast.success('Idea deleted successfully');
+    } catch (error: any) {
+      console.error('Error deleting idea:', error.message);
+      toast.error('Failed to delete idea');
+      
+      // Still update the local state as fallback
+      setIdeas(ideas.filter(idea => idea.id !== id));
+    }
   };
 
   const getIdeaById = (id: string) => filteredIdeas.find(idea => idea.id === id);
   
   return {
     ideas: filteredIdeas,
+    isLoading,
     addIdea,
     editIdea,
     deleteIdea,

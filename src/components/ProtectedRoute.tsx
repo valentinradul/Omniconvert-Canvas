@@ -2,29 +2,35 @@
 import React, { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useApp } from '@/context/AppContext';
 import { toast } from 'sonner';
 
 const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isLoading: appDataLoading } = useApp();
   const location = useLocation();
+  const isLoading = authLoading || appDataLoading;
 
   // Debug authentication state
   useEffect(() => {
     console.log('Protected Route:', { 
       isAuthenticated, 
-      isLoading, 
+      authLoading,
+      appDataLoading,
       path: location.pathname 
     });
-  }, [isAuthenticated, isLoading, location.pathname]);
+  }, [isAuthenticated, authLoading, appDataLoading, location.pathname]);
 
-  // Show loading state while checking authentication
+  // Show loading state while checking authentication or loading app data
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-pulse flex flex-col items-center">
           <div className="h-12 w-12 bg-blue-200 rounded-full mb-4"></div>
           <div className="h-4 bg-blue-200 rounded w-24"></div>
-          <p className="mt-4 text-gray-500">Verifying authentication...</p>
+          <p className="mt-4 text-gray-500">
+            {authLoading ? "Verifying authentication..." : "Loading your data..."}
+          </p>
         </div>
       </div>
     );

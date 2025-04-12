@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { useCompany } from './CompanyContext';
 import { useDepartments } from './hooks/useDepartments';
@@ -15,15 +15,16 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { currentCompany } = useCompany();
+  const [isAppDataLoading, setIsAppDataLoading] = useState(true);
   
   // Initialize our hooks
-  const { experiments, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId } = 
+  const { experiments, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId, isLoading: experimentsLoading } = 
     useExperiments(user, currentCompany);
   
-  const { hypotheses, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById } = 
+  const { hypotheses, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById, isLoading: hypothesesLoading } = 
     useHypotheses(user, currentCompany, experiments);
   
-  const { ideas, addIdea, editIdea, deleteIdea, getIdeaById } = 
+  const { ideas, addIdea, editIdea, deleteIdea, getIdeaById, isLoading: ideasLoading } = 
     useIdeas(user, currentCompany, hypotheses);
   
   const { departments, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = 
@@ -41,6 +42,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateAllHypothesesWeights = () => {
     updateAllHypothesesWeightsBase(pectiWeights);
   };
+
+  // Update loading state when all data fetching is complete
+  React.useEffect(() => {
+    if (!experimentsLoading && !hypothesesLoading && !ideasLoading) {
+      setIsAppDataLoading(false);
+    } else {
+      setIsAppDataLoading(true);
+    }
+  }, [experimentsLoading, hypothesesLoading, ideasLoading]);
   
   const appContextValue: AppContextType = {
     departments,
@@ -48,6 +58,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     hypotheses,
     experiments,
     pectiWeights,
+    isLoading: isAppDataLoading,
     addDepartment,
     editDepartment,
     deleteDepartment: wrappedDeleteDepartment,
