@@ -13,10 +13,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Category, ALL_CATEGORIES } from '@/types';
 import TagInput from '@/components/TagInput';
-import { Search, Filter, User } from 'lucide-react';
 
 const IdeasPage: React.FC = () => {
-  const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
+  const { ideas, departments, addIdea, getDepartmentById } = useApp();
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -26,16 +25,6 @@ const IdeasPage: React.FC = () => {
   const [departmentId, setDepartmentId] = useState<string | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
-  // Search and filters state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
-  const [responsibleFilter, setResponsibleFilter] = useState<string>('all');
-  
-  // Get all user names for the filter
-  const allUsers = getAllUserNames();
-  const allTags = getAllTags();
 
   const handleAddIdea = () => {
     if (departmentId && category && title && description) {
@@ -56,33 +45,7 @@ const IdeasPage: React.FC = () => {
     }
   };
 
-  // Filter ideas based on search and filter criteria
-  const filteredIdeas = ideas.filter(idea => {
-    // Search query filter
-    if (searchQuery && !idea.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
-        !idea.description.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    
-    // Category filter
-    if (categoryFilter !== 'all' && idea.category !== categoryFilter) {
-      return false;
-    }
-    
-    // Department filter
-    if (departmentFilter !== 'all' && idea.departmentId !== departmentFilter) {
-      return false;
-    }
-    
-    // Responsible user filter
-    if (responsibleFilter !== 'all' && idea.userId !== responsibleFilter) {
-      return false;
-    }
-    
-    return true;
-  });
-
-  const sortedIdeas = [...filteredIdeas].sort((a, b) => {
+  const sortedIdeas = [...ideas].sort((a, b) => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
@@ -180,87 +143,6 @@ const IdeasPage: React.FC = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
-
-      {/* Search and Filters Bar */}
-      <div className="bg-white rounded-lg border p-4 mb-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <Search className="h-5 w-5 text-muted-foreground" />
-          <Input 
-            placeholder="Search ideas..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-md"
-          />
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setSearchQuery('');
-              setCategoryFilter('all');
-              setDepartmentFilter('all');
-              setResponsibleFilter('all');
-            }}
-            size="sm"
-          >
-            Clear Filters
-          </Button>
-        </div>
-        
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select 
-              value={categoryFilter} 
-              onValueChange={(value) => setCategoryFilter(value)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {ALL_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select 
-              value={departmentFilter} 
-              onValueChange={(value) => setDepartmentFilter(value)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
-                {departments.map((dept) => (
-                  <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <Select 
-              value={responsibleFilter} 
-              onValueChange={(value) => setResponsibleFilter(value)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Responsible" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Users</SelectItem>
-                {allUsers.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
       </div>
 
       {ideas.length > 0 ? (
