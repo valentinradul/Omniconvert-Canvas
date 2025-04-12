@@ -4,9 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AppProvider } from "./context/AppContext";
 import { AuthProvider } from "./context/AuthContext";
 import { CompanyProvider } from "./context/CompanyContext";
+import { AppProvider } from "./context/AppContext";
 import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -30,13 +30,13 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <CompanyProvider>
-        <AppProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+    <BrowserRouter>
+      <TooltipProvider>
+        <AuthProvider>
+          <CompanyProvider>
+            <AppProvider>
+              <Toaster />
+              <Sonner />
               <Routes>
                 {/* Public routes */}
                 <Route index element={<Index />} />
@@ -66,11 +66,11 @@ const App = () => (
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AppProvider>
-      </CompanyProvider>
-    </AuthProvider>
+            </AppProvider>
+          </CompanyProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
