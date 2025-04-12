@@ -15,21 +15,26 @@ export const useIdeas = (
   );
   
   useEffect(() => {
-    saveData('ideas', ideas, userId);
+    // Only save data if we have a user ID
+    if (userId) {
+      saveData('ideas', ideas, userId);
+    }
   }, [ideas, userId]);
 
   const filteredIdeas = ideas.filter(idea => 
-    !currentCompany || idea.companyId === currentCompany.id || !idea.companyId
+    !currentCompany || idea.companyId === currentCompany?.id || !idea.companyId
   );
   
   const addIdea = (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => {
+    if (!userId) return;
+    
     setIdeas([
       ...ideas,
       {
         ...idea,
         id: generateId(),
         createdAt: new Date(),
-        userId: user?.id || undefined,
+        userId: userId,
         userName: user?.user_metadata?.full_name || user?.email || undefined,
         companyId: currentCompany?.id
       }
@@ -37,12 +42,16 @@ export const useIdeas = (
   };
   
   const editIdea = (id: string, ideaUpdates: Partial<GrowthIdea>) => {
+    if (!userId) return;
+    
     setIdeas(ideas.map(idea => 
       idea.id === id ? { ...idea, ...ideaUpdates } : idea
     ));
   };
   
   const deleteIdea = (id: string) => {
+    if (!userId) return;
+    
     const hypothesisWithIdea = hypotheses.find(h => h.ideaId === id);
     
     if (hypothesisWithIdea) {

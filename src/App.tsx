@@ -39,11 +39,19 @@ const App = () => {
     const performOneTimeMigration = async () => {
       if (!dataMigrated) {
         try {
+          // Clean up any old non-user-specific data
           const result = await runDataMigration();
           if (result.success) {
             console.log("Data migration completed successfully:", result);
             localStorage.setItem('dataMigrationComplete', 'true');
             setDataMigrated(true);
+            
+            // Remove non-user-specific data to prevent leakage
+            localStorage.removeItem('ideas');
+            localStorage.removeItem('hypotheses');
+            localStorage.removeItem('experiments');
+            localStorage.removeItem('departments');
+            localStorage.removeItem('currentCompanyId');
           } else {
             console.error("Data migration failed:", result.message);
           }

@@ -9,29 +9,18 @@ export const migrateDataToUser = async (targetEmail: string) => {
     const oldExperiments = localStorage.getItem('experiments') ? JSON.parse(localStorage.getItem('experiments')!) : [];
 
     // Get the user data for the target email
-    const { data: users, error: userError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', targetEmail);
-
-    if (userError) throw userError;
+    const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
     
-    // If we can't find the user in profiles, try to get them from auth
-    let userId = users && users.length > 0 ? users[0].id : null;
+    if (authError) throw authError;
     
-    if (!userId) {
-      // Try to get user from auth users
-      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) throw authError;
-      
-      const targetUser = authUsers.find(u => u.email === targetEmail);
-      if (targetUser) {
-        userId = targetUser.id;
-      } else {
-        throw new Error(`User with email ${targetEmail} not found`);
-      }
+    // Find the user with the matching email
+    const targetUser = authData.users.find(u => u.email === targetEmail);
+    
+    if (!targetUser) {
+      throw new Error(`User with email ${targetEmail} not found`);
     }
+    
+    const userId = targetUser.id;
 
     // Create the keys for this user
     const userIdeasKey = `user_${userId}_ideas`;
@@ -105,6 +94,11 @@ export const migrateDataToUser = async (targetEmail: string) => {
 
     // Set the OmniConvert company as the current company for this user
     localStorage.setItem(`user_${userId}_currentCompanyId`, companyId);
+
+    // Clean up the global storage to prevent data leakage
+    localStorage.removeItem('ideas');
+    localStorage.removeItem('hypotheses');
+    localStorage.removeItem('experiments');
 
     return {
       success: true,

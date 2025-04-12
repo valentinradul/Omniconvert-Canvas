@@ -15,14 +15,19 @@ export const useHypotheses = (
   );
   
   useEffect(() => {
-    saveData('hypotheses', hypotheses, userId);
+    // Only save data if we have a user ID
+    if (userId) {
+      saveData('hypotheses', hypotheses, userId);
+    }
   }, [hypotheses, userId]);
 
   const filteredHypotheses = hypotheses.filter(hypothesis => 
-    !currentCompany || hypothesis.companyId === currentCompany.id || !hypothesis.companyId
+    !currentCompany || hypothesis.companyId === currentCompany?.id || !hypothesis.companyId
   );
   
   const addHypothesis = (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => {
+    if (!userId) return;
+    
     setHypotheses([
       ...hypotheses,
       {
@@ -30,7 +35,7 @@ export const useHypotheses = (
         id: generateId(),
         createdAt: new Date(),
         status: hypothesis.status || 'Backlog',
-        userId: hypothesis.userId || user?.id,
+        userId: userId,
         userName: user?.user_metadata?.full_name || user?.email,
         companyId: currentCompany?.id
       }
@@ -38,12 +43,16 @@ export const useHypotheses = (
   };
   
   const editHypothesis = (id: string, hypothesisUpdates: Partial<Hypothesis>) => {
+    if (!userId) return;
+    
     setHypotheses(hypotheses.map(hypothesis => 
       hypothesis.id === id ? { ...hypothesis, ...hypothesisUpdates } : hypothesis
     ));
   };
   
   const deleteHypothesis = (id: string) => {
+    if (!userId) return;
+    
     const experimentWithHypothesis = experiments.find(e => e.hypothesisId === id);
     
     if (experimentWithHypothesis) {
@@ -55,6 +64,8 @@ export const useHypotheses = (
   };
 
   const updateAllHypothesesWeights = (pectiWeights: PECTIWeights) => {
+    if (!userId) return;
+    
     setHypotheses(prevHypotheses => 
       prevHypotheses.map(hypothesis => ({
         ...hypothesis,

@@ -14,14 +14,19 @@ export const useExperiments = (
   );
   
   useEffect(() => {
-    saveData('experiments', experiments, userId);
+    // Only save data if we have a user ID
+    if (userId) {
+      saveData('experiments', experiments, userId);
+    }
   }, [experiments, userId]);
 
   const filteredExperiments = experiments.filter(experiment => 
-    !currentCompany || experiment.companyId === currentCompany.id || !experiment.companyId
+    !currentCompany || experiment.companyId === currentCompany?.id || !experiment.companyId
   );
   
   const addExperiment = (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!userId) return;
+    
     const now = new Date();
     setExperiments([
       ...experiments,
@@ -30,20 +35,24 @@ export const useExperiments = (
         id: generateId(),
         createdAt: now,
         updatedAt: now,
-        userId: experiment.userId || user?.id,
-        userName: experiment.userName || user?.user_metadata?.full_name || user?.email,
+        userId: userId,
+        userName: user?.user_metadata?.full_name || user?.email,
         companyId: currentCompany?.id
       }
     ]);
   };
   
   const editExperiment = (id: string, experimentUpdates: Partial<Experiment>) => {
+    if (!userId) return;
+    
     setExperiments(experiments.map(experiment => 
       experiment.id === id ? { ...experiment, ...experimentUpdates, updatedAt: new Date() } : experiment
     ));
   };
   
   const deleteExperiment = (id: string) => {
+    if (!userId) return;
+    
     setExperiments(experiments.filter(experiment => experiment.id !== id));
   };
 

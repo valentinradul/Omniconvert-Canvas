@@ -8,14 +8,39 @@ export const getUserKey = (userId: string | undefined, key: string): string => {
 };
 
 export const getInitialData = <T extends unknown>(key: string, defaultValue: T, userId?: string): T => {
+  if (!userId) return defaultValue;
+  
   const userKey = getUserKey(userId, key);
-  const storedValue = localStorage.getItem(userKey);
+  
+  // First try to get user-specific data
+  let storedValue = localStorage.getItem(userKey);
+  
+  // If no user-specific data exists and global data exists, migrate it
+  if (!storedValue && localStorage.getItem(key)) {
+    storedValue = localStorage.getItem(key);
+    
+    // Store the migrated data in the user-specific key
+    if (storedValue) {
+      localStorage.setItem(userKey, storedValue);
+      
+      // Clean up global data to prevent leakage
+      localStorage.removeItem(key);
+    }
+  }
+  
   return storedValue ? JSON.parse(storedValue) : defaultValue;
 };
 
 export const saveData = <T extends unknown>(key: string, data: T, userId?: string): void => {
+  if (!userId) return; // Don't save data if no user ID is provided
+  
   const userKey = getUserKey(userId, key);
   localStorage.setItem(userKey, JSON.stringify(data));
+  
+  // Clean up any global data to prevent leakage
+  if (localStorage.getItem(key)) {
+    localStorage.removeItem(key);
+  }
 };
 
 export const getAllTags = (ideas: GrowthIdea[]): Tag[] => {
