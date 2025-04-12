@@ -85,10 +85,12 @@ export const useIdeas = (
     fetchIdeas();
   }, [user?.id, currentCompany?.id]);
   
+  // Filter ideas by company
   const filteredIdeas = ideas.filter(idea => 
     !currentCompany || idea.companyId === currentCompany.id || !idea.companyId
   );
   
+  // Add a new idea
   const addIdea = async (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => {
     try {
       // First, add to Supabase
@@ -144,6 +146,7 @@ export const useIdeas = (
     }
   };
   
+  // Edit an existing idea
   const editIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) => {
     try {
       // First update in Supabase
@@ -193,6 +196,7 @@ export const useIdeas = (
     }
   };
   
+  // Delete an idea
   const deleteIdea = async (id: string) => {
     const hypothesisWithIdea = hypotheses.find(h => h.ideaId === id);
     
