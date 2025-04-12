@@ -9,12 +9,15 @@ export const migrateDataToUser = async (targetEmail: string) => {
     const oldExperiments = localStorage.getItem('experiments') ? JSON.parse(localStorage.getItem('experiments')!) : [];
 
     // Get the user data for the target email
-    const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+    const { data: usersData, error: authError } = await supabase.auth.admin.listUsers();
     
     if (authError) throw authError;
     
     // Find the user with the matching email
-    const targetUser = authData.users.find(u => u.email === targetEmail);
+    // Properly type the users array to avoid the 'never' type issue
+    type UserType = { id: string; email?: string; };
+    const users = usersData?.users as UserType[] || [];
+    const targetUser = users.find(u => u.email === targetEmail);
     
     if (!targetUser) {
       throw new Error(`User with email ${targetEmail} not found`);
