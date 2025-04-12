@@ -5,17 +5,18 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
 const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
   // Debug authentication state
   useEffect(() => {
     console.log('Protected Route:', { 
       isAuthenticated, 
-      isLoading, 
+      isLoading,
+      userId: user?.id,
       path: location.pathname 
     });
-  }, [isAuthenticated, isLoading, location.pathname]);
+  }, [isAuthenticated, isLoading, user, location.pathname]);
 
   // Show loading state while checking authentication
   if (isLoading) {

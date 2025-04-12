@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
-import { Experiment } from '@/types';
+import { Experiment, ExperimentStatus } from '@/types';
 import { generateId, getInitialData } from '../utils/dataUtils';
+import { toast } from 'sonner';
 
 export const useExperiments = (
   user: any,
@@ -10,9 +11,21 @@ export const useExperiments = (
   const [experiments, setExperiments] = useState<Experiment[]>(() => {
     // Only load experiments if there's a user and associate with their ID
     if (user?.id) {
+      console.log(`Loading experiments for user: ${user.id}`);
       const userKey = `experiments_${user.id}`;
-      return getInitialData(userKey, []);
+      const loadedExperiments = getInitialData<any[]>(userKey, []);
+      
+      // Validate and normalize
+      const validatedExperiments = loadedExperiments.map(experiment => ({
+        ...experiment,
+        status: experiment.status || 'Planning',
+      }));
+      
+      console.log(`Loaded ${validatedExperiments.length} experiments for user ${user.id}`);
+      return validatedExperiments;
     }
+    
+    console.log('No user ID found, skipping experiments fetch');
     return [];
   });
   
@@ -21,6 +34,9 @@ export const useExperiments = (
     if (user?.id) {
       const userKey = `experiments_${user.id}`;
       localStorage.setItem(userKey, JSON.stringify(experiments));
+      console.log(`Saved ${experiments.length} experiments for user ${user.id}`);
+    } else {
+      console.log('No user ID found, skipping experiments save');
     }
   }, [experiments, user?.id]);
 
@@ -29,6 +45,11 @@ export const useExperiments = (
   );
   
   const addExperiment = (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user?.id) {
+      toast.error('You must be logged in to add experiments');
+      return;
+    }
+    
     const now = new Date();
     setExperiments([
       ...experiments,
@@ -42,16 +63,21 @@ export const useExperiments = (
         companyId: currentCompany?.id
       }
     ]);
+    
+    toast.success('Experiment added successfully!');
   };
   
   const editExperiment = (id: string, experimentUpdates: Partial<Experiment>) => {
     setExperiments(experiments.map(experiment => 
       experiment.id === id ? { ...experiment, ...experimentUpdates, updatedAt: new Date() } : experiment
     ));
+    
+    toast.success('Experiment updated successfully');
   };
   
   const deleteExperiment = (id: string) => {
     setExperiments(experiments.filter(experiment => experiment.id !== id));
+    toast.success('Experiment deleted successfully');
   };
 
   const getExperimentByHypothesisId = (hypothesisId: string) => 

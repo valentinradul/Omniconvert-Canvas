@@ -4,8 +4,31 @@ import { GrowthIdea, Tag } from '@/types';
 export const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const getInitialData = <T extends unknown>(key: string, defaultValue: T): T => {
-  const storedValue = localStorage.getItem(key);
-  return storedValue ? JSON.parse(storedValue) : defaultValue;
+  try {
+    // First try user-specific key if provided
+    if (key.includes('_')) {
+      const storedValue = localStorage.getItem(key);
+      if (storedValue) {
+        return JSON.parse(storedValue);
+      }
+    }
+    
+    // Then try the generic key (for backward compatibility)
+    const genericKey = key.split('_')[0]; // Extract the base key without user ID
+    if (genericKey) {
+      const storedGenericValue = localStorage.getItem(genericKey);
+      if (storedGenericValue) {
+        console.log(`Found data in generic key: ${genericKey}`);
+        return JSON.parse(storedGenericValue);
+      }
+    }
+    
+    // Return default if nothing found
+    return defaultValue;
+  } catch (error) {
+    console.error(`Error retrieving data for key ${key}:`, error);
+    return defaultValue;
+  }
 };
 
 export const getAllTags = (ideas: GrowthIdea[]): Tag[] => {

@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
+import { toast as sonnerToast } from 'sonner';
 
 // Define the context type
 type AuthContextType = {
@@ -27,16 +28,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check for existing session and set up auth listener
   useEffect(() => {
+    console.log('AuthProvider: Initializing auth state');
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, currentSession) => {
+        console.log(`Auth state changed: ${event}`, currentSession?.user?.id);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         
         if (event === 'SIGNED_IN') {
           // Defer profile fetch to avoid Supabase authentication deadlock
           setTimeout(() => {
-            console.log('User signed in:', session?.user.id);
+            console.log('User signed in:', currentSession?.user.id);
+            
+            // Try to recover any orphaned data
+            if (currentSession?.user) {
+              const oldIdeasStr = localStorage.getItem('ideas');
+              if (oldIdeasStr) {
+                const userId = currentSession.user.id;
+                const userSpecificKey = `ideas_${userId}`;
+                
+                // Only migrate if user-specific data doesn't exist yet
+                if (!localStorage.getItem(userSpecificKey)) {
+                  console.log('Migrating orphaned ideas to user account');
+                  localStorage.setItem(userSpecificKey, oldIdeasStr);
+                  
+                  // Do the same for hypotheses and experiments
+                  ['hypotheses', 'experiments'].forEach(dataType => {
+                    const oldDataStr = localStorage.getItem(dataType);
+                    if (oldDataStr) {
+                      localStorage.setItem(`${dataType}_${userId}`, oldDataStr);
+                    }
+                  });
+                  
+                  sonnerToast.success('Recovered your previous data!');
+                }
+              }
+            }
           }, 0);
         }
         
@@ -47,9 +76,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      console.log('Retrieved initial session:', initialSession?.user?.id);
+      setSession(initialSession);
+      setUser(initialSession?.user ?? null);
       setIsLoading(false);
     });
 
@@ -63,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
+      console.log('Attempting login for:', email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password

@@ -5,26 +5,20 @@ import { toast } from 'sonner';
 
 export const recoverOrphanedData = async (targetEmail: string) => {
   try {
+    console.log(`Attempting to recover data for: ${targetEmail}`);
     // Step 1: Get the user ID for the target email
-    const { data: userData, error: userError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', targetEmail)
-      .single();
+    const { data: userData, error: userError } = await supabase.auth.getUser();
       
-    if (userError) {
-      // Try to get user directly from auth
-      const { data: authUser, error: authError } = await supabase.auth.admin.getUserByEmail(targetEmail);
-      
-      if (authError || !authUser) {
-        throw new Error(`Could not find user with email ${targetEmail}`);
-      }
-      
-      console.log('Found user from auth:', authUser);
-      return recoverLocalStorageData(authUser.id);
+    if (userError || !userData?.user) {
+      // Try to find user directly
+      toast.error('You must be logged in to recover data');
+      console.error('Error getting user:', userError);
+      return false;
     }
     
-    return recoverLocalStorageData(userData.id);
+    const userId = userData.user.id;
+    console.log(`Found user ID: ${userId} for recovery`);
+    return recoverLocalStorageData(userId);
   } catch (error) {
     console.error('Error recovering data:', error);
     toast.error('Failed to recover data. See console for details.');
@@ -42,6 +36,7 @@ const recoverLocalStorageData = (userId: string) => {
     if (oldIdeasStr) {
       const oldIdeas: GrowthIdea[] = JSON.parse(oldIdeasStr);
       if (oldIdeas.length > 0) {
+        console.log(`Found ${oldIdeas.length} orphaned ideas`);
         // Associate ideas with the user
         const updatedIdeas = oldIdeas.map(idea => ({
           ...idea,
@@ -60,6 +55,7 @@ const recoverLocalStorageData = (userId: string) => {
     if (oldHypothesesStr) {
       const oldHypotheses: Hypothesis[] = JSON.parse(oldHypothesesStr);
       if (oldHypotheses.length > 0) {
+        console.log(`Found ${oldHypotheses.length} orphaned hypotheses`);
         // Associate hypotheses with the user
         const updatedHypotheses = oldHypotheses.map(hypothesis => ({
           ...hypothesis,
@@ -78,6 +74,7 @@ const recoverLocalStorageData = (userId: string) => {
     if (oldExperimentsStr) {
       const oldExperiments: Experiment[] = JSON.parse(oldExperimentsStr);
       if (oldExperiments.length > 0) {
+        console.log(`Found ${oldExperiments.length} orphaned experiments`);
         // Associate experiments with the user
         const updatedExperiments = oldExperiments.map(experiment => ({
           ...experiment,
@@ -103,4 +100,28 @@ const recoverLocalStorageData = (userId: string) => {
     toast.error('Failed to recover data from localStorage.');
     return false;
   }
+};
+
+// Export function to manually check/recover old-format data
+export const checkAndMigrateLocalData = (userId: string) => {
+  if (!userId) return false;
+  
+  let migratedCount = 0;
+  
+  ['ideas', 'hypotheses', 'experiments'].forEach(dataType => {
+    const oldData = localStorage.getItem(dataType);
+    if (oldData) {
+      // Check if user-specific data already exists
+      const userSpecificKey = `${dataType}_${userId}`;
+      const existingUserData = localStorage.getItem(userSpecificKey);
+      
+      if (!existingUserData) {
+        // Only migrate if no user-specific data exists
+        localStorage.setItem(userSpecificKey, oldData);
+        migratedCount++;
+      }
+    }
+  });
+  
+  return migratedCount > 0;
 };
