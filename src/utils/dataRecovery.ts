@@ -8,15 +8,20 @@ export const recoverOrphanedData = async (targetEmail: string) => {
     // Step 1: Get the user ID for the target email
     const { data: userData, error: userError } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, email')
       .eq('email', targetEmail)
       .single();
       
-    if (userError) {
-      // Try to get user directly from auth
-      const { data: authUser, error: authError } = await supabase.auth.admin.getUserByEmail(targetEmail);
+    if (userError || !userData) {
+      // Try to find user directly in auth users
+      const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
       
-      if (authError || !authUser) {
+      if (authError || !users || users.length === 0) {
+        throw new Error(`Could not find user with email ${targetEmail}`);
+      }
+      
+      const authUser = users.find(user => user.email === targetEmail);
+      if (!authUser) {
         throw new Error(`Could not find user with email ${targetEmail}`);
       }
       

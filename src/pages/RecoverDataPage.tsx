@@ -24,8 +24,12 @@ const RecoverDataPage = () => {
     setIsRecovering(true);
     try {
       await recoverOrphanedData(email);
+      toast.success('Recovery process completed. Redirecting to dashboard...');
       // Redirect to dashboard after recovery attempt
       setTimeout(() => navigate('/dashboard'), 2000);
+    } catch (error) {
+      console.error('Error in recovery process:', error);
+      toast.error('Failed to recover data. Please try again.');
     } finally {
       setIsRecovering(false);
     }
