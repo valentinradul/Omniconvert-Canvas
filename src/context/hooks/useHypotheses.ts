@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Hypothesis, HypothesisStatus, PECTIWeights } from '@/types';
 import { generateId, getInitialData } from '../utils/dataUtils';
@@ -8,22 +7,13 @@ export const useHypotheses = (
   currentCompany: any,
   experiments: any[]
 ) => {
-  const [hypotheses, setHypotheses] = useState<Hypothesis[]>(() => {
-    // Only load hypotheses if there's a user and associate with their ID
-    if (user?.id) {
-      const userKey = `hypotheses_${user.id}`;
-      return getInitialData(userKey, []);
-    }
-    return [];
-  });
+  const [hypotheses, setHypotheses] = useState<Hypothesis[]>(() => 
+    getInitialData('hypotheses', [])
+  );
   
   useEffect(() => {
-    // Only save data if there's an authenticated user
-    if (user?.id) {
-      const userKey = `hypotheses_${user.id}`;
-      localStorage.setItem(userKey, JSON.stringify(hypotheses));
-    }
-  }, [hypotheses, user?.id]);
+    localStorage.setItem('hypotheses', JSON.stringify(hypotheses));
+  }, [hypotheses]);
 
   const filteredHypotheses = hypotheses.filter(hypothesis => 
     !currentCompany || hypothesis.companyId === currentCompany.id || !hypothesis.companyId
