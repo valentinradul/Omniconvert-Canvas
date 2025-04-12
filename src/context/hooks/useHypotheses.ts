@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
-import { Hypothesis, HypothesisStatus, PECTIWeights } from '@/types';
+import { Hypothesis, HypothesisStatus, PECTIWeights, PECTI, ObservationContent } from '@/types';
 import { generateId } from '../utils/dataUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Json } from '@/integrations/supabase/types';
 
 export const useHypotheses = (
   user: any,
@@ -11,6 +13,49 @@ export const useHypotheses = (
 ) => {
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Helper functions to convert data types
+  const parseHypothesisStatus = (status: string | null): HypothesisStatus => {
+    if (!status) return "Backlog";
+    
+    if (status === "Backlog" || status === "Selected For Testing" || 
+        status === "Testing" || status === "Completed" || status === "Archived") {
+      return status as HypothesisStatus;
+    }
+    return "Backlog";
+  };
+
+  const parsePectiScore = (score: Json | null): PECTI => {
+    if (!score || typeof score !== 'object') {
+      return {
+        potential: 1,
+        ease: 1,
+        cost: 1,
+        time: 1,
+        impact: 1
+      };
+    }
+    
+    const scoreObject = score as Record<string, any>;
+    
+    return {
+      potential: scoreObject.potential || 1,
+      ease: scoreObject.ease || 1,
+      cost: scoreObject.cost || 1,
+      time: scoreObject.time || 1,
+      impact: scoreObject.impact || 1
+    };
+  };
+
+  const parseObservationContent = (content: Json | null): ObservationContent | undefined => {
+    if (!content) return undefined;
+    
+    if (typeof content === 'object') {
+      return content as ObservationContent;
+    }
+    
+    return { text: String(content) };
+  };
   
   useEffect(() => {
     const fetchHypotheses = async () => {
@@ -39,23 +84,17 @@ export const useHypotheses = (
         if (data) {
           const formattedHypotheses: Hypothesis[] = data.map(h => ({
             id: h.id,
-            ideaId: h.ideaid,
+            ideaId: h.ideaid || '',
             initiative: h.initiative || '',
             observation: h.observation || '',
             metric: h.metric || '',
-            status: h.status as HypothesisStatus || 'Backlog',
-            pectiScore: h.pectiscore || {
-              potential: 0,
-              ease: 0,
-              confidence: 0,
-              timeToValue: 0,
-              impact: 0
-            },
+            status: parseHypothesisStatus(h.status),
+            pectiScore: parsePectiScore(h.pectiscore),
             createdAt: new Date(h.createdat),
             userId: h.userid,
             userName: h.username,
             companyId: h.company_id,
-            observationContent: h.observationcontent
+            observationContent: parseObservationContent(h.observationcontent)
           }));
           
           setHypotheses(formattedHypotheses);
@@ -102,23 +141,17 @@ export const useHypotheses = (
       if (data && data[0]) {
         const newHypothesis: Hypothesis = {
           id: data[0].id,
-          ideaId: data[0].ideaid,
+          ideaId: data[0].ideaid || '',
           initiative: data[0].initiative || '',
           observation: data[0].observation || '',
           metric: data[0].metric || '',
-          status: data[0].status as HypothesisStatus || 'Backlog',
-          pectiScore: data[0].pectiscore || {
-            potential: 0,
-            ease: 0,
-            confidence: 0,
-            timeToValue: 0,
-            impact: 0
-          },
+          status: parseHypothesisStatus(data[0].status),
+          pectiScore: parsePectiScore(data[0].pectiscore),
           createdAt: new Date(data[0].createdat),
           userId: data[0].userid,
           userName: data[0].username,
           companyId: data[0].company_id,
-          observationContent: data[0].observationcontent
+          observationContent: parseObservationContent(data[0].observationcontent)
         };
         
         setHypotheses(prevHypotheses => [...prevHypotheses, newHypothesis]);
@@ -147,20 +180,31 @@ export const useHypotheses = (
   
   const editHypothesis = async (id: string, hypothesisUpdates: Partial<Hypothesis>) => {
     try {
-      const updates = {
-        initiative: hypothesisUpdates.initiative,
-        observation: hypothesisUpdates.observation,
-        metric: hypothesisUpdates.metric,
-        status: hypothesisUpdates.status,
-        pectiscore: hypothesisUpdates.pectiScore,
-        observationcontent: hypothesisUpdates.observationContent
-      };
+      const updates: Record<string, any> = {};
       
-      Object.keys(updates).forEach(key => {
-        if (updates[key as keyof typeof updates] === undefined) {
-          delete updates[key as keyof typeof updates];
-        }
-      });
+      if (hypothesisUpdates.initiative !== undefined) {
+        updates.initiative = hypothesisUpdates.initiative;
+      }
+      
+      if (hypothesisUpdates.observation !== undefined) {
+        updates.observation = hypothesisUpdates.observation;
+      }
+      
+      if (hypothesisUpdates.metric !== undefined) {
+        updates.metric = hypothesisUpdates.metric;
+      }
+      
+      if (hypothesisUpdates.status !== undefined) {
+        updates.status = hypothesisUpdates.status;
+      }
+      
+      if (hypothesisUpdates.pectiScore !== undefined) {
+        updates.pectiscore = hypothesisUpdates.pectiScore;
+      }
+      
+      if (hypothesisUpdates.observationContent !== undefined) {
+        updates.observationcontent = hypothesisUpdates.observationContent;
+      }
       
       const { error } = await supabase
         .from('hypotheses')

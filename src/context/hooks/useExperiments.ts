@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { Experiment } from '@/types';
+import { Experiment, ExperimentStatus, ObservationContent } from '@/types';
 import { generateId } from '../utils/dataUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Json } from '@/integrations/supabase/types';
 
 export const useExperiments = (
   user: any,
@@ -11,6 +12,31 @@ export const useExperiments = (
 ) => {
   const [experiments, setExperiments] = useState<Experiment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Helper functions to convert data types
+  const parseDate = (dateStr: string | null): Date | null => {
+    return dateStr ? new Date(dateStr) : null;
+  };
+
+  const parseExperimentStatus = (status: string | null): ExperimentStatus => {
+    if (!status) return "Planned";
+    
+    if (status === "Planned" || status === "In Progress" || status === "Blocked" ||
+        status === "Winning" || status === "Losing" || status === "Inconclusive") {
+      return status as ExperimentStatus;
+    }
+    return "Planned";
+  };
+
+  const parseObservationContent = (content: Json | null): ObservationContent | undefined => {
+    if (!content) return undefined;
+    
+    if (typeof content === 'object') {
+      return content as ObservationContent;
+    }
+    
+    return { text: String(content) };
+  };
   
   // Fetch experiments from Supabase when the user or company changes
   useEffect(() => {
@@ -42,19 +68,17 @@ export const useExperiments = (
           // Transform the data to match our Experiment type
           const formattedExperiments: Experiment[] = data.map(e => ({
             id: e.id,
-            hypothesisId: e.hypothesisid,
-            startDate: e.startdate ? new Date(e.startdate) : undefined,
-            endDate: e.enddate ? new Date(e.enddate) : undefined,
-            observationContent: e.observationcontent,
-            status: e.status,
-            totalCost: e.totalcost,
-            totalReturn: e.totalreturn,
+            hypothesisId: e.hypothesisid || '',
+            startDate: parseDate(e.startdate),
+            endDate: parseDate(e.enddate),
+            observationContent: parseObservationContent(e.observationcontent),
+            status: parseExperimentStatus(e.status),
             createdAt: new Date(e.createdat),
             updatedAt: new Date(e.updatedat),
             userId: e.userid,
             userName: e.username,
             companyId: e.company_id,
-            notes: e.notes
+            notes: e.notes || ''
           }));
           
           setExperiments(formattedExperiments);
@@ -87,16 +111,14 @@ export const useExperiments = (
       // First, add to Supabase
       const { data, error } = await supabase.from('experiments').insert({
         hypothesisid: experiment.hypothesisId,
-        startdate: experiment.startDate,
-        enddate: experiment.endDate,
+        startdate: experiment.startDate?.toISOString(),
+        enddate: experiment.endDate?.toISOString(),
         observationcontent: experiment.observationContent,
         status: experiment.status,
-        totalcost: experiment.totalCost,
-        totalreturn: experiment.totalReturn,
+        notes: experiment.notes,
         userid: experiment.userId || user?.id,
         username: experiment.userName || user?.user_metadata?.full_name || user?.email,
-        company_id: currentCompany?.id,
-        notes: experiment.notes
+        company_id: currentCompany?.id
       }).select();
       
       if (error) throw error;
@@ -105,19 +127,17 @@ export const useExperiments = (
         const now = new Date();
         const newExperiment: Experiment = {
           id: data[0].id,
-          hypothesisId: data[0].hypothesisid,
-          startDate: data[0].startdate ? new Date(data[0].startdate) : undefined,
-          endDate: data[0].enddate ? new Date(data[0].enddate) : undefined,
-          observationContent: data[0].observationcontent,
-          status: data[0].status,
-          totalCost: data[0].totalcost,
-          totalReturn: data[0].totalreturn,
+          hypothesisId: data[0].hypothesisid || '',
+          startDate: parseDate(data[0].startdate),
+          endDate: parseDate(data[0].enddate),
+          observationContent: parseObservationContent(data[0].observationcontent),
+          status: parseExperimentStatus(data[0].status),
           createdAt: now,
           updatedAt: now,
           userId: data[0].userid,
           userName: data[0].username,
           companyId: data[0].company_id,
-          notes: data[0].notes
+          notes: data[0].notes || ''
         };
         
         setExperiments(prevExperiments => [...prevExperiments, newExperiment]);
@@ -150,23 +170,29 @@ export const useExperiments = (
   const editExperiment = async (id: string, experimentUpdates: Partial<Experiment>) => {
     try {
       // First update in Supabase
-      const updates = {
-        startdate: experimentUpdates.startDate,
-        enddate: experimentUpdates.endDate,
-        observationcontent: experimentUpdates.observationContent,
-        status: experimentUpdates.status,
-        totalcost: experimentUpdates.totalCost,
-        totalreturn: experimentUpdates.totalReturn,
-        notes: experimentUpdates.notes,
-        updatedat: new Date()
-      };
+      const updates: Record<string, any> = {};
       
-      // Remove undefined values
-      Object.keys(updates).forEach(key => {
-        if (updates[key as keyof typeof updates] === undefined) {
-          delete updates[key as keyof typeof updates];
-        }
-      });
+      if (experimentUpdates.startDate !== undefined) {
+        updates.startdate = experimentUpdates.startDate?.toISOString();
+      }
+      
+      if (experimentUpdates.endDate !== undefined) {
+        updates.enddate = experimentUpdates.endDate?.toISOString();
+      }
+      
+      if (experimentUpdates.observationContent !== undefined) {
+        updates.observationcontent = experimentUpdates.observationContent;
+      }
+      
+      if (experimentUpdates.status !== undefined) {
+        updates.status = experimentUpdates.status;
+      }
+      
+      if (experimentUpdates.notes !== undefined) {
+        updates.notes = experimentUpdates.notes;
+      }
+      
+      updates.updatedat = new Date().toISOString();
       
       const { error } = await supabase
         .from('experiments')

@@ -7,6 +7,7 @@ export type AppContextType = {
   hypotheses: Hypothesis[];
   experiments: Experiment[];
   pectiWeights: PECTIWeights;
+  isLoading: boolean;
   addDepartment: (name: string) => void;
   editDepartment: (id: string, name: string) => void;
   deleteDepartment: (id: string) => void;

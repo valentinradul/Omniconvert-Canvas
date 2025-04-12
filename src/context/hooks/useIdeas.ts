@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { GrowthIdea, Hypothesis } from '@/types';
+import { GrowthIdea, Hypothesis, Category, ALL_CATEGORIES } from '@/types';
 import { generateId } from '../utils/dataUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -12,6 +12,16 @@ export const useIdeas = (
 ) => {
   const [ideas, setIdeas] = useState<GrowthIdea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Helper function to parse category
+  const parseCategory = (category: string | null): Category => {
+    if (!category) return "Other";
+    
+    if (ALL_CATEGORIES.includes(category as Category)) {
+      return category as Category;
+    }
+    return "Other";
+  };
   
   // Fetch ideas from Supabase when the user or company changes
   useEffect(() => {
@@ -45,9 +55,9 @@ export const useIdeas = (
             id: idea.id,
             title: idea.title,
             description: idea.description || '',
-            category: idea.category,
-            departmentId: idea.departmentid,
-            tags: idea.tags,
+            category: parseCategory(idea.category),
+            departmentId: idea.departmentid || '',
+            tags: idea.tags || [],
             createdAt: new Date(idea.createdat),
             userId: idea.userid,
             userName: idea.username,
@@ -100,9 +110,9 @@ export const useIdeas = (
           id: data[0].id,
           title: data[0].title,
           description: data[0].description || '',
-          category: data[0].category,
-          departmentId: data[0].departmentid,
-          tags: data[0].tags,
+          category: parseCategory(data[0].category),
+          departmentId: data[0].departmentid || '',
+          tags: data[0].tags || [],
           createdAt: new Date(data[0].createdat),
           userId: data[0].userid,
           userName: data[0].username,
@@ -137,20 +147,27 @@ export const useIdeas = (
   const editIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) => {
     try {
       // First update in Supabase
-      const updates = {
-        title: ideaUpdates.title,
-        description: ideaUpdates.description,
-        category: ideaUpdates.category,
-        departmentid: ideaUpdates.departmentId,
-        tags: ideaUpdates.tags,
-      };
+      const updates: Record<string, any> = {};
       
-      // Remove undefined values
-      Object.keys(updates).forEach(key => {
-        if (updates[key as keyof typeof updates] === undefined) {
-          delete updates[key as keyof typeof updates];
-        }
-      });
+      if (ideaUpdates.title !== undefined) {
+        updates.title = ideaUpdates.title;
+      }
+      
+      if (ideaUpdates.description !== undefined) {
+        updates.description = ideaUpdates.description;
+      }
+      
+      if (ideaUpdates.category !== undefined) {
+        updates.category = ideaUpdates.category;
+      }
+      
+      if (ideaUpdates.departmentId !== undefined) {
+        updates.departmentid = ideaUpdates.departmentId;
+      }
+      
+      if (ideaUpdates.tags !== undefined) {
+        updates.tags = ideaUpdates.tags;
+      }
       
       const { error } = await supabase
         .from('ideas')
