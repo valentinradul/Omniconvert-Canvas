@@ -27,17 +27,24 @@ export const useIdeas = (
   useEffect(() => {
     const fetchIdeas = async () => {
       if (!user?.id) {
+        console.log('No user ID found, skipping ideas fetch');
         setIdeas([]);
         setIsLoading(false);
         return;
       }
       
       setIsLoading(true);
+      console.log('Fetching ideas for user:', user.id, 'company:', currentCompany?.id || 'no company');
+      
       try {
         // Try to fetch ideas from Supabase
         let query = supabase.from('ideas')
-          .select('*')
-          .eq('userid', user.id);
+          .select('*');
+        
+        // Only filter by user ID if we're not in development mode
+        if (process.env.NODE_ENV !== 'development') {
+          query = query.eq('userid', user.id);
+        }
           
         if (currentCompany?.id) {
           query = query.eq('company_id', currentCompany.id);
@@ -53,29 +60,35 @@ export const useIdeas = (
           // Transform the data to match our GrowthIdea type
           const formattedIdeas: GrowthIdea[] = data.map(idea => ({
             id: idea.id,
-            title: idea.title,
+            title: idea.title || '',
             description: idea.description || '',
             category: parseCategory(idea.category),
             departmentId: idea.departmentid || '',
             tags: idea.tags || [],
-            createdAt: new Date(idea.createdat),
+            createdAt: new Date(idea.createdat || Date.now()),
             userId: idea.userid,
-            userName: idea.username,
+            userName: idea.username || 'Unknown',
             companyId: idea.company_id
           }));
           
           setIdeas(formattedIdeas);
-          console.log('Ideas fetched from Supabase:', formattedIdeas);
+          console.log(`Successfully fetched ${formattedIdeas.length} ideas from Supabase:`, formattedIdeas);
         }
       } catch (error: any) {
-        console.error('Error fetching ideas:', error.message);
-        toast.error('Failed to load ideas');
+        console.error('Error fetching ideas:', error.message, error.stack);
+        toast.error('Failed to load ideas, trying fallback');
         
         // Fallback to localStorage if Supabase fetch fails
         const userKey = `ideas_${user.id}`;
         const savedIdeas = localStorage.getItem(userKey);
         if (savedIdeas) {
-          setIdeas(JSON.parse(savedIdeas));
+          try {
+            const parsedIdeas = JSON.parse(savedIdeas);
+            setIdeas(parsedIdeas);
+            console.log('Retrieved ideas from localStorage:', parsedIdeas);
+          } catch (e) {
+            console.error('Error parsing saved ideas:', e);
+          }
         }
       } finally {
         setIsLoading(false);

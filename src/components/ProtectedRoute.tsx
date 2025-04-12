@@ -6,7 +6,7 @@ import { useApp } from '@/context/AppContext';
 import { toast } from 'sonner';
 
 const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const { isLoading: appDataLoading } = useApp();
   const location = useLocation();
   const isLoading = authLoading || appDataLoading;
@@ -17,9 +17,10 @@ const ProtectedRoute: React.FC = () => {
       isAuthenticated, 
       authLoading,
       appDataLoading,
+      user: user?.id ? { id: user.id, email: user.email } : 'No user',
       path: location.pathname 
     });
-  }, [isAuthenticated, authLoading, appDataLoading, location.pathname]);
+  }, [isAuthenticated, authLoading, appDataLoading, location.pathname, user]);
 
   // Show loading state while checking authentication or loading app data
   if (isLoading) {
