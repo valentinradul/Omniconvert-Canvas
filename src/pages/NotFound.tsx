@@ -3,6 +3,7 @@ import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { AlertCircle } from "lucide-react";
 
 const NotFound = () => {
   const location = useLocation();
@@ -17,8 +18,11 @@ const NotFound = () => {
   }, [location.pathname, isAuthenticated]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
       <div className="text-center p-8 max-w-md">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-6">
+          <AlertCircle className="h-8 w-8 text-red-500" />
+        </div>
         <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
         <p className="text-2xl text-gray-700 mb-6">Page not found</p>
         <p className="text-gray-600 mb-8">
@@ -26,7 +30,7 @@ const NotFound = () => {
           The page might have been removed, renamed, or is temporarily unavailable.
         </p>
         <div className="space-y-4">
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="bg-omni-blue hover:bg-omni-blue/90">
             <Link to={isAuthenticated ? "/dashboard" : "/"}>
               {isAuthenticated ? "Return to Dashboard" : "Return to Home"}
             </Link>
