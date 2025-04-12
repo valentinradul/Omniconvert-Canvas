@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Hypothesis, HypothesisStatus, PECTIWeights } from '@/types';
-import { generateId, getInitialData } from '../utils/dataUtils';
+import { generateId, getInitialData, mergeDataFromAllSources } from '../utils/dataUtils';
 
 export const useHypotheses = (
   user: any,
@@ -9,19 +9,34 @@ export const useHypotheses = (
   experiments: any[]
 ) => {
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>(() => {
-    // Only load hypotheses if there's a user and associate with their ID
+    // Check for user-specific data first
     if (user?.id) {
+      console.log(`Loading hypotheses for user: ${user.id}`);
       const userKey = `hypotheses_${user.id}`;
       return getInitialData(userKey, []);
     }
-    return [];
+    
+    // If no user, try to load from generic key as fallback
+    console.log('No user ID found, trying to load hypotheses from generic key');
+    const genericData = getInitialData('hypotheses', []);
+    
+    // Try to merge from multiple possible keys
+    if (genericData.length === 0) {
+      console.log('No hypotheses found in primary key, attempting to recover from all sources');
+      return mergeDataFromAllSources(['hypotheses', 'hypothesis_data', 'growth_hypotheses'], []);
+    }
+    
+    return genericData;
   });
   
   useEffect(() => {
     // Only save data if there's an authenticated user
     if (user?.id) {
       const userKey = `hypotheses_${user.id}`;
+      console.log(`Saving ${hypotheses.length} hypotheses to key: ${userKey}`);
       localStorage.setItem(userKey, JSON.stringify(hypotheses));
+    } else {
+      console.log('No user ID found, skipping hypotheses save');
     }
   }, [hypotheses, user?.id]);
 

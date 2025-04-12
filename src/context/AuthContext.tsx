@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
 // Define the context type
 type AuthContextType = {
@@ -23,13 +24,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
   // Check for existing session and set up auth listener
   useEffect(() => {
-    // Set up auth state listener FIRST
+    console.log('AuthProvider: Initializing auth state');
+    
+    // Set up auth state listener FIRST to prevent potential deadlocks
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -37,17 +41,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Defer profile fetch to avoid Supabase authentication deadlock
           setTimeout(() => {
             console.log('User signed in:', session?.user.id);
+            toast.success('Signed in successfully');
           }, 0);
         }
         
         if (event === 'SIGNED_OUT') {
           console.log('User signed out');
+          toast.info('Signed out');
         }
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Retrieved initial session:', session);
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
@@ -73,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error: any) {
       console.error('Login failed:', error.message);
-      toast({
+      uiToast({
         variant: 'destructive',
         title: 'Login failed',
         description: error.message || 'Please check your email and password',
@@ -103,13 +110,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      toast({
+      uiToast({
         title: 'Account created',
         description: 'Please check your email to verify your account.',
       });
     } catch (error: any) {
       console.error('Signup failed:', error.message);
-      toast({
+      uiToast({
         variant: 'destructive',
         title: 'Signup failed',
         description: error.message || 'There was an error creating your account',
@@ -130,13 +137,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      toast({
+      uiToast({
         title: 'Logged out successfully',
         description: 'You have been logged out of your account',
       });
     } catch (error: any) {
       console.error('Logout failed:', error.message);
-      toast({
+      uiToast({
         variant: 'destructive',
         title: 'Logout failed',
         description: error.message || 'There was an error logging out',

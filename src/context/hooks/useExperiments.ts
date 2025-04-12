@@ -1,26 +1,41 @@
 
 import { useState, useEffect } from 'react';
 import { Experiment } from '@/types';
-import { generateId, getInitialData } from '../utils/dataUtils';
+import { generateId, getInitialData, mergeDataFromAllSources } from '../utils/dataUtils';
 
 export const useExperiments = (
   user: any,
   currentCompany: any
 ) => {
   const [experiments, setExperiments] = useState<Experiment[]>(() => {
-    // Only load experiments if there's a user and associate with their ID
+    // Check for user-specific data first
     if (user?.id) {
+      console.log(`Loading experiments for user: ${user.id}`);
       const userKey = `experiments_${user.id}`;
       return getInitialData(userKey, []);
     }
-    return [];
+    
+    // If no user, try to load from generic key as fallback
+    console.log('No user ID found, trying to load experiments from generic key');
+    const genericData = getInitialData('experiments', []);
+    
+    // Try to merge from multiple possible keys
+    if (genericData.length === 0) {
+      console.log('No experiments found in primary key, attempting to recover from all sources');
+      return mergeDataFromAllSources(['experiments', 'experiment_data', 'growth_experiments'], []);
+    }
+    
+    return genericData;
   });
   
   useEffect(() => {
     // Only save data if there's an authenticated user
     if (user?.id) {
       const userKey = `experiments_${user.id}`;
+      console.log(`Saving ${experiments.length} experiments to key: ${userKey}`);
       localStorage.setItem(userKey, JSON.stringify(experiments));
+    } else {
+      console.log('No user ID found, skipping experiments save');
     }
   }, [experiments, user?.id]);
 

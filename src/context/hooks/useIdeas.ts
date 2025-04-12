@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { GrowthIdea, Hypothesis } from '@/types';
-import { generateId, getInitialData } from '../utils/dataUtils';
+import { generateId, getInitialData, mergeDataFromAllSources } from '../utils/dataUtils';
 
 export const useIdeas = (
   user: any,
@@ -9,19 +9,34 @@ export const useIdeas = (
   hypotheses: Hypothesis[]
 ) => {
   const [ideas, setIdeas] = useState<GrowthIdea[]>(() => {
-    // Only load ideas if there's a user and associate with their ID
+    // Check for user-specific data first
     if (user?.id) {
+      console.log(`Loading ideas for user: ${user.id}`);
       const userKey = `ideas_${user.id}`;
       return getInitialData(userKey, []);
     }
-    return [];
+    
+    // If no user, try to load from generic key as fallback
+    console.log('No user ID found, trying to load ideas from generic key');
+    const genericData = getInitialData('ideas', []);
+    
+    // Try to merge from multiple possible keys
+    if (genericData.length === 0) {
+      console.log('No ideas found in primary key, attempting to recover from all sources');
+      return mergeDataFromAllSources(['ideas', 'ideas_data', 'growth_ideas'], []);
+    }
+    
+    return genericData;
   });
   
   useEffect(() => {
     // Only save data if there's an authenticated user
     if (user?.id) {
       const userKey = `ideas_${user.id}`;
+      console.log(`Saving ${ideas.length} ideas to key: ${userKey}`);
       localStorage.setItem(userKey, JSON.stringify(ideas));
+    } else {
+      console.log('No user ID found, skipping ideas save');
     }
   }, [ideas, user?.id]);
 
