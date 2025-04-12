@@ -21,6 +21,7 @@ export const useIdeas = (
     }
   }, [ideas, userId]);
 
+  // Make sure to filter ideas by the current company
   const filteredIdeas = ideas.filter(idea => 
     !currentCompany || idea.companyId === currentCompany?.id || !idea.companyId
   );

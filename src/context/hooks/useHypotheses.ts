@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Hypothesis, HypothesisStatus, PECTIWeights } from '@/types';
 import { generateId, getInitialData, saveData } from '../utils/dataUtils';

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,21 +36,25 @@ const App = () => {
 
   useEffect(() => {
     const performOneTimeMigration = async () => {
+      // Reset migration status for testing
+      // localStorage.removeItem('dataMigrationComplete');
+      
       if (!dataMigrated) {
         try {
           // Clean up any old non-user-specific data
           const result = await runDataMigration();
+          console.log("Migration result:", result);
+          
           if (result.success) {
             console.log("Data migration completed successfully:", result);
             localStorage.setItem('dataMigrationComplete', 'true');
             setDataMigrated(true);
             
-            // Remove non-user-specific data to prevent leakage
+            // Keep some non-user-specific data to ensure backward compatibility
+            // but remove the ones we've successfully migrated
             localStorage.removeItem('ideas');
             localStorage.removeItem('hypotheses');
             localStorage.removeItem('experiments');
-            localStorage.removeItem('departments');
-            localStorage.removeItem('currentCompanyId');
           } else {
             console.error("Data migration failed:", result.message);
           }

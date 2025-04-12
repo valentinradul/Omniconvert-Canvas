@@ -8,29 +8,25 @@ export const migrateDataToUser = async (targetEmail: string) => {
     const oldHypotheses = localStorage.getItem('hypotheses') ? JSON.parse(localStorage.getItem('hypotheses')!) : [];
     const oldExperiments = localStorage.getItem('experiments') ? JSON.parse(localStorage.getItem('experiments')!) : [];
 
-    // Get the user data for the target email
-    const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+    // Get the user ID for the target email directly from auth
+    const { data: userData, error: userError } = await supabase.auth.getUser();
     
-    if (authError) throw authError;
+    if (userError) throw userError;
     
-    // Find the user with the matching email
-    const targetUser = authData.users.find(u => u.email === targetEmail);
-    
-    if (!targetUser) {
-      throw new Error(`User with email ${targetEmail} not found`);
+    if (!userData || !userData.user || userData.user.email !== targetEmail) {
+      throw new Error(`User ${targetEmail} is not currently logged in. Only the logged-in user's data can be migrated.`);
     }
     
-    const userId = targetUser.id;
+    const userId = userData.user.id;
 
     // Create the keys for this user
     const userIdeasKey = `user_${userId}_ideas`;
     const userHypothesesKey = `user_${userId}_hypotheses`;
     const userExperimentsKey = `user_${userId}_experiments`;
 
-    // Get the company ID for OmniConvert
+    // Check if OmniConvert company already exists for this user
     let companyId = null;
     
-    // Check if OmniConvert company already exists for this user
     const { data: existingCompanies, error: companyError } = await supabase
       .from('companies')
       .select('*')
@@ -95,10 +91,12 @@ export const migrateDataToUser = async (targetEmail: string) => {
     // Set the OmniConvert company as the current company for this user
     localStorage.setItem(`user_${userId}_currentCompanyId`, companyId);
 
-    // Clean up the global storage to prevent data leakage
-    localStorage.removeItem('ideas');
-    localStorage.removeItem('hypotheses');
-    localStorage.removeItem('experiments');
+    console.log("Successfully migrated data for:", targetEmail);
+    console.log("User ID:", userId);
+    console.log("Company ID:", companyId);
+    console.log("Ideas count:", updatedIdeas.length);
+    console.log("Hypotheses count:", updatedHypotheses.length);
+    console.log("Experiments count:", updatedExperiments.length);
 
     return {
       success: true,
