@@ -34,6 +34,12 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    // Add debugging log
+    console.log("CompanyContext: User or auth state changed", { 
+      userId: user?.id,
+      isAuthenticated: !!user
+    });
+    
     if (user) {
       loadUserCompanies();
       loadUserInvitations();
@@ -43,11 +49,13 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setUserCompanyRole(null);
       setCompanyMembers([]);
       setCompanyInvitations([]);
+      setIsLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
     if (currentCompany) {
+      console.log("Current company changed:", currentCompany.name);
       loadCompanyMembers();
       loadUserRole();
       
@@ -58,6 +66,11 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     if (user && companies.length > 0) {
       const storedCompanyId = localStorage.getItem('currentCompanyId');
+      console.log("CompanyContext: Setting current company", { 
+        companiesCount: companies.length,
+        storedCompanyId
+      });
+      
       if (storedCompanyId) {
         const company = companies.find(c => c.id === storedCompanyId);
         if (company) {
@@ -77,12 +90,19 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(true);
     
     try {
+      console.log("Loading user companies for:", user.id);
+      
       const { data: memberData, error: memberError } = await supabase
         .from('company_members')
         .select('company_id')
         .eq('user_id', user.id);
         
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error("Error fetching company members:", memberError);
+        throw memberError;
+      }
+      
+      console.log("Company member data:", memberData);
       
       if (memberData.length > 0) {
         const companyIds = memberData.map(m => m.company_id);
@@ -92,7 +112,12 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .select('*')
           .in('id', companyIds);
           
-        if (companiesError) throw companiesError;
+        if (companiesError) {
+          console.error("Error fetching companies:", companiesError);
+          throw companiesError;
+        }
+        
+        console.log("Companies data:", companiesData);
         
         const formattedCompanies: Company[] = companiesData.map(c => ({
           id: c.id,
@@ -106,6 +131,9 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (formattedCompanies.length > 0 && !currentCompany) {
           setCurrentCompany(formattedCompanies[0]);
         }
+      } else {
+        console.log("User has no companies");
+        setCompanies([]);
       }
     } catch (error: any) {
       console.error('Error loading companies:', error.message);
@@ -201,9 +229,11 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return;
     }
     
+    console.log("Creating company:", name, "for user:", user.id);
     setIsLoading(true);
     
     try {
+      // Insert into companies table
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert({ 
@@ -213,9 +243,14 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         .select()
         .single();
       
-      if (companyError) throw companyError;
+      if (companyError) {
+        console.error("Error creating company:", companyError);
+        throw companyError;
+      }
       
-      // Add user as company owner - use explicit column name references to avoid ambiguity
+      console.log("Company created:", companyData);
+      
+      // Add user as company owner
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
@@ -224,7 +259,10 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           role: 'owner'
         });
         
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error("Error adding company member:", memberError);
+        throw memberError;
+      }
       
       const newCompany: Company = {
         id: companyData.id,
@@ -233,7 +271,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         createdBy: companyData.created_by
       };
       
-      setCompanies([...companies, newCompany]);
+      setCompanies(prevCompanies => [...prevCompanies, newCompany]);
       setCurrentCompany(newCompany);
       setUserCompanyRole('owner');
       
@@ -241,6 +279,10 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         title: 'Company created',
         description: `${name} has been created successfully.`,
       });
+      
+      // Reload companies to ensure everything is in sync
+      loadUserCompanies();
+      
     } catch (error: any) {
       console.error('Error creating company:', error.message);
       toast({
