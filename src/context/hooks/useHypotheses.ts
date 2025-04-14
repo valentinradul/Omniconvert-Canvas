@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Hypothesis, HypothesisStatus, PECTIWeights } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,7 +36,29 @@ export const useHypotheses = (
         
         if (error) throw error;
         
-        setHypotheses(data || []);
+        // Transform database fields to match frontend model
+        const formattedHypotheses: Hypothesis[] = (data || []).map(h => ({
+          id: h.id,
+          ideaId: h.ideaid || "",
+          observation: h.observation || "",
+          observationContent: h.observationcontent as any,
+          initiative: h.initiative || "",
+          metric: h.metric || "",
+          pectiScore: h.pectiscore as any || {
+            potential: 1,
+            ease: 1,
+            cost: 1,
+            time: 1,
+            impact: 1
+          },
+          createdAt: new Date(h.createdat),
+          userId: h.userid,
+          userName: h.username,
+          status: h.status as HypothesisStatus || "Backlog",
+          companyId: h.company_id
+        }));
+        
+        setHypotheses(formattedHypotheses);
       } catch (error: any) {
         console.error('Error fetching hypotheses:', error.message);
         toast({
@@ -64,20 +87,19 @@ export const useHypotheses = (
     }
     
     try {
+      // Map frontend properties to database column names
       const newHypothesis = {
-        ...hypothesis,
+        ideaid: hypothesis.ideaId,
+        observation: hypothesis.observation,
+        observationcontent: hypothesis.observationContent,
+        initiative: hypothesis.initiative,
+        metric: hypothesis.metric,
+        pectiscore: hypothesis.pectiScore,
+        status: hypothesis.status || 'Backlog',
         userid: user.id,
         username: user.user_metadata?.full_name || user.email,
-        company_id: currentCompany.id,
-        status: hypothesis.status || 'Backlog',
-        createdat: new Date(),
-        ideaid: hypothesis.ideaId // Map to the column name in Supabase
+        company_id: currentCompany.id
       };
-      
-      // Clean up properties to match database column names
-      if ('ideaId' in newHypothesis) {
-        delete newHypothesis.ideaId;
-      }
       
       const { data, error } = await supabase
         .from('hypotheses')
@@ -87,13 +109,26 @@ export const useHypotheses = (
       
       if (error) throw error;
       
-      // Transform database column names back to camelCase for frontend usage
+      // Transform the returned data to match our frontend model
       const formattedHypothesis: Hypothesis = {
-        ...data,
-        ideaId: data.ideaid,
+        id: data.id,
+        ideaId: data.ideaid || "",
+        observation: data.observation || "",
+        observationContent: data.observationcontent as any,
+        initiative: data.initiative || "",
+        metric: data.metric || "",
+        pectiScore: data.pectiscore as any || {
+          potential: 1,
+          ease: 1,
+          cost: 1,
+          time: 1,
+          impact: 1
+        },
+        createdAt: new Date(data.createdat),
         userId: data.userid,
         userName: data.username,
-        createdAt: new Date(data.createdat)
+        status: data.status as HypothesisStatus || "Backlog",
+        companyId: data.company_id
       };
       
       setHypotheses([...hypotheses, formattedHypothesis]);
@@ -123,20 +158,16 @@ export const useHypotheses = (
     }
     
     try {
-      // Map frontend property names to database column names
-      const updates = {
-        ...hypothesisUpdates,
-        ideaid: hypothesisUpdates.ideaId,
-        userid: hypothesisUpdates.userId,
-        username: hypothesisUpdates.userName,
-      };
+      // Map frontend properties to database column names
+      const updates: any = {};
       
-      // Remove frontend properties that don't match database column names
-      ['ideaId', 'userId', 'userName', 'createdAt'].forEach(prop => {
-        if (prop in updates) {
-          delete updates[prop];
-        }
-      });
+      if ('ideaId' in hypothesisUpdates) updates.ideaid = hypothesisUpdates.ideaId;
+      if ('observation' in hypothesisUpdates) updates.observation = hypothesisUpdates.observation;
+      if ('observationContent' in hypothesisUpdates) updates.observationcontent = hypothesisUpdates.observationContent;
+      if ('initiative' in hypothesisUpdates) updates.initiative = hypothesisUpdates.initiative;
+      if ('metric' in hypothesisUpdates) updates.metric = hypothesisUpdates.metric;
+      if ('pectiScore' in hypothesisUpdates) updates.pectiscore = hypothesisUpdates.pectiScore;
+      if ('status' in hypothesisUpdates) updates.status = hypothesisUpdates.status;
       
       const { data, error } = await supabase
         .from('hypotheses')
@@ -147,8 +178,12 @@ export const useHypotheses = (
       
       if (error) throw error;
       
+      // Update the local state with the edited hypothesis
       setHypotheses(hypotheses.map(hypothesis => 
-        hypothesis.id === id ? { ...hypothesis, ...hypothesisUpdates } : hypothesis
+        hypothesis.id === id ? {
+          ...hypothesis,
+          ...hypothesisUpdates
+        } : hypothesis
       ));
       
       toast({

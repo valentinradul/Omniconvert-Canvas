@@ -37,12 +37,18 @@ export const useExperiments = (
         
         // Map from database column names to frontend property names
         const formattedExperiments: Experiment[] = (data || []).map(exp => ({
-          ...exp,
-          hypothesisId: exp.hypothesisid,
+          id: exp.id,
+          hypothesisId: exp.hypothesisid || "",
+          startDate: exp.startdate ? new Date(exp.startdate) : null,
+          endDate: exp.enddate ? new Date(exp.enddate) : null,
+          status: exp.status as any || "Planned",
+          notes: exp.notes || "",
+          observationContent: exp.observationcontent as any,
+          createdAt: new Date(exp.createdat),
+          updatedAt: new Date(exp.updatedat),
           userId: exp.userid,
           userName: exp.username,
-          createdAt: new Date(exp.createdat),
-          updatedAt: new Date(exp.updatedat)
+          companyId: exp.company_id
         }));
         
         setExperiments(formattedExperiments);
@@ -74,25 +80,18 @@ export const useExperiments = (
     }
     
     try {
-      const now = new Date();
-      
       // Map frontend property names to database column names
       const newExperiment = {
-        ...experiment,
         hypothesisid: experiment.hypothesisId,
+        startdate: experiment.startDate ? experiment.startDate.toISOString() : null,
+        enddate: experiment.endDate ? experiment.endDate.toISOString() : null,
+        status: experiment.status,
+        notes: experiment.notes,
+        observationcontent: experiment.observationContent,
         userid: experiment.userId || user.id,
         username: experiment.userName || user.user_metadata?.full_name || user.email,
-        company_id: currentCompany.id,
-        createdat: now,
-        updatedat: now
+        company_id: currentCompany.id
       };
-      
-      // Clean up properties to match database column names
-      ['hypothesisId', 'userId', 'userName', 'createdAt', 'updatedAt'].forEach(prop => {
-        if (prop in newExperiment) {
-          delete newExperiment[prop];
-        }
-      });
       
       const { data, error } = await supabase
         .from('experiments')
@@ -104,12 +103,18 @@ export const useExperiments = (
       
       // Transform database column names back to camelCase for frontend usage
       const formattedExperiment: Experiment = {
-        ...data,
-        hypothesisId: data.hypothesisid,
+        id: data.id,
+        hypothesisId: data.hypothesisid || "",
+        startDate: data.startdate ? new Date(data.startdate) : null,
+        endDate: data.enddate ? new Date(data.enddate) : null,
+        status: data.status as any || "Planned",
+        notes: data.notes || "",
+        observationContent: data.observationcontent as any,
+        createdAt: new Date(data.createdat),
+        updatedAt: new Date(data.updatedat),
         userId: data.userid,
         userName: data.username,
-        createdAt: new Date(data.createdat),
-        updatedAt: new Date(data.updatedat)
+        companyId: data.company_id
       };
       
       setExperiments([...experiments, formattedExperiment]);
@@ -140,20 +145,17 @@ export const useExperiments = (
     
     try {
       // Map frontend property names to database column names
-      const updates = {
-        ...experimentUpdates,
-        hypothesisid: experimentUpdates.hypothesisId,
-        userid: experimentUpdates.userId,
-        username: experimentUpdates.userName,
-        updatedat: new Date()
-      };
+      const updates: any = {};
       
-      // Remove frontend properties that don't match database column names
-      ['hypothesisId', 'userId', 'userName', 'createdAt', 'updatedAt'].forEach(prop => {
-        if (prop in updates) {
-          delete updates[prop];
-        }
-      });
+      if ('hypothesisId' in experimentUpdates) updates.hypothesisid = experimentUpdates.hypothesisId;
+      if ('startDate' in experimentUpdates) updates.startdate = experimentUpdates.startDate ? experimentUpdates.startDate.toISOString() : null;
+      if ('endDate' in experimentUpdates) updates.enddate = experimentUpdates.endDate ? experimentUpdates.endDate.toISOString() : null;
+      if ('status' in experimentUpdates) updates.status = experimentUpdates.status;
+      if ('notes' in experimentUpdates) updates.notes = experimentUpdates.notes;
+      if ('observationContent' in experimentUpdates) updates.observationcontent = experimentUpdates.observationContent;
+      
+      // Always update the 'updatedat' field
+      updates.updatedat = new Date().toISOString();
       
       const { data, error } = await supabase
         .from('experiments')
@@ -164,6 +166,7 @@ export const useExperiments = (
       
       if (error) throw error;
       
+      // Update the local state with the edited experiment
       setExperiments(experiments.map(experiment => 
         experiment.id === id ? { 
           ...experiment, 

@@ -37,7 +37,21 @@ export const useIdeas = (
         
         if (error) throw error;
         
-        setIdeas(data || []);
+        // Transform database fields to match frontend model
+        const formattedIdeas: GrowthIdea[] = (data || []).map(idea => ({
+          id: idea.id,
+          title: idea.title,
+          description: idea.description || "",
+          category: idea.category as any,
+          departmentId: idea.departmentid,
+          createdAt: new Date(idea.createdat),
+          userId: idea.userid,
+          userName: idea.username,
+          tags: idea.tags || [],
+          companyId: idea.company_id
+        }));
+        
+        setIdeas(formattedIdeas);
       } catch (error: any) {
         console.error('Error fetching ideas:', error.message);
         toast({
@@ -66,12 +80,16 @@ export const useIdeas = (
     }
     
     try {
+      // Map frontend properties to database column names
       const newIdea = {
-        ...idea,
-        userId: user.id,
-        userName: user.user_metadata?.full_name || user.email,
-        company_id: currentCompany.id,
-        departmentid: idea.departmentId // Map to the column name in Supabase
+        title: idea.title,
+        description: idea.description,
+        category: idea.category,
+        departmentid: idea.departmentId,
+        tags: idea.tags || [],
+        userid: user.id,
+        username: user.user_metadata?.full_name || user.email,
+        company_id: currentCompany.id
       };
       
       const { data, error } = await supabase
@@ -82,7 +100,21 @@ export const useIdeas = (
       
       if (error) throw error;
       
-      setIdeas([...ideas, data]);
+      // Transform the returned data to match our frontend model
+      const formattedIdea: GrowthIdea = {
+        id: data.id,
+        title: data.title,
+        description: data.description || "",
+        category: data.category as any,
+        departmentId: data.departmentid,
+        createdAt: new Date(data.createdat),
+        userId: data.userid,
+        userName: data.username,
+        tags: data.tags || [],
+        companyId: data.company_id
+      };
+      
+      setIdeas([...ideas, formattedIdea]);
       
       toast({
         title: 'Idea created',
@@ -109,16 +141,14 @@ export const useIdeas = (
     }
     
     try {
-      // Map departmentId to departmentid if it exists in updates
-      const updates = {
-        ...ideaUpdates,
-        departmentid: ideaUpdates.departmentId,
-      };
+      // Map frontend properties to database column names
+      const updates: any = {};
       
-      // Remove departmentId as it doesn't match the database column name
-      if ('departmentId' in updates) {
-        delete updates.departmentId;
-      }
+      if ('title' in ideaUpdates) updates.title = ideaUpdates.title;
+      if ('description' in ideaUpdates) updates.description = ideaUpdates.description;
+      if ('category' in ideaUpdates) updates.category = ideaUpdates.category;
+      if ('departmentId' in ideaUpdates) updates.departmentid = ideaUpdates.departmentId;
+      if ('tags' in ideaUpdates) updates.tags = ideaUpdates.tags;
       
       const { data, error } = await supabase
         .from('ideas')
@@ -129,8 +159,12 @@ export const useIdeas = (
       
       if (error) throw error;
       
+      // Update the local state with the edited idea
       setIdeas(ideas.map(idea => 
-        idea.id === id ? { ...idea, ...ideaUpdates } : idea
+        idea.id === id ? { 
+          ...idea,
+          ...ideaUpdates
+        } : idea
       ));
       
       toast({
