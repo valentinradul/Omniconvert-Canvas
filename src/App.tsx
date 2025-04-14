@@ -24,7 +24,7 @@ import ExperimentDetailsPage from "./pages/ExperimentDetailsPage";
 import DepartmentsPage from "./pages/DepartmentsPage";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
 import TeamSettingsPage from "./pages/TeamSettingsPage";
-import RecoverDataPage from "./pages/RecoverDataPage";
+import DataRecoveryPage from "./pages/DataRecoveryPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,7 +43,7 @@ const App = () => (
                 <Route index element={<Index />} />
                 <Route path="login" element={<Login />} />
                 <Route path="signup" element={<Signup />} />
-                <Route path="recover-data" element={<RecoverDataPage />} />
+                <Route path="data-recovery" element={<DataRecoveryPage />} />
                 
                 {/* Protected routes */}
                 <Route element={<ProtectedRoute />}>
