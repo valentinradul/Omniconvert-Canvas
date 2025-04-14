@@ -4,9 +4,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
-// Define the role type
-type Role = 'admin' | 'manager' | 'member';
-
 // Define the context type
 type AuthContextType = {
   user: User | null;

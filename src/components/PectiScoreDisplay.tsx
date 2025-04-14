@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { PECTI, calculatePectiPercentage } from '@/types';
+import { PECTI, calculatePectiPercentage, PECTIWeights, DEFAULT_PECTI_WEIGHTS } from '@/types';
 import { Progress } from '@/components/ui/progress';
 
 interface PectiScoreDisplayProps {
   pecti: PECTI;
+  weights?: PECTIWeights;
   showPercentage?: boolean;
   showProgressBar?: boolean;
   className?: string;
@@ -13,13 +14,15 @@ interface PectiScoreDisplayProps {
 
 const PectiScoreDisplay: React.FC<PectiScoreDisplayProps> = ({ 
   pecti,
+  weights = DEFAULT_PECTI_WEIGHTS,
   showPercentage = true,
   showProgressBar = false,
   className = '',
   size = 'md'
 }) => {
   const { potential, ease, cost, time, impact } = pecti;
-  const percentageScore = calculatePectiPercentage(pecti);
+  // Always use the provided weights
+  const percentageScore = calculatePectiPercentage(pecti, weights);
 
   const scoreSize = {
     sm: 'w-4 h-4 text-xs',
@@ -59,7 +62,7 @@ const PectiScoreDisplay: React.FC<PectiScoreDisplayProps> = ({
         {renderScoreBadge(impact, 'I')}
         
         {showPercentage && (
-          <div className={`ml-1 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg ${getScoreColor()}`}>
+          <div className={`ml-1 w-7 h-7 rounded-full flex items-center justify-center font-bold text-lg ${getScoreColor()}`}>
             {percentageScore}
           </div>
         )}

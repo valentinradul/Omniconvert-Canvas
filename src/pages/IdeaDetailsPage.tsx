@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Category } from '@/types';
+import { ALL_CATEGORIES, Category } from '@/types';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -22,9 +22,7 @@ const IdeaDetailsPage: React.FC = () => {
     editIdea, 
     deleteIdea, 
     departments, 
-    getHypothesisByIdeaId, 
-    categories,
-    getAllUserNames
+    getHypothesisByIdeaId 
   } = useApp();
   
   const [idea, setIdea] = useState(getIdeaById(ideaId || ''));
@@ -36,10 +34,8 @@ const IdeaDetailsPage: React.FC = () => {
   const [description, setDescription] = useState(idea?.description || '');
   const [category, setCategory] = useState<Category | ''>(idea?.category || '');
   const [departmentId, setDepartmentId] = useState(idea?.departmentId || '');
-  const [responsibleUserId, setResponsibleUserId] = useState(idea?.responsibleUserId || '');
   
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const allUsers = getAllUserNames();
   
   useEffect(() => {
     const currentIdea = getIdeaById(ideaId || '');
@@ -50,7 +46,6 @@ const IdeaDetailsPage: React.FC = () => {
       setDescription(currentIdea.description);
       setCategory(currentIdea.category);
       setDepartmentId(currentIdea.departmentId);
-      setResponsibleUserId(currentIdea.responsibleUserId || '');
       setDepartment(getDepartmentById(currentIdea.departmentId));
       setHypothesis(getHypothesisByIdeaId(currentIdea.id));
     } else {
@@ -74,8 +69,7 @@ const IdeaDetailsPage: React.FC = () => {
       title,
       description,
       category: category as Category,
-      departmentId,
-      responsibleUserId: responsibleUserId || undefined
+      departmentId
     });
     
     setEditDialogOpen(false);
@@ -92,8 +86,6 @@ const IdeaDetailsPage: React.FC = () => {
     navigate(`/create-hypothesis/${idea.id}`);
   };
   
-  const responsibleUser = allUsers.find(user => user.id === idea.responsibleUserId);
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -105,11 +97,6 @@ const IdeaDetailsPage: React.FC = () => {
           <p className="text-muted-foreground">
             {department?.name} · {idea.category} · Created on {new Date(idea.createdAt).toLocaleDateString()}
           </p>
-          {responsibleUser && (
-            <p className="text-muted-foreground mt-1">
-              Responsible: {responsibleUser.name}
-            </p>
-          )}
         </div>
         <div className="flex gap-2">
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -152,7 +139,7 @@ const IdeaDetailsPage: React.FC = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          {categories.map(cat => (
+                          {ALL_CATEGORIES.map(cat => (
                             <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                           ))}
                         </SelectGroup>
@@ -172,25 +159,6 @@ const IdeaDetailsPage: React.FC = () => {
                         <SelectGroup>
                           {departments.map(dept => (
                             <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="responsible">Responsible Person</Label>
-                    <Select 
-                      value={responsibleUserId} 
-                      onValueChange={setResponsibleUserId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select responsible person" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="">Unassigned</SelectItem>
-                          {allUsers.map(user => (
-                            <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
                           ))}
                         </SelectGroup>
                       </SelectContent>
