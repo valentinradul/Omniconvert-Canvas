@@ -16,8 +16,16 @@ interface CreateCompanyDialogProps {
 const CreateCompanyDialog: React.FC<CreateCompanyDialogProps> = ({ open, onClose }) => {
   const [companyName, setCompanyName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { createCompany, isLoading: companyLoading } = useCompany();
   const { isAuthenticated, user } = useAuth();
+
+  // Clear error when input changes
+  useEffect(() => {
+    if (errorMessage) {
+      setErrorMessage(null);
+    }
+  }, [companyName]);
 
   // For debugging
   useEffect(() => {
@@ -31,19 +39,23 @@ const CreateCompanyDialog: React.FC<CreateCompanyDialogProps> = ({ open, onClose
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyName.trim()) return;
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
+      setErrorMessage("Cannot create company: You are not authenticated");
       console.error("Cannot create company: User is not authenticated");
       return;
     }
 
     console.log("Submitting company creation:", companyName);
     setIsSubmitting(true);
+    setErrorMessage(null);
+    
     try {
       await createCompany(companyName);
       setCompanyName('');
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating company:', error);
+      setErrorMessage(error.message || "Failed to create company");
     } finally {
       setIsSubmitting(false);
     }
@@ -73,6 +85,13 @@ const CreateCompanyDialog: React.FC<CreateCompanyDialogProps> = ({ open, onClose
                 <span>Loading company data...</span>
               </div>
             )}
+            
+            {errorMessage && (
+              <div className="text-destructive text-sm bg-destructive/10 p-3 rounded-md">
+                {errorMessage}
+              </div>
+            )}
+            
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="companyName" className="col-span-4">
                 Company Name

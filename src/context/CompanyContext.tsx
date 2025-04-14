@@ -92,10 +92,11 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       console.log("Loading user companies for:", user.id);
       
+      // Added explicit table name for company_members.user_id
       const { data: memberData, error: memberError } = await supabase
         .from('company_members')
         .select('company_id')
-        .eq('user_id', user.id);
+        .eq('company_members.user_id', user.id);
         
       if (memberError) {
         console.error("Error fetching company members:", memberError);
@@ -179,10 +180,11 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!user || !currentCompany) return;
     
     try {
+      // Added explicit table name for company_members.user_id
       const { data, error } = await supabase
         .from('company_members')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('company_members.user_id', user.id)
         .eq('company_id', currentCompany.id)
         .single();
         
@@ -250,7 +252,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       console.log("Company created:", companyData);
       
-      // Add user as company owner
+      // Add user as company owner with explicit column names
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({

@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import CreateCompanyDialog from './company/CreateCompanyDialog';
 
 const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const { currentCompany, companies, isLoading: companyLoading } = useCompany();
   const location = useLocation();
   const [showCreateCompanyDialog, setShowCreateCompanyDialog] = React.useState(false);
@@ -16,13 +16,14 @@ const ProtectedRoute: React.FC = () => {
   useEffect(() => {
     console.log('Protected Route:', { 
       isAuthenticated, 
-      authLoading, 
+      authLoading,
+      userId: user?.id || 'No user', 
       companiesCount: companies?.length || 0,
       currentCompany: currentCompany?.name || 'No company selected',
       companyLoading,
       path: location.pathname 
     });
-  }, [isAuthenticated, authLoading, currentCompany, companies, companyLoading, location.pathname]);
+  }, [isAuthenticated, authLoading, user, currentCompany, companies, companyLoading, location.pathname]);
 
   // Show loading state while checking authentication or company data
   if (authLoading) {
