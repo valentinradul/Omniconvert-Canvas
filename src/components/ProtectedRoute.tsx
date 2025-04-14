@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useCompany } from '@/context/CompanyContext';
+import { useCompany } from '@/context/company/CompanyContext';
 import { Loader2 } from 'lucide-react';
 import CreateCompanyDialog from './company/CreateCompanyDialog';
 
@@ -10,7 +10,6 @@ const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const { currentCompany, companies, isLoading: companyLoading } = useCompany();
   const location = useLocation();
-  const [showCreateCompanyDialog, setShowCreateCompanyDialog] = React.useState(false);
 
   // Debug authentication state
   useEffect(() => {
