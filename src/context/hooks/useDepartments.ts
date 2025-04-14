@@ -1,16 +1,19 @@
-
 import { useState, useEffect } from 'react';
 import { Department } from '@/types';
-import { generateId, getInitialData } from '../utils/dataUtils';
+import { generateId } from '../utils/dataUtils';
+import { useToast } from '@/components/ui/use-toast';
 
 export const useDepartments = () => {
-  const [departments, setDepartments] = useState<Department[]>(() => 
-    getInitialData('departments', [
+  const [departments, setDepartments] = useState<Department[]>(() => {
+    const storedValue = localStorage.getItem('departments');
+    return storedValue ? JSON.parse(storedValue) : [
       { id: generateId(), name: 'Marketing' },
       { id: generateId(), name: 'Sales' },
       { id: generateId(), name: 'Product' }
-    ])
-  );
+    ];
+  });
+  
+  const { toast } = useToast();
   
   useEffect(() => {
     localStorage.setItem('departments', JSON.stringify(departments));
@@ -30,7 +33,11 @@ export const useDepartments = () => {
     const ideasUsingDepartment = ideas.some(idea => idea.departmentId === id);
     
     if (ideasUsingDepartment) {
-      alert('Cannot delete department that has ideas associated with it.');
+      toast({
+        variant: 'destructive',
+        title: 'Cannot delete department',
+        description: 'Cannot delete department that has ideas associated with it.',
+      });
       return;
     }
     

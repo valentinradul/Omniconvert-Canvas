@@ -2,22 +2,26 @@
 import React, { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useCompany } from '@/context/CompanyContext';
 
 const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { currentCompany, isLoading: companyLoading } = useCompany();
   const location = useLocation();
 
   // Debug authentication state
   useEffect(() => {
     console.log('Protected Route:', { 
       isAuthenticated, 
-      isLoading, 
+      authLoading, 
+      currentCompany: currentCompany?.name || 'No company selected',
+      companyLoading,
       path: location.pathname 
     });
-  }, [isAuthenticated, isLoading, location.pathname]);
+  }, [isAuthenticated, authLoading, currentCompany, companyLoading, location.pathname]);
 
-  // Show loading state while checking authentication
-  if (isLoading) {
+  // Show loading state while checking authentication or company data
+  if (authLoading || companyLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 

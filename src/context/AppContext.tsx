@@ -17,13 +17,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { currentCompany } = useCompany();
   
   // Initialize our hooks
-  const { experiments, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId } = 
+  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId } = 
     useExperiments(user, currentCompany);
   
-  const { hypotheses, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById } = 
+  const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById } = 
     useHypotheses(user, currentCompany, experiments);
   
-  const { ideas, addIdea, editIdea, deleteIdea, getIdeaById } = 
+  const { ideas, isLoading: ideasLoading, addIdea, editIdea, deleteIdea, getIdeaById } = 
     useIdeas(user, currentCompany, hypotheses);
   
   const { departments, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = 
@@ -41,6 +41,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateAllHypothesesWeights = () => {
     updateAllHypothesesWeightsBase(pectiWeights);
   };
+
+  const isLoading = ideasLoading || hypothesesLoading || experimentsLoading;
   
   const appContextValue: AppContextType = {
     departments,
@@ -48,6 +50,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     hypotheses,
     experiments,
     pectiWeights,
+    isLoading,
     addDepartment,
     editDepartment,
     deleteDepartment: wrappedDeleteDepartment,
