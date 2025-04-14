@@ -1,8 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag } from '../types';
+import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag, Category } from '../types';
 import { useAuth } from './AuthContext';
-import { useCompany } from './CompanyContext';
 
 // Define the shape of our context
 type AppContextType = {
@@ -10,6 +8,7 @@ type AppContextType = {
   ideas: GrowthIdea[];
   hypotheses: Hypothesis[];
   experiments: Experiment[];
+  categories: Category[];
   addDepartment: (name: string) => void;
   editDepartment: (id: string, name: string) => void;
   deleteDepartment: (id: string) => void;
@@ -19,7 +18,7 @@ type AppContextType = {
   addHypothesis: (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => void;
   editHypothesis: (id: string, hypothesis: Partial<Hypothesis>) => void;
   deleteHypothesis: (id: string) => void;
-  addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt' | 'statusUpdatedAt'>) => void;
   editExperiment: (id: string, experiment: Partial<Experiment>) => void;
   deleteExperiment: (id: string) => void;
   getIdeaById: (id: string) => GrowthIdea | undefined;
@@ -29,6 +28,15 @@ type AppContextType = {
   getDepartmentById: (id: string) => Department | undefined;
   getAllTags: () => Tag[];
   getAllUserNames: () => {id: string; name: string}[];
+  getExperimentDuration: (experiment: Experiment) => { 
+    daysRunning: number;
+    daysRemaining: number | null; 
+    daysInStatus: number;
+    daysTotal: number | null;
+  };
+  addCategory: (category: Category) => void;
+  editCategory: (oldCategory: Category, newCategory: Category) => void;
+  deleteCategory: (category: Category) => void;
 };
 
 // Create the context
@@ -46,8 +54,6 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 // Create a provider component
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const { currentCompany } = useCompany();
-  
   const [departments, setDepartments] = useState<Department[]>(() => 
     getInitialData('departments', [
       { id: generateId(), name: 'Marketing' },
@@ -68,6 +74,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getInitialData('experiments', [])
   );
   
+  const [categories, setCategories] = useState<Category[]>(() =>
+    getInitialData('categories', [
+      "Outreach", 
+      "Paid Ads", 
+      "Events", 
+      "Onboarding", 
+      "Product-led", 
+      "Content Marketing",
+      "SEO",
+      "Partnerships",
+      "Other"
+    ])
+  );
+  
   // Update localStorage when state changes
   useEffect(() => {
     localStorage.setItem('departments', JSON.stringify(departments));
@@ -85,24 +105,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('experiments', JSON.stringify(experiments));
   }, [experiments]);
   
-  // Filter data based on current company
-  const filteredIdeas = ideas.filter(idea => 
-    !currentCompany || idea.companyId === currentCompany.id || !idea.companyId
-  );
-  
-  const filteredHypotheses = hypotheses.filter(hypothesis => 
-    !currentCompany || hypothesis.companyId === currentCompany.id || !hypothesis.companyId
-  );
-  
-  const filteredExperiments = experiments.filter(experiment => 
-    !currentCompany || experiment.companyId === currentCompany.id || !experiment.companyId
-  );
+  useEffect(() => {
+    localStorage.setItem('categories', JSON.stringify(categories));
+  }, [categories]);
   
   // Helper function to get all unique tags
   const getAllTags = (): Tag[] => {
     const tagsSet = new Set<Tag>();
     
-    filteredIdeas.forEach(idea => {
+    ideas.forEach(idea => {
       if (idea.tags) {
         idea.tags.forEach(tag => tagsSet.add(tag));
       }
@@ -115,13 +126,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const getAllUserNames = () => {
     const usersMap = new Map<string, string>();
     
-    [...filteredIdeas, ...filteredHypotheses, ...filteredExperiments].forEach(item => {
+    [...ideas, ...hypotheses, ...experiments].forEach(item => {
       if (item.userId && item.userName) {
         usersMap.set(item.userId, item.userName);
       }
     });
     
     return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
+  };
+  
+  // Helper function to calculate experiment durations and days in status
+  const getExperimentDuration = (experiment: Experiment) => {
+    const today = new Date();
+    const createdAt = new Date(experiment.createdAt);
+    const statusUpdatedAt = experiment.statusUpdatedAt ? new Date(experiment.statusUpdatedAt) : createdAt;
+    const startDate = experiment.startDate ? new Date(experiment.startDate) : null;
+    const endDate = experiment.endDate ? new Date(experiment.endDate) : null;
+    
+    // Calculate days running (from creation or start date, whichever is applicable)
+    const daysRunning = startDate 
+      ? Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      : Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calculate days remaining to end date, if applicable
+    const daysRemaining = endDate 
+      ? Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+    
+    // Calculate days in the current status
+    const daysInStatus = Math.floor((today.getTime() - statusUpdatedAt.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calculate total planned days for the experiment
+    const daysTotal = startDate && endDate
+      ? Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+      
+    return {
+      daysRunning,
+      daysRemaining, 
+      daysInStatus,
+      daysTotal
+    };
   };
   
   // Department CRUD operations
@@ -156,8 +201,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: generateId(),
         createdAt: new Date(),
         userId: user?.id || undefined,
-        userName: user?.user_metadata?.full_name || user?.email || undefined,
-        companyId: currentCompany?.id
+        userName: user?.user_metadata?.full_name || user?.email || undefined
       }
     ]);
   };
@@ -190,8 +234,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createdAt: new Date(),
         status: hypothesis.status || 'Backlog',
         userId: hypothesis.userId || user?.id,
-        userName: hypothesis.userName || user?.user_metadata?.full_name || user?.email,
-        companyId: currentCompany?.id
+        userName: hypothesis.userName || user?.user_metadata?.full_name || user?.email
       }
     ]);
   };
@@ -215,7 +258,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   // Experiment CRUD operations
-  const addExperiment = (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addExperiment = (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt' | 'statusUpdatedAt'>) => {
     const now = new Date();
     setExperiments([
       ...experiments,
@@ -224,36 +267,78 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: generateId(),
         createdAt: now,
         updatedAt: now,
+        statusUpdatedAt: now,
         userId: experiment.userId || user?.id,
-        userName: experiment.userName || user?.user_metadata?.full_name || user?.email,
-        companyId: currentCompany?.id
+        userName: experiment.userName || user?.user_metadata?.full_name || user?.email
       }
     ]);
   };
   
   const editExperiment = (id: string, experimentUpdates: Partial<Experiment>) => {
-    setExperiments(experiments.map(experiment => 
-      experiment.id === id ? { ...experiment, ...experimentUpdates, updatedAt: new Date() } : experiment
-    ));
+    const now = new Date();
+    
+    setExperiments(experiments.map(experiment => {
+      if (experiment.id !== id) return experiment;
+      
+      // If status is changing, update statusUpdatedAt
+      const statusIsChanging = experimentUpdates.status && experiment.status !== experimentUpdates.status;
+      
+      return {
+        ...experiment,
+        ...experimentUpdates,
+        updatedAt: now,
+        statusUpdatedAt: statusIsChanging ? now : experiment.statusUpdatedAt || experiment.createdAt
+      };
+    }));
   };
   
   const deleteExperiment = (id: string) => {
     setExperiments(experiments.filter(experiment => experiment.id !== id));
   };
   
+  // Category CRUD operations
+  const addCategory = (category: Category) => {
+    setCategories([...categories, category]);
+  };
+  
+  const editCategory = (oldCategory: Category, newCategory: Category) => {
+    // Update the categories list
+    setCategories(categories.map(cat => cat === oldCategory ? newCategory : cat));
+    
+    // Update any ideas that use the old category
+    setIdeas(ideas.map(idea => 
+      idea.category === oldCategory 
+        ? { ...idea, category: newCategory } 
+        : idea
+    ));
+  };
+  
+  const deleteCategory = (category: Category) => {
+    // Check if any ideas are using this category
+    const ideasUsingCategory = ideas.some(idea => idea.category === category);
+    
+    if (ideasUsingCategory) {
+      alert('Cannot delete category that has ideas associated with it.');
+      return;
+    }
+    
+    setCategories(categories.filter(cat => cat !== category));
+  };
+  
   // Getter functions
-  const getIdeaById = (id: string) => filteredIdeas.find(idea => idea.id === id);
-  const getHypothesisByIdeaId = (ideaId: string) => filteredHypotheses.find(h => h.ideaId === ideaId);
-  const getHypothesisById = (id: string) => filteredHypotheses.find(h => h.id === id);
-  const getExperimentByHypothesisId = (hypothesisId: string) => filteredExperiments.find(e => e.hypothesisId === hypothesisId);
+  const getIdeaById = (id: string) => ideas.find(idea => idea.id === id);
+  const getHypothesisByIdeaId = (ideaId: string) => hypotheses.find(h => h.ideaId === ideaId);
+  const getHypothesisById = (id: string) => hypotheses.find(h => h.id === id);
+  const getExperimentByHypothesisId = (hypothesisId: string) => experiments.find(e => e.hypothesisId === hypothesisId);
   const getDepartmentById = (id: string) => departments.find(d => d.id === id);
   
   return (
     <AppContext.Provider value={{
       departments,
-      ideas: filteredIdeas,
-      hypotheses: filteredHypotheses,
-      experiments: filteredExperiments,
+      ideas,
+      hypotheses,
+      experiments,
+      categories,
       addDepartment,
       editDepartment,
       deleteDepartment,
@@ -272,7 +357,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       getExperimentByHypothesisId,
       getDepartmentById,
       getAllTags,
-      getAllUserNames
+      getAllUserNames,
+      getExperimentDuration,
+      addCategory,
+      editCategory,
+      deleteCategory
     }}>
       {children}
     </AppContext.Provider>

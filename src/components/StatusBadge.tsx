@@ -23,17 +23,17 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const getClassName = () => {
     switch (status) {
       case 'Planned':
-        return 'status-badge-planned';
+        return 'bg-gray-200 text-gray-800';
       case 'In Progress':
-        return 'status-badge-in-progress';
+        return 'bg-blue-500 text-white';
       case 'Blocked':
-        return 'status-badge-blocked';
+        return 'bg-amber-500 text-white';
       case 'Winning':
-        return 'status-badge-winning';
+        return 'bg-green-500 text-white';
       case 'Losing':
-        return 'status-badge-losing';
+        return 'bg-red-500 text-white';
       case 'Inconclusive':
-        return 'status-badge-inconclusive';
+        return 'bg-purple-500 text-white';
       default:
         return '';
     }

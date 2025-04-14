@@ -8,16 +8,20 @@ export type Department = {
 
 export type Tag = string;
 
-export type Category = 
-  | "Outreach" 
-  | "Paid Ads" 
-  | "Events" 
-  | "Onboarding" 
-  | "Product-led" 
-  | "Content Marketing"
-  | "SEO"
-  | "Partnerships"
-  | "Other";
+export type Category = string;
+
+export type GrowthIdea = {
+  id: string;
+  title: string;
+  description: string;
+  category: Category;
+  departmentId: string;
+  createdAt: Date;
+  userId?: string;
+  userName?: string;
+  tags?: Tag[];
+  responsibleUserId?: string;
+};
 
 export const ALL_CATEGORIES: Category[] = [
   "Outreach",
@@ -31,19 +35,6 @@ export const ALL_CATEGORIES: Category[] = [
   "Other"
 ];
 
-export type GrowthIdea = {
-  id: string;
-  title: string;
-  description: string;
-  category: Category;
-  departmentId: string;
-  createdAt: Date;
-  userId?: string;
-  userName?: string;
-  tags?: Tag[];
-  companyId?: string;
-};
-
 export type PECTI = {
   potential: 1 | 2 | 3 | 4 | 5;
   ease: 1 | 2 | 3 | 4 | 5;
@@ -52,7 +43,6 @@ export type PECTI = {
   impact: 1 | 2 | 3 | 4 | 5;
 };
 
-// Extended type for observation content that supports text, URLs, and images
 export type ObservationContent = {
   text: string;
   imageUrls?: string[];
@@ -71,7 +61,7 @@ export type Hypothesis = {
   userId?: string;
   userName?: string;
   status?: HypothesisStatus;
-  companyId?: string;
+  responsibleUserId?: string;
 };
 
 export type HypothesisStatus = 
@@ -118,44 +108,55 @@ export type Experiment = {
   updatedAt: Date;
   userId?: string;
   userName?: string;
-  companyId?: string;
+  responsibleUserId?: string;
+  statusUpdatedAt?: Date;
+  totalCost?: number;
+  totalReturn?: number;
 };
 
-// Company-related types
-export type Company = {
-  id: string;
-  name: string;
-  createdAt: Date;
-  createdBy: string;
-};
-
-export type CompanyMember = {
-  id: string;
-  companyId: string;
-  userId: string;
-  role: CompanyRole;
-  createdAt: Date;
-};
-
-export type CompanyRole = 
-  | "owner" 
-  | "admin" 
-  | "member";
-
-export type CompanyInvitation = {
-  id: string;
-  companyId: string;
-  email: string;
-  role: CompanyRole;
-  accepted: boolean;
-  invitedBy: string;
-  createdAt: Date;
-};
-
-// Helper function to calculate PECTI percentage score
 export const calculatePectiPercentage = (pectiScore: PECTI): number => {
   const { potential, ease, cost, time, impact } = pectiScore;
   const totalScore = potential + ease + cost + time + impact;
   const maxPossibleScore = 25; // 5 points max for each of the 5 categories
   return Math.round((totalScore / maxPossibleScore) * 100);
 };
+
+export type TeamMemberRole = "Admin" | "Manager" | "Team Member";
+
+export const ALL_TEAM_MEMBER_ROLES: TeamMemberRole[] = [
+  "Admin",
+  "Manager",
+  "Team Member"
+];
+
+export type DepartmentVisibility = "Own Department" | "Selected Departments" | "All Departments";
+
+export const ALL_DEPARTMENT_VISIBILITY_OPTIONS: DepartmentVisibility[] = [
+  "Own Department", 
+  "Selected Departments", 
+  "All Departments"
+];
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: TeamMemberRole;
+  department?: string;
+  title?: string;
+  visibleDepartments?: string[];
+  departmentVisibility?: DepartmentVisibility;
+  photoUrl?: string;
+}
+
+export interface TeamMemberFormData {
+  name: string;
+  email?: string;
+  role: TeamMemberRole;
+  department: string;
+  title?: string;
+  departmentVisibility?: DepartmentVisibility;
+  visibleDepartments?: string[];
+  photoUrl?: string;
+  customMessage?: string; // Added for invitation emails
+}

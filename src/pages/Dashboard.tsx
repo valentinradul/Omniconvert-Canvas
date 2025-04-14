@@ -1,31 +1,55 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { 
+  GrowthIdea, 
+  Hypothesis, 
+  HypothesisStatus,
+  Category,
+  Tag,
+  ExperimentStatus,
+} from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { HypothesisStatus } from '@/types';
-
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import DashboardSearch from '@/components/dashboard/DashboardSearch';
-import DashboardStats from '@/components/dashboard/DashboardStats';
-import DashboardFilters from '@/components/DashboardFilters';
 import KanbanBoard from '@/components/KanbanBoard';
+import DashboardFilters from '@/components/DashboardFilters';
 import CreateHypothesisModal from '@/components/CreateHypothesisModal';
-import { supabase, checkForData } from '@/integrations/supabase/client'; // Add import for data check
-
-import { useDashboardFilter } from '@/hooks/useDashboardFilter';
+import { useNavigate } from 'react-router-dom';
+import { subDays, startOfToday, startOfWeek, startOfMonth, startOfQuarter, startOfYear, isAfter } from 'date-fns';
 
 const Dashboard: React.FC = () => {
-  const { ideas, hypotheses, experiments, editHypothesis, getIdeaById } = useApp();
+  const { ideas, hypotheses, experiments, departments, editHypothesis, getIdeaById } = useApp();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  const [filters, setFilters] = useState<{
+    department?: string;
+    category?: Category;
+    status?: string;
+    tag?: Tag;
+    userId?: string;
+    timeframe?: 'today' | 'week' | 'month' | 'quarter' | 'year';
+  }>({});
   
   const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   
-  // Get all unique tags from ideas
+  // Calculate win rate
+  const completedExperiments = experiments.filter(e => 
+    e.status === 'Winning' || e.status === 'Losing' || e.status === 'Inconclusive'
+  );
+  
+  const winningExperiments = experiments.filter(e => e.status === 'Winning');
+  const winRate = completedExperiments.length > 0 
+    ? Math.round((winningExperiments.length / completedExperiments.length) * 100)
+    : 0;
+  
+  // Collect all unique tags from ideas
   const allTags = React.useMemo(() => {
-    const tagsSet = new Set<string>();
+    const tagsSet = new Set<Tag>();
     ideas.forEach(idea => {
       if (idea.tags) {
         idea.tags.forEach(tag => tagsSet.add(tag));
@@ -34,7 +58,7 @@ const Dashboard: React.FC = () => {
     return Array.from(tagsSet);
   }, [ideas]);
   
-  // Get all unique users
+  // Collect all unique users
   const allUsers = React.useMemo(() => {
     const usersMap = new Map<string, string>();
     
@@ -47,31 +71,174 @@ const Dashboard: React.FC = () => {
     return Array.from(usersMap.entries()).map(([id, name]) => ({ id, name }));
   }, [ideas, hypotheses, experiments]);
   
-  // Check for data when component mounts if data is empty
-  useEffect(() => {
-    if (ideas.length === 0 && hypotheses.length === 0 && experiments.length === 0) {
-      checkForData().then(result => {
-        if (result && (result.ideas?.length || result.hypotheses?.length || result.experiments?.length)) {
-          console.log("Found data in Supabase but not in local state. Consider visiting the Data Recovery page.");
-          toast({
-            title: "Data found in database",
-            description: "Data was found in the database but might be restricted by permissions. Check the Data Recovery page.",
-          });
+  // Apply filters to ideas and hypotheses
+  const filteredIdeas = React.useMemo(() => {
+    return ideas.filter(idea => {
+      // Search query
+      if (searchQuery && !idea.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
+          !idea.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      
+      // Department filter
+      if (filters.department && idea.departmentId !== filters.department) {
+        return false;
+      }
+      
+      // Category filter
+      if (filters.category && idea.category !== filters.category) {
+        return false;
+      }
+      
+      // Tag filter
+      if (filters.tag && (!idea.tags || !idea.tags.includes(filters.tag))) {
+        return false;
+      }
+      
+      // User filter
+      if (filters.userId && idea.userId !== filters.userId) {
+        return false;
+      }
+      
+      // Timeframe filter
+      if (filters.timeframe) {
+        const createdDate = new Date(idea.createdAt);
+        let cutoffDate;
+        
+        switch (filters.timeframe) {
+          case 'today':
+            cutoffDate = startOfToday();
+            break;
+          case 'week':
+            cutoffDate = startOfWeek(new Date());
+            break;
+          case 'month':
+            cutoffDate = startOfMonth(new Date());
+            break;
+          case 'quarter':
+            cutoffDate = startOfQuarter(new Date());
+            break;
+          case 'year':
+            cutoffDate = startOfYear(new Date());
+            break;
         }
-      });
-    }
-  }, [ideas.length, hypotheses.length, experiments.length, toast]);
+        
+        if (!isAfter(createdDate, cutoffDate)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [ideas, filters, searchQuery]);
+  
+  const filteredHypotheses = React.useMemo(() => {
+    return hypotheses.filter(hypothesis => {
+      // Search query
+      if (searchQuery && !hypothesis.metric.toLowerCase().includes(searchQuery.toLowerCase()) && 
+          !hypothesis.initiative.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      
+      // Status filter
+      if (filters.status && hypothesis.status !== filters.status) {
+        return false;
+      }
+      
+      // User filter
+      if (filters.userId && hypothesis.userId !== filters.userId) {
+        return false;
+      }
+      
+      // Department filter and Category filter (need to check related idea)
+      if (filters.department || filters.category) {
+        const relatedIdea = ideas.find(i => i.id === hypothesis.ideaId);
+        if (!relatedIdea) return false;
+        
+        if (filters.department && relatedIdea.departmentId !== filters.department) {
+          return false;
+        }
+        
+        if (filters.category && relatedIdea.category !== filters.category) {
+          return false;
+        }
+        
+        // Tag filter (check related idea)
+        if (filters.tag && (!relatedIdea.tags || !relatedIdea.tags.includes(filters.tag))) {
+          return false;
+        }
+      }
+      
+      // Timeframe filter
+      if (filters.timeframe) {
+        const createdDate = new Date(hypothesis.createdAt);
+        let cutoffDate;
+        
+        switch (filters.timeframe) {
+          case 'today':
+            cutoffDate = startOfToday();
+            break;
+          case 'week':
+            cutoffDate = startOfWeek(new Date());
+            break;
+          case 'month':
+            cutoffDate = startOfMonth(new Date());
+            break;
+          case 'quarter':
+            cutoffDate = startOfQuarter(new Date());
+            break;
+          case 'year':
+            cutoffDate = startOfYear(new Date());
+            break;
+        }
+        
+        if (!isAfter(createdDate, cutoffDate)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [hypotheses, ideas, filters, searchQuery]);
 
-  const {
-    filters,
-    searchQuery,
-    setSearchQuery,
-    filteredIdeas,
-    filteredHypotheses,
-    filteredExperiments,
-    handleFilterChange,
-    handleClearFilters
-  } = useDashboardFilter(ideas, hypotheses, experiments);
+  // Filter experiments based on the same criteria
+  const filteredExperiments = React.useMemo(() => {
+    return experiments.filter(experiment => {
+      if (filters.userId && experiment.userId !== filters.userId) {
+        return false;
+      }
+      
+      // Timeframe filter
+      if (filters.timeframe) {
+        const createdDate = new Date(experiment.createdAt);
+        let cutoffDate;
+        
+        switch (filters.timeframe) {
+          case 'today':
+            cutoffDate = startOfToday();
+            break;
+          case 'week':
+            cutoffDate = startOfWeek(new Date());
+            break;
+          case 'month':
+            cutoffDate = startOfMonth(new Date());
+            break;
+          case 'quarter':
+            cutoffDate = startOfQuarter(new Date());
+            break;
+          case 'year':
+            cutoffDate = startOfYear(new Date());
+            break;
+        }
+        
+        if (!isAfter(createdDate, cutoffDate)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [experiments, filters]);
 
   const handleHypothesisStatusChange = (hypothesisId: string, newStatus: HypothesisStatus) => {
     editHypothesis(hypothesisId, { status: newStatus });
@@ -88,59 +255,86 @@ const Dashboard: React.FC = () => {
     }
   };
   
+  const handleFilterChange = (filterName: string, value: string | undefined) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+  };
+  
+  const handleClearFilters = () => {
+    setFilters({});
+    setSearchQuery('');
+  };
+  
   return (
     <div className="space-y-6">
-      <DashboardHeader 
-        title="Dashboard" 
-        description="Track and manage your growth experiments"
-      />
-      
-      <div className="flex gap-6">
-        <div className="flex-1">
-          <DashboardSearch
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-          />
-          
-          <Tabs defaultValue="progress">
-            <div className="mb-4 flex justify-between items-center">
-              <TabsList>
-                <TabsTrigger value="progress">Progress View</TabsTrigger>
-                <TabsTrigger value="stats">Statistics</TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <TabsContent value="progress" className="mt-0">
-              <KanbanBoard 
-                ideas={filteredIdeas}
-                hypotheses={filteredHypotheses}
-                experiments={filteredExperiments}
-                onHypothesisStatusChange={handleHypothesisStatusChange}
-                onIdeaToHypothesis={handleIdeaToHypothesis}
-              />
-            </TabsContent>
-            
-            <TabsContent value="stats" className="mt-0">
-              <DashboardStats
-                ideasCount={filteredIdeas.length}
-                hypotheses={filteredHypotheses}
-                experiments={filteredExperiments}
-              />
-            </TabsContent>
-          </Tabs>
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Track and manage your growth experiments</p>
         </div>
-        
-        <div className="w-80">
-          <DashboardFilters 
-            departments={[]}
-            allTags={allTags}
-            allUsers={allUsers}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onClearFilters={handleClearFilters}
+        <Button onClick={() => navigate('/ideas')}>Add New Idea</Button>
+      </div>
+      
+      {/* Filters section - Horizontal layout */}
+      <div className="bg-white rounded-lg border p-4">
+        <div className="mb-4">
+          <Input
+            placeholder="Search ideas, hypotheses, or experiments..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
+        </div>
+        <DashboardFilters 
+          departments={departments}
+          allTags={allTags}
+          allUsers={allUsers}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={handleClearFilters}
+        />
+      </div>
+      
+      {/* Statistics section - Always visible */}
+      <div className="bg-white rounded-lg border p-6 mb-6">
+        <h3 className="text-lg font-medium mb-4">Growth Metrics</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-gray-50 p-4 rounded-md">
+            <p className="text-sm text-muted-foreground">Total Ideas</p>
+            <p className="text-3xl font-bold">{filteredIdeas.length}</p>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-md">
+            <p className="text-sm text-muted-foreground">Active Hypotheses</p>
+            <p className="text-3xl font-bold">
+              {filteredHypotheses.filter(h => 
+                h.status === 'Selected For Testing' || h.status === 'Testing'
+              ).length}
+            </p>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-md">
+            <p className="text-sm text-muted-foreground">Completed</p>
+            <p className="text-3xl font-bold">
+              {filteredHypotheses.filter(h => h.status === 'Completed').length}
+            </p>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-md">
+            <p className="text-sm text-muted-foreground">Win Rate</p>
+            <p className="text-3xl font-bold">
+              {winRate}%
+            </p>
+          </div>
         </div>
       </div>
+      
+      {/* Kanban board */}
+      <KanbanBoard 
+        ideas={filteredIdeas}
+        hypotheses={filteredHypotheses}
+        experiments={filteredExperiments}
+        onHypothesisStatusChange={handleHypothesisStatusChange}
+        onIdeaToHypothesis={handleIdeaToHypothesis}
+      />
       
       {selectedIdeaId && (
         <CreateHypothesisModal
