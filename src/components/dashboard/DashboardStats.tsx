@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { Experiment, HypothesisStatus } from '@/types';
+import { Experiment, Hypothesis, HypothesisStatus } from '@/types';
 
 interface DashboardStatsProps {
   ideasCount: number;
-  hypotheses: { status: HypothesisStatus }[];
+  hypotheses: Hypothesis[];
   experiments: Experiment[];
 }
 
