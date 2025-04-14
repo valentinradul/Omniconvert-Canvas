@@ -4,19 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
 
 interface StoredData {
   ideas?: any[];
   hypotheses?: any[];
   experiments?: any[];
+  [key: string]: any; // Allow for dynamic keys
 }
 
 const DataRecoveryPage: React.FC = () => {
   const [localData, setLocalData] = useState<StoredData>({});
   const [supabaseData, setSupabaseData] = useState<StoredData>({});
+  const [allKeys, setAllKeys] = useState<string[]>([]);
+  const [customKey, setCustomKey] = useState<string>('');
+  const [customKeyData, setCustomKeyData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('local');
+  const { toast } = useToast();
 
   useEffect(() => {
     // Get data from localStorage
@@ -25,6 +33,14 @@ const DataRecoveryPage: React.FC = () => {
         const ideas = localStorage.getItem('ideas') ? JSON.parse(localStorage.getItem('ideas') || '[]') : [];
         const hypotheses = localStorage.getItem('hypotheses') ? JSON.parse(localStorage.getItem('hypotheses') || '[]') : [];
         const experiments = localStorage.getItem('experiments') ? JSON.parse(localStorage.getItem('experiments') || '[]') : [];
+        
+        // Get all localStorage keys
+        const keys: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key) keys.push(key);
+        }
+        setAllKeys(keys);
         
         setLocalData({ ideas, hypotheses, experiments });
         console.log('Local data loaded:', { ideas, hypotheses, experiments });
@@ -82,6 +98,81 @@ const DataRecoveryPage: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Data Exported",
+      description: `Successfully exported ${filename}`
+    });
+  };
+
+  const downloadAllLocalStorage = () => {
+    const allData: Record<string, any> = {};
+    
+    // Gather all localStorage data
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        try {
+          const value = localStorage.getItem(key);
+          if (value) {
+            try {
+              allData[key] = JSON.parse(value);
+            } catch {
+              allData[key] = value;
+            }
+          }
+        } catch (e) {
+          console.error(`Error processing key ${key}:`, e);
+          allData[`${key}_error`] = "Failed to process this key";
+        }
+      }
+    }
+    
+    downloadData(allData, "all_localStorage_data.json");
+  };
+
+  const checkCustomKey = () => {
+    if (!customKey.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a key name",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const data = localStorage.getItem(customKey);
+      if (data) {
+        try {
+          setCustomKeyData(JSON.parse(data));
+          toast({
+            title: "Key Found",
+            description: `Found data for key: ${customKey}`
+          });
+        } catch {
+          setCustomKeyData(data);
+          toast({
+            title: "Key Found",
+            description: `Found non-JSON data for key: ${customKey}`
+          });
+        }
+      } else {
+        setCustomKeyData(null);
+        toast({
+          title: "Key Not Found",
+          description: `No data found for key: ${customKey}`,
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      console.error("Error checking custom key:", err);
+      toast({
+        title: "Error",
+        description: `Error checking key: ${err}`,
+        variant: "destructive"
+      });
+    }
   };
 
   const renderDataTable = (data: any[], title: string) => {
@@ -171,6 +262,68 @@ const DataRecoveryPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <Alert className="mb-6">
+            <AlertTitle>Looking for missing data?</AlertTitle>
+            <AlertDescription>
+              Try checking all localStorage keys or use the Complete Export option to download all localStorage data in one file.
+            </AlertDescription>
+          </Alert>
+
+          <div className="mb-6 space-y-4">
+            <Button 
+              onClick={downloadAllLocalStorage} 
+              variant="default"
+              className="w-full sm:w-auto"
+            >
+              Complete Export of All localStorage Data
+            </Button>
+            
+            <div className="flex items-center space-x-2">
+              <Input 
+                placeholder="Enter localStorage key to check" 
+                value={customKey} 
+                onChange={(e) => setCustomKey(e.target.value)} 
+                className="max-w-md"
+              />
+              <Button onClick={checkCustomKey} variant="outline">Check Key</Button>
+            </div>
+            
+            {customKeyData !== null && (
+              <div className="bg-gray-50 p-4 rounded-md border">
+                <div className="flex justify-between mb-2">
+                  <h3 className="font-medium">Data for key: {customKey}</h3>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => downloadData(customKeyData, `${customKey}_data.json`)}
+                  >
+                    Export
+                  </Button>
+                </div>
+                <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
+                  {typeof customKeyData === 'object' 
+                    ? JSON.stringify(customKeyData, null, 2) 
+                    : customKeyData}
+                </pre>
+              </div>
+            )}
+          </div>
+
+          <div className="mb-6">
+            <h3 className="font-medium mb-2">All localStorage Keys:</h3>
+            <div className="flex flex-wrap gap-2">
+              {allKeys.map((key) => (
+                <span 
+                  key={key}
+                  className="bg-gray-100 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-gray-200"
+                  onClick={() => setCustomKey(key)}
+                >
+                  {key}
+                </span>
+              ))}
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex justify-center">
               <p>Loading data...</p>
