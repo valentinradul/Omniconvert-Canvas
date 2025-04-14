@@ -31,6 +31,11 @@ const NotFound = () => {
               {isAuthenticated ? "Return to Dashboard" : "Return to Home"}
             </Link>
           </Button>
+          <div className="mt-4">
+            <Link to="/data-recovery" className="text-blue-600 hover:underline">
+              Try Data Recovery Tool
+            </Link>
+          </div>
           <div className="text-gray-500 text-sm pt-4">
             Path: <code className="bg-gray-100 p-1 rounded">{location.pathname}</code>
           </div>
