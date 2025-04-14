@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,7 @@ const DataRecoveryPage: React.FC = () => {
     setLoading(true);
     try {
       // Try to bypass RLS by using custom parameters
-      const options = { count: 'exact', head: false };
+      const options = { count: 'exact' as const, head: false };
       
       // Fetch ideas
       const { data: ideasData, error: ideasError } = await supabase
