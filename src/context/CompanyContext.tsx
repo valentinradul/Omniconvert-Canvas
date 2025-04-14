@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +33,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Add debugging log
     console.log("CompanyContext: User or auth state changed", { 
       userId: user?.id,
       isAuthenticated: !!user
@@ -92,7 +90,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       console.log("Loading user companies for:", user.id);
       
-      // Added explicit table name for company_members.user_id
       const { data: memberData, error: memberError } = await supabase
         .from('company_members')
         .select('company_id')
@@ -180,7 +177,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!user || !currentCompany) return;
     
     try {
-      // Added explicit table name for company_members.user_id
       const { data, error } = await supabase
         .from('company_members')
         .select('role')
@@ -223,19 +219,19 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   const createCompany = async (name: string) => {
     if (!user) {
+      const errorMessage = 'Authentication required: You must be logged in to create a company.';
       toast({
         variant: 'destructive',
         title: 'Authentication required',
-        description: 'You must be logged in to create a company.',
+        description: errorMessage,
       });
-      return;
+      throw new Error(errorMessage);
     }
     
     console.log("Creating company:", name, "for user:", user.id);
     setIsLoading(true);
     
     try {
-      // Insert into companies table
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert({ 
@@ -252,7 +248,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       console.log("Company created:", companyData);
       
-      // Add user as company owner with explicit column names
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
@@ -282,7 +277,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         description: `${name} has been created successfully.`,
       });
       
-      // Reload companies to ensure everything is in sync
       loadUserCompanies();
       
     } catch (error: any) {
@@ -292,6 +286,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         title: 'Failed to create company',
         description: error.message,
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -468,7 +463,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (inviteError) throw inviteError;
       
-      // Use explicit column names to avoid ambiguity
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
