@@ -26,7 +26,8 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   
-  // Use our custom hooks
+  // Define data state first before using it
+  const companyData = useCompanyData(user?.id);
   const {
     companies,
     setCompanies,
@@ -44,8 +45,9 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchUserRole,
     fetchCompanyMembers,
     switchCompany
-  } = useCompanyData(user?.id, currentCompany?.id);
+  } = companyData;
   
+  // Then use the company data
   const {
     createCompany,
     inviteMember,
@@ -56,7 +58,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   } = useCompanyActions(
     user?.id,
     userCompanyRole,
-    currentCompany?.id,
+    currentCompany?.id || null,
     companyMembers,
     companyInvitations,
     setCompanies,

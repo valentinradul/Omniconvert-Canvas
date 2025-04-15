@@ -11,11 +11,11 @@ export const useCompanyActions = (
   currentCompanyId: string | null,
   companyMembers: CompanyMember[],
   companyInvitations: CompanyInvitation[],
-  setCompanies: (companies: Company[]) => void,
-  setCurrentCompany: (company: Company | null) => void,
-  setUserCompanyRole: (role: CompanyRole | null) => void,
-  setCompanyMembers: (members: CompanyMember[]) => void,
-  setCompanyInvitations: (invitations: CompanyInvitation[]) => void,
+  setCompanies: React.Dispatch<React.SetStateAction<Company[]>>,
+  setCurrentCompany: React.Dispatch<React.SetStateAction<Company | null>>,
+  setUserCompanyRole: React.Dispatch<React.SetStateAction<CompanyRole | null>>,
+  setCompanyMembers: React.Dispatch<React.SetStateAction<CompanyMember[]>>,
+  setCompanyInvitations: React.Dispatch<React.SetStateAction<CompanyInvitation[]>>,
   fetchUserCompanies: () => Promise<void>
 ) => {
   const { createCompany: apiCreateCompany } = useCompanyCreation();
@@ -28,7 +28,7 @@ export const useCompanyActions = (
       const newCompany = await apiCreateCompany(name, userId);
       
       if (newCompany) {
-        setCompanies((prevCompanies: Company[]) => [...prevCompanies, newCompany]);
+        setCompanies(prevCompanies => [...prevCompanies, newCompany]);
         setCurrentCompany(newCompany);
         setUserCompanyRole('owner');
       }
@@ -85,7 +85,7 @@ export const useCompanyActions = (
       if (result) {
         const { company, invitationId: acceptedId, role } = result;
         
-        setCompanies((prevCompanies: Company[]) => [...prevCompanies, company]);
+        setCompanies(prevCompanies => [...prevCompanies, company]);
         setCurrentCompany(company);
         setUserCompanyRole(role);
         setCompanyInvitations(companyInvitations.filter(i => i.id !== acceptedId));

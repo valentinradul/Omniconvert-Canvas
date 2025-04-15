@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
 import { loadUserCompanies, loadUserInvitations, loadUserRole, loadCompanyMembers } from '../utils';
 
-export const useCompanyData = (userId: string | undefined, currentCompanyId: string | null) => {
+export const useCompanyData = (userId: string | undefined) => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [userCompanyRole, setUserCompanyRole] = useState<CompanyRole | null>(null);
@@ -39,10 +39,10 @@ export const useCompanyData = (userId: string | undefined, currentCompanyId: str
   
   // Load user role in company
   const fetchUserRole = async () => {
-    if (!userId || !currentCompanyId) return;
+    if (!userId || !currentCompany?.id) return;
     
     try {
-      const role = await loadUserRole(userId, currentCompanyId);
+      const role = await loadUserRole(userId, currentCompany.id);
       setUserCompanyRole(role);
     } catch (error) {
       console.error('Error loading user role:', error);
@@ -51,10 +51,10 @@ export const useCompanyData = (userId: string | undefined, currentCompanyId: str
   
   // Load company members
   const fetchCompanyMembers = async () => {
-    if (!currentCompanyId) return;
+    if (!currentCompany?.id) return;
     
     try {
-      const members = await loadCompanyMembers(currentCompanyId);
+      const members = await loadCompanyMembers(currentCompany.id);
       setCompanyMembers(members);
     } catch (error) {
       console.error('Error loading company members:', error);
