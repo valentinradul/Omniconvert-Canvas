@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
+import { useCompany } from '@/context/company/CompanyContext';
 import { Button } from '@/components/ui/button';
 import { 
   Category,
@@ -18,6 +19,8 @@ import StatisticsPanel from '@/components/dashboard/StatisticsPanel';
 import StatisticsChart from '@/components/dashboard/StatisticsChart';
 import FilterBar from '@/components/dashboard/FilterBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CreateCompanyDialog from '@/components/company/CreateCompanyDialog';
+import { Building, Plus } from 'lucide-react';
 
 // Add custom CSS variables for the colored backgrounds
 import '@/index.css';
@@ -25,6 +28,7 @@ import '@/index.css';
 const Dashboard: React.FC = () => {
   const { ideas, hypotheses, experiments, editHypothesis, getIdeaById } = useApp();
   const { user } = useAuth();
+  const { companies } = useCompany();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -40,6 +44,9 @@ const Dashboard: React.FC = () => {
   const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeView, setActiveView] = useState<'kanban' | 'chart'>('kanban');
+  const [showCreateCompanyDialog, setShowCreateCompanyDialog] = useState(false);
+  
+  const hasCompany = companies.length > 0;
   
   const allTags = React.useMemo(() => {
     const tagsSet = new Set<Tag>();
@@ -261,6 +268,49 @@ const Dashboard: React.FC = () => {
   };
 
   const hasActiveFilters = Object.values(filters).some(Boolean) || !!searchQuery;
+
+  if (!hasCompany) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Welcome to ExperimentFlow</h1>
+            <p className="text-muted-foreground">Start by creating your first company</p>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg border p-8 max-w-2xl mx-auto mt-12">
+          <div className="flex flex-col items-center text-center space-y-6">
+            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <Building className="h-10 w-10 text-primary" />
+            </div>
+            
+            <div>
+              <h2 className="text-2xl font-semibold">Create Your Company</h2>
+              <p className="text-muted-foreground mt-2">
+                Before you can start tracking experiments, you need to create a company.
+                This allows you to collaborate with your team and organize your experiments.
+              </p>
+            </div>
+            
+            <Button 
+              size="lg" 
+              onClick={() => setShowCreateCompanyDialog(true)}
+              className="mt-4"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create Company
+            </Button>
+          </div>
+        </div>
+        
+        <CreateCompanyDialog 
+          open={showCreateCompanyDialog} 
+          onClose={() => setShowCreateCompanyDialog(false)}
+        />
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">

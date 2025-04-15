@@ -4,7 +4,6 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/context/company/CompanyContext';
 import { Loader2 } from 'lucide-react';
-import CreateCompanyDialog from './company/CreateCompanyDialog';
 
 const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
@@ -50,32 +49,8 @@ const ProtectedRoute: React.FC = () => {
     );
   }
 
-  // If user has no companies, show create company dialog
-  if (companies.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Welcome!</h1>
-          <p className="text-muted-foreground mb-6">
-            You need to create a company to use the application.
-          </p>
-        </div>
-        <CreateCompanyDialog 
-          open={true} 
-          onClose={() => {}} // Empty function as we want to force company creation
-        />
-      </div>
-    );
-  }
-
-  // If user has companies but none selected
-  if (!currentCompany) {
-    console.log('No company selected, rendering company selector');
-    return <Navigate to="/team-settings" replace />;
-  }
-
-  // Render children routes if authenticated and company is selected
-  console.log('Authenticated with company, rendering outlet');
+  // Render children routes if authenticated (with or without company)
+  console.log('Authenticated, rendering outlet');
   return <Outlet />;
 };
 
