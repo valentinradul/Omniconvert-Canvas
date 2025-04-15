@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { createCompanyAPI } from './companyUtils';
+import { createCompanyAPI } from './utils/companyCreator';
 import { Company } from '@/types';
 
 export const useCompanyCreation = () => {

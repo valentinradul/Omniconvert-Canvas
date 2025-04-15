@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
-import { loadUserCompanies, loadUserInvitations, loadUserRole, loadCompanyMembers } from '../companyUtils';
+import { loadUserCompanies, loadUserInvitations, loadUserRole, loadCompanyMembers } from '../utils';
 
 export const useCompanyData = (userId: string | undefined, currentCompanyId: string | null) => {
   const [companies, setCompanies] = useState<Company[]>([]);

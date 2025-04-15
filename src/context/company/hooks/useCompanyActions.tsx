@@ -28,7 +28,7 @@ export const useCompanyActions = (
       const newCompany = await apiCreateCompany(name, userId);
       
       if (newCompany) {
-        setCompanies(prevCompanies => [...prevCompanies, newCompany]);
+        setCompanies((prevCompanies: Company[]) => [...prevCompanies, newCompany]);
         setCurrentCompany(newCompany);
         setUserCompanyRole('owner');
       }
@@ -85,7 +85,7 @@ export const useCompanyActions = (
       if (result) {
         const { company, invitationId: acceptedId, role } = result;
         
-        setCompanies(prevCompanies => [...prevCompanies, company]);
+        setCompanies((prevCompanies: Company[]) => [...prevCompanies, company]);
         setCurrentCompany(company);
         setUserCompanyRole(role);
         setCompanyInvitations(companyInvitations.filter(i => i.id !== acceptedId));
