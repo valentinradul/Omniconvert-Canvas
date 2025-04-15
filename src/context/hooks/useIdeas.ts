@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { GrowthIdea, Hypothesis } from '@/types';
 import { generateId } from '../utils/dataUtils';
@@ -92,6 +91,15 @@ export const useIdeas = (
         company_id: currentCompany.id
       };
       
+      // Fix: Remove any department ID if it's not a valid UUID
+      if (newIdea.departmentid && typeof newIdea.departmentid === 'string') {
+        // Validate UUID format - basic validation check
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(newIdea.departmentid)) {
+          delete newIdea.departmentid;
+        }
+      }
+      
       const { data, error } = await supabase
         .from('ideas')
         .insert(newIdea)
@@ -120,6 +128,8 @@ export const useIdeas = (
         title: 'Idea created',
         description: 'Your growth idea has been saved successfully.',
       });
+      
+      return formattedIdea;
     } catch (error: any) {
       console.error('Error adding idea:', error.message);
       toast({
@@ -127,6 +137,7 @@ export const useIdeas = (
         title: 'Failed to add idea',
         description: error.message,
       });
+      return null;
     }
   };
   

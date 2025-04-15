@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -14,11 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Category, ALL_CATEGORIES } from '@/types';
 import TagInput from '@/components/TagInput';
 import { Search, Filter, User } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const IdeasPage: React.FC = () => {
   const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -37,22 +38,33 @@ const IdeasPage: React.FC = () => {
   const allUsers = getAllUserNames();
   const allTags = getAllTags();
 
-  const handleAddIdea = () => {
-    if (departmentId && category && title && description) {
-      addIdea({
+  const handleAddIdea = async () => {
+    if (category && title && description) {
+      // Only include departmentId if it's properly selected from the dropdown
+      const newIdea = {
         title,
         description,
         category,
-        departmentId,
+        departmentId: departmentId || undefined,
         tags
-      });
+      };
 
-      setTitle('');
-      setDescription('');
-      setCategory(undefined);
-      setDepartmentId(undefined);
-      setTags([]);
-      setIsDialogOpen(false);
+      const result = await addIdea(newIdea);
+      
+      if (result) {
+        setTitle('');
+        setDescription('');
+        setCategory(undefined);
+        setDepartmentId(undefined);
+        setTags([]);
+        setIsDialogOpen(false);
+      }
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Missing information',
+        description: 'Please fill in all required fields to create an idea.'
+      });
     }
   };
 
@@ -174,7 +186,7 @@ const IdeasPage: React.FC = () => {
             </div>
             
             <DialogFooter>
-              <Button onClick={handleAddIdea} disabled={!title || !description || !category || !departmentId}>
+              <Button onClick={handleAddIdea} disabled={!title || !description || !category}>
                 Create Idea
               </Button>
             </DialogFooter>
