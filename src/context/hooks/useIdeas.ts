@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { GrowthIdea, Hypothesis } from '@/types';
 import { generateId } from '../utils/dataUtils';
@@ -75,7 +76,7 @@ export const useIdeas = (
         title: 'Authentication required',
         description: 'You must be logged in and select a company to add ideas.',
       });
-      return;
+      return null;
     }
     
     try {

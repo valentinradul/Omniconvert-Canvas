@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -51,7 +52,7 @@ const IdeasPage: React.FC = () => {
 
       const result = await addIdea(newIdea);
       
-      if (result) {
+      if (result !== null) { // Check for null instead of truthiness
         setTitle('');
         setDescription('');
         setCategory(undefined);
