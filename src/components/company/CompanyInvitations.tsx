@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useCompany } from '@/context/CompanyContext';
+import { useCompany } from '@/context/company/CompanyContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, X } from 'lucide-react';

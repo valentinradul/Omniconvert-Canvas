@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useCompany } from '@/context/CompanyContext';
+import { useCompany } from '@/context/company/CompanyContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, UserPlus, Mail, UserMinus, Shield } from 'lucide-react';

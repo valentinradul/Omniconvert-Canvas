@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useCompany } from '@/context/CompanyContext';
+import { useCompany } from '@/context/company/CompanyContext';
 import { Check, ChevronsUpDown, PlusCircle, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext } from 'react';
 import { useAuth } from './AuthContext';
-import { useCompany } from './CompanyContext';
+import { useCompany } from './company/CompanyContext';
 import { useDepartments } from './hooks/useDepartments';
 import { useIdeas } from './hooks/useIdeas';
 import { useHypotheses } from './hooks/useHypotheses';
