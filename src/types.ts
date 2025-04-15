@@ -146,20 +146,19 @@ export type Company = {
   createdBy: string;
 };
 
-export type CompanyMember = {
+export interface CompanyMember {
   id: string;
   companyId: string;
   userId: string;
   role: CompanyRole;
   createdAt: Date;
-};
+  profile?: {
+    fullName?: string | null;
+    avatarUrl?: string | null;
+  } | null;
+}
 
-export type CompanyRole = 
-  | "owner" 
-  | "admin" 
-  | "member";
-
-export type CompanyInvitation = {
+export interface CompanyInvitation {
   id: string;
   companyId: string;
   email: string;
@@ -167,7 +166,7 @@ export type CompanyInvitation = {
   accepted: boolean;
   invitedBy: string;
   createdAt: Date;
-};
+}
 
 // Helper function to calculate PECTI percentage score with weights
 export const calculatePectiPercentage = (

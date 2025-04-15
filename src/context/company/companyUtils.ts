@@ -103,9 +103,20 @@ export const loadUserRole = async (userId: string, companyId: string) => {
 // Load company members
 export const loadCompanyMembers = async (companyId: string) => {
   try {
+    // Get company members joined with profiles for additional user info
     const { data, error } = await supabase
       .from('company_members')
-      .select('*')
+      .select(`
+        id, 
+        company_id,
+        user_id,
+        role,
+        created_at,
+        profiles:user_id (
+          full_name,
+          avatar_url
+        )
+      `)
       .eq('company_id', companyId);
       
     if (error) throw error;
@@ -115,7 +126,11 @@ export const loadCompanyMembers = async (companyId: string) => {
       companyId: m.company_id,
       userId: m.user_id,
       role: m.role as CompanyRole,
-      createdAt: new Date(m.created_at)
+      createdAt: new Date(m.created_at),
+      profile: m.profiles ? {
+        fullName: m.profiles.full_name,
+        avatarUrl: m.profiles.avatar_url
+      } : null
     }));
     
     return formattedMembers;

@@ -1,21 +1,31 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { useCompany } from '@/context/company/CompanyContext';
+import { CompanyRole, CompanyMember } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { useCompany } from '@/context/company/CompanyContext';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, UserPlus, Mail, UserMinus, Shield } from 'lucide-react';
-import InviteMemberDialog from '@/components/company/InviteMemberDialog';
+import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu"
+import { MoreVertical, Trash2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,243 +35,230 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { CompanyRole } from '@/types';
-import CompanySwitcher from '@/components/company/CompanySwitcher';
-import CompanyInvitations from '@/components/company/CompanyInvitations';
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
-const TeamSettingsPage = () => {
+interface MembersTableProps {
+  members: CompanyMember[];
+  userRole: CompanyRole | null;
+  onRemove: (userId: string) => void;
+  onUpdateRole: (userId: string, role: CompanyRole) => void;
+}
+
+const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTableProps) => {
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>User</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {members.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={3} className="text-center text-muted-foreground py-4">
+                No members yet
+              </TableCell>
+            </TableRow>
+          ) : (
+            members.map((member) => (
+              <TableRow key={member.id}>
+                <TableCell>
+                  <div className="flex items-center">
+                    <Avatar className="h-8 w-8 mr-3">
+                      <AvatarImage src={member.profile?.avatarUrl || ''} alt="Avatar" />
+                      <AvatarFallback>
+                        {member.profile?.fullName 
+                          ? member.profile.fullName.substring(0, 2).toUpperCase()
+                          : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{member.profile?.fullName || 'Unknown User'}</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={
+                    member.role === 'owner' ? 'default' : 
+                    member.role === 'admin' ? 'outline' : 
+                    'secondary'
+                  }>
+                    {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => onUpdateRole(member.userId, 'member')}
+                        disabled={member.role === 'member' || userRole !== 'owner'}
+                      >
+                        Make Member
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onUpdateRole(member.userId, 'admin')}
+                        disabled={member.role === 'admin' || userRole !== 'owner'}
+                      >
+                        Make Admin
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem disabled={userRole !== 'owner' || member.role === 'owner'}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remove
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently remove the member from the company.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onRemove(member.userId)}>
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
+
+const TeamSettingsPage: React.FC = () => {
+  const { companyMembers, userCompanyRole, inviteMember, removeMember, updateMemberRole } = useCompany();
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<CompanyRole>('member');
   const { toast } = useToast();
-  const {
-    currentCompany,
-    userCompanyRole,
-    companyMembers,
-    updateMemberRole,
-    removeMember,
-  } = useCompany();
 
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
-  const [memberToPromote, setMemberToPromote] = useState<{ userId: string; role: CompanyRole } | null>(null);
-
-  const handleTeamNameChange = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Team settings updated",
-      description: "Your team settings have been updated successfully.",
-    });
+  const handleInvite = async () => {
+    try {
+      await inviteMember(email, role);
+      toast({
+        title: "Invitation sent",
+        description: `Invitation sent to ${email} as ${role}`,
+      });
+      setEmail('');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to send invitation",
+        description: error.message || "There was an error sending the invitation",
+      });
+    }
   };
 
-  // Function to get initials from user ID (in a real app, you'd have user profiles)
-  const getUserInitials = (userId: string) => {
-    return userId.substring(0, 2).toUpperCase();
+  const handleRemove = async (userId: string) => {
+    try {
+      await removeMember(userId);
+      toast({
+        title: "Member removed",
+        description: "Member removed from the company",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to remove member",
+        description: error.message || "There was an error removing the member",
+      });
+    }
   };
 
-  const canManageTeam = userCompanyRole === 'owner' || userCompanyRole === 'admin';
+  const handleUpdateRole = async (userId: string, role: CompanyRole) => {
+    try {
+      await updateMemberRole(userId, role);
+      toast({
+        title: "Member role updated",
+        description: "Member role updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to update member role",
+        description: error.message || "There was an error updating the member role",
+      });
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Team Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your team and team member settings.
-        </p>
+    <div>
+      <div className="md:flex md:items-center md:justify-between space-y-4 md:space-y-0">
+        <div>
+          <h1 className="text-2xl font-bold">Team Settings</h1>
+          <p className="text-muted-foreground">Manage your team members and their roles.</p>
+        </div>
       </div>
-      
-      <CompanyInvitations />
-      
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Company</CardTitle>
-              <CardDescription>
-                Manage your company settings or switch between companies.
-              </CardDescription>
-            </div>
-            <div>
-              <CompanySwitcher />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {currentCompany ? (
-              <form onSubmit={handleTeamNameChange} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium" htmlFor="teamName">
-                    Company Name
-                  </label>
-                  <Input
-                    id="teamName"
-                    name="teamName"
-                    placeholder="Company Name"
-                    defaultValue={currentCompany.name}
-                    disabled={!userCompanyRole || userCompanyRole !== 'owner'}
-                  />
-                </div>
-                {userCompanyRole === 'owner' && (
-                  <Button type="submit">Save Changes</Button>
-                )}
-              </form>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                You don't belong to any company yet. Create one to get started.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        
-        {currentCompany && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Team Members</CardTitle>
-                <CardDescription>
-                  Manage your team members and their roles.
-                </CardDescription>
+
+      <div className="grid gap-6 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Invite New Member</h2>
+            <div className="grid gap-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="col-span-3"
+                />
               </div>
-              {canManageTeam && (
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowInviteDialog(true)}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="role" className="text-right">
+                  Role
+                </Label>
+                <select
+                  id="role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as CompanyRole)}
+                  className="col-span-3 rounded-md border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Invite Member
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              {companyMembers.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground mb-4">
-                    Your team currently has {companyMembers.length} member{companyMembers.length !== 1 ? 's' : ''}.
-                  </div>
-                  <div className="space-y-2">
-                    {companyMembers.map(member => (
-                      <div 
-                        key={member.id} 
-                        className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Avatar>
-                            <AvatarFallback>{getUserInitials(member.userId)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col">
-                            <span>{member.userId.substring(0, 8)}...</span>
-                            <Badge variant="outline" className="capitalize">
-                              {member.role}
-                            </Badge>
-                          </div>
-                        </div>
-                        
-                        {userCompanyRole === 'owner' && member.role !== 'owner' && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Actions</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {member.role === 'member' && (
-                                <DropdownMenuItem onClick={() => setMemberToPromote({
-                                  userId: member.userId,
-                                  role: 'admin'
-                                })}>
-                                  <Shield className="h-4 w-4 mr-2" />
-                                  Make Admin
-                                </DropdownMenuItem>
-                              )}
-                              {member.role === 'admin' && (
-                                <DropdownMenuItem onClick={() => setMemberToPromote({
-                                  userId: member.userId,
-                                  role: 'member'
-                                })}>
-                                  <Shield className="h-4 w-4 mr-2" />
-                                  Remove Admin
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => setMemberToRemove(member.userId)}>
-                                <UserMinus className="h-4 w-4 mr-2" />
-                                <span className="text-destructive">Remove Member</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No team members yet. Invite someone to collaborate.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <Button onClick={handleInvite} disabled={userCompanyRole !== 'owner'}>
+                Invite Member
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Current Members</h2>
+            <MembersTable 
+              members={companyMembers} 
+              userRole={userCompanyRole}
+              onRemove={handleRemove}
+              onUpdateRole={handleUpdateRole}
+            />
+          </div>
+        </div>
       </div>
-      
-      {/* Invite Member Dialog */}
-      <InviteMemberDialog 
-        open={showInviteDialog}
-        onClose={() => setShowInviteDialog(false)}
-      />
-      
-      {/* Remove Member Alert Dialog */}
-      <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove this team member? They will lose access to all company data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={() => {
-                if (memberToRemove) {
-                  removeMember(memberToRemove);
-                }
-                setMemberToRemove(null);
-              }}
-            >
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      
-      {/* Change Role Alert Dialog */}
-      <AlertDialog open={!!memberToPromote} onOpenChange={() => setMemberToPromote(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {memberToPromote?.role === 'admin' ? 'Promote to Admin' : 'Remove Admin Role'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {memberToPromote?.role === 'admin' 
-                ? 'This will give the user admin privileges to manage team members and company settings.'
-                : 'This will remove admin privileges from this user.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => {
-                if (memberToPromote) {
-                  updateMemberRole(memberToPromote.userId, memberToPromote.role);
-                }
-                setMemberToPromote(null);
-              }}
-            >
-              Confirm
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
