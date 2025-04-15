@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -103,32 +102,39 @@ export const loadUserRole = async (userId: string, companyId: string) => {
 // Load company members
 export const loadCompanyMembers = async (companyId: string) => {
   try {
-    // Get company members joined with profiles for additional user info
-    const { data, error } = await supabase
+    // Get company members with profile data using a different approach
+    // First get company members
+    const { data: membersData, error: membersError } = await supabase
       .from('company_members')
-      .select(`
-        id, 
-        company_id,
-        user_id,
-        role,
-        created_at,
-        profiles:profiles(id, full_name, avatar_url)
-      `)
+      .select('id, company_id, user_id, role, created_at')
       .eq('company_id', companyId);
       
-    if (error) throw error;
+    if (membersError) throw membersError;
     
-    const formattedMembers: CompanyMember[] = data.map(m => ({
-      id: m.id,
-      companyId: m.company_id,
-      userId: m.user_id,
-      role: m.role as CompanyRole,
-      createdAt: new Date(m.created_at),
-      profile: m.profiles ? {
-        fullName: m.profiles.full_name,
-        avatarUrl: m.profiles.avatar_url
-      } : null
-    }));
+    // Now get profile data for each member
+    const formattedMembers: CompanyMember[] = [];
+    
+    for (const member of membersData) {
+      // Get profile for this user
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', member.user_id)
+        .single();
+      
+      // Even if there's an error getting profile, still add the member with null profile
+      formattedMembers.push({
+        id: member.id,
+        companyId: member.company_id,
+        userId: member.user_id,
+        role: member.role as CompanyRole,
+        createdAt: new Date(member.created_at),
+        profile: profileError ? null : {
+          fullName: profileData?.full_name,
+          avatarUrl: profileData?.avatar_url
+        }
+      });
+    }
     
     return formattedMembers;
   } catch (error: any) {
