@@ -1,3 +1,4 @@
+
 // Common types used across the application
 
 export type Department = {
@@ -137,6 +138,9 @@ export type Experiment = {
   userName?: string;
   companyId?: string;
 };
+
+// Define the CompanyRole type
+export type CompanyRole = 'owner' | 'admin' | 'member';
 
 // Company-related types
 export type Company = {

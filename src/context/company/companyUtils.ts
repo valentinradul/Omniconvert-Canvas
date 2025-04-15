@@ -112,10 +112,7 @@ export const loadCompanyMembers = async (companyId: string) => {
         user_id,
         role,
         created_at,
-        profiles:user_id (
-          full_name,
-          avatar_url
-        )
+        profiles:profiles(id, full_name, avatar_url)
       `)
       .eq('company_id', companyId);
       
