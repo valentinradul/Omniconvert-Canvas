@@ -11,7 +11,7 @@ export const loadUserCompanies = async (userId: string) => {
     const { data: memberData, error: memberError } = await supabase
       .from('company_members')
       .select('company_id')
-      .eq('company_members.user_id', userId);
+      .eq('user_id', userId);
       
     if (memberError) {
       console.error("Error fetching company members:", memberError);
@@ -87,7 +87,7 @@ export const loadUserRole = async (userId: string, companyId: string) => {
     const { data, error } = await supabase
       .from('company_members')
       .select('role')
-      .eq('company_members.user_id', userId)
+      .eq('user_id', userId)
       .eq('company_id', companyId)
       .single();
       
