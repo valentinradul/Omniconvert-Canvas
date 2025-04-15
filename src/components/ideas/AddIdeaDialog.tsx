@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -7,12 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import TagInput from '@/components/TagInput';
-import { Category, ALL_CATEGORIES } from '@/types';
+import { Category, ALL_CATEGORIES, GrowthIdea } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface AddIdeaDialogProps {
   departments: any[];
-  addIdea: (idea: any) => Promise<any>;
+  addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => Promise<GrowthIdea | null>;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }

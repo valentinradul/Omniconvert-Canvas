@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { GrowthIdea, Hypothesis } from '@/types';
 import { generateId } from '../utils/dataUtils';
@@ -69,7 +68,7 @@ export const useIdeas = (
   
   const filteredIdeas = ideas;
   
-  const addIdea = async (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => {
+  const addIdea = async (idea: Omit<GrowthIdea, 'id' | 'createdAt'>): Promise<GrowthIdea | null> => {
     if (!user || !currentCompany?.id) {
       toast({
         variant: 'destructive',
