@@ -71,17 +71,7 @@ const ProtectedRoute: React.FC = () => {
   // If user has companies but none selected
   if (!currentCompany) {
     console.log('No company selected, rendering company selector');
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Select a Company</h1>
-          <p className="text-muted-foreground mb-6">
-            Please select a company to continue.
-          </p>
-        </div>
-        {/* Display company selector here */}
-      </div>
-    );
+    return <Navigate to="/team-settings" replace />;
   }
 
   // Render children routes if authenticated and company is selected

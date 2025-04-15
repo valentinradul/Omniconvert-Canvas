@@ -451,6 +451,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_member_of_same_company: {
+        Args: { company_id: string }
+        Returns: boolean
+      }
       user_has_company_access: {
         Args: { user_id: string; company_id: string }
         Returns: boolean
