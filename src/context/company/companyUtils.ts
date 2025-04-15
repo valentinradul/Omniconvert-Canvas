@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -102,38 +103,54 @@ export const loadUserRole = async (userId: string, companyId: string) => {
 // Load company members
 export const loadCompanyMembers = async (companyId: string) => {
   try {
-    // Get company members with profile data using a different approach
-    // First get company members
+    // Get all company members first
     const { data: membersData, error: membersError } = await supabase
       .from('company_members')
       .select('id, company_id, user_id, role, created_at')
       .eq('company_id', companyId);
       
-    if (membersError) throw membersError;
+    if (membersError) {
+      console.error('Error fetching company members:', membersError);
+      throw membersError;
+    }
     
-    // Now get profile data for each member
+    // Initialize array for formatted member data
     const formattedMembers: CompanyMember[] = [];
     
+    // Loop through each member and fetch their profile data separately
     for (const member of membersData) {
-      // Get profile for this user
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url')
-        .eq('id', member.user_id)
-        .single();
-      
-      // Even if there's an error getting profile, still add the member with null profile
-      formattedMembers.push({
-        id: member.id,
-        companyId: member.company_id,
-        userId: member.user_id,
-        role: member.role as CompanyRole,
-        createdAt: new Date(member.created_at),
-        profile: profileError ? null : {
-          fullName: profileData?.full_name,
-          avatarUrl: profileData?.avatar_url
-        }
-      });
+      try {
+        // Get profile for this user
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', member.user_id)
+          .single();
+        
+        // Add member to array with profile data if available
+        formattedMembers.push({
+          id: member.id,
+          companyId: member.company_id,
+          userId: member.user_id,
+          role: member.role as CompanyRole,
+          createdAt: new Date(member.created_at),
+          profile: profileError ? null : {
+            fullName: profileData?.full_name,
+            avatarUrl: profileData?.avatar_url
+          }
+        });
+      } catch (profileFetchError) {
+        console.error(`Error fetching profile for user ${member.user_id}:`, profileFetchError);
+        // Still add the member even if profile fetch fails, just with null profile
+        formattedMembers.push({
+          id: member.id,
+          companyId: member.company_id,
+          userId: member.user_id,
+          role: member.role as CompanyRole,
+          createdAt: new Date(member.created_at),
+          profile: null
+        });
+      }
     }
     
     return formattedMembers;
