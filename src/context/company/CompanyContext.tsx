@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -38,7 +37,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [companyInvitations, setCompanyInvitations] = useState<CompanyInvitation[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load user data when auth state changes
   useEffect(() => {
     console.log("CompanyContext: User or auth state changed", { 
       userId: user?.id,
@@ -58,7 +56,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [user]);
 
-  // Handle current company changes
   useEffect(() => {
     if (currentCompany) {
       console.log("Current company changed:", currentCompany.name);
@@ -69,7 +66,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [currentCompany]);
 
-  // Set initial company from localStorage or first available
   useEffect(() => {
     if (user && companies.length > 0) {
       const storedCompanyId = localStorage.getItem('currentCompanyId');
@@ -91,7 +87,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [companies, user]);
 
-  // Fetch functions
   const fetchUserCompanies = async () => {
     if (!user) return;
     
@@ -140,7 +135,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // API Functions
   const createCompany = async (name: string) => {
     try {
       const newCompany = await apiCreateCompany(name, user?.id);
