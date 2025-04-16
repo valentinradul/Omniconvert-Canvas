@@ -10,7 +10,7 @@ type IdeaDatabaseRecord = {
   category: string;
   departmentid: string;
   createdat: string;
-  user_id: string;  // Updated from userid to user_id
+  user_id: string;
   username: string;
   tags: string[];
   company_id: string;
@@ -50,7 +50,7 @@ export const fetchIdeas = async (companyId?: string) => {
       category: idea.category as any,
       departmentId: idea.departmentid,
       createdAt: new Date(idea.createdat),
-      userId: idea.user_id,  // Updated from userid to user_id
+      userId: idea.user_id,
       userName: idea.username,
       tags: idea.tags || [],
       companyId: idea.company_id,
@@ -73,7 +73,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       category: idea.category,
       departmentid: idea.departmentId,
       tags: idea.tags || [],
-      user_id: idea.userId,  // Updated from userid to user_id
+      user_id: idea.userId,
       username: idea.userName,
       company_id: idea.companyId,
       is_public: idea.isPublic || false
@@ -105,7 +105,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       category: data.category as any,
       departmentId: data.departmentid,
       createdAt: new Date(data.createdat),
-      userId: data.user_id,  // Updated from userid to user_id
+      userId: data.user_id,
       userName: data.username,
       tags: data.tags || [],
       companyId: data.company_id,
@@ -165,7 +165,7 @@ export const fetchPublicIdeas = async () => {
       category: idea.category as any,
       departmentId: idea.departmentid,
       createdAt: new Date(idea.createdat),
-      userId: idea.user_id,  // Updated from userid to user_id
+      userId: idea.user_id,
       userName: idea.username,
       tags: idea.tags || [],
       companyId: idea.company_id,
