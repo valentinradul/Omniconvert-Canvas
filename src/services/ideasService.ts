@@ -88,12 +88,10 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       }
     }
     
-    // Add .explain() to log the query details
     const { data, error } = await supabase
       .from('ideas')
-      .insert(newIdea)
+      .insert([newIdea])
       .select()
-      .explain() // Added .explain() method
       .single();
     
     if (error) throw error;
