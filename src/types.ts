@@ -1,4 +1,3 @@
-
 // Common types used across the application
 
 export type Department = {
@@ -42,6 +41,7 @@ export type GrowthIdea = {
   userName?: string;
   tags?: Tag[];
   companyId?: string;
+  isPublic?: boolean;
 };
 
 export type PECTI = {
