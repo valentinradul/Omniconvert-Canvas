@@ -88,10 +88,11 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       }
     }
     
+    // Explicitly alias the table to avoid ambiguous column errors
     const { data, error } = await supabase
       .from('ideas')
       .insert(newIdea)
-      .select()
+      .select('ideas.*')  // This explicitly selects all columns from the ideas table
       .single();
     
     if (error) throw error;
@@ -134,7 +135,7 @@ export const updateIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) =
       .from('ideas')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select('ideas.*')  // This explicitly selects all columns from the ideas table
       .single();
     
     if (error) throw error;
