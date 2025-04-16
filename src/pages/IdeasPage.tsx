@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
 import { DialogTrigger } from '@/components/ui/dialog';
 import AddIdeaDialog from '@/components/ideas/AddIdeaDialog';
 import IdeasFilterBar from '@/components/ideas/IdeasFilterBar';
@@ -71,9 +72,11 @@ const IdeasPage: React.FC = () => {
           <p className="text-muted-foreground">Capture and manage growth ideas</p>
         </div>
         
-        <DialogTrigger asChild>
-          <Button onClick={() => setIsDialogOpen(true)}>Add New Idea</Button>
-        </DialogTrigger>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setIsDialogOpen(true)}>Add New Idea</Button>
+          </DialogTrigger>
+        </Dialog>
       </div>
 
       <IdeasFilterBar 
