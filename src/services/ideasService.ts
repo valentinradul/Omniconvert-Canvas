@@ -15,7 +15,7 @@ type IdeaDatabaseRecord = {
   tags: string[];
   company_id: string;
   responsibleuserid: string;
-  is_public?: boolean;  // Add this field to match database column
+  is_public: boolean;  // Update to non-optional since we set default in DB
 };
 
 export interface NewIdea {
@@ -54,7 +54,7 @@ export const fetchIdeas = async (companyId?: string) => {
       userName: idea.username,
       tags: idea.tags || [],
       companyId: idea.company_id,
-      isPublic: idea.is_public || false
+      isPublic: idea.is_public
     }));
     
     return formattedIdeas;
@@ -108,7 +108,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       userName: data.username,
       tags: data.tags || [],
       companyId: data.company_id,
-      isPublic: data.is_public || false
+      isPublic: data.is_public
     };
     
     return formattedIdea;

@@ -243,6 +243,7 @@ export type Database = {
           departmentid: string | null
           description: string | null
           id: string
+          is_public: boolean | null
           responsibleuserid: string | null
           tags: string[] | null
           title: string
@@ -256,6 +257,7 @@ export type Database = {
           departmentid?: string | null
           description?: string | null
           id?: string
+          is_public?: boolean | null
           responsibleuserid?: string | null
           tags?: string[] | null
           title: string
@@ -269,6 +271,7 @@ export type Database = {
           departmentid?: string | null
           description?: string | null
           id?: string
+          is_public?: boolean | null
           responsibleuserid?: string | null
           tags?: string[] | null
           title?: string
