@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { GrowthIdea, Hypothesis } from '@/types';
-import { generateId } from '../utils/dataUtils';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { fetchIdeas, createIdea, updateIdea, deleteIdeaById, NewIdea } from '@/services/ideasService';
+import { canDeleteIdea } from '@/validators/ideaValidators';
+import { useToast } from '@/hooks/use-toast';
 
 export const useIdeas = (
   user: any,
@@ -15,7 +16,7 @@ export const useIdeas = (
   
   // Fetch ideas from Supabase when user or company changes
   useEffect(() => {
-    const fetchIdeas = async () => {
+    const loadIdeas = async () => {
       if (!user) {
         setIdeas([]);
         setIsLoading(false);
@@ -25,34 +26,9 @@ export const useIdeas = (
       setIsLoading(true);
       
       try {
-        let query = supabase.from('ideas').select('*');
-        
-        // Filter by company if applicable
-        if (currentCompany?.id) {
-          query = query.eq('company_id', currentCompany.id);
-        }
-        
-        const { data, error } = await query;
-        
-        if (error) throw error;
-        
-        // Transform database fields to match frontend model
-        const formattedIdeas: GrowthIdea[] = (data || []).map(idea => ({
-          id: idea.id,
-          title: idea.title,
-          description: idea.description || "",
-          category: idea.category as any,
-          departmentId: idea.departmentid,
-          createdAt: new Date(idea.createdat),
-          userId: idea.userid,
-          userName: idea.username,
-          tags: idea.tags || [],
-          companyId: idea.company_id
-        }));
-        
-        setIdeas(formattedIdeas);
+        const data = await fetchIdeas(currentCompany?.id);
+        setIdeas(data);
       } catch (error: any) {
-        console.error('Error fetching ideas:', error.message);
         toast({
           variant: 'destructive',
           title: 'Failed to load ideas',
@@ -63,8 +39,8 @@ export const useIdeas = (
       }
     };
     
-    fetchIdeas();
-  }, [user, currentCompany]);
+    loadIdeas();
+  }, [user, currentCompany, toast]);
   
   const filteredIdeas = ideas;
   
@@ -79,59 +55,26 @@ export const useIdeas = (
     }
     
     try {
-      // Map frontend properties to database column names
-      const newIdea = {
-        title: idea.title,
-        description: idea.description,
-        category: idea.category,
-        departmentid: idea.departmentId,
-        tags: idea.tags || [],
-        userid: user.id,
-        username: user.user_metadata?.full_name || user.email,
-        company_id: currentCompany.id
+      const newIdeaData: NewIdea = {
+        ...idea,
+        userId: user.id,
+        userName: user.user_metadata?.full_name || user.email,
+        companyId: currentCompany.id
       };
       
-      // Fix: Remove any department ID if it's not a valid UUID
-      if (newIdea.departmentid && typeof newIdea.departmentid === 'string') {
-        // Validate UUID format - basic validation check
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(newIdea.departmentid)) {
-          delete newIdea.departmentid;
-        }
+      const createdIdea = await createIdea(newIdeaData);
+      
+      if (createdIdea) {
+        setIdeas([...ideas, createdIdea]);
+        
+        toast({
+          title: 'Idea created',
+          description: 'Your growth idea has been saved successfully.',
+        });
       }
       
-      const { data, error } = await supabase
-        .from('ideas')
-        .insert(newIdea)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      // Transform the returned data to match our frontend model
-      const formattedIdea: GrowthIdea = {
-        id: data.id,
-        title: data.title,
-        description: data.description || "",
-        category: data.category as any,
-        departmentId: data.departmentid,
-        createdAt: new Date(data.createdat),
-        userId: data.userid,
-        userName: data.username,
-        tags: data.tags || [],
-        companyId: data.company_id
-      };
-      
-      setIdeas([...ideas, formattedIdea]);
-      
-      toast({
-        title: 'Idea created',
-        description: 'Your growth idea has been saved successfully.',
-      });
-      
-      return formattedIdea;
+      return createdIdea;
     } catch (error: any) {
-      console.error('Error adding idea:', error.message);
       toast({
         variant: 'destructive',
         title: 'Failed to add idea',
@@ -152,23 +95,7 @@ export const useIdeas = (
     }
     
     try {
-      // Map frontend properties to database column names
-      const updates: any = {};
-      
-      if ('title' in ideaUpdates) updates.title = ideaUpdates.title;
-      if ('description' in ideaUpdates) updates.description = ideaUpdates.description;
-      if ('category' in ideaUpdates) updates.category = ideaUpdates.category;
-      if ('departmentId' in ideaUpdates) updates.departmentid = ideaUpdates.departmentId;
-      if ('tags' in ideaUpdates) updates.tags = ideaUpdates.tags;
-      
-      const { data, error } = await supabase
-        .from('ideas')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
+      await updateIdea(id, ideaUpdates);
       
       // Update the local state with the edited idea
       setIdeas(ideas.map(idea => 
@@ -183,7 +110,6 @@ export const useIdeas = (
         description: 'Your growth idea has been updated successfully.',
       });
     } catch (error: any) {
-      console.error('Error updating idea:', error.message);
       toast({
         variant: 'destructive',
         title: 'Failed to update idea',
@@ -193,9 +119,7 @@ export const useIdeas = (
   };
   
   const deleteIdea = async (id: string) => {
-    const hypothesisWithIdea = hypotheses.find(h => h.ideaId === id);
-    
-    if (hypothesisWithIdea) {
+    if (!canDeleteIdea(id, hypotheses)) {
       toast({
         variant: 'destructive',
         title: 'Cannot delete idea',
@@ -205,12 +129,7 @@ export const useIdeas = (
     }
     
     try {
-      const { error } = await supabase
-        .from('ideas')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await deleteIdeaById(id);
       
       setIdeas(ideas.filter(idea => idea.id !== id));
       
@@ -219,7 +138,6 @@ export const useIdeas = (
         description: 'The growth idea has been deleted successfully.',
       });
     } catch (error: any) {
-      console.error('Error deleting idea:', error.message);
       toast({
         variant: 'destructive',
         title: 'Failed to delete idea',
