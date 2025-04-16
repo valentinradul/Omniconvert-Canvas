@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { GrowthIdea, Tag } from '@/types';
 
@@ -87,11 +88,12 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       }
     }
     
-    // Using a simplified select() call with no table references to avoid ambiguity
+    // Add .explain() to log the query details
     const { data, error } = await supabase
       .from('ideas')
       .insert(newIdea)
       .select()
+      .explain() // Added .explain() method
       .single();
     
     if (error) throw error;
