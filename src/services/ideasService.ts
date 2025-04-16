@@ -88,6 +88,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       }
     }
     
+    // Using a simplified select() call with no table references to avoid ambiguity
     const { data, error } = await supabase
       .from('ideas')
       .insert(newIdea)
@@ -130,6 +131,7 @@ export const updateIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) =
     if ('tags' in ideaUpdates) updates.tags = ideaUpdates.tags;
     if ('isPublic' in ideaUpdates) updates.is_public = ideaUpdates.isPublic;
     
+    // Use simple select() with no table references to avoid ambiguity
     const { data, error } = await supabase
       .from('ideas')
       .update(updates)
