@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { GrowthIdea } from '@/types';
 
@@ -31,7 +32,7 @@ export interface NewIdea {
 
 export const fetchIdeas = async (companyId?: string) => {
   try {
-    let query = supabase.from('ideas').select('*');
+    let query = supabase.from('ideas').select();
     
     if (companyId) {
       query = query.eq('company_id', companyId);
@@ -87,7 +88,6 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       }
     }
     
-    // Use * instead of 'ideas.*' to avoid the parsing error
     const { data, error } = await supabase
       .from('ideas')
       .insert(newIdea)
@@ -150,7 +150,7 @@ export const fetchPublicIdeas = async () => {
   try {
     const { data, error } = await supabase
       .from('ideas')
-      .select('*')
+      .select()
       .eq('is_public', true);
     
     if (error) throw error;
