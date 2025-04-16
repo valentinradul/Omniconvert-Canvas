@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -5,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import TagInput from '@/components/TagInput';
 import { Category, ALL_CATEGORIES, GrowthIdea } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +29,7 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
   const [category, setCategory] = useState<Category | undefined>(undefined);
   const [departmentId, setDepartmentId] = useState<string | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
+  const [isPublic, setIsPublic] = useState(false);
   const { toast } = useToast();
 
   const handleAddIdea = async () => {
@@ -37,7 +40,8 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
         description,
         category,
         departmentId: departmentId || undefined,
-        tags
+        tags,
+        isPublic
       };
 
       const result = await addIdea(newIdea);
@@ -48,6 +52,7 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
         setCategory(undefined);
         setDepartmentId(undefined);
         setTags([]);
+        setIsPublic(false);
         setIsOpen(false);
       }
     } else {
@@ -133,6 +138,18 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="public-idea"
+              checked={isPublic}
+              onCheckedChange={setIsPublic}
+            />
+            <Label htmlFor="public-idea">Make this idea public</Label>
+            <p className="text-xs text-muted-foreground ml-2">
+              Public ideas can be viewed by anyone
+            </p>
           </div>
         </div>
         

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -9,9 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { ALL_CATEGORIES, Category } from '@/types';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 
 const IdeaDetailsPage: React.FC = () => {
   const { ideaId } = useParams();
@@ -34,6 +37,7 @@ const IdeaDetailsPage: React.FC = () => {
   const [description, setDescription] = useState(idea?.description || '');
   const [category, setCategory] = useState<Category | ''>(idea?.category || '');
   const [departmentId, setDepartmentId] = useState(idea?.departmentId || '');
+  const [isPublic, setIsPublic] = useState(idea?.isPublic || false);
   
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   
@@ -48,6 +52,7 @@ const IdeaDetailsPage: React.FC = () => {
       setDepartmentId(currentIdea.departmentId);
       setDepartment(getDepartmentById(currentIdea.departmentId));
       setHypothesis(getHypothesisByIdeaId(currentIdea.id));
+      setIsPublic(currentIdea.isPublic || false);
     } else {
       navigate('/ideas');
     }
@@ -60,8 +65,8 @@ const IdeaDetailsPage: React.FC = () => {
   const handleEdit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !description || !category || !departmentId) {
-      toast.error('Please fill in all fields');
+    if (!title || !description || !category) {
+      toast.error('Please fill in all required fields');
       return;
     }
     
@@ -69,7 +74,8 @@ const IdeaDetailsPage: React.FC = () => {
       title,
       description,
       category: category as Category,
-      departmentId
+      departmentId,
+      isPublic
     });
     
     setEditDialogOpen(false);
@@ -93,7 +99,10 @@ const IdeaDetailsPage: React.FC = () => {
           <Button variant="outline" onClick={() => navigate('/ideas')} className="mb-4">
             Back to Ideas
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">{idea.title}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">{idea.title}</h1>
+            {idea.isPublic && <Badge>Public</Badge>}
+          </div>
           <p className="text-muted-foreground">
             {department?.name} · {idea.category} · Created on {new Date(idea.createdAt).toLocaleDateString()}
           </p>
@@ -163,6 +172,14 @@ const IdeaDetailsPage: React.FC = () => {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="public-idea"
+                      checked={isPublic}
+                      onCheckedChange={setIsPublic}
+                    />
+                    <Label htmlFor="public-idea">Make this idea public</Label>
                   </div>
                 </div>
                 <DialogFooter>

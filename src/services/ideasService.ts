@@ -11,6 +11,7 @@ export interface NewIdea {
   userId?: string;
   userName?: string;
   companyId?: string;
+  isPublic?: boolean;
 }
 
 export const fetchIdeas = async (companyId?: string) => {
@@ -36,7 +37,8 @@ export const fetchIdeas = async (companyId?: string) => {
       userId: idea.userid,
       userName: idea.username,
       tags: idea.tags || [],
-      companyId: idea.company_id
+      companyId: idea.company_id,
+      isPublic: idea.is_public || false
     }));
     
     return formattedIdeas;
@@ -57,7 +59,8 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       tags: idea.tags || [],
       userid: idea.userId,
       username: idea.userName,
-      company_id: idea.companyId
+      company_id: idea.companyId,
+      is_public: idea.isPublic || false
     };
     
     // Fix: Remove any department ID if it's not a valid UUID
@@ -88,7 +91,8 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       userId: data.userid,
       userName: data.username,
       tags: data.tags || [],
-      companyId: data.company_id
+      companyId: data.company_id,
+      isPublic: data.is_public || false
     };
     
     return formattedIdea;
@@ -108,6 +112,7 @@ export const updateIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) =
     if ('category' in ideaUpdates) updates.category = ideaUpdates.category;
     if ('departmentId' in ideaUpdates) updates.departmentid = ideaUpdates.departmentId;
     if ('tags' in ideaUpdates) updates.tags = ideaUpdates.tags;
+    if ('isPublic' in ideaUpdates) updates.is_public = ideaUpdates.isPublic;
     
     const { data, error } = await supabase
       .from('ideas')
@@ -121,6 +126,37 @@ export const updateIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) =
     return data;
   } catch (error: any) {
     console.error('Error updating idea:', error.message);
+    throw error;
+  }
+};
+
+export const fetchPublicIdeas = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('ideas')
+      .select('*')
+      .eq('is_public', true);
+    
+    if (error) throw error;
+    
+    // Transform database fields to match frontend model
+    const formattedIdeas: GrowthIdea[] = (data || []).map(idea => ({
+      id: idea.id,
+      title: idea.title,
+      description: idea.description || "",
+      category: idea.category as any,
+      departmentId: idea.departmentid,
+      createdAt: new Date(idea.createdat),
+      userId: idea.userid,
+      userName: idea.username,
+      tags: idea.tags || [],
+      companyId: idea.company_id,
+      isPublic: true
+    }));
+    
+    return formattedIdeas;
+  } catch (error: any) {
+    console.error('Error fetching public ideas:', error.message);
     throw error;
   }
 };
