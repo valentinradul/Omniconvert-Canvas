@@ -31,7 +31,7 @@ export type GrowthIdea = {
   category: Category;
   departmentId: string;
   createdAt: Date;
-  userId?: string;
+  userId: string; // Changed from optional to required
   userName?: string;
   tags?: Tag[];
   companyId?: string;

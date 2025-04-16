@@ -247,7 +247,7 @@ export type Database = {
           responsibleuserid: string | null
           tags: string[] | null
           title: string
-          user_id: string | null
+          user_id: string
           username: string | null
         }
         Insert: {
@@ -261,7 +261,7 @@ export type Database = {
           responsibleuserid?: string | null
           tags?: string[] | null
           title: string
-          user_id?: string | null
+          user_id: string
           username?: string | null
         }
         Update: {
@@ -275,7 +275,7 @@ export type Database = {
           responsibleuserid?: string | null
           tags?: string[] | null
           title?: string
-          user_id?: string | null
+          user_id?: string
           username?: string | null
         }
         Relationships: [

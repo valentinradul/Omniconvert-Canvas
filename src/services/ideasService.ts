@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { GrowthIdea, Tag } from '@/types';
 
@@ -15,7 +14,7 @@ type IdeaDatabaseRecord = {
   tags: string[];
   company_id: string;
   responsibleuserid: string;
-  is_public: boolean;  // Update to non-optional since we set default in DB
+  is_public: boolean;
 };
 
 export interface NewIdea {
@@ -24,7 +23,7 @@ export interface NewIdea {
   category: string;
   departmentId?: string;
   tags?: Tag[];
-  userId?: string;
+  userId: string;
   userName?: string;
   companyId?: string;
   isPublic?: boolean;
@@ -91,24 +90,27 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
     const { data, error } = await supabase
       .from('ideas')
       .insert([newIdea])
-      .select()
-      .single();
+      .select();
     
     if (error) throw error;
     
+    if (!data || data.length === 0) {
+      throw new Error('No data returned after inserting idea');
+    }
+    
     // Transform the returned data to match our frontend model
     const formattedIdea: GrowthIdea = {
-      id: data.id,
-      title: data.title,
-      description: data.description || "",
-      category: data.category as any,
-      departmentId: data.departmentid,
-      createdAt: new Date(data.createdat),
-      userId: data.user_id,
-      userName: data.username,
-      tags: data.tags || [],
-      companyId: data.company_id,
-      isPublic: data.is_public
+      id: data[0].id,
+      title: data[0].title,
+      description: data[0].description || "",
+      category: data[0].category as any,
+      departmentId: data[0].departmentid,
+      createdAt: new Date(data[0].createdat),
+      userId: data[0].user_id,
+      userName: data[0].username,
+      tags: data[0].tags || [],
+      companyId: data[0].company_id,
+      isPublic: data[0].is_public
     };
     
     return formattedIdea;
@@ -135,8 +137,7 @@ export const updateIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) =
       .from('ideas')
       .update(updates)
       .eq('id', id)
-      .select()
-      .single();
+      .select();
     
     if (error) throw error;
     
