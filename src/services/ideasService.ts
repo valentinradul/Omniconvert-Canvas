@@ -73,7 +73,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       category: idea.category,
       departmentid: idea.departmentId,
       tags: idea.tags || [],
-      userid: idea.userId,
+      userid: idea.userId,  // Note: this is userid (without underscore)
       username: idea.userName,
       company_id: idea.companyId,
       is_public: idea.isPublic || false
@@ -88,11 +88,11 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       }
     }
     
-    // Explicitly alias the table to avoid ambiguous column errors
+    // Use * instead of 'ideas.*' to avoid the parsing error
     const { data, error } = await supabase
       .from('ideas')
       .insert(newIdea)
-      .select('ideas.*')  // This explicitly selects all columns from the ideas table
+      .select('*')
       .single();
     
     if (error) throw error;
@@ -135,7 +135,7 @@ export const updateIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) =
       .from('ideas')
       .update(updates)
       .eq('id', id)
-      .select('ideas.*')  // This explicitly selects all columns from the ideas table
+      .select('*')  // Changed from 'ideas.*' to '*'
       .single();
     
     if (error) throw error;
