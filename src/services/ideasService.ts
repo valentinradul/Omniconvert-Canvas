@@ -73,7 +73,6 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       category: idea.category,
       departmentid: idea.departmentId,
       tags: idea.tags || [],
-      user_id: idea.userId,
       username: idea.userName,
       company_id: idea.companyId,
       is_public: idea.isPublic || false
@@ -90,7 +89,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
     
     const { data, error } = await supabase
       .from('ideas')
-      .insert([newIdea])
+      .insert(newIdea)
       .select()
       .single();
     
