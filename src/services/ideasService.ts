@@ -2,6 +2,22 @@
 import { supabase } from '@/integrations/supabase/client';
 import { GrowthIdea } from '@/types';
 
+// Define a type for the database response structure
+type IdeaDatabaseRecord = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  departmentid: string;
+  createdat: string;
+  userid: string;
+  username: string;
+  tags: string[];
+  company_id: string;
+  responsibleuserid: string;
+  is_public?: boolean;  // Add this field to match database column
+};
+
 export interface NewIdea {
   title: string;
   description: string;
@@ -27,7 +43,7 @@ export const fetchIdeas = async (companyId?: string) => {
     if (error) throw error;
     
     // Transform database fields to match frontend model
-    const formattedIdeas: GrowthIdea[] = (data || []).map(idea => ({
+    const formattedIdeas: GrowthIdea[] = (data || []).map((idea: IdeaDatabaseRecord) => ({
       id: idea.id,
       title: idea.title,
       description: idea.description || "",
@@ -105,7 +121,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
 export const updateIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) => {
   try {
     // Map frontend properties to database column names
-    const updates: any = {};
+    const updates: Record<string, any> = {};
     
     if ('title' in ideaUpdates) updates.title = ideaUpdates.title;
     if ('description' in ideaUpdates) updates.description = ideaUpdates.description;
@@ -140,7 +156,7 @@ export const fetchPublicIdeas = async () => {
     if (error) throw error;
     
     // Transform database fields to match frontend model
-    const formattedIdeas: GrowthIdea[] = (data || []).map(idea => ({
+    const formattedIdeas: GrowthIdea[] = (data || []).map((idea: IdeaDatabaseRecord) => ({
       id: idea.id,
       title: idea.title,
       description: idea.description || "",
