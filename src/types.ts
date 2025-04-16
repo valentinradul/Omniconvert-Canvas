@@ -1,3 +1,4 @@
+
 // Common types used across the application
 
 export type Department = {
@@ -37,7 +38,7 @@ export type GrowthIdea = {
   category: Category;
   departmentId: string;
   createdAt: Date;
-  userId?: string;
+  userId?: string;  // Updated from userID to userId for consistency
   userName?: string;
   tags?: Tag[];
   companyId?: string;
@@ -86,7 +87,7 @@ export type Hypothesis = {
   metric: string;
   pectiScore: PECTI;
   createdAt: Date;
-  userId?: string;
+  userId?: string;  // Updated for consistency
   userName?: string;
   status?: HypothesisStatus;
   companyId?: string;
@@ -134,7 +135,7 @@ export type Experiment = {
   observationContent?: ObservationContent;
   createdAt: Date;
   updatedAt: Date;
-  userId?: string;
+  userId?: string;  // Updated for consistency
   userName?: string;
   companyId?: string;
 };
