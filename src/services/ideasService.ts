@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { GrowthIdea } from '@/types';
 
@@ -92,7 +91,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
     const { data, error } = await supabase
       .from('ideas')
       .insert(newIdea)
-      .select('*')
+      .select()
       .single();
     
     if (error) throw error;
@@ -135,7 +134,7 @@ export const updateIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) =
       .from('ideas')
       .update(updates)
       .eq('id', id)
-      .select('*')  // Changed from 'ideas.*' to '*'
+      .select()
       .single();
     
     if (error) throw error;
