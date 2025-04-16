@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { GrowthIdea } from '@/types';
+import { GrowthIdea, Tag } from '@/types';
 
 // Define a type for the database response structure
 type IdeaDatabaseRecord = {
@@ -23,7 +22,7 @@ export interface NewIdea {
   description: string;
   category: string;
   departmentId?: string;
-  tags?: string[];
+  tags?: Tag[];
   userId?: string;
   userName?: string;
   companyId?: string;
