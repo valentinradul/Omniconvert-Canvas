@@ -18,6 +18,9 @@ const AccountSettingsPage = () => {
     });
   };
 
+  // Check if user is using email/password authentication (not a third-party provider)
+  const isEmailPasswordUser = user?.app_metadata?.provider === 'email';
+
   return (
     <div className="space-y-6">
       <div>
@@ -69,17 +72,19 @@ const AccountSettingsPage = () => {
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Password</CardTitle>
-            <CardDescription>
-              Update your password to keep your account secure.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline">Change Password</Button>
-          </CardContent>
-        </Card>
+        {isEmailPasswordUser && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Password</CardTitle>
+              <CardDescription>
+                Update your password to keep your account secure.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline">Change Password</Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
