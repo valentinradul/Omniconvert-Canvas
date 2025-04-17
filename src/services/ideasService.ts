@@ -10,7 +10,7 @@ type IdeaDatabaseRecord = {
   category: string;
   departmentid: string;
   createdat: string;
-  userid: string; // Correct field name
+  userid: string; // Updated from user_id
   username: string;
   tags: string[];
   company_id: string;
@@ -73,7 +73,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       category: idea.category,
       departmentid: idea.departmentId,
       tags: idea.tags || [],
-      userid: idea.userId, // Ensure this matches the renamed column
+      userid: idea.userId, // Updated from user_id
       username: idea.userName,
       company_id: idea.companyId,
       is_public: idea.isPublic || false
@@ -91,7 +91,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
     const { data, error } = await supabase
       .from('ideas')
       .insert(newIdea)
-      .select()
+      .select('*')
       .single();
     
     if (error) throw error;
