@@ -66,51 +66,51 @@ export const fetchIdeas = async (companyId?: string) => {
 
 export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
   try {
-    // Map frontend properties to database column names
-    const newIdea = {
-      title: idea.title,
-      description: idea.description,
-      category: idea.category,
-      departmentid: idea.departmentId,
-      tags: idea.tags || [],
-      username: idea.userName,
-      company_id: idea.companyId,
-      is_public: idea.isPublic || false
-    };
+    // // Map frontend properties to database column names
+    // const newIdea = {
+    //   title: idea.title,
+    //   description: idea.description,
+    //   category: idea.category,
+    //   departmentid: idea.departmentId,
+    //   tags: idea.tags || [],
+    //   username: idea.userName,
+    //   company_id: idea.companyId,
+    //   is_public: idea.isPublic || false
+    // };
     
-    // Fix: Remove any department ID if it's not a valid UUID
-    if (newIdea.departmentid && typeof newIdea.departmentid === 'string') {
-      // Validate UUID format - basic validation check
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(newIdea.departmentid)) {
-        delete newIdea.departmentid;
-      }
-    }
+    // // Fix: Remove any department ID if it's not a valid UUID
+    // if (newIdea.departmentid && typeof newIdea.departmentid === 'string') {
+    //   // Validate UUID format - basic validation check
+    //   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    //   if (!uuidRegex.test(newIdea.departmentid)) {
+    //     delete newIdea.departmentid;
+    //   }
+    // }
     
-    const { data, error } = await supabase
-      .from('ideas')
-      .insert(newIdea)
-      .select()
-      .single();
+    // const { data, error } = await supabase
+    //   .from('ideas')
+    //   .insert(newIdea)
+    //   .select()
+    //   .single();
     
-    if (error) throw error;
+    // if (error) throw error;
     
     // Transform the returned data to match our frontend model
-    const formattedIdea: GrowthIdea = {
-      id: data.id,
-      title: data.title,
-      description: data.description || "",
-      category: data.category as any,
-      departmentId: data.departmentid,
-      createdAt: new Date(data.createdat),
-      userId: data.user_id,
-      userName: data.username,
-      tags: data.tags || [],
-      companyId: data.company_id,
-      isPublic: data.is_public
-    };
+    // const formattedIdea: GrowthIdea = {
+    //   id: data.id,
+    //   title: data.title,
+    //   description: data.description || "",
+    //   category: data.category as any,
+    //   departmentId: data.departmentid,
+    //   createdAt: new Date(data.createdat),
+    //   userId: data.user_id,
+    //   userName: data.username,
+    //   tags: data.tags || [],
+    //   companyId: data.company_id,
+    //   isPublic: data.is_public
+    // };
     
-    return formattedIdea;
+    return idea;
   } catch (error: any) {
     console.error('Error adding idea:', error.message);
     throw error;
