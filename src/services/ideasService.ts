@@ -10,7 +10,7 @@ type IdeaDatabaseRecord = {
   category: string;
   departmentid: string;
   createdat: string;
-  userid: string; // Updated from user_id
+  userid: string; // Correct field name
   username: string;
   tags: string[];
   company_id: string;
@@ -73,7 +73,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       category: idea.category,
       departmentid: idea.departmentId,
       tags: idea.tags || [],
-      userid: idea.userId, // Updated from user_id
+      userid: idea.userId, // Ensure this matches the renamed column
       username: idea.userName,
       company_id: idea.companyId,
       is_public: idea.isPublic || false
