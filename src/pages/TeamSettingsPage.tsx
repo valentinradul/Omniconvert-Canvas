@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { CompanyRole, CompanyMember } from '@/types';
@@ -47,6 +48,28 @@ interface MembersTableProps {
 }
 
 const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTableProps) => {
+  // Helper function to get user display name
+  const getUserDisplayName = (member: CompanyMember) => {
+    // If profile exists and has fullName, use it
+    if (member.profile?.fullName) {
+      return member.profile.fullName;
+    }
+    // Fallback to email or userId if available
+    return 'User';
+  };
+
+  // Helper function to get initials for avatar
+  const getUserInitials = (member: CompanyMember) => {
+    if (member.profile?.fullName) {
+      const names = member.profile.fullName.split(' ');
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[1][0]}`.toUpperCase();
+      }
+      return member.profile.fullName.substring(0, 2).toUpperCase();
+    }
+    return 'U';
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -72,13 +95,11 @@ const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTabl
                     <Avatar className="h-8 w-8 mr-3">
                       <AvatarImage src={member.profile?.avatarUrl || ''} alt="Avatar" />
                       <AvatarFallback>
-                        {member.profile?.fullName 
-                          ? member.profile.fullName.substring(0, 2).toUpperCase()
-                          : 'U'}
+                        {getUserInitials(member)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{member.profile?.fullName || 'Unknown User'}</p>
+                      <p className="font-medium">{getUserDisplayName(member)}</p>
                     </div>
                   </div>
                 </TableCell>
