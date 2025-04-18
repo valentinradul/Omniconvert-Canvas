@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { CompanyRole, CompanyMember } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import CompanySwitcher from '@/components/company/CompanySwitcher';
 import {
   Table,
   TableBody,
@@ -209,6 +210,7 @@ const TeamSettingsPage: React.FC = () => {
           <h1 className="text-2xl font-bold">Team Settings</h1>
           <p className="text-muted-foreground">Manage your team members and their roles.</p>
         </div>
+        <CompanySwitcher />
       </div>
 
       <div className="grid gap-6 mt-8">
