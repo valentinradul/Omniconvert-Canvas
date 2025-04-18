@@ -31,6 +31,7 @@ export interface NewIdea {
 }
 
 export const fetchIdeas = async (companyId?: string) => {
+  console.log(companyId)
   try {
     let query = supabase.from('ideas').select();
     
