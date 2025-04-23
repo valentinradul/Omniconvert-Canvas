@@ -47,7 +47,7 @@ export const createCompanyAPI = async (name: string, userId: string) => {
     
     return newCompany;
   } catch (error: any) {
-    console.error('Error creating company:', error.message);
+    console.error('Error creating company 2:', error.message);
     throw error;
   }
 };
