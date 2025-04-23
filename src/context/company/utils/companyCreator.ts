@@ -25,18 +25,18 @@ export const createCompanyAPI = async (name: string, userId: string) => {
     console.log("Company created:", companyData);
     
     // Add user as company owner with explicit column names
-    const { error: memberError } = await supabase
-      .from('company_members')
-      .insert({
-        company_id: companyData.id,
-        user_id: userId,
-        role: 'owner'
-      });
+    // const { error: memberError } = await supabase
+    //   .from('company_members')
+    //   .insert({
+    //     company_id: companyData.id,
+    //     user_id: userId,
+    //     role: 'owner'
+    //   });
       
-    if (memberError) {
-      console.error("Error adding company member:", memberError);
-      throw memberError;
-    }
+    // if (memberError) {
+    //   console.error("Error adding company member:", memberError);
+    //   throw memberError;
+    // }
     
     const newCompany: Company = {
       id: companyData.id,
