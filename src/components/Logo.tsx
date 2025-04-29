@@ -12,11 +12,12 @@ const Logo: React.FC<LogoProps> = ({ className = "" }) => {
   const { isAuthenticated } = useAuth();
   const isHomePage = location.pathname === '/';
 
-  // Calculate the logo height - increase by 50% for logged in users
+  // Calculate the logo height - increase by 50% + 30% for logged in users
+  // 22.5px * 1.5 * 1.3 = 43.875px (total 95% larger than original)
   const logoHeight = isHomePage 
     ? "h-30" 
     : isAuthenticated 
-      ? "h-[33.75px]" // 22.5px * 1.5 = 33.75px (50% larger)
+      ? "h-[43.875px]" // 22.5px * 1.5 * 1.3 = 43.875px (95% larger)
       : "h-[22.5px]";
 
   return (

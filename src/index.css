@@ -84,6 +84,12 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-fira;
   }
 }
+
+html {
+  font-family: 'Fira Sans', sans-serif;
+}
+
+/* ... keep existing code */

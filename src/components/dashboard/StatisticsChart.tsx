@@ -80,40 +80,42 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
       <CardContent>
         <div className="h-[200px]">
           <ChartContainer config={config}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorWinning" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.2}/>
-                </linearGradient>
-                <linearGradient id="colorLosing" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#f97316" stopOpacity={0.2}/>
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <ChartTooltip
-                content={<ChartTooltipContent />}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="winning" 
-                stroke="#10b981" 
-                fillOpacity={1} 
-                fill="url(#colorWinning)" 
-                name="Winning"
-              />
-              <Area 
-                type="monotone" 
-                dataKey="losing" 
-                stroke="#f97316" 
-                fillOpacity={1} 
-                fill="url(#colorLosing)"
-                name="Losing/Inconclusive"
-              />
-            </AreaChart>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorWinning" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.2}/>
+                  </linearGradient>
+                  <linearGradient id="colorLosing" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#f97316" stopOpacity={0.2}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" />
+                <YAxis width={40} /> {/* Fixed width for Y-axis */}
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <ChartTooltip
+                  content={<ChartTooltipContent />}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="winning" 
+                  stroke="#10b981" 
+                  fillOpacity={1} 
+                  fill="url(#colorWinning)" 
+                  name="Winning"
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="losing" 
+                  stroke="#f97316" 
+                  fillOpacity={1} 
+                  fill="url(#colorLosing)"
+                  name="Losing/Inconclusive"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </ChartContainer>
         </div>
       </CardContent>
