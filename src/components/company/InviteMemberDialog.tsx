@@ -13,9 +13,10 @@ import { Loader2 } from 'lucide-react';
 interface InviteMemberDialogProps {
   open: boolean;
   onClose: () => void;
+  onInviteSent?: () => void;  // New callback for when invitation is sent
 }
 
-const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose }) => {
+const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, onInviteSent }) => {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<CompanyRole>('member');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,6 +38,12 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose }
       
       setEmail('');
       setRole('member');
+      
+      // Call the onInviteSent callback if provided
+      if (onInviteSent) {
+        onInviteSent();
+      }
+      
       onClose();
     } catch (error) {
       console.error('Error inviting member:', error);

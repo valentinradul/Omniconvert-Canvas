@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,7 +35,19 @@ export const useCompanyManagement = () => {
     setIsProcessing(true);
     
     try {
-      // First, fetch company info
+      // First, check if there's already a pending invitation for this email
+      const { data: existingInvites } = await supabase
+        .from('company_invitations')
+        .select('id')
+        .eq('company_id', currentCompanyId)
+        .eq('email', email)
+        .eq('accepted', false);
+        
+      if (existingInvites && existingInvites.length > 0) {
+        throw new Error('This email already has a pending invitation');
+      }
+      
+      // Fetch company info
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .select('name')
@@ -68,7 +79,8 @@ export const useCompanyManagement = () => {
       
       // Send invitation email
       try {
-        await supabase.functions.invoke('send-invitation', {
+        console.log("Calling send-invitation edge function");
+        const { error: fnError } = await supabase.functions.invoke('send-invitation', {
           body: {
             email,
             companyName: companyData.name,
@@ -78,10 +90,21 @@ export const useCompanyManagement = () => {
           }
         });
         
+        if (fnError) {
+          console.error('Error from edge function:', fnError);
+          throw new Error(`Email service error: ${fnError.message}`);
+        }
+        
         console.log('Invitation email sent successfully');
-      } catch (emailError) {
+      } catch (emailError: any) {
         console.error('Error sending invitation email:', emailError);
-        // Continue execution even if email fails - the invitation is created in the database
+        // We'll still return success even if email fails, but with a warning
+        toast({
+          variant: 'warning',
+          title: 'Invitation created with warning',
+          description: `Invitation created but there was an issue sending the email: ${emailError.message}`,
+        });
+        return invitation;
       }
       
       toast({
@@ -97,6 +120,7 @@ export const useCompanyManagement = () => {
         title: 'Failed to send invitation',
         description: error.message,
       });
+      throw error;
     } finally {
       setIsProcessing(false);
     }

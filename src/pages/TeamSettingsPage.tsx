@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { CompanyRole, CompanyMember } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import CompanySwitcher from '@/components/company/CompanySwitcher';
 import {
   Table,
@@ -171,28 +169,10 @@ const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTabl
 };
 
 const TeamSettingsPage: React.FC = () => {
-  const { companyMembers, userCompanyRole, inviteMember, removeMember, updateMemberRole } = useCompany();
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState<CompanyRole>('member');
+  const { companyMembers, userCompanyRole, removeMember, updateMemberRole } = useCompany();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteRefreshTrigger, setInviteRefreshTrigger] = useState(0);
   const { toast } = useToast();
-
-  const handleInvite = async () => {
-    try {
-      await inviteMember(email, role);
-      toast({
-        title: "Invitation sent",
-        description: `Invitation sent to ${email} as ${role}`,
-      });
-      setEmail('');
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Failed to send invitation",
-        description: error.message || "There was an error sending the invitation",
-      });
-    }
-  };
 
   const handleRemove = async (userId: string) => {
     try {
@@ -226,6 +206,11 @@ const TeamSettingsPage: React.FC = () => {
     }
   };
 
+  // Function to trigger a refresh of the pending invitations
+  const refreshInvitations = () => {
+    setInviteRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <div>
       <div className="md:flex md:items-center md:justify-between space-y-4 md:space-y-0">
@@ -237,8 +222,11 @@ const TeamSettingsPage: React.FC = () => {
       </div>
 
       <div className="grid gap-6 mt-8">
-        {/* Add the PendingInvitations component here */}
-        <PendingInvitations />
+        {/* PendingInvitations with refresh capability */}
+        <PendingInvitations 
+          refreshTrigger={inviteRefreshTrigger}
+          onInvitationResent={refreshInvitations}
+        />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -253,7 +241,8 @@ const TeamSettingsPage: React.FC = () => {
               
               <InviteMemberDialog 
                 open={showInviteDialog} 
-                onClose={() => setShowInviteDialog(false)} 
+                onClose={() => setShowInviteDialog(false)}
+                onInviteSent={refreshInvitations}
               />
             </div>
           </div>

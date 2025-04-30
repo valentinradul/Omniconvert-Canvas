@@ -35,10 +35,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     const roleName = role.charAt(0).toUpperCase() + role.slice(1);
     const sender = inviterName || "Someone";
-    const appUrl = Deno.env.get("PUBLIC_APP_URL") || "https://localhost:8080";
+    const appUrl = Deno.env.get("PUBLIC_APP_URL") || "https://localhost:5173";
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
     console.log("Sending invitation email to:", email, "for company:", companyName, "with role:", roleName);
-    console.log("Using RESEND_API_KEY:", Deno.env.get("RESEND_API_KEY") ? "Key exists" : "Key missing");
+    console.log("Using PUBLIC_APP_URL:", appUrl);
+    console.log("Using RESEND_API_KEY:", resendApiKey ? "Key exists (length: " + resendApiKey.length + ")" : "Key missing");
+
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY environment variable is missing");
+    }
 
     const emailResponse = await resend.emails.send({
       from: "Invitations <onboarding@resend.dev>",
@@ -63,7 +69,7 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Email sending response:", emailResponse);
+    console.log("Email sending response:", JSON.stringify(emailResponse));
     
     return new Response(JSON.stringify(emailResponse), {
       status: 200,

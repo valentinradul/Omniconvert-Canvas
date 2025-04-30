@@ -7,6 +7,7 @@ import { Mail, Clock, RefreshCw } from 'lucide-react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/components/ui/use-toast';
 
 interface PendingInvitation {
   id: string;
@@ -15,10 +16,19 @@ interface PendingInvitation {
   createdAt: string;
 }
 
-const PendingInvitations: React.FC = () => {
+interface PendingInvitationsProps {
+  onInvitationResent?: () => void;
+  refreshTrigger?: any; // A value that when changed will trigger a refresh
+}
+
+const PendingInvitations: React.FC<PendingInvitationsProps> = ({ 
+  onInvitationResent,
+  refreshTrigger 
+}) => {
   const { currentCompany } = useCompany();
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { toast } = useToast();
 
   const fetchPendingInvitations = async () => {
     if (!currentCompany) return;
@@ -44,6 +54,11 @@ const PendingInvitations: React.FC = () => {
       setPendingInvitations(formatted);
     } catch (error) {
       console.error('Error fetching pending invitations:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to load invitations",
+        description: "Could not retrieve pending invitations. Please try again."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +85,7 @@ const PendingInvitations: React.FC = () => {
       if (companyError || !company) throw companyError || new Error('Company not found');
       
       // Call edge function to resend email
-      await supabase.functions.invoke('send-invitation', {
+      const { error } = await supabase.functions.invoke('send-invitation', {
         body: {
           email: invitation.email,
           companyName: company.name,
@@ -79,17 +94,31 @@ const PendingInvitations: React.FC = () => {
           invitationId: invitationId
         }
       });
+
+      if (error) throw error;
       
-      alert('Invitation resent successfully');
-    } catch (error) {
+      toast({
+        title: "Invitation resent",
+        description: `Invitation email resent to ${invitation.email}`
+      });
+      
+      if (onInvitationResent) {
+        onInvitationResent();
+      }
+    } catch (error: any) {
       console.error('Error resending invitation:', error);
-      alert('Failed to resend invitation');
+      toast({
+        variant: "destructive",
+        title: "Failed to resend invitation",
+        description: error.message || "An unexpected error occurred"
+      });
     }
   };
   
+  // Fetch invitations on initial load and when company changes
   useEffect(() => {
     fetchPendingInvitations();
-  }, [currentCompany]);
+  }, [currentCompany, refreshTrigger]);
   
   if (pendingInvitations.length === 0 && !isLoading) {
     return null;
@@ -108,7 +137,7 @@ const PendingInvitations: React.FC = () => {
           onClick={fetchPendingInvitations} 
           disabled={isLoading}
         >
-          <RefreshCw className="h-4 w-4 mr-2" />
+          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
       </CardHeader>
