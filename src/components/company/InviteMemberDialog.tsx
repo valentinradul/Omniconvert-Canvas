@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCompany } from '@/context/company/CompanyContext';
 import { CompanyRole } from '@/types';
+import { useToast } from '@/components/ui/use-toast';
 
 interface InviteMemberDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose }
   const [role, setRole] = useState<CompanyRole>('member');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { inviteMember, currentCompany } = useCompany();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,11 +28,22 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose }
     setIsSubmitting(true);
     try {
       await inviteMember(email, role);
+      
+      toast({
+        title: "Invitation sent successfully!",
+        description: `${email} has been invited to join your team.`,
+      });
+      
       setEmail('');
       setRole('member');
       onClose();
     } catch (error) {
       console.error('Error inviting member:', error);
+      toast({
+        variant: "destructive",
+        title: "Invitation failed",
+        description: "There was a problem sending the invitation. Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }

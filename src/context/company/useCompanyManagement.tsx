@@ -36,7 +36,24 @@ export const useCompanyManagement = () => {
     setIsProcessing(true);
     
     try {
-      const { data, error } = await supabase
+      // First, fetch company info
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', currentCompanyId)
+        .single();
+        
+      if (companyError) throw companyError;
+      
+      // Get inviter's profile info
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .single();
+      
+      // Create invitation record
+      const { data: invitation, error } = await supabase
         .from('company_invitations')
         .insert({
           company_id: currentCompanyId,
@@ -49,12 +66,30 @@ export const useCompanyManagement = () => {
         
       if (error) throw error;
       
+      // Send invitation email
+      try {
+        await supabase.functions.invoke('send-invitation', {
+          body: {
+            email,
+            companyName: companyData.name,
+            inviterName: profileData?.full_name || null,
+            role,
+            invitationId: invitation.id
+          }
+        });
+        
+        console.log('Invitation email sent successfully');
+      } catch (emailError) {
+        console.error('Error sending invitation email:', emailError);
+        // Continue execution even if email fails - the invitation is created in the database
+      }
+      
       toast({
         title: 'Invitation sent',
         description: `An invitation has been sent to ${email}.`,
       });
       
-      return data;
+      return invitation;
     } catch (error: any) {
       console.error('Error inviting member:', error.message);
       toast({
