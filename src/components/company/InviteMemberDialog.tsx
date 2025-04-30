@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCompany } from '@/context/company/CompanyContext';
 import { CompanyRole } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
 
 interface InviteMemberDialogProps {
   open: boolean;
@@ -42,7 +43,7 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose }
       toast({
         variant: "destructive",
         title: "Invitation failed",
-        description: "There was a problem sending the invitation. Please try again.",
+        description: "There was a problem sending the invitation. Please check if the email is valid and try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -106,7 +107,14 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose }
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || !email.trim()}>
-              {isSubmitting ? 'Sending...' : 'Send Invitation'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                'Send Invitation'
+              )}
             </Button>
           </DialogFooter>
         </form>

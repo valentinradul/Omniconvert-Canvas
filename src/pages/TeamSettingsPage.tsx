@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { CompanyRole, CompanyMember } from '@/types';
@@ -39,6 +38,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import InviteMemberDialog from '@/components/company/InviteMemberDialog';
+import PendingInvitations from '@/components/company/PendingInvitations';
 
 interface MembersTableProps {
   members: CompanyMember[];
@@ -173,6 +174,7 @@ const TeamSettingsPage: React.FC = () => {
   const { companyMembers, userCompanyRole, inviteMember, removeMember, updateMemberRole } = useCompany();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<CompanyRole>('member');
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const { toast } = useToast();
 
   const handleInvite = async () => {
@@ -235,39 +237,24 @@ const TeamSettingsPage: React.FC = () => {
       </div>
 
       <div className="grid gap-6 mt-8">
+        {/* Add the PendingInvitations component here */}
+        <PendingInvitations />
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <h2 className="text-lg font-semibold mb-2">Invite New Member</h2>
-            <div className="grid gap-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
-                </Label>
-                <Input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="role" className="text-right">
-                  Role
-                </Label>
-                <select
-                  id="role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as CompanyRole)}
-                  className="col-span-3 rounded-md border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <Button onClick={handleInvite} disabled={userCompanyRole !== 'owner'}>
-                Invite Member
+            <div className="flex flex-col space-y-4">
+              <Button 
+                onClick={() => setShowInviteDialog(true)} 
+                disabled={userCompanyRole !== 'owner' && userCompanyRole !== 'admin'}
+              >
+                Invite Team Member
               </Button>
+              
+              <InviteMemberDialog 
+                open={showInviteDialog} 
+                onClose={() => setShowInviteDialog(false)} 
+              />
             </div>
           </div>
 

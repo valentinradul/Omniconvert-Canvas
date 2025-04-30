@@ -29,11 +29,16 @@ const handler = async (req: Request): Promise<Response> => {
     const { email, companyName, inviterName, role, invitationId }: InvitationEmailRequest = await req.json();
 
     if (!email || !companyName) {
+      console.error("Missing required fields:", { email, companyName });
       throw new Error("Missing required fields");
     }
 
     const roleName = role.charAt(0).toUpperCase() + role.slice(1);
     const sender = inviterName || "Someone";
+    const appUrl = Deno.env.get("PUBLIC_APP_URL") || "https://localhost:8080";
+
+    console.log("Sending invitation email to:", email, "for company:", companyName, "with role:", roleName);
+    console.log("Using RESEND_API_KEY:", Deno.env.get("RESEND_API_KEY") ? "Key exists" : "Key missing");
 
     const emailResponse = await resend.emails.send({
       from: "Invitations <onboarding@resend.dev>",
@@ -46,7 +51,7 @@ const handler = async (req: Request): Promise<Response> => {
             ${sender} has invited you to join <strong>${companyName}</strong> as a <strong>${roleName}</strong>.
           </p>
           <div style="margin: 30px 0;">
-            <a href="${Deno.env.get("PUBLIC_APP_URL") || "https://localhost:8080"}/invitations" 
+            <a href="${appUrl}/invitations" 
                style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
               View Invitation
             </a>
