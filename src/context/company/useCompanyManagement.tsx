@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -98,9 +99,10 @@ export const useCompanyManagement = () => {
         console.log('Invitation email sent successfully');
       } catch (emailError: any) {
         console.error('Error sending invitation email:', emailError);
-        // We'll still return success even if email fails, but with a warning
+        // We'll still return success even if email fails, but with a different message
+        // Changed from 'warning' to 'destructive' as 'warning' is not an available variant
         toast({
-          variant: 'warning',
+          variant: 'destructive',
           title: 'Invitation created with warning',
           description: `Invitation created but there was an issue sending the email: ${emailError.message}`,
         });
