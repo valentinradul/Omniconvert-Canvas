@@ -18,7 +18,7 @@ interface PendingInvitation {
 
 interface PendingInvitationsProps {
   onInvitationResent?: () => void;
-  refreshTrigger?: any; // A value that when changed will trigger a refresh
+  refreshTrigger?: any;
 }
 
 const PendingInvitations: React.FC<PendingInvitationsProps> = ({ 
@@ -34,6 +34,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
   const fetchPendingInvitations = async () => {
     if (!currentCompany?.id) {
       console.log('No current company, skipping invitation fetch');
+      setPendingInvitations([]);
       return;
     }
     
@@ -43,6 +44,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
     try {
       console.log('Fetching pending invitations for company:', currentCompany.id);
       
+      // Simple query to company_invitations table only, avoiding any user table joins
       const { data, error } = await supabase
         .from('company_invitations')
         .select('id, email, role, created_at')
@@ -69,11 +71,15 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
     } catch (error: any) {
       console.error('Error fetching pending invitations:', error);
       setHasError(true);
-      toast({
-        variant: "destructive",
-        title: "Failed to load invitations",
-        description: error.message || "Could not retrieve pending invitations. Please try again."
-      });
+      
+      // Only show toast for non-permission errors
+      if (!error.message?.includes('permission denied')) {
+        toast({
+          variant: "destructive",
+          title: "Failed to load invitations",
+          description: error.message || "Could not retrieve pending invitations. Please try again."
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +110,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
         body: {
           email: invitation.email,
           companyName: company.name,
-          inviterName: null, // We don't have the original inviter name
+          inviterName: null,
           role: invitation.role,
           invitationId: invitationId
         }
@@ -130,7 +136,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
     }
   };
   
-  // Fetch invitations on initial load and when company or refresh trigger changes
+  // Fetch invitations when component mounts or dependencies change
   useEffect(() => {
     console.log('PendingInvitations useEffect triggered', { 
       currentCompany: currentCompany?.id, 
@@ -139,7 +145,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
     fetchPendingInvitations();
   }, [currentCompany?.id, refreshTrigger]);
   
-  // Show error state
+  // Show error state only for non-permission errors
   if (hasError && !isLoading) {
     return (
       <Card className="mb-6">
