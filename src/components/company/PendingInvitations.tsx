@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,93 +9,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
 
-interface PendingInvitation {
-  id: string;
-  email: string;
-  role: string;
-  createdAt: string;
-}
-
 interface PendingInvitationsProps {
   onInvitationResent?: () => void;
-  refreshTrigger?: any;
 }
 
-const PendingInvitations: React.FC<PendingInvitationsProps> = ({ 
-  onInvitationResent,
-  refreshTrigger 
-}) => {
-  const { currentCompany } = useCompany();
-  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [hasError, setHasError] = useState<boolean>(false);
+const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationResent }) => {
+  const { currentCompany, pendingInvitations, refreshPendingInvitations } = useCompany();
   const { toast } = useToast();
 
-  const fetchPendingInvitations = async () => {
-    if (!currentCompany?.id) {
-      console.log('No current company, skipping invitation fetch');
-      setPendingInvitations([]);
-      return;
-    }
-    
-    setIsLoading(true);
-    setHasError(false);
-    
-    try {
-      console.log('Fetching pending invitations for company:', currentCompany.id);
-      
-      const { data, error } = await supabase
-        .from('company_invitations')
-        .select('id, email, role, created_at')
-        .eq('company_id', currentCompany.id)
-        .eq('accepted', false)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Supabase error fetching invitations:', error);
-        throw error;
-      }
-      
-      console.log('Fetched invitations data:', data);
-      
-      const formatted = (data || []).map(inv => ({
-        id: inv.id,
-        email: inv.email,
-        role: inv.role,
-        createdAt: inv.created_at
-      }));
-      
-      setPendingInvitations(formatted);
-      console.log('Set pending invitations:', formatted);
-    } catch (error: any) {
-      console.error('Error fetching pending invitations:', error);
-      setHasError(true);
-      toast({
-        variant: "destructive",
-        title: "Failed to load invitations",
-        description: error.message || "Could not retrieve pending invitations. Please try again."
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
   const resendInvitation = async (invitationId: string) => {
     try {
       // Get the invitation details
-      const { data: invitation, error: invError } = await supabase
-        .from('company_invitations')
-        .select('email, company_id, role')
-        .eq('id', invitationId)
-        .single();
-      
-      if (invError || !invitation) throw invError || new Error('Invitation not found');
+      const invitation = pendingInvitations.find(inv => inv.id === invitationId);
+      if (!invitation) throw new Error('Invitation not found');
       
       // Get company name
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('name')
-        .eq('id', invitation.company_id)
+        .eq('id', invitation.companyId)
         .single();
       
       if (companyError || !company) throw companyError || new Error('Company not found');
@@ -131,39 +63,8 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
     }
   };
   
-  // Fetch invitations when component mounts or dependencies change
-  useEffect(() => {
-    console.log('PendingInvitations useEffect triggered', { 
-      currentCompany: currentCompany?.id, 
-      refreshTrigger 
-    });
-    fetchPendingInvitations();
-  }, [currentCompany?.id, refreshTrigger]);
-  
-  // Show error state
-  if (hasError && !isLoading) {
-    return (
-      <Card className="mb-6">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Pending Invitations</CardTitle>
-            <CardDescription className="text-red-600">Failed to load pending invitations</CardDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={fetchPendingInvitations}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Retry
-          </Button>
-        </CardHeader>
-      </Card>
-    );
-  }
-  
-  // Don't show the component if there are no pending invitations and we're not loading
-  if (pendingInvitations.length === 0 && !isLoading && !hasError) {
+  // Don't show the component if there are no pending invitations
+  if (pendingInvitations.length === 0) {
     return null;
   }
 
@@ -177,41 +78,33 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={fetchPendingInvitations} 
-          disabled={isLoading}
+          onClick={refreshPendingInvitations}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center p-4">
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            Loading invitations...
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {pendingInvitations.map(invitation => (
-              <div key={invitation.id} className="flex items-center justify-between p-3 border rounded-md">
-                <div className="flex items-center space-x-3">
-                  <Mail className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <div className="font-medium">{invitation.email}</div>
-                    <div className="text-sm text-muted-foreground flex items-center">
-                      <Badge variant="outline" className="mr-2 capitalize">{invitation.role}</Badge>
-                      <Clock className="h-3 w-3 mr-1" />
-                      <span>Invited {formatDistanceToNow(new Date(invitation.createdAt), { addSuffix: true })}</span>
-                    </div>
+        <div className="space-y-3">
+          {pendingInvitations.map(invitation => (
+            <div key={invitation.id} className="flex items-center justify-between p-3 border rounded-md">
+              <div className="flex items-center space-x-3">
+                <Mail className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <div className="font-medium">{invitation.email}</div>
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <Badge variant="outline" className="mr-2 capitalize">{invitation.role}</Badge>
+                    <Clock className="h-3 w-3 mr-1" />
+                    <span>Invited {formatDistanceToNow(invitation.createdAt, { addSuffix: true })}</span>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => resendInvitation(invitation.id)}>
-                  Resend
-                </Button>
               </div>
-            ))}
-          </div>
-        )}
+              <Button variant="outline" size="sm" onClick={() => resendInvitation(invitation.id)}>
+                Resend
+              </Button>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

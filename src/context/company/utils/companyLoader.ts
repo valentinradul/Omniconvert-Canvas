@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
 
@@ -126,6 +127,42 @@ export const loadCompanyMembers = async (companyId: string) => {
     return formattedMembers;
   } catch (error: any) {
     console.error('Error loading company members:', error.message);
+    throw error;
+  }
+};
+
+// Load company invitations
+export const loadCompanyInvitations = async (companyId: string) => {
+  try {
+    console.log('Loading company invitations for company:', companyId);
+    
+    const { data, error } = await supabase
+      .from('company_invitations')
+      .select('id, company_id, email, role, accepted, invited_by, created_at')
+      .eq('company_id', companyId)
+      .eq('accepted', false)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error loading company invitations:', error);
+      throw error;
+    }
+    
+    console.log('Loaded company invitations:', data);
+    
+    const formattedInvitations: CompanyInvitation[] = (data || []).map(i => ({
+      id: i.id,
+      companyId: i.company_id,
+      email: i.email,
+      role: i.role as CompanyRole,
+      accepted: i.accepted,
+      invitedBy: i.invited_by,
+      createdAt: new Date(i.created_at)
+    }));
+    
+    return formattedInvitations;
+  } catch (error: any) {
+    console.error('Error loading company invitations:', error.message);
     throw error;
   }
 };

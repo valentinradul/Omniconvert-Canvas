@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
-import { loadUserCompanies, loadUserInvitations, loadUserRole, loadCompanyMembers } from '../utils';
+import { loadUserCompanies, loadUserInvitations, loadUserRole, loadCompanyMembers, loadCompanyInvitations } from '../utils';
 
 export const useCompanyData = (userId: string | undefined) => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -9,6 +9,7 @@ export const useCompanyData = (userId: string | undefined) => {
   const [userCompanyRole, setUserCompanyRole] = useState<CompanyRole | null>(null);
   const [companyMembers, setCompanyMembers] = useState<CompanyMember[]>([]);
   const [companyInvitations, setCompanyInvitations] = useState<CompanyInvitation[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<CompanyInvitation[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Load user companies
@@ -61,6 +62,18 @@ export const useCompanyData = (userId: string | undefined) => {
     }
   };
 
+  // Load pending invitations for current company
+  const fetchPendingInvitations = async () => {
+    if (!currentCompany?.id) return;
+    
+    try {
+      const invitations = await loadCompanyInvitations(currentCompany.id);
+      setPendingInvitations(invitations);
+    } catch (error) {
+      console.error('Error loading pending invitations:', error);
+    }
+  };
+
   // Set current company by ID
   const switchCompany = (companyId: string) => {
     const company = companies.find(c => c.id === companyId);
@@ -81,11 +94,14 @@ export const useCompanyData = (userId: string | undefined) => {
     setCompanyMembers,
     companyInvitations,
     setCompanyInvitations,
+    pendingInvitations,
+    setPendingInvitations,
     isLoading,
     fetchUserCompanies,
     fetchUserInvitations,
     fetchUserRole,
     fetchCompanyMembers,
+    fetchPendingInvitations,
     switchCompany
   };
 };

@@ -169,9 +169,8 @@ const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTabl
 };
 
 const TeamSettingsPage: React.FC = () => {
-  const { companyMembers, userCompanyRole, removeMember, updateMemberRole } = useCompany();
+  const { companyMembers, userCompanyRole, removeMember, updateMemberRole, refreshPendingInvitations } = useCompany();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [inviteRefreshTrigger, setInviteRefreshTrigger] = useState(0);
   const { toast } = useToast();
 
   const handleRemove = async (userId: string) => {
@@ -206,9 +205,9 @@ const TeamSettingsPage: React.FC = () => {
     }
   };
 
-  // Function to trigger a refresh of the pending invitations
-  const refreshInvitations = () => {
-    setInviteRefreshTrigger(prev => prev + 1);
+  // Function to handle invitation sent and refresh pending invitations
+  const handleInvitationSent = () => {
+    refreshPendingInvitations();
   };
 
   return (
@@ -222,11 +221,8 @@ const TeamSettingsPage: React.FC = () => {
       </div>
 
       <div className="grid gap-6 mt-8">
-        {/* PendingInvitations with refresh capability */}
-        <PendingInvitations 
-          refreshTrigger={inviteRefreshTrigger}
-          onInvitationResent={refreshInvitations}
-        />
+        {/* PendingInvitations with automatic refresh */}
+        <PendingInvitations onInvitationResent={refreshPendingInvitations} />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -242,7 +238,7 @@ const TeamSettingsPage: React.FC = () => {
               <InviteMemberDialog 
                 open={showInviteDialog} 
                 onClose={() => setShowInviteDialog(false)}
-                onInviteSent={refreshInvitations}
+                onInviteSent={handleInvitationSent}
               />
             </div>
           </div>

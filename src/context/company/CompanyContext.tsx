@@ -11,6 +11,7 @@ type CompanyContextType = {
   userCompanyRole: CompanyRole | null;
   companyMembers: CompanyMember[];
   companyInvitations: CompanyInvitation[];
+  pendingInvitations: CompanyInvitation[];
   isLoading: boolean;
   createCompany: (name: string) => Promise<void>;
   switchCompany: (companyId: string) => void;
@@ -19,6 +20,7 @@ type CompanyContextType = {
   updateMemberRole: (userId: string, role: CompanyRole) => Promise<void>;
   acceptInvitation: (invitationId: string) => Promise<void>;
   declineInvitation: (invitationId: string) => Promise<void>;
+  refreshPendingInvitations: () => Promise<void>;
 };
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -39,11 +41,14 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setCompanyMembers,
     companyInvitations,
     setCompanyInvitations,
+    pendingInvitations,
+    setPendingInvitations,
     isLoading,
     fetchUserCompanies,
     fetchUserInvitations,
     fetchUserRole,
     fetchCompanyMembers,
+    fetchPendingInvitations,
     switchCompany
   } = companyData;
   
@@ -69,6 +74,11 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchUserCompanies
   );
 
+  // Function to refresh pending invitations
+  const refreshPendingInvitations = async () => {
+    await fetchPendingInvitations();
+  };
+
   // Effects to handle auth and company state changes
   useEffect(() => {
     console.log("CompanyContext: User or auth state changed", { 
@@ -87,6 +97,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setUserCompanyRole(null);
       setCompanyMembers([]);
       setCompanyInvitations([]);
+      setPendingInvitations([]);
     }
   }, [user]);
 
@@ -95,6 +106,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.log("Current company changed:", currentCompany.name);
       fetchCompanyMembers();
       fetchUserRole();
+      fetchPendingInvitations();
       
       localStorage.setItem('currentCompanyId', currentCompany.id);
     }
@@ -129,6 +141,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         userCompanyRole,
         companyMembers,
         companyInvitations,
+        pendingInvitations,
         isLoading,
         createCompany,
         switchCompany,
@@ -136,7 +149,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         removeMember,
         updateMemberRole,
         acceptInvitation,
-        declineInvitation
+        declineInvitation,
+        refreshPendingInvitations
       }}
     >
       {children}
