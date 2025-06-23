@@ -44,7 +44,6 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
     try {
       console.log('Fetching pending invitations for company:', currentCompany.id);
       
-      // Query only company_invitations table with exact required fields
       const { data, error } = await supabase
         .from('company_invitations')
         .select('id, email, role, created_at')
@@ -71,20 +70,11 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
     } catch (error: any) {
       console.error('Error fetching pending invitations:', error);
       setHasError(true);
-      
-      // Only show toast for non-permission errors
-      if (!error.message?.includes('permission denied')) {
-        toast({
-          variant: "destructive",
-          title: "Failed to load invitations",
-          description: error.message || "Could not retrieve pending invitations. Please try again."
-        });
-      } else {
-        // For permission errors, just log and don't show error state
-        console.log('Permission error, hiding invitation section');
-        setPendingInvitations([]);
-        setHasError(false);
-      }
+      toast({
+        variant: "destructive",
+        title: "Failed to load invitations",
+        description: error.message || "Could not retrieve pending invitations. Please try again."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +82,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
   
   const resendInvitation = async (invitationId: string) => {
     try {
-      // Get the invitation details - only from company_invitations table
+      // Get the invitation details
       const { data: invitation, error: invError } = await supabase
         .from('company_invitations')
         .select('email, company_id, role')
@@ -101,7 +91,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
       
       if (invError || !invitation) throw invError || new Error('Invitation not found');
       
-      // Get company name - only from companies table
+      // Get company name
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('name')
@@ -150,7 +140,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
     fetchPendingInvitations();
   }, [currentCompany?.id, refreshTrigger]);
   
-  // Show error state only for non-permission errors
+  // Show error state
   if (hasError && !isLoading) {
     return (
       <Card className="mb-6">
