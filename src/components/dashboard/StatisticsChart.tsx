@@ -73,7 +73,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
   };
   
   return (
-    <Card className="col-span-full h-[540px] overflow-auto">
+    <Card className="rounded-lg border bg-card text-card-foreground shadow-sm col-span-full h-[540px] overflow-auto">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium">Experiment Performance</CardTitle>
       </CardHeader>
