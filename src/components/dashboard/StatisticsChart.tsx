@@ -73,7 +73,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
   };
   
   return (
-    <Card className="col-span-full">
+    <Card className="col-span-full h-[540px] overflow-auto">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium">Experiment Performance</CardTitle>
       </CardHeader>
@@ -93,7 +93,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="name" />
-                <YAxis width={40} /> {/* Fixed width for Y-axis */}
+                <YAxis width={40} />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <ChartTooltip
                   content={<ChartTooltipContent />}
