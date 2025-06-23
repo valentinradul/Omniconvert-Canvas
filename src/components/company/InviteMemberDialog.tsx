@@ -29,8 +29,10 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
 
     setIsSubmitting(true);
     try {
+      console.log('Sending invitation to:', email, 'with role:', role);
       await inviteMember(email, role);
       
+      console.log('Invitation sent successfully');
       toast({
         title: "Invitation sent successfully!",
         description: `${email} has been invited to join your team.`,
@@ -39,27 +41,36 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
       setEmail('');
       setRole('member');
       
-      // Call the onInviteSent callback if provided
+      // Call the onInviteSent callback if provided to refresh the pending invitations
       if (onInviteSent) {
+        console.log('Triggering invitation refresh callback');
         onInviteSent();
       }
       
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error inviting member:', error);
       toast({
         variant: "destructive",
         title: "Invitation failed",
-        description: "There was a problem sending the invitation. Please check if the email is valid and try again.",
+        description: error.message || "There was a problem sending the invitation. Please check if the email is valid and try again.",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleClose = () => {
+    if (!isSubmitting) {
+      setEmail('');
+      setRole('member');
+      onClose();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) onClose();
+      if (!isOpen) handleClose();
     }}>
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
@@ -108,7 +119,7 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSubmitting}
             >
               Cancel

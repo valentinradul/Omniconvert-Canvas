@@ -28,13 +28,21 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
   const { currentCompany } = useCompany();
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(false);
   const { toast } = useToast();
 
   const fetchPendingInvitations = async () => {
-    if (!currentCompany) return;
+    if (!currentCompany?.id) {
+      console.log('No current company, skipping invitation fetch');
+      return;
+    }
     
     setIsLoading(true);
+    setHasError(false);
+    
     try {
+      console.log('Fetching pending invitations for company:', currentCompany.id);
+      
       const { data, error } = await supabase
         .from('company_invitations')
         .select('id, email, role, created_at')
@@ -42,9 +50,14 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
         .eq('accepted', false)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching invitations:', error);
+        throw error;
+      }
       
-      const formatted = data.map(inv => ({
+      console.log('Fetched invitations data:', data);
+      
+      const formatted = (data || []).map(inv => ({
         id: inv.id,
         email: inv.email,
         role: inv.role,
@@ -52,12 +65,14 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
       }));
       
       setPendingInvitations(formatted);
-    } catch (error) {
+      console.log('Set pending invitations:', formatted);
+    } catch (error: any) {
       console.error('Error fetching pending invitations:', error);
+      setHasError(true);
       toast({
         variant: "destructive",
         title: "Failed to load invitations",
-        description: "Could not retrieve pending invitations. Please try again."
+        description: error.message || "Could not retrieve pending invitations. Please try again."
       });
     } finally {
       setIsLoading(false);
@@ -115,12 +130,39 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
     }
   };
   
-  // Fetch invitations on initial load and when company changes
+  // Fetch invitations on initial load and when company or refresh trigger changes
   useEffect(() => {
+    console.log('PendingInvitations useEffect triggered', { 
+      currentCompany: currentCompany?.id, 
+      refreshTrigger 
+    });
     fetchPendingInvitations();
-  }, [currentCompany, refreshTrigger]);
+  }, [currentCompany?.id, refreshTrigger]);
   
-  if (pendingInvitations.length === 0 && !isLoading) {
+  // Show error state
+  if (hasError && !isLoading) {
+    return (
+      <Card className="mb-6">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Pending Invitations</CardTitle>
+            <CardDescription className="text-red-600">Failed to load pending invitations</CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchPendingInvitations}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </CardHeader>
+      </Card>
+    );
+  }
+  
+  // Don't show the component if there are no pending invitations and we're not loading
+  if (pendingInvitations.length === 0 && !isLoading && !hasError) {
     return null;
   }
 
@@ -145,7 +187,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
         {isLoading ? (
           <div className="flex items-center justify-center p-4">
             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            Loading...
+            Loading invitations...
           </div>
         ) : (
           <div className="space-y-3">
