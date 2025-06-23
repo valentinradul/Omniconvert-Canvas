@@ -131,12 +131,12 @@ export const loadCompanyMembers = async (companyId: string) => {
   }
 };
 
-// Load user invitations - simplified to avoid users table access
+// Load user invitations - only query company_invitations table
 export const loadUserInvitations = async (userEmail: string) => {
   try {
     console.log('Loading invitations for email:', userEmail);
     
-    // Simple query to company_invitations table only
+    // Query only company_invitations table with exact fields needed
     const { data, error } = await supabase
       .from('company_invitations')
       .select('id, company_id, email, role, accepted, invited_by, created_at')
@@ -145,6 +145,11 @@ export const loadUserInvitations = async (userEmail: string) => {
       
     if (error) {
       console.error('Error loading invitations:', error);
+      // Don't throw permission errors, just return empty array
+      if (error.message?.includes('permission denied')) {
+        console.log('Permission denied loading invitations, returning empty array');
+        return [];
+      }
       throw error;
     }
     
@@ -163,11 +168,7 @@ export const loadUserInvitations = async (userEmail: string) => {
     return formattedInvitations;
   } catch (error: any) {
     console.error('Error loading invitations:', error.message);
-    // Don't throw permission errors, just return empty array
-    if (error.message?.includes('permission denied')) {
-      console.log('Permission denied loading invitations, returning empty array');
-      return [];
-    }
-    throw error;
+    // Return empty array for any errors to prevent breaking the app
+    return [];
   }
 };

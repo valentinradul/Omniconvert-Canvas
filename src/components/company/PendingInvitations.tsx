@@ -44,7 +44,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
     try {
       console.log('Fetching pending invitations for company:', currentCompany.id);
       
-      // Simple query to company_invitations table only, avoiding any user table joins
+      // Query only company_invitations table with exact required fields
       const { data, error } = await supabase
         .from('company_invitations')
         .select('id, email, role, created_at')
@@ -79,6 +79,11 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
           title: "Failed to load invitations",
           description: error.message || "Could not retrieve pending invitations. Please try again."
         });
+      } else {
+        // For permission errors, just log and don't show error state
+        console.log('Permission error, hiding invitation section');
+        setPendingInvitations([]);
+        setHasError(false);
       }
     } finally {
       setIsLoading(false);
@@ -87,7 +92,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
   
   const resendInvitation = async (invitationId: string) => {
     try {
-      // Get the invitation details
+      // Get the invitation details - only from company_invitations table
       const { data: invitation, error: invError } = await supabase
         .from('company_invitations')
         .select('email, company_id, role')
@@ -96,7 +101,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
       
       if (invError || !invitation) throw invError || new Error('Invitation not found');
       
-      // Get company name
+      // Get company name - only from companies table
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('name')
