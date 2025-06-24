@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -10,7 +11,8 @@ import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import { ObservationContent, calculatePectiPercentage } from '@/types';
 import ObservationContentEditor from '@/components/ObservationContentEditor';
-import { Save, Trash2 } from 'lucide-react';
+import DraftIndicator from '@/components/DraftIndicator';
+import { useDraftState } from '@/hooks/useDraftState';
 
 const CreateHypothesisPage: React.FC = () => {
   const { ideaId } = useParams();
@@ -19,133 +21,41 @@ const CreateHypothesisPage: React.FC = () => {
 
   const [idea, setIdea] = useState(getIdeaById(ideaId || ''));
   
-  // Storage key for this specific idea
-  const storageKey = `hypothesis-draft-${ideaId}`;
-  
-  // Form state - will be initialized from localStorage or defaults
-  const [observation, setObservation] = useState('');
-  const [observationContent, setObservationContent] = useState<ObservationContent>({
-    text: '',
-    imageUrls: [],
-    externalUrls: []
+  const defaultValues = {
+    observation: '',
+    observationContent: {
+      text: '',
+      imageUrls: [],
+      externalUrls: []
+    } as ObservationContent,
+    initiative: '',
+    metric: '',
+    potential: 3,
+    ease: 3,
+    cost: 3,
+    time: 3,
+    impact: 3
+  };
+
+  const {
+    formData,
+    hasSavedDraft,
+    updateField,
+    clearDraft,
+    saveDraft,
+    clearDraftOnSubmit
+  } = useDraftState({
+    storageKey: `hypothesis-draft-${ideaId}`,
+    defaultValues
   });
-  const [initiative, setInitiative] = useState('');
-  const [metric, setMetric] = useState('');
-  
-  // PECTI scores
-  const [potential, setPotential] = useState<number>(3);
-  const [ease, setEase] = useState<number>(3);
-  const [cost, setCost] = useState<number>(3);
-  const [time, setTime] = useState<number>(3);
-  const [impact, setImpact] = useState<number>(3);
-  
-  // Track if we have saved state and if component is initialized
-  const [hasSavedDraft, setHasSavedDraft] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  
-  // Helper function to save form state to localStorage
-  const saveFormState = (formData: any) => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(formData));
-      console.log('Form state saved to localStorage:', storageKey, formData);
-    } catch (error) {
-      console.error('Error saving form state:', error);
-    }
-  };
-  
-  // Helper function to load form state from localStorage
-  const loadFormState = () => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        console.log('Form state loaded from localStorage:', storageKey, parsed);
-        return parsed;
-      }
-    } catch (error) {
-      console.error('Error parsing saved form state:', error);
-      localStorage.removeItem(storageKey);
-    }
-    return null;
-  };
-  
-  // Initialize form state from localStorage on component mount
-  useEffect(() => {
-    console.log('Initializing form state for idea:', ideaId);
-    const savedState = loadFormState();
-    
-    if (savedState) {
-      console.log('Restoring saved state:', savedState);
-      setObservation(savedState.observation || '');
-      setObservationContent(savedState.observationContent || {
-        text: '',
-        imageUrls: [],
-        externalUrls: []
-      });
-      setInitiative(savedState.initiative || '');
-      setMetric(savedState.metric || '');
-      setPotential(savedState.potential || 3);
-      setEase(savedState.ease || 3);
-      setCost(savedState.cost || 3);
-      setTime(savedState.time || 3);
-      setImpact(savedState.impact || 3);
-      setHasSavedDraft(true);
-    } else {
-      console.log('No saved state found, using defaults');
-      setHasSavedDraft(false);
-    }
-    
-    setIsInitialized(true);
-  }, [ideaId, storageKey]);
-  
-  // Auto-save form state whenever any field changes (but only after initialization)
-  useEffect(() => {
-    if (!isInitialized) {
-      console.log('Not initialized yet, skipping auto-save');
-      return;
-    }
-    
-    const formData = {
-      observation,
-      observationContent,
-      initiative,
-      metric,
-      potential,
-      ease,
-      cost,
-      time,
-      impact
-    };
-    
-    // Check if there's actually some content to save
-    const hasContent = observation.trim() || 
-                      initiative.trim() || 
-                      metric.trim() || 
-                      potential !== 3 || 
-                      ease !== 3 || 
-                      cost !== 3 || 
-                      time !== 3 || 
-                      impact !== 3 ||
-                      (observationContent.imageUrls && observationContent.imageUrls.length > 0) ||
-                      (observationContent.externalUrls && observationContent.externalUrls.length > 0);
-    
-    console.log('Auto-save check - hasContent:', hasContent, formData);
-    
-    if (hasContent) {
-      saveFormState(formData);
-      if (!hasSavedDraft) {
-        setHasSavedDraft(true);
-      }
-    }
-  }, [observation, observationContent, initiative, metric, potential, ease, cost, time, impact, isInitialized, hasSavedDraft]);
   
   // Calculated PECTI percentage
   const pectiPercentage = calculatePectiPercentage({
-    potential: potential as 1 | 2 | 3 | 4 | 5,
-    ease: ease as 1 | 2 | 3 | 4 | 5,
-    cost: cost as 1 | 2 | 3 | 4 | 5,
-    time: time as 1 | 2 | 3 | 4 | 5,
-    impact: impact as 1 | 2 | 3 | 4 | 5,
+    potential: formData.potential as 1 | 2 | 3 | 4 | 5,
+    ease: formData.ease as 1 | 2 | 3 | 4 | 5,
+    cost: formData.cost as 1 | 2 | 3 | 4 | 5,
+    time: formData.time as 1 | 2 | 3 | 4 | 5,
+    impact: formData.impact as 1 | 2 | 3 | 4 | 5,
   });
   
   useEffect(() => {
@@ -159,11 +69,11 @@ const CreateHypothesisPage: React.FC = () => {
 
   useEffect(() => {
     // Sync regular observation text with observationContent.text
-    setObservationContent(prev => ({
-      ...prev,
-      text: observation
-    }));
-  }, [observation]);
+    updateField('observationContent', {
+      ...formData.observationContent,
+      text: formData.observation
+    });
+  }, [formData.observation]);
   
   if (!idea) {
     return <div>Loading...</div>;
@@ -172,7 +82,7 @@ const CreateHypothesisPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!observation || !initiative || !metric) {
+    if (!formData.observation || !formData.initiative || !formData.metric) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -180,24 +90,23 @@ const CreateHypothesisPage: React.FC = () => {
     try {
       const newHypothesis = {
         ideaId: idea.id,
-        observation,
-        observationContent,
-        initiative,
-        metric,
+        observation: formData.observation,
+        observationContent: formData.observationContent,
+        initiative: formData.initiative,
+        metric: formData.metric,
         pectiScore: {
-          potential: potential as 1 | 2 | 3 | 4 | 5,
-          ease: ease as 1 | 2 | 3 | 4 | 5,
-          cost: cost as 1 | 2 | 3 | 4 | 5,
-          time: time as 1 | 2 | 3 | 4 | 5,
-          impact: impact as 1 | 2 | 3 | 4 | 5,
+          potential: formData.potential as 1 | 2 | 3 | 4 | 5,
+          ease: formData.ease as 1 | 2 | 3 | 4 | 5,
+          cost: formData.cost as 1 | 2 | 3 | 4 | 5,
+          time: formData.time as 1 | 2 | 3 | 4 | 5,
+          impact: formData.impact as 1 | 2 | 3 | 4 | 5,
         }
       };
       
       addHypothesis(newHypothesis);
       
       // Clear the saved draft after successful submission
-      localStorage.removeItem(storageKey);
-      setHasSavedDraft(false);
+      clearDraftOnSubmit();
       
       toast.success('Hypothesis created successfully!');
       navigate('/hypotheses');
@@ -207,64 +116,22 @@ const CreateHypothesisPage: React.FC = () => {
     }
   };
   
-  const clearDraft = () => {
-    console.log('Clearing draft for:', storageKey);
-    localStorage.removeItem(storageKey);
-    setObservation('');
-    setObservationContent({ text: '', imageUrls: [], externalUrls: [] });
-    setInitiative('');
-    setMetric('');
-    setPotential(3);
-    setEase(3);
-    setCost(3);
-    setTime(3);
-    setImpact(3);
-    setHasSavedDraft(false);
-    toast.success('Draft cleared');
-  };
-  
-  const saveDraft = () => {
-    const formData = {
-      observation,
-      observationContent,
-      initiative,
-      metric,
-      potential,
-      ease,
-      cost,
-      time,
-      impact
-    };
-    
-    saveFormState(formData);
-    setHasSavedDraft(true);
-    toast.success('Draft saved successfully!');
-  };
-  
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-4">
         <Button variant="outline" onClick={() => navigate('/ideas')}>
           Back to Ideas
         </Button>
-        {hasSavedDraft && (
-          <Button variant="ghost" size="sm" onClick={clearDraft}>
-            Clear Draft
-          </Button>
-        )}
       </div>
       
       <h1 className="text-3xl font-bold tracking-tight mb-6">Create Hypothesis</h1>
       
-      {hasSavedDraft && (
-        <Card className="mb-6 border-amber-200 bg-amber-50">
-          <CardContent className="pt-4">
-            <p className="text-sm text-amber-800">
-              📝 Draft automatically saved - your progress is preserved when you leave this page.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      <DraftIndicator
+        hasSavedDraft={hasSavedDraft}
+        onSaveDraft={saveDraft}
+        onClearDraft={clearDraft}
+        showButtons={false}
+      />
       
       <Card className="mb-6">
         <CardHeader>
@@ -285,16 +152,16 @@ const CreateHypothesisPage: React.FC = () => {
               <Label htmlFor="observation">Because we observed</Label>
               <Textarea 
                 id="observation" 
-                value={observation} 
-                onChange={(e) => setObservation(e.target.value)} 
+                value={formData.observation} 
+                onChange={(e) => updateField('observation', e.target.value)} 
                 placeholder="E.g. that users are dropping off during onboarding"
               />
             </div>
             
             <div className="grid gap-3 border-l-4 border-l-primary/20 pl-4">
               <ObservationContentEditor 
-                value={observationContent} 
-                onChange={setObservationContent}
+                value={formData.observationContent} 
+                onChange={(content) => updateField('observationContent', content)}
                 showTextArea={false}
               />
             </div>
@@ -303,8 +170,8 @@ const CreateHypothesisPage: React.FC = () => {
               <Label htmlFor="initiative">We will do</Label>
               <Textarea 
                 id="initiative" 
-                value={initiative} 
-                onChange={(e) => setInitiative(e.target.value)} 
+                value={formData.initiative} 
+                onChange={(e) => updateField('initiative', e.target.value)} 
                 placeholder="E.g. simplify the onboarding process by reducing steps"
               />
             </div>
@@ -313,8 +180,8 @@ const CreateHypothesisPage: React.FC = () => {
               <Label htmlFor="metric">With the measurable goal to improve</Label>
               <Input 
                 id="metric" 
-                value={metric} 
-                onChange={(e) => setMetric(e.target.value)} 
+                value={formData.metric} 
+                onChange={(e) => updateField('metric', e.target.value)} 
                 placeholder="E.g. completion rate by 20%"
               />
             </div>
@@ -323,11 +190,11 @@ const CreateHypothesisPage: React.FC = () => {
               <p className="font-medium mb-2">Preview:</p>
               <p>
                 <span className="text-muted-foreground">Because we observed</span>{' '}
-                <span className="font-medium">{observation || '...'}</span>,{' '}
+                <span className="font-medium">{formData.observation || '...'}</span>,{' '}
                 <span className="text-muted-foreground">we will do</span>{' '}
-                <span className="font-medium">{initiative || '...'}</span>,{' '}
+                <span className="font-medium">{formData.initiative || '...'}</span>,{' '}
                 <span className="text-muted-foreground">with the measurable goal to improve</span>{' '}
-                <span className="font-medium">{metric || '...'}</span>.
+                <span className="font-medium">{formData.metric || '...'}</span>.
               </p>
             </div>
           </CardContent>
@@ -341,71 +208,71 @@ const CreateHypothesisPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between mb-2">
-                  <Label>Potential (P): {potential}</Label>
+                  <Label>Potential (P): {formData.potential}</Label>
                   <span className="text-xs text-muted-foreground">How much potential does this idea have?</span>
                 </div>
                 <Slider
                   min={1}
                   max={5}
                   step={1}
-                  value={[potential]}
-                  onValueChange={(value) => setPotential(value[0])}
+                  value={[formData.potential]}
+                  onValueChange={(value) => updateField('potential', value[0])}
                 />
               </div>
               
               <div>
                 <div className="flex justify-between mb-2">
-                  <Label>Ease (E): {ease}</Label>
+                  <Label>Ease (E): {formData.ease}</Label>
                   <span className="text-xs text-muted-foreground">How easy will it be to implement?</span>
                 </div>
                 <Slider
                   min={1}
                   max={5}
                   step={1}
-                  value={[ease]}
-                  onValueChange={(value) => setEase(value[0])}
+                  value={[formData.ease]}
+                  onValueChange={(value) => updateField('ease', value[0])}
                 />
               </div>
               
               <div>
                 <div className="flex justify-between mb-2">
-                  <Label>Cost (C): {cost}</Label>
+                  <Label>Cost (C): {formData.cost}</Label>
                   <span className="text-xs text-muted-foreground">How expensive will it be? (1 = high cost, 5 = low cost)</span>
                 </div>
                 <Slider
                   min={1}
                   max={5}
                   step={1}
-                  value={[cost]}
-                  onValueChange={(value) => setCost(value[0])}
+                  value={[formData.cost]}
+                  onValueChange={(value) => updateField('cost', value[0])}
                 />
               </div>
               
               <div>
                 <div className="flex justify-between mb-2">
-                  <Label>Time (T): {time}</Label>
+                  <Label>Time (T): {formData.time}</Label>
                   <span className="text-xs text-muted-foreground">How quickly can it be implemented? (1 = slow, 5 = fast)</span>
                 </div>
                 <Slider
                   min={1}
                   max={5}
                   step={1}
-                  value={[time]}
-                  onValueChange={(value) => setTime(value[0])}
+                  value={[formData.time]}
+                  onValueChange={(value) => updateField('time', value[0])}
                 />
               </div>
               
               <div>
                 <div className="flex justify-between mb-2">
-                  <Label>Impact (I): {impact}</Label>
+                  <Label>Impact (I): {formData.impact}</Label>
                   <span className="text-xs text-muted-foreground">How significant will the impact be?</span>
                 </div>
                 <Slider
                   min={1}
                   max={5}
                   step={1}
-                  value={[impact]}
-                  onValueChange={(value) => setImpact(value[0])}
+                  value={[formData.impact]}
+                  onValueChange={(value) => updateField('impact', value[0])}
                 />
               </div>
             </div>
@@ -413,7 +280,7 @@ const CreateHypothesisPage: React.FC = () => {
             <div className="bg-muted/40 p-4 rounded-md">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <p className="font-medium">Total PECTI Score: {potential + ease + cost + time + impact} / 25</p>
+                  <p className="font-medium">Total PECTI Score: {formData.potential + formData.ease + formData.cost + formData.time + formData.impact} / 25</p>
                   <div className={`text-sm font-bold px-2 py-1 rounded ${
                     pectiPercentage >= 70 ? 'bg-green-100 text-green-800' : 
                     pectiPercentage >= 40 ? 'bg-amber-100 text-amber-800' : 
@@ -423,38 +290,24 @@ const CreateHypothesisPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
-                  <div className={`text-center rounded-md p-2 pecti-score-${potential}`}>P: {potential}</div>
-                  <div className={`text-center rounded-md p-2 pecti-score-${ease}`}>E: {ease}</div>
-                  <div className={`text-center rounded-md p-2 pecti-score-${cost}`}>C: {cost}</div>
-                  <div className={`text-center rounded-md p-2 pecti-score-${time}`}>T: {time}</div>
-                  <div className={`text-center rounded-md p-2 pecti-score-${impact}`}>I: {impact}</div>
+                  <div className={`text-center rounded-md p-2 pecti-score-${formData.potential}`}>P: {formData.potential}</div>
+                  <div className={`text-center rounded-md p-2 pecti-score-${formData.ease}`}>E: {formData.ease}</div>
+                  <div className={`text-center rounded-md p-2 pecti-score-${formData.cost}`}>C: {formData.cost}</div>
+                  <div className={`text-center rounded-md p-2 pecti-score-${formData.time}`}>T: {formData.time}</div>
+                  <div className={`text-center rounded-md p-2 pecti-score-${formData.impact}`}>I: {formData.impact}</div>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
         
+        <DraftIndicator
+          hasSavedDraft={hasSavedDraft}
+          onSaveDraft={saveDraft}
+          onClearDraft={clearDraft}
+        />
+        
         <div className="flex justify-end gap-3">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={saveDraft}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Save Draft
-          </Button>
-          
-          {hasSavedDraft && (
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={clearDraft}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear Draft
-            </Button>
-          )}
-          
           <Button type="submit" size="lg">Create Hypothesis</Button>
         </div>
       </form>
