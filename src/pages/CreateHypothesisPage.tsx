@@ -24,44 +24,73 @@ const CreateHypothesisPage: React.FC = () => {
   
   // Helper function to save form state to localStorage
   const saveFormState = (formData: any) => {
-    localStorage.setItem(storageKey, JSON.stringify(formData));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(formData));
+      console.log('Form state saved to localStorage:', storageKey);
+    } catch (error) {
+      console.error('Error saving form state:', error);
+    }
   };
   
   // Helper function to load form state from localStorage
   const loadFormState = () => {
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (error) {
-        console.error('Error parsing saved form state:', error);
-        localStorage.removeItem(storageKey);
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('Form state loaded from localStorage:', storageKey, parsed);
+        return parsed;
       }
+    } catch (error) {
+      console.error('Error parsing saved form state:', error);
+      localStorage.removeItem(storageKey);
     }
     return null;
   };
   
-  // Load saved state or use defaults
-  const savedState = loadFormState();
-  
-  // Form state
-  const [observation, setObservation] = useState(savedState?.observation || '');
-  const [observationContent, setObservationContent] = useState<ObservationContent>(
-    savedState?.observationContent || {
-      text: '',
-      imageUrls: [],
-      externalUrls: []
-    }
-  );
-  const [initiative, setInitiative] = useState(savedState?.initiative || '');
-  const [metric, setMetric] = useState(savedState?.metric || '');
+  // Form state - initialize with empty values first
+  const [observation, setObservation] = useState('');
+  const [observationContent, setObservationContent] = useState<ObservationContent>({
+    text: '',
+    imageUrls: [],
+    externalUrls: []
+  });
+  const [initiative, setInitiative] = useState('');
+  const [metric, setMetric] = useState('');
   
   // PECTI scores
-  const [potential, setPotential] = useState<number>(savedState?.potential || 3);
-  const [ease, setEase] = useState<number>(savedState?.ease || 3);
-  const [cost, setCost] = useState<number>(savedState?.cost || 3);
-  const [time, setTime] = useState<number>(savedState?.time || 3);
-  const [impact, setImpact] = useState<number>(savedState?.impact || 3);
+  const [potential, setPotential] = useState<number>(3);
+  const [ease, setEase] = useState<number>(3);
+  const [cost, setCost] = useState<number>(3);
+  const [time, setTime] = useState<number>(3);
+  const [impact, setImpact] = useState<number>(3);
+  
+  // Track if we have saved state
+  const [hasSavedDraft, setHasSavedDraft] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Load saved state on component mount
+  useEffect(() => {
+    const savedState = loadFormState();
+    if (savedState) {
+      console.log('Restoring saved state:', savedState);
+      setObservation(savedState.observation || '');
+      setObservationContent(savedState.observationContent || {
+        text: '',
+        imageUrls: [],
+        externalUrls: []
+      });
+      setInitiative(savedState.initiative || '');
+      setMetric(savedState.metric || '');
+      setPotential(savedState.potential || 3);
+      setEase(savedState.ease || 3);
+      setCost(savedState.cost || 3);
+      setTime(savedState.time || 3);
+      setImpact(savedState.impact || 3);
+      setHasSavedDraft(true);
+    }
+    setIsInitialized(true);
+  }, [storageKey]);
   
   // Calculated PECTI percentage
   const pectiPercentage = calculatePectiPercentage({
@@ -72,8 +101,10 @@ const CreateHypothesisPage: React.FC = () => {
     impact: impact as 1 | 2 | 3 | 4 | 5,
   });
   
-  // Save form state whenever any field changes
+  // Save form state whenever any field changes (but only after initialization)
   useEffect(() => {
+    if (!isInitialized) return;
+    
     const formData = {
       observation,
       observationContent,
@@ -85,8 +116,19 @@ const CreateHypothesisPage: React.FC = () => {
       time,
       impact
     };
-    saveFormState(formData);
-  }, [observation, observationContent, initiative, metric, potential, ease, cost, time, impact]);
+    
+    // Only save if there's actually some content
+    const hasContent = observation || initiative || metric || 
+                      potential !== 3 || ease !== 3 || cost !== 3 || 
+                      time !== 3 || impact !== 3 ||
+                      observationContent.imageUrls.length > 0 ||
+                      observationContent.externalUrls.length > 0;
+    
+    if (hasContent) {
+      saveFormState(formData);
+      setHasSavedDraft(true);
+    }
+  }, [observation, observationContent, initiative, metric, potential, ease, cost, time, impact, isInitialized]);
   
   useEffect(() => {
     const currentIdea = getIdeaById(ideaId || '');
@@ -137,6 +179,7 @@ const CreateHypothesisPage: React.FC = () => {
       
       // Clear the saved draft after successful submission
       localStorage.removeItem(storageKey);
+      setHasSavedDraft(false);
       
       toast.success('Hypothesis created successfully!');
       navigate('/hypotheses');
@@ -157,6 +200,7 @@ const CreateHypothesisPage: React.FC = () => {
     setCost(3);
     setTime(3);
     setImpact(3);
+    setHasSavedDraft(false);
     toast.success('Draft cleared');
   };
   
@@ -166,7 +210,7 @@ const CreateHypothesisPage: React.FC = () => {
         <Button variant="outline" onClick={() => navigate('/ideas')}>
           Back to Ideas
         </Button>
-        {savedState && (
+        {hasSavedDraft && (
           <Button variant="ghost" size="sm" onClick={clearDraft}>
             Clear Draft
           </Button>
@@ -175,7 +219,7 @@ const CreateHypothesisPage: React.FC = () => {
       
       <h1 className="text-3xl font-bold tracking-tight mb-6">Create Hypothesis</h1>
       
-      {savedState && (
+      {hasSavedDraft && (
         <Card className="mb-6 border-amber-200 bg-amber-50">
           <CardContent className="pt-4">
             <p className="text-sm text-amber-800">
