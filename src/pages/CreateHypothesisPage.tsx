@@ -19,22 +19,49 @@ const CreateHypothesisPage: React.FC = () => {
 
   const [idea, setIdea] = useState(getIdeaById(ideaId || ''));
   
+  // Storage key for this specific idea
+  const storageKey = `hypothesis-draft-${ideaId}`;
+  
+  // Helper function to save form state to localStorage
+  const saveFormState = (formData: any) => {
+    localStorage.setItem(storageKey, JSON.stringify(formData));
+  };
+  
+  // Helper function to load form state from localStorage
+  const loadFormState = () => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (error) {
+        console.error('Error parsing saved form state:', error);
+        localStorage.removeItem(storageKey);
+      }
+    }
+    return null;
+  };
+  
+  // Load saved state or use defaults
+  const savedState = loadFormState();
+  
   // Form state
-  const [observation, setObservation] = useState('');
-  const [observationContent, setObservationContent] = useState<ObservationContent>({
-    text: '',
-    imageUrls: [],
-    externalUrls: []
-  });
-  const [initiative, setInitiative] = useState('');
-  const [metric, setMetric] = useState('');
+  const [observation, setObservation] = useState(savedState?.observation || '');
+  const [observationContent, setObservationContent] = useState<ObservationContent>(
+    savedState?.observationContent || {
+      text: '',
+      imageUrls: [],
+      externalUrls: []
+    }
+  );
+  const [initiative, setInitiative] = useState(savedState?.initiative || '');
+  const [metric, setMetric] = useState(savedState?.metric || '');
   
   // PECTI scores
-  const [potential, setPotential] = useState<number>(3);
-  const [ease, setEase] = useState<number>(3);
-  const [cost, setCost] = useState<number>(3);
-  const [time, setTime] = useState<number>(3);
-  const [impact, setImpact] = useState<number>(3);
+  const [potential, setPotential] = useState<number>(savedState?.potential || 3);
+  const [ease, setEase] = useState<number>(savedState?.ease || 3);
+  const [cost, setCost] = useState<number>(savedState?.cost || 3);
+  const [time, setTime] = useState<number>(savedState?.time || 3);
+  const [impact, setImpact] = useState<number>(savedState?.impact || 3);
   
   // Calculated PECTI percentage
   const pectiPercentage = calculatePectiPercentage({
@@ -44,6 +71,22 @@ const CreateHypothesisPage: React.FC = () => {
     time: time as 1 | 2 | 3 | 4 | 5,
     impact: impact as 1 | 2 | 3 | 4 | 5,
   });
+  
+  // Save form state whenever any field changes
+  useEffect(() => {
+    const formData = {
+      observation,
+      observationContent,
+      initiative,
+      metric,
+      potential,
+      ease,
+      cost,
+      time,
+      impact
+    };
+    saveFormState(formData);
+  }, [observation, observationContent, initiative, metric, potential, ease, cost, time, impact]);
   
   useEffect(() => {
     const currentIdea = getIdeaById(ideaId || '');
@@ -91,6 +134,10 @@ const CreateHypothesisPage: React.FC = () => {
       };
       
       addHypothesis(newHypothesis);
+      
+      // Clear the saved draft after successful submission
+      localStorage.removeItem(storageKey);
+      
       toast.success('Hypothesis created successfully!');
       navigate('/hypotheses');
     } catch (error) {
@@ -99,13 +146,44 @@ const CreateHypothesisPage: React.FC = () => {
     }
   };
   
+  const clearDraft = () => {
+    localStorage.removeItem(storageKey);
+    setObservation('');
+    setObservationContent({ text: '', imageUrls: [], externalUrls: [] });
+    setInitiative('');
+    setMetric('');
+    setPotential(3);
+    setEase(3);
+    setCost(3);
+    setTime(3);
+    setImpact(3);
+    toast.success('Draft cleared');
+  };
+  
   return (
     <div className="max-w-4xl mx-auto">
-      <Button variant="outline" onClick={() => navigate('/ideas')} className="mb-4">
-        Back to Ideas
-      </Button>
+      <div className="flex justify-between items-center mb-4">
+        <Button variant="outline" onClick={() => navigate('/ideas')}>
+          Back to Ideas
+        </Button>
+        {savedState && (
+          <Button variant="ghost" size="sm" onClick={clearDraft}>
+            Clear Draft
+          </Button>
+        )}
+      </div>
       
       <h1 className="text-3xl font-bold tracking-tight mb-6">Create Hypothesis</h1>
+      
+      {savedState && (
+        <Card className="mb-6 border-amber-200 bg-amber-50">
+          <CardContent className="pt-4">
+            <p className="text-sm text-amber-800">
+              📝 Draft automatically saved - your progress is preserved when you leave this page.
+            </p>
+          </CardContent>
+        </Card>
+      )}
       
       <Card className="mb-6">
         <CardHeader>
