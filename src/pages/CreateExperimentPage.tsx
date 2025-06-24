@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ObservationContentEditor from '@/components/ObservationContentEditor';
 import PectiScoreDisplay from '@/components/PectiScoreDisplay';
+import DraftIndicator from '@/components/DraftIndicator';
+import { useDraftState } from '@/hooks/useDraftState';
 
 const CreateExperimentPage: React.FC = () => {
   const { hypothesisId } = useParams();
@@ -25,15 +27,28 @@ const CreateExperimentPage: React.FC = () => {
   const [hypothesis, setHypothesis] = useState(getHypothesisById(hypothesisId || ''));
   const [idea, setIdea] = useState(hypothesis ? getIdeaById(hypothesis.ideaId) : undefined);
   
-  // Form state
-  const [status, setStatus] = useState<ExperimentStatus>('Planned');
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
-  const [notes, setNotes] = useState('');
-  const [observationContent, setObservationContent] = useState<ObservationContent>({
-    text: '',
-    imageUrls: [],
-    externalUrls: []
+  const defaultValues = {
+    status: 'Planned' as ExperimentStatus,
+    startDate: null as Date | null,
+    endDate: null as Date | null,
+    notes: '',
+    observationContent: {
+      text: '',
+      imageUrls: [],
+      externalUrls: []
+    } as ObservationContent
+  };
+
+  const {
+    formData,
+    hasSavedDraft,
+    updateField,
+    clearDraft,
+    saveDraft,
+    clearDraftOnSubmit
+  } = useDraftState({
+    storageKey: `create-experiment-${hypothesisId}`,
+    defaultValues
   });
   
   useEffect(() => {
@@ -54,13 +69,13 @@ const CreateExperimentPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!status) {
+    if (!formData.status) {
       toast.error('Please select a status');
       return;
     }
     
     // If end date is set, it must be after start date
-    if (startDate && endDate && endDate < startDate) {
+    if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
       toast.error('End date must be after start date');
       return;
     }
@@ -68,20 +83,26 @@ const CreateExperimentPage: React.FC = () => {
     try {
       const newExperiment = {
         hypothesisId: hypothesis.id,
-        status,
-        startDate,
-        endDate,
-        notes,
-        observationContent
+        status: formData.status,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        notes: formData.notes,
+        observationContent: formData.observationContent
       };
       
       addExperiment(newExperiment);
+      clearDraftOnSubmit();
       toast.success('Experiment created successfully!');
       navigate('/experiments');
     } catch (error) {
       toast.error('Error creating experiment');
       console.error(error);
     }
+  };
+
+  const handleCancel = () => {
+    clearDraft();
+    navigate('/hypotheses');
   };
   
   return (
@@ -91,6 +112,12 @@ const CreateExperimentPage: React.FC = () => {
       </Button>
       
       <h1 className="text-3xl font-bold tracking-tight mb-6">Create Experiment</h1>
+      
+      <DraftIndicator
+        hasSavedDraft={hasSavedDraft}
+        onSaveDraft={saveDraft}
+        onClearDraft={clearDraft}
+      />
       
       <Card className="mb-6">
         <CardHeader>
@@ -122,8 +149,8 @@ const CreateExperimentPage: React.FC = () => {
             <div className="grid gap-3">
               <Label htmlFor="status">Status</Label>
               <Select 
-                value={status} 
-                onValueChange={(value) => setStatus(value as ExperimentStatus)}
+                value={formData.status} 
+                onValueChange={(value) => updateField('status', value as ExperimentStatus)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
@@ -147,18 +174,18 @@ const CreateExperimentPage: React.FC = () => {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !startDate && "text-muted-foreground"
+                        !formData.startDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {startDate ? format(startDate, "PPP") : "Select start date"}
+                      {formData.startDate ? format(formData.startDate, "PPP") : "Select start date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={startDate || undefined}
-                      onSelect={setStartDate}
+                      selected={formData.startDate || undefined}
+                      onSelect={(date) => updateField('startDate', date)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -173,18 +200,18 @@ const CreateExperimentPage: React.FC = () => {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !endDate && "text-muted-foreground"
+                        !formData.endDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, "PPP") : "Select end date"}
+                      {formData.endDate ? format(formData.endDate, "PPP") : "Select end date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={endDate || undefined}
-                      onSelect={setEndDate}
+                      selected={formData.endDate || undefined}
+                      onSelect={(date) => updateField('endDate', date)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -196,8 +223,8 @@ const CreateExperimentPage: React.FC = () => {
               <Label htmlFor="notes">Notes</Label>
               <Textarea 
                 id="notes" 
-                value={notes} 
-                onChange={(e) => setNotes(e.target.value)} 
+                value={formData.notes} 
+                onChange={(e) => updateField('notes', e.target.value)} 
                 placeholder="Add any details about how the experiment will be conducted"
               />
             </div>
@@ -205,14 +232,17 @@ const CreateExperimentPage: React.FC = () => {
             <div className="grid gap-3 border-t border-border pt-4 mt-4">
               <Label>Documentation & References</Label>
               <ObservationContentEditor 
-                value={observationContent} 
-                onChange={setObservationContent} 
+                value={formData.observationContent} 
+                onChange={(content) => updateField('observationContent', content)} 
               />
             </div>
           </CardContent>
         </Card>
         
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={handleCancel} type="button">
+            Cancel
+          </Button>
           <Button type="submit" size="lg">Create Experiment</Button>
         </div>
       </form>
