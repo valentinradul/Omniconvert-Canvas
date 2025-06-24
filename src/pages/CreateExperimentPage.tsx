@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { ALL_STATUSES, ExperimentStatus, ObservationContent } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Save, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -117,6 +116,7 @@ const CreateExperimentPage: React.FC = () => {
         hasSavedDraft={hasSavedDraft}
         onSaveDraft={saveDraft}
         onClearDraft={clearDraft}
+        showButtons={false}
       />
       
       <Card className="mb-6">
@@ -240,9 +240,26 @@ const CreateExperimentPage: React.FC = () => {
         </Card>
         
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={handleCancel} type="button">
-            Cancel
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={saveDraft}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            Save Draft
           </Button>
+          
+          {hasSavedDraft && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={clearDraft}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear Draft
+            </Button>
+          )}
+          
           <Button type="submit" size="lg">Create Experiment</Button>
         </div>
       </form>
