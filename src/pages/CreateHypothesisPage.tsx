@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -22,11 +21,32 @@ const CreateHypothesisPage: React.FC = () => {
   // Storage key for this specific idea
   const storageKey = `hypothesis-draft-${ideaId}`;
   
+  // Form state - will be initialized from localStorage or defaults
+  const [observation, setObservation] = useState('');
+  const [observationContent, setObservationContent] = useState<ObservationContent>({
+    text: '',
+    imageUrls: [],
+    externalUrls: []
+  });
+  const [initiative, setInitiative] = useState('');
+  const [metric, setMetric] = useState('');
+  
+  // PECTI scores
+  const [potential, setPotential] = useState<number>(3);
+  const [ease, setEase] = useState<number>(3);
+  const [cost, setCost] = useState<number>(3);
+  const [time, setTime] = useState<number>(3);
+  const [impact, setImpact] = useState<number>(3);
+  
+  // Track if we have saved state and if component is initialized
+  const [hasSavedDraft, setHasSavedDraft] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
   // Helper function to save form state to localStorage
   const saveFormState = (formData: any) => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(formData));
-      console.log('Form state saved to localStorage:', storageKey);
+      console.log('Form state saved to localStorage:', storageKey, formData);
     } catch (error) {
       console.error('Error saving form state:', error);
     }
@@ -48,30 +68,11 @@ const CreateHypothesisPage: React.FC = () => {
     return null;
   };
   
-  // Form state - initialize with empty values first
-  const [observation, setObservation] = useState('');
-  const [observationContent, setObservationContent] = useState<ObservationContent>({
-    text: '',
-    imageUrls: [],
-    externalUrls: []
-  });
-  const [initiative, setInitiative] = useState('');
-  const [metric, setMetric] = useState('');
-  
-  // PECTI scores
-  const [potential, setPotential] = useState<number>(3);
-  const [ease, setEase] = useState<number>(3);
-  const [cost, setCost] = useState<number>(3);
-  const [time, setTime] = useState<number>(3);
-  const [impact, setImpact] = useState<number>(3);
-  
-  // Track if we have saved state
-  const [hasSavedDraft, setHasSavedDraft] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  
-  // Load saved state on component mount
+  // Initialize form state from localStorage on component mount
   useEffect(() => {
+    console.log('Initializing form state for idea:', ideaId);
     const savedState = loadFormState();
+    
     if (savedState) {
       console.log('Restoring saved state:', savedState);
       setObservation(savedState.observation || '');
@@ -88,22 +89,20 @@ const CreateHypothesisPage: React.FC = () => {
       setTime(savedState.time || 3);
       setImpact(savedState.impact || 3);
       setHasSavedDraft(true);
+    } else {
+      console.log('No saved state found, using defaults');
+      setHasSavedDraft(false);
     }
+    
     setIsInitialized(true);
-  }, [storageKey]);
+  }, [ideaId, storageKey]);
   
-  // Calculated PECTI percentage
-  const pectiPercentage = calculatePectiPercentage({
-    potential: potential as 1 | 2 | 3 | 4 | 5,
-    ease: ease as 1 | 2 | 3 | 4 | 5,
-    cost: cost as 1 | 2 | 3 | 4 | 5,
-    time: time as 1 | 2 | 3 | 4 | 5,
-    impact: impact as 1 | 2 | 3 | 4 | 5,
-  });
-  
-  // Save form state whenever any field changes (but only after initialization)
+  // Auto-save form state whenever any field changes (but only after initialization)
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized) {
+      console.log('Not initialized yet, skipping auto-save');
+      return;
+    }
     
     const formData = {
       observation,
@@ -117,18 +116,36 @@ const CreateHypothesisPage: React.FC = () => {
       impact
     };
     
-    // Only save if there's actually some content
-    const hasContent = observation || initiative || metric || 
-                      potential !== 3 || ease !== 3 || cost !== 3 || 
-                      time !== 3 || impact !== 3 ||
-                      observationContent.imageUrls.length > 0 ||
-                      observationContent.externalUrls.length > 0;
+    // Check if there's actually some content to save
+    const hasContent = observation.trim() || 
+                      initiative.trim() || 
+                      metric.trim() || 
+                      potential !== 3 || 
+                      ease !== 3 || 
+                      cost !== 3 || 
+                      time !== 3 || 
+                      impact !== 3 ||
+                      (observationContent.imageUrls && observationContent.imageUrls.length > 0) ||
+                      (observationContent.externalUrls && observationContent.externalUrls.length > 0);
+    
+    console.log('Auto-save check - hasContent:', hasContent, formData);
     
     if (hasContent) {
       saveFormState(formData);
-      setHasSavedDraft(true);
+      if (!hasSavedDraft) {
+        setHasSavedDraft(true);
+      }
     }
-  }, [observation, observationContent, initiative, metric, potential, ease, cost, time, impact, isInitialized]);
+  }, [observation, observationContent, initiative, metric, potential, ease, cost, time, impact, isInitialized, hasSavedDraft]);
+  
+  // Calculated PECTI percentage
+  const pectiPercentage = calculatePectiPercentage({
+    potential: potential as 1 | 2 | 3 | 4 | 5,
+    ease: ease as 1 | 2 | 3 | 4 | 5,
+    cost: cost as 1 | 2 | 3 | 4 | 5,
+    time: time as 1 | 2 | 3 | 4 | 5,
+    impact: impact as 1 | 2 | 3 | 4 | 5,
+  });
   
   useEffect(() => {
     const currentIdea = getIdeaById(ideaId || '');
@@ -190,6 +207,7 @@ const CreateHypothesisPage: React.FC = () => {
   };
   
   const clearDraft = () => {
+    console.log('Clearing draft for:', storageKey);
     localStorage.removeItem(storageKey);
     setObservation('');
     setObservationContent({ text: '', imageUrls: [], externalUrls: [] });
