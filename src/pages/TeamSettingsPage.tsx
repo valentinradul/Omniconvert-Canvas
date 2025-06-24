@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { CompanyRole, CompanyMember } from '@/types';
@@ -24,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MoreVertical, Trash2, UserMinus } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -125,7 +126,7 @@ const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTabl
                           <AlertDialogHeader>
                             <AlertDialogTitle>Remove team member?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will permanently remove the member from the company.
+                              This action cannot be undone. This will permanently remove {getUserDisplayName(member)} from the company.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -138,29 +139,31 @@ const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTabl
                       </AlertDialog>
                     )}
                     
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Change Role</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => onUpdateRole(member.userId, 'member')}
-                          disabled={member.role === 'member' || userRole !== 'owner'}
-                        >
-                          Make Member
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onUpdateRole(member.userId, 'admin')}
-                          disabled={member.role === 'admin' || userRole !== 'owner'}
-                        >
-                          Make Admin
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {userRole === 'owner' && member.role !== 'owner' && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Change Role</DropdownMenuLabel>
+                          <DropdownMenuItem
+                            onClick={() => onUpdateRole(member.userId, 'member')}
+                            disabled={member.role === 'member'}
+                          >
+                            Make Member
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onUpdateRole(member.userId, 'admin')}
+                            disabled={member.role === 'admin'}
+                          >
+                            Make Admin
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -182,9 +185,10 @@ const TeamSettingsPage: React.FC = () => {
       await removeMember(userId);
       toast({
         title: "Member removed",
-        description: "Member removed from the company",
+        description: "Member removed from the company successfully",
       });
     } catch (error: any) {
+      console.error('Error removing member:', error);
       toast({
         variant: "destructive",
         title: "Failed to remove member",
@@ -201,6 +205,7 @@ const TeamSettingsPage: React.FC = () => {
         description: "Member role updated successfully",
       });
     } catch (error: any) {
+      console.error('Error updating member role:', error);
       toast({
         variant: "destructive",
         title: "Failed to update member role",

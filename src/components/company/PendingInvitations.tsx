@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +7,7 @@ import { Mail, Clock, RefreshCw, X } from 'lucide-react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface PendingInvitationsProps {
   onInvitationResent?: () => void;
@@ -15,6 +16,23 @@ interface PendingInvitationsProps {
 const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationResent }) => {
   const { currentCompany, pendingInvitations, refreshPendingInvitations, unsendInvitation, userCompanyRole } = useCompany();
   const { toast } = useToast();
+
+  const handleRefresh = async () => {
+    try {
+      await refreshPendingInvitations();
+      toast({
+        title: "Refreshed",
+        description: "Pending invitations have been refreshed"
+      });
+    } catch (error: any) {
+      console.error('Error refreshing invitations:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to refresh",
+        description: error.message || "An unexpected error occurred"
+      });
+    }
+  };
 
   const resendInvitation = async (invitationId: string) => {
     try {
@@ -65,6 +83,10 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationRes
   const handleUnsendInvitation = async (invitationId: string) => {
     try {
       await unsendInvitation(invitationId);
+      toast({
+        title: "Invitation unsent",
+        description: "The invitation has been successfully removed"
+      });
     } catch (error: any) {
       console.error('Error unsending invitation:', error);
       toast({
@@ -90,7 +112,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationRes
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={refreshPendingInvitations}
+          onClick={handleRefresh}
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
