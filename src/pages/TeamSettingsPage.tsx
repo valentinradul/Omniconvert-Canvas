@@ -23,7 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreVertical, Trash2 } from 'lucide-react';
+import { MoreVertical, Trash2, UserMinus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import {
   AlertDialog,
@@ -112,38 +112,18 @@ const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTabl
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem
-                        onClick={() => onUpdateRole(member.userId, 'member')}
-                        disabled={member.role === 'member' || userRole !== 'owner'}
-                      >
-                        Make Member
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onUpdateRole(member.userId, 'admin')}
-                        disabled={member.role === 'admin' || userRole !== 'owner'}
-                      >
-                        Make Admin
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                  <div className="flex items-center gap-2">
+                    {(userRole === 'owner' || userRole === 'admin') && member.role !== 'owner' && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <DropdownMenuItem disabled={userRole !== 'owner' || member.role === 'owner'}>
-                            <Trash2 className="mr-2 h-4 w-4" />
+                          <Button variant="outline" size="sm">
+                            <UserMinus className="h-4 w-4 mr-1" />
                             Remove
-                          </DropdownMenuItem>
+                          </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogTitle>Remove team member?</AlertDialogTitle>
                             <AlertDialogDescription>
                               This action cannot be undone. This will permanently remove the member from the company.
                             </AlertDialogDescription>
@@ -156,8 +136,32 @@ const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTabl
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                    )}
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Change Role</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onClick={() => onUpdateRole(member.userId, 'member')}
+                          disabled={member.role === 'member' || userRole !== 'owner'}
+                        >
+                          Make Member
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onUpdateRole(member.userId, 'admin')}
+                          disabled={member.role === 'admin' || userRole !== 'owner'}
+                        >
+                          Make Admin
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))

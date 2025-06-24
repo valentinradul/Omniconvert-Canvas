@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -226,10 +225,54 @@ export const useCompanyManagement = () => {
     }
   };
 
+  const unsendInvitation = async (
+    invitationId: string,
+    currentCompanyId: string | undefined,
+    userCompanyRole: CompanyRole | null
+  ) => {
+    if (!currentCompanyId || !userCompanyRole || (userCompanyRole !== 'owner' && userCompanyRole !== 'admin')) {
+      toast({
+        variant: 'destructive',
+        title: 'Permission denied',
+        description: 'You don\'t have permission to unsend invitations.',
+      });
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      const { error } = await supabase
+        .from('company_invitations')
+        .delete()
+        .eq('id', invitationId)
+        .eq('company_id', currentCompanyId);
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Invitation unsent',
+        description: 'The invitation has been successfully removed.',
+      });
+      
+      return invitationId;
+    } catch (error: any) {
+      console.error('Error unsending invitation:', error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to unsend invitation',
+        description: error.message,
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return {
     inviteMember,
     removeMember,
     updateMemberRole,
+    unsendInvitation,
     isProcessing
   };
 };

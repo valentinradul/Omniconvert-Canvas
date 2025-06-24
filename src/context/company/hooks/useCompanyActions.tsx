@@ -19,7 +19,7 @@ export const useCompanyActions = (
   fetchUserCompanies: () => Promise<void>
 ) => {
   const { createCompany: apiCreateCompany } = useCompanyCreation();
-  const { inviteMember: apiInviteMember, removeMember: apiRemoveMember, updateMemberRole: apiUpdateMemberRole } = useCompanyManagement();
+  const { inviteMember: apiInviteMember, removeMember: apiRemoveMember, updateMemberRole: apiUpdateMemberRole, unsendInvitation: apiUnsendInvitation } = useCompanyManagement();
   const { acceptInvitation: apiAcceptInvitation, declineInvitation: apiDeclineInvitation } = useInvitations();
 
   // Create company
@@ -110,12 +110,26 @@ export const useCompanyActions = (
     }
   };
 
+  // Unsend invitation
+  const unsendInvitation = async (invitationId: string, setPendingInvitations: React.Dispatch<React.SetStateAction<CompanyInvitation[]>>) => {
+    try {
+      const result = await apiUnsendInvitation(invitationId, currentCompanyId, userCompanyRole);
+      
+      if (result) {
+        setPendingInvitations(prev => prev.filter(i => i.id !== invitationId));
+      }
+    } catch (error) {
+      console.error('Error in unsendInvitation:', error);
+    }
+  };
+
   return {
     createCompany,
     inviteMember,
     removeMember,
     updateMemberRole,
     acceptInvitation,
-    declineInvitation
+    declineInvitation,
+    unsendInvitation
   };
 };

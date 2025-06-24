@@ -20,6 +20,7 @@ type CompanyContextType = {
   updateMemberRole: (userId: string, role: CompanyRole) => Promise<void>;
   acceptInvitation: (invitationId: string) => Promise<void>;
   declineInvitation: (invitationId: string) => Promise<void>;
+  unsendInvitation: (invitationId: string) => Promise<void>;
   refreshPendingInvitations: () => Promise<void>;
 };
 
@@ -59,7 +60,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     removeMember,
     updateMemberRole,
     acceptInvitation,
-    declineInvitation
+    declineInvitation,
+    unsendInvitation: apiUnsendInvitation
   } = useCompanyActions(
     user?.id,
     userCompanyRole,
@@ -77,6 +79,12 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Function to refresh pending invitations
   const refreshPendingInvitations = async () => {
     await fetchPendingInvitations();
+  };
+
+  // Wrapper for unsend invitation that refreshes pending invitations
+  const unsendInvitation = async (invitationId: string) => {
+    await apiUnsendInvitation(invitationId, setPendingInvitations);
+    await refreshPendingInvitations();
   };
 
   // Effects to handle auth and company state changes
@@ -150,6 +158,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateMemberRole,
         acceptInvitation,
         declineInvitation,
+        unsendInvitation,
         refreshPendingInvitations
       }}
     >

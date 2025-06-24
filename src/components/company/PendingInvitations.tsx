@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, Clock, RefreshCw } from 'lucide-react';
+import { Mail, Clock, RefreshCw, X } from 'lucide-react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -14,7 +13,7 @@ interface PendingInvitationsProps {
 }
 
 const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationResent }) => {
-  const { currentCompany, pendingInvitations, refreshPendingInvitations } = useCompany();
+  const { currentCompany, pendingInvitations, refreshPendingInvitations, unsendInvitation, userCompanyRole } = useCompany();
   const { toast } = useToast();
 
   const resendInvitation = async (invitationId: string) => {
@@ -62,6 +61,19 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationRes
       });
     }
   };
+
+  const handleUnsendInvitation = async (invitationId: string) => {
+    try {
+      await unsendInvitation(invitationId);
+    } catch (error: any) {
+      console.error('Error unsending invitation:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to unsend invitation",
+        description: error.message || "An unexpected error occurred"
+      });
+    }
+  };
   
   // Don't show the component if there are no pending invitations
   if (pendingInvitations.length === 0) {
@@ -99,9 +111,21 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationRes
                   </div>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => resendInvitation(invitation.id)}>
-                Resend
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => resendInvitation(invitation.id)}>
+                  Resend
+                </Button>
+                {(userCompanyRole === 'owner' || userCompanyRole === 'admin') && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleUnsendInvitation(invitation.id)}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Unsend
+                  </Button>
+                )}
+              </div>
             </div>
           ))}
         </div>
