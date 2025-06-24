@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Edit, FileEdit } from 'lucide-react';
@@ -108,15 +109,6 @@ const ExperimentTableRow: React.FC<ExperimentTableRowProps> = ({
       </TableCell>
       <TableCell className="text-right">
         <div className="space-x-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => navigate(`/hypothesis-details/${hypothesis?.id}`)}
-          >
-            <Edit className="h-3.5 w-3.5 mr-1" />
-            Edit Hypothesis
-          </Button>
-          
           {isDraft ? (
             <Button 
               size="sm"
@@ -128,9 +120,11 @@ const ExperimentTableRow: React.FC<ExperimentTableRowProps> = ({
           ) : (
             <Button 
               size="sm"
+              variant="outline"
               onClick={() => navigate(`/experiment-details/${experiment.id}`)}
             >
-              View Details
+              <Edit className="h-3.5 w-3.5 mr-1" />
+              Edit Experiment
             </Button>
           )}
         </div>
