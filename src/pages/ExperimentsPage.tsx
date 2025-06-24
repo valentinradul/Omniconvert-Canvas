@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -7,7 +6,6 @@ import EmptyExperiments from '@/components/experiments/EmptyExperiments';
 import { useExperimentSorting } from '@/hooks/useExperimentSorting';
 import { Experiment } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -126,7 +124,6 @@ const ExperimentsPage: React.FC = () => {
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="h-4 w-4 mr-2" />
               Create Experiment
             </Button>
           </DialogTrigger>
