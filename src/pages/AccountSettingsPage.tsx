@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
+import ChangePasswordDialog from '@/components/ChangePasswordDialog';
 
 const AccountSettingsPage = () => {
   const { toast } = useToast();
@@ -81,7 +82,9 @@ const AccountSettingsPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline">Change Password</Button>
+              <ChangePasswordDialog>
+                <Button variant="outline">Change Password</Button>
+              </ChangePasswordDialog>
             </CardContent>
           </Card>
         )}
