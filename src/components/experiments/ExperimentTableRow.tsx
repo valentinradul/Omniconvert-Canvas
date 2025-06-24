@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Edit } from 'lucide-react';
+import { User, Edit, FileEdit } from 'lucide-react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/StatusBadge';
@@ -31,15 +31,20 @@ const ExperimentTableRow: React.FC<ExperimentTableRowProps> = ({
   handleStatusChange 
 }) => {
   const navigate = useNavigate();
-  // Use userName instead of responsibleUserName since that's what we have in the Experiment type
+  const isDraft = experiment.id.startsWith('draft-');
   const responsibleName = experiment.userName || hypothesis?.userName || 'Unassigned';
   
   return (
-    <TableRow key={experiment.id}>
+    <TableRow key={experiment.id} className={isDraft ? 'bg-amber-50/50' : ''}>
       <TableCell>
         <div className="space-y-1">
-          <div className="font-medium">
+          <div className="font-medium flex items-center gap-2">
             {idea?.title || 'Experiment'}
+            {isDraft && (
+              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                Draft
+              </span>
+            )}
           </div>
           <div className="text-xs text-muted-foreground line-clamp-2">
             {hypothesis?.initiative || 'No hypothesis description'}
@@ -47,27 +52,31 @@ const ExperimentTableRow: React.FC<ExperimentTableRowProps> = ({
         </div>
       </TableCell>
       <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 p-0 flex items-center gap-1">
-              <StatusBadge status={experiment.status} />
-              <ChevronDown className="h-4 w-4 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {statusOptions.map(status => (
-              <DropdownMenuItem 
-                key={status}
-                className={`
-                  status-dropdown-${status.toLowerCase().replace(' ', '-')}
-                `}
-                onClick={() => handleStatusChange(experiment.id, status)}
-              >
-                {status}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isDraft ? (
+          <StatusBadge status={experiment.status} />
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 p-0 flex items-center gap-1">
+                <StatusBadge status={experiment.status} />
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {statusOptions.map(status => (
+                <DropdownMenuItem 
+                  key={status}
+                  className={`
+                    status-dropdown-${status.toLowerCase().replace(' ', '-')}
+                  `}
+                  onClick={() => handleStatusChange(experiment.id, status)}
+                >
+                  {status}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </TableCell>
       <TableCell>
         {hypothesis?.pectiScore ? (
@@ -111,12 +120,23 @@ const ExperimentTableRow: React.FC<ExperimentTableRowProps> = ({
             <Edit className="h-3.5 w-3.5 mr-1" />
             Edit Hypothesis
           </Button>
-          <Button 
-            size="sm"
-            onClick={() => navigate(`/experiment-details/${experiment.id}`)}
-          >
-            View Details
-          </Button>
+          
+          {isDraft ? (
+            <Button 
+              size="sm"
+              onClick={() => navigate(`/create-experiment/${hypothesis?.id}`)}
+            >
+              <FileEdit className="h-3.5 w-3.5 mr-1" />
+              Continue Draft
+            </Button>
+          ) : (
+            <Button 
+              size="sm"
+              onClick={() => navigate(`/experiment-details/${experiment.id}`)}
+            >
+              View Details
+            </Button>
+          )}
         </div>
       </TableCell>
     </TableRow>
