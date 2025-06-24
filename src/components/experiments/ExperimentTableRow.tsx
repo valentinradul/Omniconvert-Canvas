@@ -121,7 +121,7 @@ const ExperimentTableRow: React.FC<ExperimentTableRowProps> = ({
             <Button 
               size="sm"
               variant="outline"
-              onClick={() => navigate(`/edit-experiment/${experiment.id}`)}
+              onClick={() => navigate(`/experiment-details/${experiment.id}`)}
             >
               <Edit className="h-3.5 w-3.5 mr-1" />
               Edit Experiment

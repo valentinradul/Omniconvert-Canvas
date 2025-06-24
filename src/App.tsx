@@ -12,8 +12,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import IdeasPage from "./pages/IdeasPage";
 import IdeaDetailsPage from "./pages/IdeaDetailsPage";
@@ -23,7 +21,6 @@ import HypothesisDetailsPage from "./pages/HypothesisDetailsPage";
 import CreateExperimentPage from "./pages/CreateExperimentPage";
 import ExperimentsPage from "./pages/ExperimentsPage";
 import ExperimentDetailsPage from "./pages/ExperimentDetailsPage";
-import EditExperimentPage from "./pages/EditExperimentPage";
 import DepartmentsPage from "./pages/DepartmentsPage";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
 import TeamSettingsPage from "./pages/TeamSettingsPage";
@@ -46,8 +43,6 @@ const App = () => (
                 <Route index element={<Index />} />
                 <Route path="login" element={<Login />} />
                 <Route path="signup" element={<Signup />} />
-                <Route path="forgot-password" element={<ForgotPassword />} />
-                <Route path="reset-password" element={<ResetPassword />} />
                 <Route path="data-recovery" element={<DataRecoveryPage />} />
                 
                 {/* Protected routes */}
@@ -62,7 +57,6 @@ const App = () => (
                     <Route path="create-experiment/:hypothesisId" element={<CreateExperimentPage />} />
                     <Route path="experiments" element={<ExperimentsPage />} />
                     <Route path="experiment-details/:experimentId" element={<ExperimentDetailsPage />} />
-                    <Route path="edit-experiment/:experimentId" element={<EditExperimentPage />} />
                     <Route path="departments" element={<DepartmentsPage />} />
                     <Route path="account-settings" element={<AccountSettingsPage />} />
                     <Route path="team-settings" element={<TeamSettingsPage />} />
