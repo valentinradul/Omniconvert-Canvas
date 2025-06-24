@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -102,11 +103,6 @@ const ExperimentsPage: React.FC = () => {
     getHypothesisById 
   });
 
-  // Filter hypotheses that don't already have experiments
-  const availableHypotheses = hypotheses.filter(hypothesis => 
-    !allExperiments.some(experiment => experiment.hypothesisId === hypothesis.id)
-  );
-
   const handleCreateExperiment = (hypothesisId: string) => {
     setIsCreateDialogOpen(false);
     navigate(`/create-experiment/${hypothesisId}`);
@@ -138,15 +134,15 @@ const ExperimentsPage: React.FC = () => {
             <DialogHeader>
               <DialogTitle>Create New Experiment</DialogTitle>
               <DialogDescription>
-                Select a hypothesis to create an experiment for. Only hypotheses without existing experiments are shown.
+                Select a hypothesis to create an experiment for. You can create multiple experiments for the same hypothesis.
               </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4">
-              {availableHypotheses.length === 0 ? (
+              {hypotheses.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">
-                    No hypotheses available for experiments. All hypotheses already have experiments or there are no hypotheses created yet.
+                    No hypotheses available. Create a hypothesis first to start experimenting.
                   </p>
                   <Button 
                     variant="outline" 
@@ -160,12 +156,21 @@ const ExperimentsPage: React.FC = () => {
                   </Button>
                 </div>
               ) : (
-                availableHypotheses.map(hypothesis => {
+                hypotheses.map(hypothesis => {
                   const idea = getIdeaById(hypothesis.ideaId);
+                  const existingExperimentsCount = allExperiments.filter(exp => exp.hypothesisId === hypothesis.id).length;
+                  
                   return (
                     <Card key={hypothesis.id} className="cursor-pointer hover:bg-accent transition-colors" onClick={() => handleCreateExperiment(hypothesis.id)}>
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-lg">{idea?.title || 'Untitled Idea'}</CardTitle>
+                        <CardTitle className="text-lg flex justify-between items-center">
+                          <span>{idea?.title || 'Untitled Idea'}</span>
+                          {existingExperimentsCount > 0 && (
+                            <span className="text-sm font-normal text-muted-foreground">
+                              {existingExperimentsCount} experiment{existingExperimentsCount !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </CardTitle>
                         <CardDescription className="text-sm">
                           Created by {hypothesis.userName || 'Unknown'} • {hypothesis.createdAt.toLocaleDateString()}
                         </CardDescription>
