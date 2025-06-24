@@ -6,33 +6,16 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import ChangePasswordDialog from '@/components/ChangePasswordDialog';
-import DraftIndicator from '@/components/DraftIndicator';
-import { useDraftState } from '@/hooks/useDraftState';
 
 const AccountSettingsPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const defaultValues = {
-    fullName: user?.user_metadata?.full_name || "",
-    email: user?.email || ""
-  };
-
-  const {
-    formData,
-    hasSavedDraft,
-    updateField,
-    clearDraft,
-    saveDraft,
-    clearDraftOnSubmit
-  } = useDraftState({
-    storageKey: 'account-settings-draft',
-    defaultValues
-  });
+  const [fullName, setFullName] = React.useState(user?.user_metadata?.full_name || "");
+  const [email, setEmail] = React.useState(user?.email || "");
   
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    clearDraftOnSubmit();
     toast({
       title: "Profile updated",
       description: "Your profile information has been updated successfully.",
@@ -60,12 +43,6 @@ const AccountSettingsPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DraftIndicator
-              hasSavedDraft={hasSavedDraft}
-              onSaveDraft={saveDraft}
-              onClearDraft={clearDraft}
-            />
-            
             <form onSubmit={handleProfileUpdate} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium" htmlFor="fullName">
@@ -75,8 +52,8 @@ const AccountSettingsPage = () => {
                   id="fullName"
                   name="fullName"
                   placeholder="Your name"
-                  value={formData.fullName}
-                  onChange={(e) => updateField('fullName', e.target.value)}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -88,7 +65,7 @@ const AccountSettingsPage = () => {
                   name="email"
                   type="email"
                   placeholder="your.email@example.com"
-                  value={formData.email}
+                  value={email}
                   disabled
                 />
                 <p className="text-xs text-muted-foreground">
