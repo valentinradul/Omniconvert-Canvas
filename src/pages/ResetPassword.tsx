@@ -43,43 +43,53 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    // Check for error in URL hash (from email link errors)
-    const hash = window.location.hash;
-    if (hash.includes('error=')) {
-      const urlParams = new URLSearchParams(hash.substring(1));
-      const error = urlParams.get('error');
-      const errorDescription = urlParams.get('error_description');
-      
-      if (error === 'access_denied' || hash.includes('otp_expired')) {
-        setIsValidToken(false);
-        setErrorMessage("The password reset link has expired or is invalid.");
-        return;
+    const handleTokenVerification = async () => {
+      // Check for error in URL hash first
+      const hash = window.location.hash;
+      if (hash.includes('error=')) {
+        const urlParams = new URLSearchParams(hash.substring(1));
+        const error = urlParams.get('error');
+        
+        if (error === 'access_denied' || hash.includes('otp_expired')) {
+          setIsValidToken(false);
+          setErrorMessage("The password reset link has expired or is invalid. Please request a new one.");
+          return;
+        }
       }
-    }
 
-    // Check if we have the necessary tokens from the URL
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    const type = searchParams.get('type');
-    
-    if (type === 'recovery' && accessToken && refreshToken) {
-      // Set the session with the tokens from the URL
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      }).then(({ error }) => {
-        if (error) {
-          console.error('Error setting session:', error);
+      // Check URL parameters from email link
+      const accessToken = searchParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token');
+      const type = searchParams.get('type');
+      
+      // If we have recovery tokens from email link
+      if (type === 'recovery' && accessToken && refreshToken) {
+        try {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            console.error('Error setting session:', error);
+            setIsValidToken(false);
+            setErrorMessage("Unable to verify the reset link. Please try requesting a new one.");
+          } else {
+            setIsValidToken(true);
+          }
+        } catch (error) {
+          console.error('Session error:', error);
           setIsValidToken(false);
           setErrorMessage("Unable to verify the reset link. Please try requesting a new one.");
-        } else {
-          setIsValidToken(true);
         }
-      });
-    } else {
-      setIsValidToken(false);
-      setErrorMessage("Invalid reset link. Please request a new password reset.");
-    }
+      } else {
+        // No valid tokens found
+        setIsValidToken(false);
+        setErrorMessage("Invalid reset link. Please request a new password reset.");
+      }
+    };
+
+    handleTokenVerification();
   }, [searchParams]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -147,7 +157,7 @@ const ResetPassword = () => {
                 <AlertCircle className="h-12 w-12 text-red-500" />
               </div>
               <p className="text-sm text-gray-600 mb-6">
-                {errorMessage || "This password reset link is invalid or has expired. Password reset links expire after 1 hour for security reasons."}
+                {errorMessage}
               </p>
               <Link to="/forgot-password">
                 <Button className="w-full">
