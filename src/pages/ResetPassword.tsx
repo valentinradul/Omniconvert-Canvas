@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
@@ -32,6 +32,7 @@ const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -42,11 +43,26 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
+    // Check for error in URL hash (from email link errors)
+    const hash = window.location.hash;
+    if (hash.includes('error=')) {
+      const urlParams = new URLSearchParams(hash.substring(1));
+      const error = urlParams.get('error');
+      const errorDescription = urlParams.get('error_description');
+      
+      if (error === 'access_denied' || hash.includes('otp_expired')) {
+        setIsValidToken(false);
+        setErrorMessage("The password reset link has expired or is invalid.");
+        return;
+      }
+    }
+
     // Check if we have the necessary tokens from the URL
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
+    const type = searchParams.get('type');
     
-    if (accessToken && refreshToken) {
+    if (type === 'recovery' && accessToken && refreshToken) {
       // Set the session with the tokens from the URL
       supabase.auth.setSession({
         access_token: accessToken,
@@ -55,12 +71,14 @@ const ResetPassword = () => {
         if (error) {
           console.error('Error setting session:', error);
           setIsValidToken(false);
+          setErrorMessage("Unable to verify the reset link. Please try requesting a new one.");
         } else {
           setIsValidToken(true);
         }
       });
     } else {
       setIsValidToken(false);
+      setErrorMessage("Invalid reset link. Please request a new password reset.");
     }
   }, [searchParams]);
 
@@ -101,7 +119,7 @@ const ResetPassword = () => {
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
             <div className="text-center">
-              <p>Loading...</p>
+              <p>Verifying reset link...</p>
             </div>
           </div>
         </div>
@@ -119,17 +137,17 @@ const ResetPassword = () => {
               Back to Login
             </Link>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">Invalid or expired link</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            This password reset link is invalid or has expired.
-          </p>
+          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">Reset Link Invalid</h2>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
             <div className="text-center">
-              <p className="text-sm text-gray-600 mb-4">
-                Please request a new password reset link.
+              <div className="flex justify-center mb-4">
+                <AlertCircle className="h-12 w-12 text-red-500" />
+              </div>
+              <p className="text-sm text-gray-600 mb-6">
+                {errorMessage || "This password reset link is invalid or has expired. Password reset links expire after 1 hour for security reasons."}
               </p>
               <Link to="/forgot-password">
                 <Button className="w-full">

@@ -38,8 +38,11 @@ const ForgotPassword = () => {
     setIsLoading(true);
     
     try {
+      // Use the current domain for the redirect URL
+      const redirectUrl = `${window.location.origin}/reset-password`;
+      
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
       });
 
       if (error) {
@@ -49,7 +52,7 @@ const ForgotPassword = () => {
       setEmailSent(true);
       toast({
         title: "Password reset email sent",
-        description: "Check your email for a link to reset your password.",
+        description: "Check your email for a link to reset your password. The link will expire in 1 hour.",
       });
     } catch (error: any) {
       toast({
@@ -82,7 +85,7 @@ const ForgotPassword = () => {
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-4">
-                Didn't receive the email? Check your spam folder or try again.
+                The link will expire in 1 hour. If you don't receive the email, check your spam folder or try again.
               </p>
               <Button 
                 variant="outline" 
