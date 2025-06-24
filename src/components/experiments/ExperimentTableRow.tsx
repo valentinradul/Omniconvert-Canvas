@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Edit, FileEdit } from 'lucide-react';
@@ -38,13 +37,8 @@ const ExperimentTableRow: React.FC<ExperimentTableRowProps> = ({
     <TableRow key={experiment.id} className={isDraft ? 'bg-amber-50/50' : ''}>
       <TableCell>
         <div className="space-y-1">
-          <div className="font-medium flex items-center gap-2">
+          <div className="font-medium">
             {idea?.title || 'Experiment'}
-            {isDraft && (
-              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-                Draft
-              </span>
-            )}
           </div>
           <div className="text-xs text-muted-foreground line-clamp-2">
             {hypothesis?.initiative || 'No hypothesis description'}
