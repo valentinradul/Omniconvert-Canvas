@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import { ObservationContent, calculatePectiPercentage } from '@/types';
 import ObservationContentEditor from '@/components/ObservationContentEditor';
+import { Save, Trash2 } from 'lucide-react';
 
 const CreateHypothesisPage: React.FC = () => {
   const { ideaId } = useParams();
@@ -222,6 +223,24 @@ const CreateHypothesisPage: React.FC = () => {
     toast.success('Draft cleared');
   };
   
+  const saveDraft = () => {
+    const formData = {
+      observation,
+      observationContent,
+      initiative,
+      metric,
+      potential,
+      ease,
+      cost,
+      time,
+      impact
+    };
+    
+    saveFormState(formData);
+    setHasSavedDraft(true);
+    toast.success('Draft saved successfully!');
+  };
+  
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-4">
@@ -415,7 +434,27 @@ const CreateHypothesisPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-3">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={saveDraft}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            Save Draft
+          </Button>
+          
+          {hasSavedDraft && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={clearDraft}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear Draft
+            </Button>
+          )}
+          
           <Button type="submit" size="lg">Create Hypothesis</Button>
         </div>
       </form>
