@@ -19,25 +19,38 @@ export const useDraftState = <T extends Record<string, any>>({
   const [isInitialized, setIsInitialized] = useState(false);
   const [formData, setFormData] = useState<T>(defaultValues as T);
 
+  // Helper to detect and clean corrupted undefined objects
+  const cleanCorruptedValue = (value: any): any => {
+    // Handle corrupted undefined objects like { "_type": "undefined", "value": "undefined" }
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if (value._type === 'undefined' || value.value === 'undefined') {
+        return undefined;
+      }
+    }
+    return value;
+  };
+
   // Simple helper to check if a value should be saved
   const isValidValue = (value: any): boolean => {
-    if (value === undefined || value === null) return false;
-    if (typeof value === 'string') return value.trim().length > 0;
-    if (typeof value === 'number') return true;
-    if (typeof value === 'boolean') return true;
-    if (Array.isArray(value)) return value.length > 0;
+    const cleanedValue = cleanCorruptedValue(value);
+    if (cleanedValue === undefined || cleanedValue === null) return false;
+    if (typeof cleanedValue === 'string') return cleanedValue.trim().length > 0;
+    if (typeof cleanedValue === 'number') return true;
+    if (typeof cleanedValue === 'boolean') return true;
+    if (Array.isArray(cleanedValue)) return cleanedValue.length > 0;
     return false;
   };
 
   // Helper function to save form state to localStorage
   const saveFormState = (data: T) => {
     try {
-      // Only save fields that have valid values
+      // Only save fields that have valid values, cleaning corrupted ones first
       const cleanData: any = {};
       
       Object.entries(data).forEach(([key, value]) => {
-        if (isValidValue(value)) {
-          cleanData[key] = value;
+        const cleanedValue = cleanCorruptedValue(value);
+        if (isValidValue(cleanedValue)) {
+          cleanData[key] = cleanedValue;
         }
       });
       
@@ -56,8 +69,16 @@ export const useDraftState = <T extends Record<string, any>>({
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('Form state loaded from localStorage:', storageKey, parsed);
-        return parsed;
+        // Clean any corrupted values from loaded data
+        const cleanedParsed: any = {};
+        Object.entries(parsed).forEach(([key, value]) => {
+          const cleanedValue = cleanCorruptedValue(value);
+          if (cleanedValue !== undefined) {
+            cleanedParsed[key] = cleanedValue;
+          }
+        });
+        console.log('Form state loaded from localStorage:', storageKey, cleanedParsed);
+        return cleanedParsed;
       }
     } catch (error) {
       console.error('Error parsing saved form state:', error);
@@ -93,8 +114,11 @@ export const useDraftState = <T extends Record<string, any>>({
       return;
     }
     
-    // Check if there's actually some content to save
-    const hasContent = Object.values(formData).some(value => isValidValue(value));
+    // Check if there's actually some content to save (clean values first)
+    const hasContent = Object.values(formData).some(value => {
+      const cleanedValue = cleanCorruptedValue(value);
+      return isValidValue(cleanedValue);
+    });
     
     console.log('Auto-save check - hasContent:', hasContent, formData);
     
@@ -123,9 +147,11 @@ export const useDraftState = <T extends Record<string, any>>({
   };
 
   const updateField = <K extends keyof T>(field: K, value: T[K]) => {
+    // Clean the value before setting it to prevent corrupted data from entering the state
+    const cleanedValue = cleanCorruptedValue(value);
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: cleanedValue as T[K]
     }));
   };
 
