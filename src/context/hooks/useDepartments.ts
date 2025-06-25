@@ -2,23 +2,51 @@
 import { useState, useEffect } from 'react';
 import { Department } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
+import { generateId } from '../utils/dataUtils';
 
-// Generate a proper UUID v4
-const generateUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+// Function to check if a string is a valid UUID
+const isValidUUID = (str: string) => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
+// Function to migrate old departments to have proper UUIDs
+const migrateDepartments = (departments: Department[]): Department[] => {
+  return departments.map(dept => ({
+    ...dept,
+    id: isValidUUID(dept.id) ? dept.id : generateId()
+  }));
 };
 
 export const useDepartments = () => {
   const [departments, setDepartments] = useState<Department[]>(() => {
     const storedValue = localStorage.getItem('departments');
-    return storedValue ? JSON.parse(storedValue) : [
-      { id: generateUUID(), name: 'Marketing' },
-      { id: generateUUID(), name: 'Sales' },
-      { id: generateUUID(), name: 'Product' }
+    
+    if (storedValue) {
+      try {
+        const parsedDepartments = JSON.parse(storedValue);
+        // Migrate any departments with invalid UUIDs
+        const migratedDepartments = migrateDepartments(parsedDepartments);
+        
+        // Check if migration was needed
+        const needsMigration = parsedDepartments.some((dept: Department) => !isValidUUID(dept.id));
+        if (needsMigration) {
+          console.log('Migrating departments to use proper UUIDs');
+          // Save the migrated departments immediately
+          localStorage.setItem('departments', JSON.stringify(migratedDepartments));
+        }
+        
+        return migratedDepartments;
+      } catch (error) {
+        console.error('Error parsing stored departments, using defaults');
+      }
+    }
+    
+    // Default departments with proper UUIDs
+    return [
+      { id: generateId(), name: 'Marketing' },
+      { id: generateId(), name: 'Sales' },
+      { id: generateId(), name: 'Product' }
     ];
   });
   
@@ -29,7 +57,8 @@ export const useDepartments = () => {
   }, [departments]);
 
   const addDepartment = (name: string) => {
-    setDepartments([...departments, { id: generateUUID(), name }]);
+    const newDepartment = { id: generateId(), name };
+    setDepartments([...departments, newDepartment]);
   };
   
   const editDepartment = (id: string, name: string) => {
