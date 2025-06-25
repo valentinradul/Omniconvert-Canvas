@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -66,7 +65,21 @@ const DepartmentsPage: React.FC = () => {
   };
   
   const countIdeasByDepartment = (departmentId: string) => {
-    return ideas.filter(idea => idea.departmentId === departmentId).length;
+    // Check both departmentId and departmentid (lowercase) to handle any data inconsistencies
+    const count = ideas.filter(idea => 
+      idea.departmentId === departmentId || 
+      (idea as any).departmentid === departmentId
+    ).length;
+    
+    console.log(`Department ${departmentId} has ${count} ideas`);
+    console.log('All ideas:', ideas.map(idea => ({ 
+      id: idea.id, 
+      title: idea.title, 
+      departmentId: idea.departmentId, 
+      departmentid: (idea as any).departmentid 
+    })));
+    
+    return count;
   };
   
   return (
@@ -152,7 +165,9 @@ const DepartmentsPage: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p>{ideaCount} growth ideas associated</p>
+                <p className="text-sm text-muted-foreground">
+                  {ideaCount} {ideaCount === 1 ? 'growth idea' : 'growth ideas'} associated
+                </p>
               </CardContent>
             </Card>
           );
