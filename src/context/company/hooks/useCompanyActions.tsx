@@ -1,5 +1,5 @@
 
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useCompanyCreation } from '../useCompanyCreation';
 import { useCompanyManagement } from '../useCompanyManagement';
 import { useInvitations } from '../useInvitations';

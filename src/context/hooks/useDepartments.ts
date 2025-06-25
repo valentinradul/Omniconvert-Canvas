@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Department } from '@/types';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { generateId } from '../utils/dataUtils';
 
 // Function to check if a string is a valid UUID
