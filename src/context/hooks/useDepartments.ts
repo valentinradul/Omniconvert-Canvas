@@ -1,15 +1,24 @@
+
 import { useState, useEffect } from 'react';
 import { Department } from '@/types';
-import { generateId } from '../utils/dataUtils';
 import { useToast } from '@/components/ui/use-toast';
+
+// Generate a proper UUID v4
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 export const useDepartments = () => {
   const [departments, setDepartments] = useState<Department[]>(() => {
     const storedValue = localStorage.getItem('departments');
     return storedValue ? JSON.parse(storedValue) : [
-      { id: generateId(), name: 'Marketing' },
-      { id: generateId(), name: 'Sales' },
-      { id: generateId(), name: 'Product' }
+      { id: generateUUID(), name: 'Marketing' },
+      { id: generateUUID(), name: 'Sales' },
+      { id: generateUUID(), name: 'Product' }
     ];
   });
   
@@ -20,7 +29,7 @@ export const useDepartments = () => {
   }, [departments]);
 
   const addDepartment = (name: string) => {
-    setDepartments([...departments, { id: generateId(), name }]);
+    setDepartments([...departments, { id: generateUUID(), name }]);
   };
   
   const editDepartment = (id: string, name: string) => {
