@@ -10,6 +10,11 @@ export const generateId = () => {
   });
 };
 
+export const getInitialData = <T extends unknown>(key: string, defaultValue: T): T => {
+  const storedValue = localStorage.getItem(key);
+  return storedValue ? JSON.parse(storedValue) : defaultValue;
+};
+
 export const getAllTags = (ideas: GrowthIdea[]): Tag[] => {
   const tagSet = new Set<string>();
   
