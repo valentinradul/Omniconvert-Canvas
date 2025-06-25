@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -12,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ALL_CATEGORIES, Category } from '@/types';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 
@@ -27,6 +26,8 @@ const IdeaDetailsPage: React.FC = () => {
     departments, 
     getHypothesisByIdeaId 
   } = useApp();
+  
+  const { toast } = useToast();
   
   const [idea, setIdea] = useState(getIdeaById(ideaId || ''));
   const [department, setDepartment] = useState(idea ? getDepartmentById(idea.departmentId) : undefined);
@@ -66,7 +67,11 @@ const IdeaDetailsPage: React.FC = () => {
     e.preventDefault();
     
     if (!title || !description || !category) {
-      toast.error('Please fill in all required fields');
+      toast({
+        variant: 'destructive',
+        title: 'Missing information',
+        description: 'Please fill in all required fields'
+      });
       return;
     }
     
@@ -79,13 +84,11 @@ const IdeaDetailsPage: React.FC = () => {
     });
     
     setEditDialogOpen(false);
-    toast.success('Growth idea updated successfully!');
   };
   
   const handleDelete = () => {
     deleteIdea(idea.id);
     navigate('/ideas');
-    toast.success('Growth idea deleted successfully!');
   };
   
   const createHypothesis = () => {
