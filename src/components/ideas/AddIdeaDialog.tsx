@@ -90,6 +90,7 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
           <DialogDescription>Create a new growth idea to test</DialogDescription>
         </DialogHeader>
         
+        {/* Only show the draft notification, not the buttons */}
         <DraftIndicator
           hasSavedDraft={hasSavedDraft}
           onSaveDraft={saveDraft}
@@ -182,14 +183,35 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
           </div>
         </div>
         
-        <DraftIndicator
-          hasSavedDraft={hasSavedDraft}
-          onSaveDraft={saveDraft}
-          onClearDraft={clearDraft}
-        />
-        
-        <DialogFooter>
-          <Button onClick={handleAddIdea} disabled={!formData.title || !formData.description || !formData.category}>
+        <DialogFooter className="flex justify-between items-center">
+          {/* Draft controls on the left */}
+          <div className="flex gap-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={saveDraft}
+              size="sm"
+            >
+              Save Draft
+            </Button>
+            
+            {hasSavedDraft && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={clearDraft}
+                size="sm"
+              >
+                Clear Draft
+              </Button>
+            )}
+          </div>
+          
+          {/* Create button on the right */}
+          <Button 
+            onClick={handleAddIdea} 
+            disabled={!formData.title || !formData.description || !formData.category}
+          >
             Create Idea
           </Button>
         </DialogFooter>
