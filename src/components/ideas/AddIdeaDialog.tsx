@@ -13,6 +13,12 @@ import { Category, ALL_CATEGORIES, GrowthIdea } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useDraftState } from '@/hooks/useDraftState';
 
+// Function to check if a string is a valid UUID
+const isValidUUID = (str: string) => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 interface AddIdeaDialogProps {
   departments: any[];
   addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => Promise<GrowthIdea | null>;
@@ -54,14 +60,33 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
     }
   });
 
+  // Validate department ID when form data changes
+  useEffect(() => {
+    if (formData.departmentId && !isValidUUID(formData.departmentId)) {
+      console.log('Invalid department ID detected, clearing:', formData.departmentId);
+      updateField('departmentId', undefined);
+    }
+  }, [formData.departmentId, updateField]);
+
+  // Also validate that the department ID exists in the current departments list
+  useEffect(() => {
+    if (formData.departmentId && isValidUUID(formData.departmentId)) {
+      const departmentExists = departments.some(dept => dept.id === formData.departmentId);
+      if (!departmentExists) {
+        console.log('Department no longer exists, clearing:', formData.departmentId);
+        updateField('departmentId', undefined);
+      }
+    }
+  }, [formData.departmentId, departments, updateField]);
+
   const handleAddIdea = async () => {
     if (formData.category && formData.title && formData.description) {
-      // Only include departmentId if it's properly selected from the dropdown
+      // Only include departmentId if it's properly selected from the dropdown and is a valid UUID
       const newIdea = {
         title: formData.title,
         description: formData.description,
         category: formData.category,
-        departmentId: formData.departmentId || undefined,
+        departmentId: (formData.departmentId && isValidUUID(formData.departmentId)) ? formData.departmentId : undefined,
         tags: formData.tags,
         isPublic: formData.isPublic
       };
