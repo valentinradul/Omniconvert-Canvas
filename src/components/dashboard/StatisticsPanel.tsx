@@ -39,14 +39,10 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
     ? Math.round((winningExperiments.length / completedExperiments.length) * 100)
     : 0;
 
-  // Calculate trend indicators (simple example - showing increase if filtered count > 50% of total)
-  const ideasTrend = filteredIdeas.length > ideas.length * 0.5;
-  const hypothesesTrend = activeHypotheses > hypotheses.filter(h => 
-    h.status === 'Selected For Testing' || h.status === 'Testing'
-  ).length * 0.5;
-  const experimentsTrend = runningExperiments > experiments.filter(e => 
-    e.status === 'In Progress' || e.status === 'Planned'
-  ).length * 0.5;
+  // Calculate trend indicators based on total vs filtered counts
+  const ideasTrend = filteredIdeas.length >= ideas.length * 0.5;
+  const hypothesesTrend = activeHypotheses > 0 || filteredHypotheses.length >= hypotheses.length * 0.5;
+  const experimentsTrend = runningExperiments > 0 || filteredExperiments.length >= experiments.length * 0.5;
 
   console.log('StatisticsPanel - Active Hypotheses:', activeHypotheses);
   console.log('StatisticsPanel - Running Experiments:', runningExperiments);
