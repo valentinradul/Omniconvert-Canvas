@@ -126,6 +126,7 @@ const CreateHypothesisPage: React.FC = () => {
       
       <h1 className="text-3xl font-bold tracking-tight mb-6">Create Hypothesis</h1>
       
+      {/* Only show the draft notification, not the buttons */}
       <DraftIndicator
         hasSavedDraft={hasSavedDraft}
         onSaveDraft={saveDraft}
@@ -301,13 +302,29 @@ const CreateHypothesisPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        <DraftIndicator
-          hasSavedDraft={hasSavedDraft}
-          onSaveDraft={saveDraft}
-          onClearDraft={clearDraft}
-        />
-        
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-between items-center gap-3">
+          {/* Draft controls on the left */}
+          <div className="flex gap-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={saveDraft}
+            >
+              Save Draft
+            </Button>
+            
+            {hasSavedDraft && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={clearDraft}
+              >
+                Clear Draft
+              </Button>
+            )}
+          </div>
+          
+          {/* Create button on the right */}
           <Button type="submit" size="lg">Create Hypothesis</Button>
         </div>
       </form>
