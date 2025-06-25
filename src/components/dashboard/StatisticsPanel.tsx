@@ -21,7 +21,15 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
   filteredHypotheses,
   filteredExperiments
 }) => {
-  // Calculate statistics
+  // Calculate statistics for active hypotheses and experiments
+  const activeHypotheses = filteredHypotheses.filter(h => 
+    h.status === 'Selected For Testing' || h.status === 'Testing'
+  ).length;
+
+  const runningExperiments = filteredExperiments.filter(e => 
+    e.status === 'In Progress' || e.status === 'Planned'
+  ).length;
+  
   const completedExperiments = filteredExperiments.filter(e => 
     e.status === 'Winning' || e.status === 'Losing' || e.status === 'Inconclusive'
   );
@@ -31,16 +39,19 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
     ? Math.round((winningExperiments.length / completedExperiments.length) * 100)
     : 0;
 
-  const activeHypotheses = filteredHypotheses.filter(h => 
-    h.status === 'Selected For Testing' || h.status === 'Testing'
-  ).length;
-
-  const completedHypotheses = filteredHypotheses.filter(h => h.status === 'Completed').length;
-
   // Calculate trend indicators (simple example - showing increase if filtered count > 50% of total)
   const ideasTrend = filteredIdeas.length > ideas.length * 0.5;
-  const hypothesesTrend = filteredHypotheses.length > hypotheses.length * 0.5;
-  const experimentsTrend = filteredExperiments.length > experiments.length * 0.5;
+  const hypothesesTrend = activeHypotheses > hypotheses.filter(h => 
+    h.status === 'Selected For Testing' || h.status === 'Testing'
+  ).length * 0.5;
+  const experimentsTrend = runningExperiments > experiments.filter(e => 
+    e.status === 'In Progress' || e.status === 'Planned'
+  ).length * 0.5;
+
+  console.log('StatisticsPanel - Active Hypotheses:', activeHypotheses);
+  console.log('StatisticsPanel - Running Experiments:', runningExperiments);
+  console.log('StatisticsPanel - All hypotheses:', filteredHypotheses.map(h => ({ id: h.id, status: h.status })));
+  console.log('StatisticsPanel - All experiments:', filteredExperiments.map(e => ({ id: e.id, status: e.status })));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -86,9 +97,9 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
             <Beaker size={20} className="text-green-600" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Completed</p>
+            <p className="text-sm text-muted-foreground">Running Experiments</p>
             <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold">{completedHypotheses}</p>
+              <p className="text-2xl font-bold">{runningExperiments}</p>
               {experimentsTrend ? 
                 <ArrowUpIcon size={16} className="text-green-500" /> : 
                 <ArrowDownIcon size={16} className="text-amber-500" />

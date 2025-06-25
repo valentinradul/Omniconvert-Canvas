@@ -32,6 +32,13 @@ const Dashboard: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
+  // Add debugging logs to understand data state
+  console.log('Dashboard - Ideas count:', ideas.length);
+  console.log('Dashboard - Hypotheses count:', hypotheses.length);
+  console.log('Dashboard - Experiments count:', experiments.length);
+  console.log('Dashboard - Hypotheses data:', hypotheses.map(h => ({ id: h.id, status: h.status, ideaId: h.ideaId })));
+  console.log('Dashboard - Experiments data:', experiments.map(e => ({ id: e.id, status: e.status, hypothesisId: e.hypothesisId })));
+  
   const [filters, setFilters] = useState<{
     department?: string;
     category?: Category;
@@ -236,6 +243,8 @@ const Dashboard: React.FC = () => {
         statusCounts[hypothesis.status]++;
       }
     });
+    
+    console.log('Dashboard - Hypothesis by status:', statusCounts);
     
     return statusCounts;
   }, [filteredHypotheses]);
