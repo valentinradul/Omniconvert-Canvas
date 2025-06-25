@@ -2,15 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { calculatePectiPercentage, PECTI, Tag } from '@/types';
+import { calculatePectiPercentage, PECTI, Tag, HypothesisStatus } from '@/types';
 import HypothesisFilters from '@/components/hypothesis/HypothesisFilters';
 import HypothesisTable from '@/components/hypothesis/HypothesisTable';
 import EmptyHypothesisList from '@/components/hypothesis/EmptyHypothesisList';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const HypothesesPage: React.FC = () => {
   const { hypotheses, ideas, experiments, getIdeaById, editHypothesis, departments, getAllTags, getAllUserNames } = useApp();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<'pectiScore' | 'createdAt'>('pectiScore');
@@ -112,6 +114,14 @@ const HypothesesPage: React.FC = () => {
       pectiScore: pectiValues 
     });
   };
+
+  const handleStatusChange = (hypothesisId: string, newStatus: HypothesisStatus) => {
+    editHypothesis(hypothesisId, { status: newStatus });
+    toast({
+      title: "Status Updated",
+      description: `Hypothesis status changed to ${newStatus}`,
+    });
+  };
   
   return (
     <div className="space-y-6">
@@ -155,6 +165,7 @@ const HypothesesPage: React.FC = () => {
           calculatePectiPercentage={calculatePectiPercentage}
           onSortChange={handleSort}
           onEditPecti={handleEditPecti}
+          onStatusChange={handleStatusChange}
           sortField={sortField}
         />
       )}

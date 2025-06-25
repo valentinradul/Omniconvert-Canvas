@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Department, Hypothesis, PECTI } from '@/types';
+import { Department, Hypothesis, PECTI, HypothesisStatus } from '@/types';
 import { Table, TableHeader, TableRow, TableHead, TableBody } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';
@@ -14,6 +14,7 @@ interface HypothesisTableProps {
   calculatePectiPercentage: (pecti: PECTI) => number;
   onSortChange: (field: 'pectiScore' | 'createdAt') => void;
   onEditPecti: (hypothesisId: string, pectiValues: PECTI) => void;
+  onStatusChange?: (hypothesisId: string, newStatus: HypothesisStatus) => void;
   sortField: 'pectiScore' | 'createdAt';
 }
 
@@ -25,6 +26,7 @@ const HypothesisTable: React.FC<HypothesisTableProps> = ({
   calculatePectiPercentage,
   onSortChange,
   onEditPecti,
+  onStatusChange,
   sortField
 }) => {
   const handleEditPecti = (hypothesis: Hypothesis, editedPecti: PECTI) => {
@@ -62,6 +64,7 @@ const HypothesisTable: React.FC<HypothesisTableProps> = ({
               hasExperiment={hasExperiment}
               calculatePectiPercentage={calculatePectiPercentage}
               onEditPecti={handleEditPecti}
+              onStatusChange={onStatusChange}
             />
           );
         })}

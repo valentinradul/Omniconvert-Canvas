@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Department, Hypothesis, PECTI } from '@/types';
+import { Department, Hypothesis, PECTI, HypothesisStatus } from '@/types';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
 import PectiScoreDisplay from '@/components/PectiScoreDisplay';
 import HypothesisPectiEditor from './HypothesisPectiEditor';
+import HypothesisStatusEditor from './HypothesisStatusEditor';
 
 interface HypothesisTableRowProps {
   hypothesis: Hypothesis;
@@ -20,6 +21,7 @@ interface HypothesisTableRowProps {
   hasExperiment: boolean;
   calculatePectiPercentage: (pecti: PECTI) => number;
   onEditPecti: (hypothesis: Hypothesis, editedPecti: PECTI) => void;
+  onStatusChange?: (hypothesisId: string, newStatus: HypothesisStatus) => void;
 }
 
 const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
@@ -28,7 +30,8 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
   department,
   hasExperiment,
   calculatePectiPercentage,
-  onEditPecti
+  onEditPecti,
+  onStatusChange
 }) => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
@@ -49,6 +52,12 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
   const handleEditPecti = () => {
     setEditPectiValues({...hypothesis.pectiScore});
     setIsEditing(true);
+  };
+
+  const handleStatusChange = (newStatus: HypothesisStatus) => {
+    if (onStatusChange) {
+      onStatusChange(hypothesis.id, newStatus);
+    }
   };
 
   return (
@@ -81,15 +90,11 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
         )}
       </TableCell>
       <TableCell>
-        <Badge className={`
-          ${hypothesis.status === 'Selected For Testing' ? 'bg-blue-100 text-blue-800' : ''}
-          ${hypothesis.status === 'Testing' ? 'bg-amber-100 text-amber-800' : ''}
-          ${hypothesis.status === 'Completed' ? 'bg-green-100 text-green-800' : ''}
-          ${hypothesis.status === 'Archived' ? 'bg-red-100 text-red-800' : ''}
-          ${hypothesis.status === 'Backlog' ? 'bg-gray-100 text-gray-800' : ''}
-        `}>
-          {hypothesis.status}
-        </Badge>
+        <HypothesisStatusEditor
+          currentStatus={hypothesis.status || 'Backlog'}
+          onStatusChange={handleStatusChange}
+          disabled={!onStatusChange}
+        />
       </TableCell>
       <TableCell>
         {isEditing ? (
