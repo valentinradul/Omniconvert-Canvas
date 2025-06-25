@@ -12,10 +12,21 @@ const isValidUUID = (str: string) => {
 
 // Function to migrate old departments to have proper UUIDs
 const migrateDepartments = (departments: Department[]): Department[] => {
-  return departments.map(dept => ({
-    ...dept,
-    id: isValidUUID(dept.id) ? dept.id : generateId()
-  }));
+  let migrationNeeded = false;
+  const migratedDepartments = departments.map(dept => {
+    if (!isValidUUID(dept.id)) {
+      migrationNeeded = true;
+      console.log('Migrating department:', dept.name, 'from ID:', dept.id, 'to new UUID');
+      return { ...dept, id: generateId() };
+    }
+    return dept;
+  });
+  
+  if (migrationNeeded) {
+    console.log('Department migration completed:', migratedDepartments);
+  }
+  
+  return migratedDepartments;
 };
 
 export const useDepartments = () => {
@@ -25,13 +36,13 @@ export const useDepartments = () => {
     if (storedValue) {
       try {
         const parsedDepartments = JSON.parse(storedValue);
-        // Migrate any departments with invalid UUIDs
+        // Always migrate any departments with invalid UUIDs
         const migratedDepartments = migrateDepartments(parsedDepartments);
         
         // Check if migration was needed
         const needsMigration = parsedDepartments.some((dept: Department) => !isValidUUID(dept.id));
         if (needsMigration) {
-          console.log('Migrating departments to use proper UUIDs');
+          console.log('Migrating departments to use proper UUIDs and saving immediately');
           // Save the migrated departments immediately
           localStorage.setItem('departments', JSON.stringify(migratedDepartments));
         }
@@ -43,25 +54,35 @@ export const useDepartments = () => {
     }
     
     // Default departments with proper UUIDs
-    return [
+    const defaultDepartments = [
       { id: generateId(), name: 'Marketing' },
       { id: generateId(), name: 'Sales' },
       { id: generateId(), name: 'Product' }
     ];
+    
+    // Save defaults to localStorage immediately
+    localStorage.setItem('departments', JSON.stringify(defaultDepartments));
+    console.log('Created default departments with UUIDs:', defaultDepartments);
+    
+    return defaultDepartments;
   });
   
   const { toast } = useToast();
   
+  // Force save departments to localStorage whenever they change
   useEffect(() => {
+    console.log('Saving departments to localStorage:', departments);
     localStorage.setItem('departments', JSON.stringify(departments));
   }, [departments]);
 
   const addDepartment = (name: string) => {
     const newDepartment = { id: generateId(), name };
+    console.log('Adding new department with UUID:', newDepartment);
     setDepartments([...departments, newDepartment]);
   };
   
   const editDepartment = (id: string, name: string) => {
+    console.log('Editing department:', id, 'to name:', name);
     setDepartments(departments.map(dept => 
       dept.id === id ? { ...dept, name } : dept
     ));
@@ -79,10 +100,15 @@ export const useDepartments = () => {
       return;
     }
     
+    console.log('Deleting department:', id);
     setDepartments(departments.filter(dept => dept.id !== id));
   };
 
-  const getDepartmentById = (id: string) => departments.find(d => d.id === id);
+  const getDepartmentById = (id: string) => {
+    const department = departments.find(d => d.id === id);
+    console.log('Looking for department with ID:', id, 'found:', department);
+    return department;
+  };
   
   return {
     departments,

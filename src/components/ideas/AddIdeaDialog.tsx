@@ -54,6 +54,17 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
     }
   });
 
+  // Validate department ID exists in current departments list after migration
+  useEffect(() => {
+    if (isInitialized && formData.departmentId) {
+      const departmentExists = departments.some(dept => dept.id === formData.departmentId);
+      if (!departmentExists) {
+        console.log('Department ID no longer valid after migration, clearing:', formData.departmentId);
+        updateField('departmentId', undefined);
+      }
+    }
+  }, [isInitialized, formData.departmentId, departments, updateField]);
+
   console.log('AddIdeaDialog formData:', formData);
   console.log('Available departments:', departments.map(d => ({ id: d.id, name: d.name })));
 
