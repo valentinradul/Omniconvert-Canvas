@@ -25,7 +25,7 @@ export const useDraftState = <T extends Record<string, any>>({
       // Clean the data before saving - remove undefined values and objects with _type: "undefined"
       const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
         if (value !== undefined && 
-            !(typeof value === 'object' && value !== null && value._type === 'undefined')) {
+            !(typeof value === 'object' && value !== null && (value as any)._type === 'undefined')) {
           acc[key] = value;
         }
         return acc;
@@ -47,7 +47,7 @@ export const useDraftState = <T extends Record<string, any>>({
         
         // Clean any corrupted undefined values from the parsed data
         const cleanedParsed = Object.entries(parsed).reduce((acc, [key, value]) => {
-          if (typeof value === 'object' && value !== null && value._type === 'undefined') {
+          if (typeof value === 'object' && value !== null && (value as any)._type === 'undefined') {
             // Skip corrupted undefined values
             return acc;
           }
@@ -96,7 +96,7 @@ export const useDraftState = <T extends Record<string, any>>({
       if (typeof value === 'string') return value.trim();
       if (typeof value === 'number') return value !== (defaultValues as any)[Object.keys(formData).find(k => formData[k as keyof T] === value) as string];
       if (Array.isArray(value)) return value.length > 0;
-      if (typeof value === 'object' && value !== null && value._type !== 'undefined') return Object.keys(value).length > 0;
+      if (typeof value === 'object' && value !== null && (value as any)._type !== 'undefined') return Object.keys(value).length > 0;
       return value !== undefined && value !== null;
     });
     
