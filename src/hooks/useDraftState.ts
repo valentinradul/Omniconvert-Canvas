@@ -19,14 +19,45 @@ export const useDraftState = <T extends Record<string, any>>({
   const [isInitialized, setIsInitialized] = useState(false);
   const [formData, setFormData] = useState<T>(defaultValues as T);
 
+  // Helper function to clean corrupted values
+  const cleanValue = (value: any): any => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    
+    // Check for corrupted undefined objects
+    if (typeof value === 'object' && value !== null) {
+      if ((value as any)._type === 'undefined') {
+        return undefined;
+      }
+      
+      // Clean nested objects
+      if (Array.isArray(value)) {
+        return value.map(cleanValue).filter(v => v !== undefined);
+      }
+      
+      // Clean object properties
+      const cleanedObj: any = {};
+      for (const [key, val] of Object.entries(value)) {
+        const cleanedVal = cleanValue(val);
+        if (cleanedVal !== undefined) {
+          cleanedObj[key] = cleanedVal;
+        }
+      }
+      return Object.keys(cleanedObj).length > 0 ? cleanedObj : undefined;
+    }
+    
+    return value;
+  };
+
   // Helper function to save form state to localStorage
   const saveFormState = (data: T) => {
     try {
-      // Clean the data before saving - remove undefined values and objects with _type: "undefined"
+      // Clean the data before saving - remove undefined values and corrupted objects
       const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
-        if (value !== undefined && 
-            !(typeof value === 'object' && value !== null && (value as any)._type === 'undefined')) {
-          acc[key] = value;
+        const cleanedValue = cleanValue(value);
+        if (cleanedValue !== undefined) {
+          acc[key] = cleanedValue;
         }
         return acc;
       }, {} as any);
@@ -45,13 +76,12 @@ export const useDraftState = <T extends Record<string, any>>({
       if (saved) {
         const parsed = JSON.parse(saved);
         
-        // Clean any corrupted undefined values from the parsed data
+        // Clean any corrupted values from the parsed data
         const cleanedParsed = Object.entries(parsed).reduce((acc, [key, value]) => {
-          if (typeof value === 'object' && value !== null && (value as any)._type === 'undefined') {
-            // Skip corrupted undefined values
-            return acc;
+          const cleanedValue = cleanValue(value);
+          if (cleanedValue !== undefined) {
+            acc[key] = cleanedValue;
           }
-          acc[key] = value;
           return acc;
         }, {} as any);
         
@@ -70,7 +100,7 @@ export const useDraftState = <T extends Record<string, any>>({
     console.log('Initializing form state for:', storageKey);
     const savedState = loadFormState();
     
-    if (savedState) {
+    if (savedState && Object.keys(savedState).length > 0) {
       console.log('Restoring saved state:', savedState);
       // Merge saved state with default values to ensure all fields exist
       const mergedState = { ...defaultValues, ...savedState };
@@ -78,6 +108,7 @@ export const useDraftState = <T extends Record<string, any>>({
       setHasSavedDraft(true);
     } else {
       console.log('No saved state found, using defaults');
+      setFormData(defaultValues as T);
       setHasSavedDraft(false);
     }
     
@@ -93,11 +124,16 @@ export const useDraftState = <T extends Record<string, any>>({
     
     // Check if there's actually some content to save
     const hasContent = Object.values(formData).some(value => {
-      if (typeof value === 'string') return value.trim();
-      if (typeof value === 'number') return value !== (defaultValues as any)[Object.keys(formData).find(k => formData[k as keyof T] === value) as string];
-      if (Array.isArray(value)) return value.length > 0;
-      if (typeof value === 'object' && value !== null && (value as any)._type !== 'undefined') return Object.keys(value).length > 0;
-      return value !== undefined && value !== null;
+      const cleanedValue = cleanValue(value);
+      if (cleanedValue === undefined) return false;
+      
+      if (typeof cleanedValue === 'string') return cleanedValue.trim().length > 0;
+      if (typeof cleanedValue === 'number') return true;
+      if (typeof cleanedValue === 'boolean') return true;
+      if (Array.isArray(cleanedValue)) return cleanedValue.length > 0;
+      if (typeof cleanedValue === 'object') return Object.keys(cleanedValue).length > 0;
+      
+      return true;
     });
     
     console.log('Auto-save check - hasContent:', hasContent, formData);
