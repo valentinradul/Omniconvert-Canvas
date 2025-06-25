@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -65,19 +66,23 @@ const DepartmentsPage: React.FC = () => {
   };
   
   const countIdeasByDepartment = (departmentId: string) => {
-    // Check both departmentId and departmentid (lowercase) to handle any data inconsistencies
-    const count = ideas.filter(idea => 
-      idea.departmentId === departmentId || 
-      (idea as any).departmentid === departmentId
-    ).length;
+    // Count ideas that are properly associated with this department
+    const count = ideas.filter(idea => {
+      // Check both departmentId (frontend model) and departmentid (database field)
+      const ideaDeptId = idea.departmentId || (idea as any).departmentid;
+      return ideaDeptId === departmentId;
+    }).length;
     
     console.log(`Department ${departmentId} has ${count} ideas`);
-    console.log('All ideas:', ideas.map(idea => ({ 
-      id: idea.id, 
-      title: idea.title, 
-      departmentId: idea.departmentId, 
-      departmentid: (idea as any).departmentid 
-    })));
+    console.log('Ideas check:', {
+      departmentId,
+      totalIdeas: ideas.length,
+      ideasWithDepartments: ideas.filter(idea => idea.departmentId || (idea as any).departmentid).length,
+      matchingIdeas: ideas.filter(idea => {
+        const ideaDeptId = idea.departmentId || (idea as any).departmentid;
+        return ideaDeptId === departmentId;
+      })
+    });
     
     return count;
   };

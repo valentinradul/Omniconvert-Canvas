@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { GrowthIdea, Tag } from '@/types';
 
@@ -31,7 +30,7 @@ export interface NewIdea {
 }
 
 export const fetchIdeas = async (companyId?: string) => {
-  console.log(companyId)
+  console.log('Fetching ideas for company:', companyId)
   try {
     let query = supabase.from('ideas').select();
     
@@ -49,7 +48,7 @@ export const fetchIdeas = async (companyId?: string) => {
       title: idea.title,
       description: idea.description || "",
       category: idea.category as any,
-      departmentId: idea.departmentid,
+      departmentId: idea.departmentid, // Map departmentid to departmentId
       createdAt: new Date(idea.createdat),
       userId: idea.userid,
       userName: idea.username,
@@ -57,6 +56,12 @@ export const fetchIdeas = async (companyId?: string) => {
       companyId: idea.company_id,
       isPublic: idea.is_public
     }));
+    
+    console.log('Formatted ideas:', formattedIdeas.map(idea => ({
+      id: idea.id,
+      title: idea.title,
+      departmentId: idea.departmentId
+    })));
     
     return formattedIdeas;
   } catch (error: any) {
@@ -72,7 +77,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       title: idea.title,
       description: idea.description,
       category: idea.category,
-      departmentid: idea.departmentId,
+      departmentid: idea.departmentId, // Ensure departmentId is mapped to departmentid
       tags: idea.tags || [],
       userid: idea.userId, // Updated from user_id
       username: idea.userName,
@@ -80,14 +85,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       is_public: idea.isPublic || false
     };
     
-    // Fix: Remove any department ID if it's not a valid UUID
-    if (newIdea.departmentid && typeof newIdea.departmentid === 'string') {
-      // Validate UUID format - basic validation check
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(newIdea.departmentid)) {
-        delete newIdea.departmentid;
-      }
-    }
+    console.log('Creating idea with department:', newIdea.departmentid);
     
     const { data, error } = await supabase
       .from('ideas')
@@ -103,7 +101,7 @@ export const createIdea = async (idea: NewIdea): Promise<GrowthIdea | null> => {
       title: data.title,
       description: data.description || "",
       category: data.category as any,
-      departmentId: data.departmentid,
+      departmentId: data.departmentid, // Map back to departmentId
       createdAt: new Date(data.createdat),
       userId: data.userid,
       userName: data.username,
