@@ -13,12 +13,6 @@ import { Category, ALL_CATEGORIES, GrowthIdea } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useDraftState } from '@/hooks/useDraftState';
 
-// Function to check if a string is a valid UUID
-const isValidUUID = (str: string) => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-};
-
 interface AddIdeaDialogProps {
   departments: any[];
   addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => Promise<GrowthIdea | null>;
@@ -60,40 +54,25 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
     }
   });
 
-  // Validate department ID when form data changes
-  useEffect(() => {
-    if (formData.departmentId && !isValidUUID(formData.departmentId)) {
-      console.log('Invalid department ID detected, clearing:', formData.departmentId);
-      updateField('departmentId', undefined);
-    }
-  }, [formData.departmentId, updateField]);
-
-  // Also validate that the department ID exists in the current departments list
-  useEffect(() => {
-    if (formData.departmentId && isValidUUID(formData.departmentId)) {
-      const departmentExists = departments.some(dept => dept.id === formData.departmentId);
-      if (!departmentExists) {
-        console.log('Department no longer exists, clearing:', formData.departmentId);
-        updateField('departmentId', undefined);
-      }
-    }
-  }, [formData.departmentId, departments, updateField]);
+  console.log('AddIdeaDialog formData:', formData);
+  console.log('Available departments:', departments.map(d => ({ id: d.id, name: d.name })));
 
   const handleAddIdea = async () => {
     if (formData.category && formData.title && formData.description) {
-      // Only include departmentId if it's properly selected from the dropdown and is a valid UUID
       const newIdea = {
         title: formData.title,
         description: formData.description,
         category: formData.category,
-        departmentId: (formData.departmentId && isValidUUID(formData.departmentId)) ? formData.departmentId : undefined,
+        departmentId: formData.departmentId || undefined,
         tags: formData.tags,
         isPublic: formData.isPublic
       };
 
+      console.log('Submitting idea with department:', newIdea.departmentId);
+
       const result = await addIdea(newIdea);
       
-      if (result !== null) { // Check for null instead of truthiness
+      if (result !== null) {
         setFormData(defaultValues);
         clearDraftOnSubmit();
         setIsOpen(false);
@@ -115,7 +94,6 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
           <DialogDescription>Create a new growth idea to test</DialogDescription>
         </DialogHeader>
         
-        {/* Only show the draft notification, not the buttons */}
         <DraftIndicator
           hasSavedDraft={hasSavedDraft}
           onSaveDraft={saveDraft}
@@ -159,7 +137,7 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
             <div>
               <Label htmlFor="category">Category</Label>
               <Select 
-                value={formData.category} 
+                value={formData.category || ''} 
                 onValueChange={(value) => updateField('category', value as Category)}
               >
                 <SelectTrigger>
@@ -178,8 +156,11 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
             <div>
               <Label htmlFor="department">Department</Label>
               <Select 
-                value={formData.departmentId} 
-                onValueChange={(value) => updateField('departmentId', value)}
+                value={formData.departmentId || ''} 
+                onValueChange={(value) => {
+                  console.log('Department selected:', value);
+                  updateField('departmentId', value);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select department" />
@@ -209,7 +190,6 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
         </div>
         
         <DialogFooter className="flex justify-between items-center">
-          {/* Draft controls on the left */}
           <div className="flex gap-2">
             <Button 
               type="button" 
@@ -232,7 +212,6 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
             )}
           </div>
           
-          {/* Create button on the right */}
           <Button 
             onClick={handleAddIdea} 
             disabled={!formData.title || !formData.description || !formData.category}
