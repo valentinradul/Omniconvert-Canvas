@@ -46,32 +46,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY environment variable is missing");
     }
 
-    // First, let's test the API key by trying to get domains
-    console.log("Testing API key by fetching domains...");
-    try {
-      const domainsResponse = await fetch('https://api.resend.com/domains', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      const domainsData = await domainsResponse.json();
-      console.log("Domains API response status:", domainsResponse.status);
-      console.log("Domains API response:", JSON.stringify(domainsData));
-      
-      if (!domainsResponse.ok) {
-        console.error("API key validation failed:", domainsData);
-        throw new Error(`Invalid API key: ${domainsData.message || 'Unknown error'}`);
-      }
-    } catch (domainError) {
-      console.error("Error testing API key:", domainError);
-      throw new Error("Failed to validate API key with Resend");
-    }
-
-    // Using the default Resend testing domain that should work immediately
-    const fromAddress = "onboarding@resend.dev";
+    // Try sending with your verified domain first
+    const fromAddress = "noreply@omniconvert.com";
     console.log("Using from address:", fromAddress);
 
     const emailResponse = await resend.emails.send({
@@ -103,19 +79,46 @@ const handler = async (req: Request): Promise<Response> => {
     if (emailResponse.error) {
       console.error("Resend API error:", emailResponse.error);
       
-      // Handle domain verification error specifically
-      if (emailResponse.error.message && emailResponse.error.message.includes("verify a domain")) {
-        throw new Error("Email domain not verified. Please verify your domain at resend.com/domains to send emails to other recipients.");
-      }
-      
-      // Handle authentication errors
-      if (emailResponse.error.message && emailResponse.error.message.includes("API key")) {
-        throw new Error("Invalid Resend API key. Please check your RESEND_API_KEY configuration.");
-      }
-      
-      // Handle from address errors
-      if (emailResponse.error.message && (emailResponse.error.message.includes("from") || emailResponse.error.message.includes("domain"))) {
-        throw new Error(`Invalid from address. Please ensure ${fromAddress} uses your verified domain.`);
+      // If domain verification fails, try with the default Resend domain
+      if (emailResponse.error.message && emailResponse.error.message.includes("domain")) {
+        console.log("Domain verification failed, trying with default Resend domain...");
+        
+        const fallbackResponse = await resend.emails.send({
+          from: `Team Invitations <onboarding@resend.dev>`,
+          to: [email],
+          subject: `You've been invited to join ${companyName}`,
+          html: `
+            <div style="font-family: 'Helvetica', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #333; font-size: 24px;">Team Invitation</h1>
+              <p style="font-size: 16px; line-height: 1.5; color: #555;">
+                ${sender} has invited you to join <strong>${companyName}</strong> as a <strong>${roleName}</strong>.
+              </p>
+              <div style="margin: 30px 0;">
+                <a href="${appUrl}/invitations" 
+                   style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                  View Invitation
+                </a>
+              </div>
+              <p style="font-size: 14px; color: #777; margin-top: 30px;">
+                If you don't have an account yet, you'll be prompted to create one.
+              </p>
+            </div>
+          `,
+        });
+        
+        console.log("Fallback email response:", JSON.stringify(fallbackResponse));
+        
+        if (fallbackResponse.error) {
+          throw new Error(`Email service error: ${fallbackResponse.error.message || 'Unknown error'}`);
+        }
+        
+        return new Response(JSON.stringify(fallbackResponse), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        });
       }
       
       throw new Error(`Email service error: ${emailResponse.error.message || 'Unknown error'}`);
