@@ -46,12 +46,13 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY environment variable is missing");
     }
 
-    // TODO: Replace "YOUR-VERIFIED-DOMAIN.COM" with your actual verified domain from Resend
-    const fromAddress = "noreply@YOUR-VERIFIED-DOMAIN.COM";
+    // Using the default Resend testing domain for now
+    // TODO: Replace with your verified domain: "noreply@yourdomain.com"
+    const fromAddress = "onboarding@resend.dev";
     console.log("Using from address:", fromAddress);
 
     const emailResponse = await resend.emails.send({
-      from: `Invitations <${fromAddress}>`,
+      from: `Team Invitations <${fromAddress}>`,
       to: [email],
       subject: `You've been invited to join ${companyName}`,
       html: `
@@ -91,7 +92,7 @@ const handler = async (req: Request): Promise<Response> => {
       
       // Handle from address errors
       if (emailResponse.error.message && (emailResponse.error.message.includes("from") || emailResponse.error.message.includes("domain"))) {
-        throw new Error(`Invalid from address. Please ensure ${fromAddress} uses your verified domain.`);
+        throw new Error(`Invalid from address. Please ensure you're using a verified domain or the default resend.dev domain.`);
       }
       
       throw new Error(`Email service error: ${emailResponse.error.message || 'Unknown error'}`);
