@@ -84,32 +84,34 @@ const TeamSettingsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 mt-8">
+      <div className="space-y-6 mt-8">
         {/* PendingInvitations with manual refresh and edit functionality */}
         <PendingInvitations 
           onInvitationResent={refreshPendingInvitations} 
           onEditMember={handleEditMember}
         />
         
-        <div className="grid grid-cols-1 gap-4">
-          <div>
-            <h2 className="text-lg font-semibold mb-2">Invite New Member</h2>
-            <div className="flex flex-col space-y-4">
+        {/* Invite New Member Section - Centered and Compact */}
+        <div className="flex justify-center">
+          <div className="w-full max-w-md">
+            <div className="text-center space-y-3">
+              <h3 className="text-lg font-medium">Invite New Member</h3>
               <Button 
                 onClick={() => setShowInviteDialog(true)} 
                 disabled={userCompanyRole !== 'owner' && userCompanyRole !== 'admin'}
+                className="w-full"
               >
                 Invite Team Member
               </Button>
-              
-              <InviteMemberDialog 
-                open={showInviteDialog} 
-                onClose={() => setShowInviteDialog(false)}
-                onInviteSent={handleInvitationSent}
-              />
             </div>
           </div>
         </div>
+        
+        <InviteMemberDialog 
+          open={showInviteDialog} 
+          onClose={() => setShowInviteDialog(false)}
+          onInviteSent={handleInvitationSent}
+        />
       </div>
     </div>
   );
