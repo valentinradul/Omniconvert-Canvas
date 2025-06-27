@@ -36,31 +36,32 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationRes
 
   const resendInvitation = async (invitationId: string) => {
     try {
+      console.log('Resending invitation:', invitationId);
+      
       // Get the invitation details
       const invitation = pendingInvitations.find(inv => inv.id === invitationId);
       if (!invitation) throw new Error('Invitation not found');
       
-      // Get company name
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .select('name')
-        .eq('id', invitation.companyId)
-        .single();
-      
-      if (companyError || !company) throw companyError || new Error('Company not found');
+      console.log('Found invitation:', invitation);
       
       // Call edge function to resend email
-      const { error } = await supabase.functions.invoke('send-invitation', {
+      console.log('Calling send-invitation edge function for resend');
+      const { data, error } = await supabase.functions.invoke('send-invitation', {
         body: {
           email: invitation.email,
-          companyName: company.name,
+          companyName: currentCompany?.name || 'Company',
           inviterName: null,
           role: invitation.role,
           invitationId: invitationId
         }
       });
 
-      if (error) throw error;
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Failed to resend invitation: ${error.message}`);
+      }
       
       toast({
         title: "Invitation resent",
