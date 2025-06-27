@@ -23,6 +23,7 @@ type CompanyContextType = {
   unsendInvitation: (invitationId: string) => Promise<void>;
   refreshPendingInvitations: () => Promise<void>;
   refreshCompanyMembers: () => Promise<void>;
+  refreshUserCompanies: () => Promise<void>;
 };
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -89,6 +90,11 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await fetchCompanyMembers();
   };
 
+  // Function to refresh user companies (useful after accepting invitations)
+  const refreshUserCompanies = async () => {
+    await fetchUserCompanies();
+  };
+
   // Wrapper for unsend invitation that refreshes pending invitations
   const unsendInvitation = async (invitationId: string) => {
     await apiUnsendInvitation(invitationId, setPendingInvitations);
@@ -103,6 +109,9 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
     
     if (user) {
+      // Clear any cached company data when user changes
+      localStorage.removeItem('userCompanies');
+      
       fetchUserCompanies();
       if (user.email) {
         fetchUserInvitations(user.email);
@@ -114,6 +123,10 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setCompanyMembers([]);
       setCompanyInvitations([]);
       setPendingInvitations([]);
+      
+      // Clear localStorage when user logs out
+      localStorage.removeItem('currentCompanyId');
+      localStorage.removeItem('userCompanies');
     }
   }, [user]);
 
@@ -141,6 +154,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (company) {
           setCurrentCompany(company);
         } else {
+          // If stored company doesn't exist in user's companies, set to first available
           setCurrentCompany(companies[0]);
         }
       } else {
@@ -168,7 +182,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         declineInvitation,
         unsendInvitation,
         refreshPendingInvitations,
-        refreshCompanyMembers
+        refreshCompanyMembers,
+        refreshUserCompanies
       }}
     >
       {children}

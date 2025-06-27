@@ -46,24 +46,38 @@ export function useInvitations() {
         }
       }
       
-      // Accept invitation
+      // Check if user is already a member of this company
+      const { data: existingMember, error: memberCheckError } = await supabase
+        .from('company_members')
+        .select('*')
+        .eq('company_id', invitation.companyId)
+        .eq('user_id', userId)
+        .single();
+        
+      if (memberCheckError && memberCheckError.code !== 'PGRST116') {
+        throw memberCheckError;
+      }
+      
+      // If user is not already a member, add them
+      if (!existingMember) {
+        const { error: memberError } = await supabase
+          .from('company_members')
+          .insert({
+            company_id: invitation.companyId,
+            user_id: userId,
+            role: invitation.role
+          });
+          
+        if (memberError) throw memberError;
+      }
+      
+      // Accept invitation (mark as accepted)
       const { error: updateError } = await supabase
         .from('company_invitations')
         .update({ accepted: true })
         .eq('id', invitationId);
         
       if (updateError) throw updateError;
-      
-      // Add user as company member
-      const { error: memberError } = await supabase
-        .from('company_members')
-        .insert({
-          company_id: invitation.companyId,
-          user_id: userId,
-          role: invitation.role
-        });
-        
-      if (memberError) throw memberError;
       
       // Get company details
       const { data: companyData, error: companyError } = await supabase
@@ -84,12 +98,15 @@ export function useInvitations() {
       // Set the company as current company in localStorage
       localStorage.setItem('currentCompanyId', company.id);
       
+      // Clear any existing company context to force refresh
+      localStorage.removeItem('userCompanies');
+      
       toast({
         title: "Welcome to the team!",
         description: `You are now a member of ${company.name}. Redirecting to dashboard...`,
       });
       
-      // Redirect to dashboard after successful acceptance
+      // Redirect to dashboard after successful acceptance with a clean reload
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 1500);
