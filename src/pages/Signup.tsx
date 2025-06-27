@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -54,8 +53,8 @@ const Signup = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       await signup(values.email, values.password, values.name);
-      // User will be redirected after verification or automatically logged in
-      // depending on Supabase settings
+      // Clear the form after successful signup
+      form.reset();
     } catch (error) {
       // Error is handled in the auth context
       console.error("Signup submission error:", error);
