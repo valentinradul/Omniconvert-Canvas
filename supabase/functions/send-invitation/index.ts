@@ -46,8 +46,12 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY environment variable is missing");
     }
 
+    // Use your verified domain in the from address - update this to match your verified domain
+    const fromAddress = "noreply@yourdomain.com"; // Replace with your verified domain
+    console.log("Using from address:", fromAddress);
+
     const emailResponse = await resend.emails.send({
-      from: "Invitations <onboarding@resend.dev>",
+      from: `Invitations <${fromAddress}>`,
       to: [email],
       subject: `You've been invited to join ${companyName}`,
       html: `
@@ -80,8 +84,26 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error("Email domain not verified. Please verify your domain at resend.com/domains to send emails to other recipients.");
       }
       
+      // Handle authentication errors
+      if (emailResponse.error.message && emailResponse.error.message.includes("API key")) {
+        throw new Error("Invalid Resend API key. Please check your RESEND_API_KEY configuration.");
+      }
+      
+      // Handle from address errors
+      if (emailResponse.error.message && (emailResponse.error.message.includes("from") || emailResponse.error.message.includes("domain"))) {
+        throw new Error(`Invalid from address. Please ensure ${fromAddress} uses your verified domain.`);
+      }
+      
       throw new Error(`Email service error: ${emailResponse.error.message || 'Unknown error'}`);
     }
+    
+    // Check if we got a successful response with an ID
+    if (!emailResponse.data || !emailResponse.data.id) {
+      console.error("Unexpected response format:", emailResponse);
+      throw new Error("Email service returned unexpected response format");
+    }
+    
+    console.log("Email sent successfully with ID:", emailResponse.data.id);
     
     return new Response(JSON.stringify(emailResponse), {
       status: 200,
