@@ -439,6 +439,10 @@ export type Database = {
         Args: { user_id: string; company_id: string }
         Returns: boolean
       }
+      get_current_user_email: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_company_role: {
         Args: { user_id: string; company_id: string }
         Returns: string
