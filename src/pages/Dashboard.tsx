@@ -20,6 +20,7 @@ import StatisticsChart from '@/components/dashboard/StatisticsChart';
 import FilterBar from '@/components/dashboard/FilterBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CreateCompanyDialog from '@/components/company/CreateCompanyDialog';
+import CompanyInvitations from '@/components/company/CompanyInvitations';
 import { Building, Plus } from 'lucide-react';
 
 // Add custom CSS variables for the colored backgrounds
@@ -28,7 +29,7 @@ import '@/index.css';
 const Dashboard: React.FC = () => {
   const { ideas, hypotheses, experiments, editHypothesis, getIdeaById } = useApp();
   const { user } = useAuth();
-  const { companies } = useCompany();
+  const { companies, companyInvitations } = useCompany();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -36,8 +37,7 @@ const Dashboard: React.FC = () => {
   console.log('Dashboard - Ideas count:', ideas.length);
   console.log('Dashboard - Hypotheses count:', hypotheses.length);
   console.log('Dashboard - Experiments count:', experiments.length);
-  console.log('Dashboard - Hypotheses data:', hypotheses.map(h => ({ id: h.id, status: h.status, ideaId: h.ideaId })));
-  console.log('Dashboard - Experiments data:', experiments.map(e => ({ id: e.id, status: e.status, hypothesisId: e.hypothesisId })));
+  console.log('Dashboard - Company invitations:', companyInvitations.length);
   
   const [filters, setFilters] = useState<{
     department?: string;
@@ -54,6 +54,7 @@ const Dashboard: React.FC = () => {
   const [showCreateCompanyDialog, setShowCreateCompanyDialog] = useState(false);
   
   const hasCompany = companies.length > 0;
+  const hasPendingInvitations = companyInvitations.length > 0;
   
   const allTags = React.useMemo(() => {
     const tagsSet = new Set<Tag>();
@@ -278,6 +279,53 @@ const Dashboard: React.FC = () => {
 
   const hasActiveFilters = Object.values(filters).some(Boolean) || !!searchQuery;
 
+  // Show invitations first if user has pending invitations but no company
+  if (!hasCompany && hasPendingInvitations) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Welcome to ExperimentFlow</h1>
+            <p className="text-muted-foreground">You have pending team invitations</p>
+          </div>
+        </div>
+        
+        <CompanyInvitations />
+        
+        <div className="bg-white rounded-lg border p-8 max-w-2xl mx-auto mt-8">
+          <div className="flex flex-col items-center text-center space-y-6">
+            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <Building className="h-10 w-10 text-primary" />
+            </div>
+            
+            <div>
+              <h2 className="text-2xl font-semibold">Or Create Your Own Company</h2>
+              <p className="text-muted-foreground mt-2">
+                If you prefer to start your own team, you can create a new company
+                and invite others to collaborate with you.
+              </p>
+            </div>
+            
+            <Button 
+              size="lg" 
+              onClick={() => setShowCreateCompanyDialog(true)}
+              className="mt-4"
+              variant="outline"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create New Company
+            </Button>
+          </div>
+        </div>
+        
+        <CreateCompanyDialog 
+          open={showCreateCompanyDialog} 
+          onClose={() => setShowCreateCompanyDialog(false)}
+        />
+      </div>
+    );
+  }
+
   if (!hasCompany) {
     return (
       <div className="space-y-6">
@@ -330,6 +378,9 @@ const Dashboard: React.FC = () => {
         </div>
         <Button onClick={() => navigate('/ideas')}>Add New Idea</Button>
       </div>
+      
+      {/* Show any remaining invitations at the top */}
+      {hasPendingInvitations && <CompanyInvitations />}
       
       {/* Statistics Panel - Always Visible */}
       <StatisticsPanel 

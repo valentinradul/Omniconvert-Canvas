@@ -22,6 +22,8 @@ export function useInvitations() {
         throw new Error("Invitation not found");
       }
       
+      console.log('Accepting invitation:', invitation);
+      
       // Accept invitation
       const { error: updateError } = await supabase
         .from('company_invitations')
@@ -57,10 +59,18 @@ export function useInvitations() {
         createdBy: companyData.created_by
       };
       
+      // Set the company as current company in localStorage
+      localStorage.setItem('currentCompanyId', company.id);
+      
       toast({
-        title: "Invitation accepted",
-        description: `You are now a member of ${company.name}`,
+        title: "Welcome to the team!",
+        description: `You are now a member of ${company.name}. Redirecting to dashboard...`,
       });
+      
+      // Redirect to dashboard after successful acceptance
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1500);
       
       return { company, invitationId, role: invitation.role };
     } catch (error: any) {

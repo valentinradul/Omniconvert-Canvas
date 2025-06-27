@@ -30,18 +30,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN') {
-          // Defer profile fetch to avoid Supabase authentication deadlock
-          setTimeout(() => {
-            console.log('User signed in:', session?.user.id);
-          }, 0);
+          console.log('User signed in:', session?.user.id);
+          
+          // Check if user has pending invitations after sign in
+          setTimeout(async () => {
+            if (session?.user?.email) {
+              try {
+                const { data: invitations } = await supabase
+                  .from('company_invitations')
+                  .select('*')
+                  .eq('email', session.user.email)
+                  .eq('accepted', false);
+                
+                if (invitations && invitations.length > 0) {
+                  console.log('User has pending invitations, staying on current page');
+                } else {
+                  // Check if user has company access
+                  const { data: membership } = await supabase
+                    .from('company_members')
+                    .select('company_id')
+                    .eq('user_id', session.user.id)
+                    .limit(1);
+                  
+                  if (membership && membership.length > 0 && window.location.pathname === '/') {
+                    // User has company access and is on home page, redirect to dashboard
+                    window.location.href = '/dashboard';
+                  }
+                }
+              } catch (error) {
+                console.error('Error checking user invitations:', error);
+              }
+            }
+          }, 1000);
         }
         
         if (event === 'SIGNED_OUT') {
           console.log('User signed out');
+          // Clear any stored company data
+          localStorage.removeItem('currentCompanyId');
         }
       }
     );
@@ -95,7 +126,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             full_name: name,
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/dashboard`
         }
       });
       
