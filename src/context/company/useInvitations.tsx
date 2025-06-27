@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,9 +30,10 @@ export function useInvitations() {
         .select('*')
         .eq('company_id', invitation.companyId)
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
         
-      if (memberCheckError && memberCheckError.code !== 'PGRST116') {
+      if (memberCheckError) {
+        console.error('Error checking existing membership:', memberCheckError);
         throw memberCheckError;
       }
       
@@ -45,7 +47,10 @@ export function useInvitations() {
             role: invitation.role
           });
           
-        if (memberError) throw memberError;
+        if (memberError) {
+          console.error('Error adding company member:', memberError);
+          throw memberError;
+        }
       }
       
       // Accept invitation (mark as accepted)
@@ -54,7 +59,10 @@ export function useInvitations() {
         .update({ accepted: true })
         .eq('id', invitationId);
         
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating invitation:', updateError);
+        throw updateError;
+      }
       
       // Get company details
       const { data: companyData, error: companyError } = await supabase
@@ -63,7 +71,10 @@ export function useInvitations() {
         .eq('id', invitation.companyId)
         .single();
         
-      if (companyError) throw companyError;
+      if (companyError) {
+        console.error('Error fetching company:', companyError);
+        throw companyError;
+      }
       
       const company: Company = {
         id: companyData.id,
