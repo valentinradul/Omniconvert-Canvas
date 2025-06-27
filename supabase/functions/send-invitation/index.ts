@@ -50,7 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const roleName = role.charAt(0).toUpperCase() + role.slice(1);
     const sender = inviterName || "Someone";
-    const appUrl = Deno.env.get("PUBLIC_APP_URL") || "https://localhost:5173";
+    const appUrl = "https://experiment-flow-hub.lovable.app";
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
     // Enhanced API key logging
