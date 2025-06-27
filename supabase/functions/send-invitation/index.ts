@@ -1,5 +1,3 @@
-
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -93,13 +91,13 @@ const handler = async (req: Request): Promise<Response> => {
             ${sender} has invited you to join <strong>${companyName}</strong> as a <strong>${roleName}</strong>.
           </p>
           <div style="margin: 30px 0;">
-            <a href="${appUrl}/invitations" 
+            <a href="${appUrl}/signup" 
                style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-              View Invitation
+              Create Account & Join Team
             </a>
           </div>
           <p style="font-size: 14px; color: #777; margin-top: 30px;">
-            If you don't have an account yet, you'll be prompted to create one.
+            If you already have an account, you can sign in and check your invitations.
           </p>
         </div>
       `,
@@ -151,4 +149,3 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
-
