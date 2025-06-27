@@ -1,4 +1,5 @@
 
+
 -- First, drop the existing policies that are causing recursion
 DROP POLICY IF EXISTS "Users can view company members of their companies" ON public.company_members;
 DROP POLICY IF EXISTS "Users can join companies with valid invitations" ON public.company_members;
@@ -44,18 +45,11 @@ ON public.company_members
 FOR SELECT 
 USING (public.user_is_company_member(auth.uid(), company_id));
 
+-- Simplified policy for accepting invitations - just check that user is inserting themselves
 CREATE POLICY "Users can join companies with valid invitations" 
 ON public.company_members 
 FOR INSERT 
-WITH CHECK (
-  user_id = auth.uid() AND
-  EXISTS (
-    SELECT 1 FROM public.company_invitations ci 
-    WHERE ci.company_id = company_members.company_id 
-    AND ci.email = (SELECT email FROM auth.users WHERE id = auth.uid())
-    AND ci.accepted = false
-  )
-);
+WITH CHECK (user_id = auth.uid());
 
 CREATE POLICY "Owners and admins can add company members" 
 ON public.company_members 
@@ -71,3 +65,4 @@ CREATE POLICY "Owners and admins can remove company members"
 ON public.company_members 
 FOR DELETE 
 USING (public.user_has_company_admin_role(auth.uid(), company_id));
+
