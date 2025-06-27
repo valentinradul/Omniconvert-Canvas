@@ -25,6 +25,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
   console.log('CompanyInvitations render:', { 
     invitationsCount: invitations.length, 
     userId: user?.id,
+    userEmail: user?.email,
     isAuthenticated,
     invitations: invitations.map(inv => ({ 
       id: inv.id, 
@@ -36,9 +37,21 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     }))
   });
 
-  // Don't show if no invitations or user not authenticated
-  if (!isAuthenticated || !user || invitations.length === 0) {
-    console.log('Not showing invitations:', { isAuthenticated, hasUser: !!user, invitationsCount: invitations.length });
+  // Filter invitations for current user's email
+  const userInvitations = invitations.filter(inv => 
+    user?.email && inv.email.toLowerCase() === user.email.toLowerCase()
+  );
+
+  console.log('Filtered user invitations:', userInvitations.length);
+
+  // Don't show if no invitations for this user or user not authenticated
+  if (!isAuthenticated || !user || userInvitations.length === 0) {
+    console.log('Not showing invitations:', { 
+      isAuthenticated, 
+      hasUser: !!user, 
+      userEmail: user?.email,
+      userInvitationsCount: userInvitations.length 
+    });
     return null;
   }
 
@@ -101,12 +114,12 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
         <CardTitle className="flex items-center gap-2">
           <Mail className="h-5 w-5 text-blue-600" />
           Company Invitations
-          <Badge variant="secondary">{invitations.length}</Badge>
+          <Badge variant="secondary">{userInvitations.length}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {invitations.map((invitation) => (
+          {userInvitations.map((invitation) => (
             <div key={invitation.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-muted-foreground" />

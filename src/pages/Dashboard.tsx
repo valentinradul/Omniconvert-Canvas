@@ -29,7 +29,9 @@ const Dashboard: React.FC = () => {
     console.log('Dashboard - Hypotheses count:', hypotheses.length);
     console.log('Dashboard - Experiments count:', experiments.length);
     console.log('Dashboard - Company invitations:', companyInvitations.length);
-  }, [ideas.length, hypotheses.length, experiments.length, companyInvitations.length]);
+    console.log('Dashboard - User email:', user?.email);
+    console.log('Dashboard - Current company:', currentCompany?.name);
+  }, [ideas.length, hypotheses.length, experiments.length, companyInvitations.length, user?.email, currentCompany]);
 
   // Calculate hypothesis statistics by status
   const hypothesesByStatus = hypotheses.reduce((acc, hypothesis) => {
@@ -86,6 +88,12 @@ const Dashboard: React.FC = () => {
     setHasActiveFilters(false);
   };
 
+  // Filter invitations for current user's email if user exists
+  const userInvitations = user?.email ? 
+    companyInvitations.filter(inv => 
+      inv.email.toLowerCase() === user.email.toLowerCase()
+    ) : [];
+
   return (
     <div className="space-y-6">
       <div>
@@ -95,10 +103,10 @@ const Dashboard: React.FC = () => {
         </p>
       </div>
 
-      {/* Company Invitations */}
-      {companyInvitations.length > 0 && (
+      {/* Company Invitations - show only if user has invitations for their email */}
+      {userInvitations.length > 0 && (
         <CompanyInvitations 
-          invitations={companyInvitations}
+          invitations={userInvitations}
           onInvitationAccepted={handleInvitationAccepted}
           onInvitationDeclined={handleInvitationDeclined}
         />

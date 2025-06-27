@@ -16,7 +16,11 @@ const TeamSettingsPage: React.FC = () => {
   const [selectedMember, setSelectedMember] = useState<CompanyMember | null>(null);
   const { toast } = useToast();
 
+  console.log('TeamSettingsPage - Company members:', companyMembers.length);
+  console.log('TeamSettingsPage - User role:', userCompanyRole);
+
   const handleEditMember = (member: CompanyMember) => {
+    console.log('Editing member:', member.id);
     setSelectedMember(member);
     setShowEditDialog(true);
   };
@@ -80,6 +84,11 @@ const TeamSettingsPage: React.FC = () => {
               >
                 Invite Team Member
               </Button>
+              {(userCompanyRole !== 'owner' && userCompanyRole !== 'admin') && (
+                <p className="text-sm text-muted-foreground">
+                  Only owners and admins can invite members
+                </p>
+              )}
             </div>
           </div>
         </div>
