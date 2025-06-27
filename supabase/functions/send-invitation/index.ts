@@ -19,18 +19,37 @@ interface InvitationEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("=== INVITATION EMAIL FUNCTION START ===");
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("Received invitation email request");
-    const { email, companyName, inviterName, role, invitationId }: InvitationEmailRequest = await req.json();
+    console.log("Method:", req.method);
+    console.log("Headers:", Object.fromEntries(req.headers.entries()));
+    
+    const rawBody = await req.text();
+    console.log("Raw request body:", rawBody);
+    
+    let parsedBody: InvitationEmailRequest;
+    try {
+      parsedBody = JSON.parse(rawBody);
+      console.log("Parsed request body:", JSON.stringify(parsedBody));
+    } catch (parseError) {
+      console.error("Failed to parse JSON:", parseError);
+      throw new Error("Invalid JSON in request body");
+    }
+
+    const { email, companyName, inviterName, role, invitationId } = parsedBody;
+
+    console.log("Extracted fields:", { email, companyName, inviterName, role, invitationId });
 
     if (!email || !companyName) {
       console.error("Missing required fields:", { email, companyName });
-      throw new Error("Missing required fields");
+      throw new Error("Missing required fields: email and companyName are required");
     }
 
     const roleName = role.charAt(0).toUpperCase() + role.slice(1);
@@ -38,18 +57,26 @@ const handler = async (req: Request): Promise<Response> => {
     const appUrl = Deno.env.get("PUBLIC_APP_URL") || "https://localhost:5173";
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
-    console.log("Sending invitation email to:", email, "for company:", companyName, "with role:", roleName);
-    console.log("Using PUBLIC_APP_URL:", appUrl);
-    console.log("Using RESEND_API_KEY:", resendApiKey ? "Key exists (length: " + resendApiKey.length + ")" : "Key missing");
+    console.log("Processing invitation:", {
+      email,
+      companyName,
+      roleName,
+      sender,
+      appUrl,
+      hasApiKey: !!resendApiKey,
+      apiKeyLength: resendApiKey?.length || 0
+    });
 
     if (!resendApiKey) {
+      console.error("RESEND_API_KEY is missing from environment variables");
       throw new Error("RESEND_API_KEY environment variable is missing");
     }
 
-    // Try sending with your verified domain first
-    const fromAddress = "noreply@omniconvert.com";
+    // Try sending with the default Resend domain first
+    const fromAddress = "onboarding@resend.dev";
     console.log("Using from address:", fromAddress);
 
+    console.log("Attempting to send email...");
     const emailResponse = await resend.emails.send({
       from: `Team Invitations <${fromAddress}>`,
       to: [email],
@@ -73,54 +100,11 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Email sending response:", JSON.stringify(emailResponse));
+    console.log("Email response received:", JSON.stringify(emailResponse));
     
     // Check if there's an error in the response
     if (emailResponse.error) {
       console.error("Resend API error:", emailResponse.error);
-      
-      // If domain verification fails, try with the default Resend domain
-      if (emailResponse.error.message && emailResponse.error.message.includes("domain")) {
-        console.log("Domain verification failed, trying with default Resend domain...");
-        
-        const fallbackResponse = await resend.emails.send({
-          from: `Team Invitations <onboarding@resend.dev>`,
-          to: [email],
-          subject: `You've been invited to join ${companyName}`,
-          html: `
-            <div style="font-family: 'Helvetica', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #333; font-size: 24px;">Team Invitation</h1>
-              <p style="font-size: 16px; line-height: 1.5; color: #555;">
-                ${sender} has invited you to join <strong>${companyName}</strong> as a <strong>${roleName}</strong>.
-              </p>
-              <div style="margin: 30px 0;">
-                <a href="${appUrl}/invitations" 
-                   style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                  View Invitation
-                </a>
-              </div>
-              <p style="font-size: 14px; color: #777; margin-top: 30px;">
-                If you don't have an account yet, you'll be prompted to create one.
-              </p>
-            </div>
-          `,
-        });
-        
-        console.log("Fallback email response:", JSON.stringify(fallbackResponse));
-        
-        if (fallbackResponse.error) {
-          throw new Error(`Email service error: ${fallbackResponse.error.message || 'Unknown error'}`);
-        }
-        
-        return new Response(JSON.stringify(fallbackResponse), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
-          },
-        });
-      }
-      
       throw new Error(`Email service error: ${emailResponse.error.message || 'Unknown error'}`);
     }
     
@@ -131,6 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
     
     console.log("Email sent successfully with ID:", emailResponse.data.id);
+    console.log("=== INVITATION EMAIL FUNCTION SUCCESS ===");
     
     return new Response(JSON.stringify(emailResponse), {
       status: 200,
@@ -140,9 +125,18 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error sending invitation email:", error);
+    console.error("=== INVITATION EMAIL FUNCTION ERROR ===");
+    console.error("Error type:", typeof error);
+    console.error("Error name:", error?.name);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
+    console.error("Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || "Unknown error occurred",
+        type: error.name || "UnknownError"
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
