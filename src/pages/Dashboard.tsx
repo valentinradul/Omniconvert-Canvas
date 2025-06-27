@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useCompany } from "@/context/company/CompanyContext";
 import { useIdeas } from "@/context/hooks/useIdeas";
 import { useHypotheses } from "@/context/hooks/useHypotheses";
@@ -11,9 +11,13 @@ import CompanyInvitations from "@/components/company/CompanyInvitations";
 
 const Dashboard: React.FC = () => {
   const { companyInvitations, refreshUserCompanies, refreshCompanyMembers } = useCompany();
-  const { ideas } = useIdeas();
-  const { hypotheses } = useHypotheses();
-  const { experiments } = useExperiments();
+  const { ideas } = useIdeas('', '', '');
+  const { hypotheses } = useHypotheses('', '', '');
+  const { experiments } = useExperiments('', '');
+
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hasActiveFilters, setHasActiveFilters] = useState(false);
 
   // Log dashboard data for debugging
   useEffect(() => {
@@ -32,6 +36,31 @@ const Dashboard: React.FC = () => {
 
   console.log('Dashboard - Hypothesis by status:', hypothesesByStatus);
 
+  // Filter data based on search query
+  const filteredIdeas = ideas.filter(idea => 
+    idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    idea.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredHypotheses = hypotheses.filter(hypothesis =>
+    hypothesis.statement.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    hypothesis.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredExperiments = experiments.filter(experiment =>
+    experiment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    experiment.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Calculate win rate for chart
+  const completedExperiments = filteredExperiments.filter(e => 
+    e.status === 'Winning' || e.status === 'Losing' || e.status === 'Inconclusive'
+  );
+  const winningExperiments = filteredExperiments.filter(e => e.status === 'Winning');
+  const winRate = completedExperiments.length > 0 
+    ? Math.round((winningExperiments.length / completedExperiments.length) * 100)
+    : 0;
+
   const handleInvitationAccepted = () => {
     console.log('Invitation accepted - refreshing data');
     refreshUserCompanies();
@@ -41,6 +70,16 @@ const Dashboard: React.FC = () => {
   const handleInvitationDeclined = () => {
     console.log('Invitation declined - refreshing data');
     // No need to refresh company data, just remove the invitation from view
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setHasActiveFilters(query.length > 0);
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setHasActiveFilters(false);
   };
 
   return (
@@ -61,16 +100,26 @@ const Dashboard: React.FC = () => {
         />
       )}
 
-      <FilterBar />
+      <FilterBar 
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
+        onClearFilters={handleClearFilters}
+        hasActiveFilters={hasActiveFilters}
+      />
       
       <StatisticsPanel 
         ideas={ideas}
         hypotheses={hypotheses}
         experiments={experiments}
+        filteredIdeas={filteredIdeas}
+        filteredHypotheses={filteredHypotheses}
+        filteredExperiments={filteredExperiments}
       />
       
       <StatisticsChart 
-        hypothesesByStatus={hypothesesByStatus}
+        hypotheses={hypothesesByStatus}
+        experiments={filteredExperiments}
+        winRate={winRate}
       />
     </div>
   );
