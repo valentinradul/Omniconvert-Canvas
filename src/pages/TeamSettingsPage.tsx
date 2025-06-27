@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { CompanyRole, CompanyMember } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreVertical, Trash2, UserMinus } from 'lucide-react';
+import { MoreVertical, Trash2, UserMinus, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -45,9 +45,10 @@ interface MembersTableProps {
   userRole: CompanyRole | null;
   onRemove: (userId: string) => void;
   onUpdateRole: (userId: string, role: CompanyRole) => void;
+  onEditMember: (member: CompanyMember) => void;
 }
 
-const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTableProps) => {
+const MembersTable = ({ members, userRole, onRemove, onUpdateRole, onEditMember }: MembersTableProps) => {
   // Helper function to get user display name
   const getUserDisplayName = (member: CompanyMember) => {
     // If profile exists and has fullName, use it
@@ -114,6 +115,15 @@ const MembersTable = ({ members, userRole, onRemove, onUpdateRole }: MembersTabl
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => onEditMember(member)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    
                     {(userRole === 'owner' || userRole === 'admin') && member.role !== 'owner' && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -180,15 +190,6 @@ const TeamSettingsPage: React.FC = () => {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const { toast } = useToast();
 
-  // Auto-refresh data every 10 seconds to catch new member acceptances
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refreshPendingInvitations();
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [refreshPendingInvitations]);
-
   const handleRemove = async (userId: string) => {
     try {
       await removeMember(userId);
@@ -223,6 +224,14 @@ const TeamSettingsPage: React.FC = () => {
     }
   };
 
+  const handleEditMember = (member: CompanyMember) => {
+    // TODO: Implement edit member functionality
+    toast({
+      title: "Edit Member",
+      description: `Edit functionality for ${member.profile?.fullName || 'User'} will be implemented soon`,
+    });
+  };
+
   // Function to handle invitation sent and refresh pending invitations
   const handleInvitationSent = () => {
     refreshPendingInvitations();
@@ -253,7 +262,7 @@ const TeamSettingsPage: React.FC = () => {
       </div>
 
       <div className="grid gap-6 mt-8">
-        {/* PendingInvitations with automatic refresh */}
+        {/* PendingInvitations with manual refresh */}
         <PendingInvitations onInvitationResent={refreshPendingInvitations} />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -282,6 +291,7 @@ const TeamSettingsPage: React.FC = () => {
               userRole={userCompanyRole}
               onRemove={handleRemove}
               onUpdateRole={handleUpdateRole}
+              onEditMember={handleEditMember}
             />
           </div>
         </div>

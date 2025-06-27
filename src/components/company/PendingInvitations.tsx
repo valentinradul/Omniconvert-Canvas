@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, Clock, RefreshCw, X, User, Check } from 'lucide-react';
+import { Mail, Clock, RefreshCw, X, User } from 'lucide-react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -132,7 +132,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationRes
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Check className="h-5 w-5 text-green-600" />
+                <User className="h-5 w-5 text-blue-600" />
                 Current Team Members
               </CardTitle>
               <CardDescription>People who have accepted their invitations and are part of the team</CardDescription>
@@ -161,7 +161,6 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationRes
                   </div>
                   <div className="flex items-center">
                     <Badge variant="default" className="bg-green-600">
-                      <Check className="h-3 w-3 mr-1" />
                       Active
                     </Badge>
                   </div>
