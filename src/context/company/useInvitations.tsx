@@ -25,7 +25,7 @@ export function useInvitations() {
     setIsProcessing(true);
     
     try {
-      // Get invitation data with correct property names
+      // Get invitation data
       const invitation = invitations.find(inv => inv.id === invitationId);
       if (!invitation) {
         console.error('Invitation not found:', invitationId);
@@ -43,7 +43,7 @@ export function useInvitations() {
       
       console.log('Adding user to company members:', { userId, companyId, role: invitation.role });
       
-      // Add user to company members - RLS will handle all validation
+      // Add user to company members
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
