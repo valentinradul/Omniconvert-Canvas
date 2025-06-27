@@ -23,36 +23,21 @@ export function useInvitations() {
       
       console.log('Accepting invitation:', invitation);
       
-      // Check if user is already a member of this company
-      const { data: existingMember, error: memberCheckError } = await supabase
+      // Add user to company members (the RLS policy will handle validation)
+      const { error: memberError } = await supabase
         .from('company_members')
-        .select('*')
-        .eq('company_id', invitation.companyId)
-        .eq('user_id', userId)
-        .maybeSingle();
+        .insert({
+          company_id: invitation.companyId,
+          user_id: userId,
+          role: invitation.role
+        });
         
-      if (memberCheckError) {
-        console.error('Error checking existing membership:', memberCheckError);
-        throw memberCheckError;
+      if (memberError) {
+        console.error('Error adding company member:', memberError);
+        throw memberError;
       }
       
-      // If user is not already a member, add them
-      if (!existingMember) {
-        const { error: memberError } = await supabase
-          .from('company_members')
-          .insert({
-            company_id: invitation.companyId,
-            user_id: userId,
-            role: invitation.role
-          });
-          
-        if (memberError) {
-          console.error('Error adding company member:', memberError);
-          throw memberError;
-        }
-      }
-      
-      // Accept invitation (mark as accepted)
+      // Mark invitation as accepted
       const { error: updateError } = await supabase
         .from('company_invitations')
         .update({ accepted: true })
