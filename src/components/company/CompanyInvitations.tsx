@@ -27,31 +27,32 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     userId: user?.id,
     userEmail: user?.email,
     isAuthenticated,
-    invitations: invitations.map(inv => ({ 
-      id: inv.id, 
-      email: inv.email, 
-      company_id: inv.company_id,
-      companyId: inv.companyId,
-      role: inv.role,
-      created_at: inv.created_at
-    }))
+    allInvitations: invitations
   });
 
-  // Filter invitations for current user's email
-  const userInvitations = invitations.filter(inv => 
-    user?.email && inv.email.toLowerCase() === user.email.toLowerCase()
-  );
+  // Don't show if user not authenticated
+  if (!isAuthenticated || !user) {
+    console.log('User not authenticated, not showing invitations');
+    return null;
+  }
 
-  console.log('Filtered user invitations:', userInvitations.length);
+  // Filter invitations for current user's email - be more lenient with filtering
+  const userInvitations = invitations.filter(inv => {
+    if (!user?.email || !inv.email) return false;
+    const userEmailLower = user.email.toLowerCase().trim();
+    const invEmailLower = inv.email.toLowerCase().trim();
+    return userEmailLower === invEmailLower;
+  });
 
-  // Don't show if no invitations for this user or user not authenticated
-  if (!isAuthenticated || !user || userInvitations.length === 0) {
-    console.log('Not showing invitations:', { 
-      isAuthenticated, 
-      hasUser: !!user, 
-      userEmail: user?.email,
-      userInvitationsCount: userInvitations.length 
-    });
+  console.log('Filtered user invitations:', { 
+    userEmail: user?.email,
+    filteredCount: userInvitations.length,
+    userInvitations 
+  });
+
+  // Don't show if no invitations for this user
+  if (userInvitations.length === 0) {
+    console.log('No invitations for user, not showing component');
     return null;
   }
 
@@ -125,7 +126,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
                 <Mail className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <div className="font-medium">
-                    Join {invitation.companyName || 'Company'}
+                    Join {invitation.companyName || invitation.company_name || 'Company'}
                   </div>
                   <div className="text-sm text-muted-foreground flex items-center">
                     <Badge variant="outline" className="mr-2 capitalize">
@@ -133,7 +134,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
                     </Badge>
                     <Clock className="h-3 w-3 mr-1" />
                     <span>
-                      Invited {formatInvitationDate(invitation.created_at)}
+                      Invited {formatInvitationDate(invitation.created_at || invitation.createdAt)}
                     </span>
                   </div>
                 </div>

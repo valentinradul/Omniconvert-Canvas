@@ -18,6 +18,7 @@ const TeamSettingsPage: React.FC = () => {
 
   console.log('TeamSettingsPage - Company members:', companyMembers.length);
   console.log('TeamSettingsPage - User role:', userCompanyRole);
+  console.log('TeamSettingsPage - All members:', companyMembers);
 
   const handleEditMember = (member: CompanyMember) => {
     console.log('Editing member:', member.id);
