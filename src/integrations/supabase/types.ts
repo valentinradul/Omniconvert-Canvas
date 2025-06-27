@@ -462,6 +462,14 @@ export type Database = {
         Args: { user_id: string; company_id: string }
         Returns: boolean
       }
+      user_has_company_admin_role: {
+        Args: { user_id: string; company_id: string }
+        Returns: boolean
+      }
+      user_is_company_member: {
+        Args: { user_id: string; company_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "member"
