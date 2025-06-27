@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +34,7 @@ export function useInvitations() {
       
       console.log('Current user email:', user.email);
       
-      // Get invitation data from database to ensure it's valid and for the current user
+      // Get invitation data from database
       const { data: invitation, error: invitationError } = await supabase
         .from('company_invitations')
         .select('*')
@@ -93,7 +94,6 @@ export function useInvitations() {
         
       if (updateError) {
         console.error('Error updating invitation status:', updateError);
-        // Don't throw here as the main action (adding to company) succeeded
         console.warn('Failed to mark invitation as accepted, but user was added to company');
       } else {
         console.log('Successfully marked invitation as accepted');
@@ -120,28 +120,21 @@ export function useInvitations() {
         createdBy: companyData.created_by
       };
       
-      // Set the company as current company in localStorage
-      localStorage.setItem('currentCompanyId', company.id);
+      // Clear cached data and set new company
       localStorage.removeItem('userCompanies');
+      localStorage.setItem('currentCompanyId', company.id);
       
       console.log('Set current company ID in localStorage:', company.id);
       
       toast({
         title: "Welcome to the team!",
-        description: `You are now a member of ${company.name}. Redirecting to dashboard...`,
+        description: `You are now a member of ${company.name}`,
       });
-      
-      // Redirect to dashboard
-      setTimeout(() => {
-        console.log('Redirecting to dashboard after successful invitation acceptance');
-        window.location.href = '/dashboard';
-      }, 1500);
       
       return { company, invitationId, role: invitation.role };
     } catch (error: any) {
       console.error('Error accepting invitation:', error);
       
-      // Provide more specific error messages
       let errorMessage = "There was an error accepting the invitation";
       
       if (error.message?.includes('not valid for your email')) {

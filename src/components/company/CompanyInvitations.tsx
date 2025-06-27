@@ -55,6 +55,11 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
       if (result && onInvitationAccepted) {
         console.log('Invitation accepted successfully, calling callback');
         onInvitationAccepted();
+        
+        // Force refresh company data after acceptance
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     } catch (error) {
       console.error('Error in handleAccept:', error);
