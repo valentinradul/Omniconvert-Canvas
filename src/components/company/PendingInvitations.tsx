@@ -1,20 +1,21 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, Clock, RefreshCw, X, User } from 'lucide-react';
+import { Mail, Clock, RefreshCw, X, User, Edit } from 'lucide-react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { CompanyMember } from '@/types';
 
 interface PendingInvitationsProps {
   onInvitationResent?: () => void;
+  onEditMember?: (member: CompanyMember) => void;
 }
 
-const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationResent }) => {
+const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationResent, onEditMember }) => {
   const { currentCompany, pendingInvitations, companyMembers, refreshPendingInvitations, unsendInvitation, userCompanyRole } = useCompany();
   const { toast } = useToast();
 
@@ -159,7 +160,15 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({ onInvitationRes
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => onEditMember && onEditMember(member)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
                     <Badge variant="default" className="bg-green-600">
                       Active
                     </Badge>
