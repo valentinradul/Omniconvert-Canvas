@@ -31,7 +31,8 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
       email: inv.email, 
       company_id: inv.company_id,
       companyId: inv.companyId,
-      role: inv.role 
+      role: inv.role,
+      created_at: inv.created_at
     }))
   });
 
@@ -74,6 +75,21 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     }
   };
 
+  // Safe date formatting function
+  const formatInvitationDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date string:', dateString);
+        return 'Recently';
+      }
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return 'Recently';
+    }
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -99,7 +115,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
                     </Badge>
                     <Clock className="h-3 w-3 mr-1" />
                     <span>
-                      Invited {formatDistanceToNow(new Date(invitation.created_at), { addSuffix: true })}
+                      Invited {formatInvitationDate(invitation.created_at)}
                     </span>
                   </div>
                 </div>

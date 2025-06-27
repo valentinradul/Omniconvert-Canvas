@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { deepCleanupAuthState } from "@/utils/authCleanup";
+import { ultraCleanupAuthState } from "@/utils/authCleanup";
 import { LoginPageHeader } from "@/components/auth/LoginPageHeader";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
@@ -15,9 +15,9 @@ const Login = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
   const { handleGoogleLogin } = useGoogleLogin();
   
-  // Enhanced cleanup when component mounts
+  // Ultra cleanup when component mounts for persistent login issues
   useEffect(() => {
-    deepCleanupAuthState();
+    ultraCleanupAuthState();
   }, []);
   
   // Redirect if already authenticated
@@ -29,6 +29,11 @@ const Login = () => {
 
   const handleLogin = async (email: string, password: string) => {
     try {
+      console.log('Attempting login for:', email);
+      
+      // Additional cleanup before login attempt
+      await ultraCleanupAuthState();
+      
       await login(email, password);
       toast({
         title: "Login successful",

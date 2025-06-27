@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
-import { cleanupAuthState, deepCleanupAuthState } from '@/utils/authCleanup';
+import { cleanupAuthState, deepCleanupAuthState, ultraCleanupAuthState } from '@/utils/authCleanup';
 
 // Define the context type
 type AuthContextType = {
@@ -94,14 +94,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      console.log('Starting login process for:', email);
+      console.log('Starting enhanced login process for:', email);
       
-      // Enhanced cleanup before login attempt
-      await deepCleanupAuthState();
+      // Import ultra cleanup
+      const { ultraCleanupAuthState } = await import('@/utils/authCleanup');
       
-      // Force sign out any existing session with retries
+      // Ultra cleanup before login attempt
+      await ultraCleanupAuthState();
+      
+      // Force sign out any existing session with more retries
       let signOutAttempts = 0;
-      while (signOutAttempts < 3) {
+      while (signOutAttempts < 5) {
         try {
           console.log(`Sign out attempt ${signOutAttempts + 1}`);
           await supabase.auth.signOut({ scope: 'global' });
@@ -109,42 +112,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (signOutError) {
           console.log(`Sign out attempt ${signOutAttempts + 1} failed:`, signOutError);
           signOutAttempts++;
-          if (signOutAttempts < 3) {
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 500));
+          if (signOutAttempts < 5) {
+            // Wait before retry with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, signOutAttempts) * 200));
           }
         }
       }
       
       // Additional delay to ensure cleanup is complete
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      console.log('Attempting sign in...');
+      console.log('Attempting sign in with cleaned state...');
+      
+      // Normalize email and attempt sign in
+      const normalizedEmail = email.trim().toLowerCase();
+      console.log('Normalized email:', normalizedEmail);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password
+        email: normalizedEmail,
+        password: password.trim()
       });
       
       if (error) {
-        console.error('Login error:', error);
+        console.error('Login error details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        });
         throw error;
       }
       
-      console.log('Login successful:', data.user?.id);
+      if (!data.user) {
+        console.error('Login succeeded but no user data returned');
+        throw new Error('Authentication failed - no user data');
+      }
+      
+      console.log('Login successful for user:', data.user.id);
     } catch (error: any) {
-      console.error('Login failed:', error.message);
+      console.error('Login failed with error:', error);
       
       // Enhanced error handling with specific messages
       let errorMessage = 'Please check your email and password';
       
       if (error.message?.includes('Invalid login credentials')) {
-        errorMessage = 'Invalid email or password. Please try again.';
+        errorMessage = 'Invalid email or password. Please double-check your credentials and try again.';
       } else if (error.message?.includes('Email not confirmed')) {
         errorMessage = 'Please check your email and click the confirmation link.';
       } else if (error.message?.includes('Too many requests')) {
-        errorMessage = 'Too many login attempts. Please wait a moment and try again.';
+        errorMessage = 'Too many login attempts. Please wait a few minutes and try again.';
       } else if (error.message?.includes('Network')) {
         errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message?.includes('User not found')) {
+        errorMessage = 'No account found with this email address. Please check your email or sign up.';
+      } else if (error.status === 400) {
+        errorMessage = 'Invalid login credentials. Please verify your email and password.';
       }
       
       toast({
