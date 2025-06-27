@@ -46,6 +46,30 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY environment variable is missing");
     }
 
+    // First, let's test the API key by trying to get domains
+    console.log("Testing API key by fetching domains...");
+    try {
+      const domainsResponse = await fetch('https://api.resend.com/domains', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const domainsData = await domainsResponse.json();
+      console.log("Domains API response status:", domainsResponse.status);
+      console.log("Domains API response:", JSON.stringify(domainsData));
+      
+      if (!domainsResponse.ok) {
+        console.error("API key validation failed:", domainsData);
+        throw new Error(`Invalid API key: ${domainsData.message || 'Unknown error'}`);
+      }
+    } catch (domainError) {
+      console.error("Error testing API key:", domainError);
+      throw new Error("Failed to validate API key with Resend");
+    }
+
     // Using the default Resend testing domain that should work immediately
     const fromAddress = "onboarding@resend.dev";
     console.log("Using from address:", fromAddress);
