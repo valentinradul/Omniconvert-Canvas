@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -18,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { cleanupAuthState } from "@/utils/authCleanup";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -28,6 +28,11 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login, isAuthenticated, isLoading } = useAuth();
+  
+  // Clean up auth state when component mounts
+  useEffect(() => {
+    cleanupAuthState();
+  }, []);
   
   // Redirect if already authenticated
   useEffect(() => {
@@ -51,7 +56,9 @@ const Login = () => {
         title: "Login successful",
         description: "Welcome back to ExperimentFlow!",
       });
-      navigate("/dashboard");
+      
+      // Use window.location.href for a clean navigation
+      window.location.href = "/dashboard";
     } catch (error) {
       // Error is handled in the auth context
       console.error("Login submission error:", error);
@@ -60,6 +67,9 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     try {
+      // Clean up auth state before Google login
+      cleanupAuthState();
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

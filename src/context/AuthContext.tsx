@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
+import { cleanupAuthState } from '@/utils/authCleanup';
 
 // Define the context type
 type AuthContextType = {
@@ -94,6 +94,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
+      // Clean up any existing auth state first
+      cleanupAuthState();
+      
+      // Attempt to sign out any existing session
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (signOutError) {
+        // Continue even if sign out fails
+        console.log('Sign out during login failed (continuing):', signOutError);
+      }
+      
+      // Small delay to ensure cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -156,7 +170,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
+      // Clean up auth state first
+      cleanupAuthState();
+      
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) {
         throw error;
@@ -166,6 +183,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: 'Logged out successfully',
         description: 'You have been logged out of your account',
       });
+      
+      // Force page reload to ensure clean state
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
     } catch (error: any) {
       console.error('Logout failed:', error.message);
       toast({
