@@ -2,8 +2,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -29,7 +27,6 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     console.log("Method:", req.method);
-    console.log("Headers:", Object.fromEntries(req.headers.entries()));
     
     const rawBody = await req.text();
     console.log("Raw request body:", rawBody);
@@ -57,20 +54,27 @@ const handler = async (req: Request): Promise<Response> => {
     const appUrl = Deno.env.get("PUBLIC_APP_URL") || "https://localhost:5173";
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
-    console.log("Processing invitation:", {
-      email,
-      companyName,
-      roleName,
-      sender,
-      appUrl,
-      hasApiKey: !!resendApiKey,
-      apiKeyLength: resendApiKey?.length || 0
-    });
+    // Enhanced API key logging
+    console.log("=== API KEY DIAGNOSTICS ===");
+    console.log("RESEND_API_KEY exists:", !!resendApiKey);
+    console.log("RESEND_API_KEY length:", resendApiKey?.length || 0);
+    console.log("RESEND_API_KEY starts with 're_':", resendApiKey?.startsWith('re_') || false);
+    console.log("RESEND_API_KEY first 10 chars:", resendApiKey?.substring(0, 10) || 'N/A');
+    console.log("All environment variables:", Object.keys(Deno.env.toObject()));
+    console.log("=== END API KEY DIAGNOSTICS ===");
 
     if (!resendApiKey) {
       console.error("RESEND_API_KEY is missing from environment variables");
       throw new Error("RESEND_API_KEY environment variable is missing");
     }
+
+    if (!resendApiKey.startsWith('re_')) {
+      console.error("RESEND_API_KEY format appears incorrect - should start with 're_'");
+      throw new Error("RESEND_API_KEY format appears incorrect");
+    }
+
+    // Initialize Resend with the API key
+    const resend = new Resend(resendApiKey);
 
     // Try sending with the default Resend domain first
     const fromAddress = "onboarding@resend.dev";
