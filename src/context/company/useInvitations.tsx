@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,29 +24,56 @@ export function useInvitations() {
     setIsProcessing(true);
     
     try {
-      // Get invitation data
-      const invitation = invitations.find(inv => inv.id === invitationId);
-      if (!invitation) {
-        console.error('Invitation not found:', invitationId);
-        throw new Error("Invitation not found");
+      // Get current user's email for validation
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user?.email) {
+        console.error('Error getting current user:', userError);
+        throw new Error("Unable to verify your identity");
       }
       
-      console.log('Found invitation:', invitation);
+      console.log('Current user email:', user.email);
       
-      // Use correct property name - check both variations to be safe
-      const companyId = invitation.company_id || invitation.companyId;
-      if (!companyId) {
-        console.error('No company ID found in invitation:', invitation);
-        throw new Error("Invalid invitation - missing company information");
+      // Get invitation data from database to ensure it's valid and for the current user
+      const { data: invitation, error: invitationError } = await supabase
+        .from('company_invitations')
+        .select('*')
+        .eq('id', invitationId)
+        .eq('email', user.email)
+        .eq('accepted', false)
+        .single();
+        
+      if (invitationError || !invitation) {
+        console.error('Invitation not found or invalid:', invitationError);
+        throw new Error("Invitation not found or not valid for your email address");
       }
       
-      console.log('Adding user to company members:', { userId, companyId, role: invitation.role });
+      console.log('Found valid invitation:', invitation);
+      
+      // Check if user is already a member of this company
+      const { data: existingMember, error: memberCheckError } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('company_id', invitation.company_id)
+        .maybeSingle();
+        
+      if (memberCheckError) {
+        console.error('Error checking existing membership:', memberCheckError);
+        throw new Error("Unable to verify membership status");
+      }
+      
+      if (existingMember) {
+        console.log('User is already a member of this company');
+        throw new Error("You are already a member of this company");
+      }
+      
+      console.log('Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
       
       // Add user to company members
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
-          company_id: companyId,
+          company_id: invitation.company_id,
           user_id: userId,
           role: invitation.role
         });
@@ -67,16 +93,17 @@ export function useInvitations() {
         
       if (updateError) {
         console.error('Error updating invitation status:', updateError);
-        throw updateError;
+        // Don't throw here as the main action (adding to company) succeeded
+        console.warn('Failed to mark invitation as accepted, but user was added to company');
+      } else {
+        console.log('Successfully marked invitation as accepted');
       }
-      
-      console.log('Successfully marked invitation as accepted');
       
       // Get company details
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .select('*')
-        .eq('id', companyId)
+        .eq('id', invitation.company_id)
         .single();
         
       if (companyError) {
@@ -117,12 +144,14 @@ export function useInvitations() {
       // Provide more specific error messages
       let errorMessage = "There was an error accepting the invitation";
       
-      if (error.message?.includes('permission denied')) {
-        errorMessage = "You don't have permission to join this company";
-      } else if (error.message?.includes('violates row-level security')) {
-        errorMessage = "Access denied - please contact the company administrator";
-      } else if (error.message?.includes('duplicate key')) {
+      if (error.message?.includes('not valid for your email')) {
+        errorMessage = "This invitation is not valid for your email address";
+      } else if (error.message?.includes('already a member')) {
         errorMessage = "You are already a member of this company";
+      } else if (error.message?.includes('not found')) {
+        errorMessage = "Invitation not found or has already been used";
+      } else if (error.message?.includes('verify your identity')) {
+        errorMessage = "Unable to verify your identity - please try logging out and back in";
       } else if (error.message) {
         errorMessage = error.message;
       }
