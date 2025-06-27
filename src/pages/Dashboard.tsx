@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useCompany } from "@/context/company/CompanyContext";
+import { useAuth } from "@/context/AuthContext";
 import { useIdeas } from "@/context/hooks/useIdeas";
 import { useHypotheses } from "@/context/hooks/useHypotheses";
 import { useExperiments } from "@/context/hooks/useExperiments";
@@ -10,10 +11,13 @@ import StatisticsChart from "@/components/dashboard/StatisticsChart";
 import CompanyInvitations from "@/components/company/CompanyInvitations";
 
 const Dashboard: React.FC = () => {
-  const { companyInvitations, refreshUserCompanies, refreshCompanyMembers } = useCompany();
-  const { ideas } = useIdeas('', '', '');
-  const { hypotheses } = useHypotheses('', '', '');
-  const { experiments } = useExperiments('', '');
+  const { user } = useAuth();
+  const { companyInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany } = useCompany();
+  
+  // Initialize hooks with proper parameters
+  const { experiments } = useExperiments(user, currentCompany);
+  const { hypotheses } = useHypotheses(user, currentCompany, experiments);
+  const { ideas } = useIdeas(user, currentCompany, hypotheses);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,13 +47,13 @@ const Dashboard: React.FC = () => {
   );
 
   const filteredHypotheses = hypotheses.filter(hypothesis =>
-    hypothesis.statement.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    hypothesis.title?.toLowerCase().includes(searchQuery.toLowerCase())
+    hypothesis.observation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    hypothesis.initiative.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredExperiments = experiments.filter(experiment =>
-    experiment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    experiment.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    experiment.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    experiment.hypothesisId.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Calculate win rate for chart
