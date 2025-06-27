@@ -24,6 +24,28 @@ export function useInvitations() {
       
       console.log('Accepting invitation:', invitation);
       
+      // Ensure user has a profile first
+      const { data: existingProfile, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (profileCheckError && profileCheckError.code === 'PGRST116') {
+        // Profile doesn't exist, create one
+        const { error: profileCreateError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            full_name: 'User' // Default name, user can update later
+          });
+          
+        if (profileCreateError) {
+          console.error('Error creating profile:', profileCreateError);
+          // Continue anyway, profile creation is not critical
+        }
+      }
+      
       // Accept invitation
       const { error: updateError } = await supabase
         .from('company_invitations')

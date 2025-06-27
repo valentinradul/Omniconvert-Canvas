@@ -22,6 +22,7 @@ type CompanyContextType = {
   declineInvitation: (invitationId: string) => Promise<void>;
   unsendInvitation: (invitationId: string) => Promise<void>;
   refreshPendingInvitations: () => Promise<void>;
+  refreshCompanyMembers: () => Promise<void>;
 };
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -79,6 +80,13 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Function to refresh pending invitations
   const refreshPendingInvitations = async () => {
     await fetchPendingInvitations();
+    // Also refresh company members in case someone accepted an invitation
+    await fetchCompanyMembers();
+  };
+
+  // Function to refresh company members
+  const refreshCompanyMembers = async () => {
+    await fetchCompanyMembers();
   };
 
   // Wrapper for unsend invitation that refreshes pending invitations
@@ -159,7 +167,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         acceptInvitation,
         declineInvitation,
         unsendInvitation,
-        refreshPendingInvitations
+        refreshPendingInvitations,
+        refreshCompanyMembers
       }}
     >
       {children}

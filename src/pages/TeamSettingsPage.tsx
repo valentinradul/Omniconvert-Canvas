@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { CompanyRole, CompanyMember } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -180,6 +180,15 @@ const TeamSettingsPage: React.FC = () => {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const { toast } = useToast();
 
+  // Auto-refresh data every 10 seconds to catch new member acceptances
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshPendingInvitations();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [refreshPendingInvitations]);
+
   const handleRemove = async (userId: string) => {
     try {
       await removeMember(userId);
@@ -219,6 +228,15 @@ const TeamSettingsPage: React.FC = () => {
     refreshPendingInvitations();
   };
 
+  // Function to handle manual refresh
+  const handleManualRefresh = () => {
+    refreshPendingInvitations();
+    toast({
+      title: "Refreshed",
+      description: "Team data has been refreshed"
+    });
+  };
+
   return (
     <div>
       <div className="md:flex md:items-center md:justify-between space-y-4 md:space-y-0">
@@ -226,7 +244,12 @@ const TeamSettingsPage: React.FC = () => {
           <h1 className="text-2xl font-bold">Team Settings</h1>
           <p className="text-muted-foreground">Manage your team members and their roles.</p>
         </div>
-        <CompanySwitcher />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleManualRefresh}>
+            Refresh Data
+          </Button>
+          <CompanySwitcher />
+        </div>
       </div>
 
       <div className="grid gap-6 mt-8">
