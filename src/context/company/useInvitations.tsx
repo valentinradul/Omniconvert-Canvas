@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,14 +17,11 @@ export function useInvitations() {
     try {
       // Get invitation data
       const invitation = invitations.find(inv => inv.id === invitationId);
-      
       if (!invitation) {
         throw new Error("Invitation not found");
       }
       
-      console.log('Accepting invitation:', invitation);
-      
-      // Add user to company members (the RLS policy will handle validation)
+      // Add user to company members - RLS will handle all validation
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
@@ -32,10 +30,7 @@ export function useInvitations() {
           role: invitation.role
         });
         
-      if (memberError) {
-        console.error('Error adding company member:', memberError);
-        throw memberError;
-      }
+      if (memberError) throw memberError;
       
       // Mark invitation as accepted
       const { error: updateError } = await supabase
@@ -43,10 +38,7 @@ export function useInvitations() {
         .update({ accepted: true })
         .eq('id', invitationId);
         
-      if (updateError) {
-        console.error('Error updating invitation:', updateError);
-        throw updateError;
-      }
+      if (updateError) throw updateError;
       
       // Get company details
       const { data: companyData, error: companyError } = await supabase
@@ -55,10 +47,7 @@ export function useInvitations() {
         .eq('id', invitation.companyId)
         .single();
         
-      if (companyError) {
-        console.error('Error fetching company:', companyError);
-        throw companyError;
-      }
+      if (companyError) throw companyError;
       
       const company: Company = {
         id: companyData.id,
@@ -69,8 +58,6 @@ export function useInvitations() {
       
       // Set the company as current company in localStorage
       localStorage.setItem('currentCompanyId', company.id);
-      
-      // Clear any existing company context to force refresh
       localStorage.removeItem('userCompanies');
       
       toast({
@@ -78,7 +65,7 @@ export function useInvitations() {
         description: `You are now a member of ${company.name}. Redirecting to dashboard...`,
       });
       
-      // Redirect to dashboard after successful acceptance with a clean reload
+      // Redirect to dashboard
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 1500);
@@ -104,7 +91,6 @@ export function useInvitations() {
     setIsProcessing(true);
     
     try {
-      // Delete invitation
       const { error } = await supabase
         .from('company_invitations')
         .delete()
