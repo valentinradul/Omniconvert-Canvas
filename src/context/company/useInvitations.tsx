@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,17 +22,6 @@ export function useInvitations() {
       }
       
       console.log('Accepting invitation:', invitation);
-      
-      // Get current user session to access email
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.email) {
-        throw new Error("User session not found");
-      }
-      
-      // Verify the invitation is for the current user's email
-      if (invitation.email !== session.user.email) {
-        throw new Error("Invitation email does not match current user");
-      }
       
       // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
