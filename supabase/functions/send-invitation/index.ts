@@ -46,8 +46,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY environment variable is missing");
     }
 
-    // Using your verified omniconvert.com domain
-    const fromAddress = "noreply@omniconvert.com";
+    // Using the default Resend testing domain that should work immediately
+    const fromAddress = "onboarding@resend.dev";
     console.log("Using from address:", fromAddress);
 
     const emailResponse = await resend.emails.send({
