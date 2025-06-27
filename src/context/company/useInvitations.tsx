@@ -10,27 +10,54 @@ export function useInvitations() {
 
   // Accept invitation function
   const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
-    if (!userId) return null;
+    console.log('Starting invitation acceptance process:', { invitationId, userId, invitationsCount: invitations.length });
+    
+    if (!userId) {
+      console.error('No user ID provided for invitation acceptance');
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please log in to accept the invitation",
+      });
+      return null;
+    }
     
     setIsProcessing(true);
     
     try {
-      // Get invitation data
+      // Get invitation data with correct property names
       const invitation = invitations.find(inv => inv.id === invitationId);
       if (!invitation) {
+        console.error('Invitation not found:', invitationId);
         throw new Error("Invitation not found");
       }
+      
+      console.log('Found invitation:', invitation);
+      
+      // Use correct property name - check both variations to be safe
+      const companyId = invitation.company_id || invitation.companyId;
+      if (!companyId) {
+        console.error('No company ID found in invitation:', invitation);
+        throw new Error("Invalid invitation - missing company information");
+      }
+      
+      console.log('Adding user to company members:', { userId, companyId, role: invitation.role });
       
       // Add user to company members - RLS will handle all validation
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
-          company_id: invitation.companyId,
+          company_id: companyId,
           user_id: userId,
           role: invitation.role
         });
         
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error('Error adding company member:', memberError);
+        throw memberError;
+      }
+      
+      console.log('Successfully added user to company members');
       
       // Mark invitation as accepted
       const { error: updateError } = await supabase
@@ -38,16 +65,26 @@ export function useInvitations() {
         .update({ accepted: true })
         .eq('id', invitationId);
         
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating invitation status:', updateError);
+        throw updateError;
+      }
+      
+      console.log('Successfully marked invitation as accepted');
       
       // Get company details
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .select('*')
-        .eq('id', invitation.companyId)
+        .eq('id', companyId)
         .single();
         
-      if (companyError) throw companyError;
+      if (companyError) {
+        console.error('Error fetching company data:', companyError);
+        throw companyError;
+      }
+      
+      console.log('Retrieved company data:', companyData);
       
       const company: Company = {
         id: companyData.id,
@@ -60,6 +97,8 @@ export function useInvitations() {
       localStorage.setItem('currentCompanyId', company.id);
       localStorage.removeItem('userCompanies');
       
+      console.log('Set current company ID in localStorage:', company.id);
+      
       toast({
         title: "Welcome to the team!",
         description: `You are now a member of ${company.name}. Redirecting to dashboard...`,
@@ -67,6 +106,7 @@ export function useInvitations() {
       
       // Redirect to dashboard
       setTimeout(() => {
+        console.log('Redirecting to dashboard after successful invitation acceptance');
         window.location.href = '/dashboard';
       }, 1500);
       
@@ -74,10 +114,23 @@ export function useInvitations() {
     } catch (error: any) {
       console.error('Error accepting invitation:', error);
       
+      // Provide more specific error messages
+      let errorMessage = "There was an error accepting the invitation";
+      
+      if (error.message?.includes('permission denied')) {
+        errorMessage = "You don't have permission to join this company";
+      } else if (error.message?.includes('violates row-level security')) {
+        errorMessage = "Access denied - please contact the company administrator";
+      } else if (error.message?.includes('duplicate key')) {
+        errorMessage = "You are already a member of this company";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         variant: "destructive",
         title: "Failed to accept invitation",
-        description: error.message || "There was an error accepting the invitation",
+        description: errorMessage,
       });
       
       return null;
@@ -88,6 +141,7 @@ export function useInvitations() {
   
   // Decline invitation function
   const declineInvitation = async (invitationId: string) => {
+    console.log('Declining invitation:', invitationId);
     setIsProcessing(true);
     
     try {
@@ -96,7 +150,12 @@ export function useInvitations() {
         .delete()
         .eq('id', invitationId);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error declining invitation:', error);
+        throw error;
+      }
+      
+      console.log('Successfully declined invitation');
       
       toast({
         title: "Invitation declined",
