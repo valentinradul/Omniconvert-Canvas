@@ -1,4 +1,3 @@
-
 import { useToast } from '@/hooks/use-toast';
 import { useCompanyCreation } from '../useCompanyCreation';
 import { useCompanyManagement } from '../useCompanyManagement';
@@ -87,7 +86,7 @@ export const useCompanyActions = (
         
         setCompanies(prevCompanies => [...prevCompanies, company]);
         setCurrentCompany(company);
-        setUserCompanyRole(role);
+        setUserCompanyRole(role as CompanyRole);
         setCompanyInvitations(companyInvitations.filter(i => i.id !== acceptedId));
         
         fetchUserCompanies();
