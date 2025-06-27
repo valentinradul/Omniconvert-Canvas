@@ -46,8 +46,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY environment variable is missing");
     }
 
-    // Use your verified domain in the from address - update this to match your verified domain
-    const fromAddress = "noreply@yourdomain.com"; // Replace with your verified domain
+    // TODO: Replace "YOUR-VERIFIED-DOMAIN.COM" with your actual verified domain from Resend
+    const fromAddress = "noreply@YOUR-VERIFIED-DOMAIN.COM";
     console.log("Using from address:", fromAddress);
 
     const emailResponse = await resend.emails.send({
