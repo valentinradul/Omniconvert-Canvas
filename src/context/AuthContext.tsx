@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
-import { cleanupAuthState } from '@/utils/authCleanup';
+import { cleanupAuthState, deepCleanupAuthState } from '@/utils/authCleanup';
 
 // Define the context type
 type AuthContextType = {
@@ -89,39 +89,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // Login function
+  // Enhanced login function with better error handling and cleanup
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     
     try {
-      // Clean up any existing auth state first
-      cleanupAuthState();
+      console.log('Starting login process for:', email);
       
-      // Attempt to sign out any existing session
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (signOutError) {
-        // Continue even if sign out fails
-        console.log('Sign out during login failed (continuing):', signOutError);
+      // Enhanced cleanup before login attempt
+      await deepCleanupAuthState();
+      
+      // Force sign out any existing session with retries
+      let signOutAttempts = 0;
+      while (signOutAttempts < 3) {
+        try {
+          console.log(`Sign out attempt ${signOutAttempts + 1}`);
+          await supabase.auth.signOut({ scope: 'global' });
+          break; // Success, exit loop
+        } catch (signOutError) {
+          console.log(`Sign out attempt ${signOutAttempts + 1} failed:`, signOutError);
+          signOutAttempts++;
+          if (signOutAttempts < 3) {
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
       }
       
-      // Small delay to ensure cleanup is complete
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Additional delay to ensure cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      console.log('Attempting sign in...');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
         password
       });
       
       if (error) {
+        console.error('Login error:', error);
         throw error;
       }
+      
+      console.log('Login successful:', data.user?.id);
     } catch (error: any) {
       console.error('Login failed:', error.message);
+      
+      // Enhanced error handling with specific messages
+      let errorMessage = 'Please check your email and password';
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please try again.';
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Please check your email and click the confirmation link.';
+      } else if (error.message?.includes('Too many requests')) {
+        errorMessage = 'Too many login attempts. Please wait a moment and try again.';
+      } else if (error.message?.includes('Network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Login failed',
-        description: error.message || 'Please check your email and password',
+        description: errorMessage,
       });
       throw error;
     } finally {
@@ -166,18 +195,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Logout function
+  // Enhanced logout function
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      // Clean up auth state first
-      cleanupAuthState();
+      console.log('Starting logout process...');
+      
+      // Enhanced cleanup before logout
+      await deepCleanupAuthState();
       
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) {
-        throw error;
+        console.error('Logout error:', error);
+        // Don't throw on logout errors, still clean up
       }
+      
+      // Force clear state even if logout had errors
+      setSession(null);
+      setUser(null);
       
       toast({
         title: 'Logged out successfully',
