@@ -165,15 +165,17 @@ export const loadCompanyMembers = async (companyId: string): Promise<CompanyMemb
       return [];
     }
 
-    // Transform the data
+    // Transform the data - include companyId in the returned object
     const members: CompanyMember[] = data.map(member => ({
       id: member.id,
+      companyId: companyId, // Add the missing companyId property
       userId: member.user_id,
       role: member.role as CompanyRole,
       createdAt: new Date(member.created_at),
-      name: (member.profiles as any)?.full_name || 'Unknown User',
-      email: '', // We'll need to get this separately if needed
-      avatarUrl: (member.profiles as any)?.avatar_url || null
+      profile: {
+        fullName: (member.profiles as any)?.full_name || null,
+        avatarUrl: (member.profiles as any)?.avatar_url || null
+      }
     }));
 
     console.log('Transformed members:', members);
