@@ -17,7 +17,7 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
     console.log('📧 User email:', userEmail);
 
     // Get all companies the user is a member of
-    const { data: memberData, error: memberError } = await supabase
+    let { data: memberData, error: memberError } = await supabase
       .from('company_members')
       .select(`
         company_id,
