@@ -63,15 +63,16 @@ const Login = () => {
     loadInvitationDetails();
   }, [invitationId]);
 
-  // Redirect if already authenticated (invitation will be handled by the hook)
+  // If already authenticated and no invitation processing, redirect to dashboard
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
+    if (isAuthenticated && !isLoading && !isProcessingInvitation) {
+      // If there's no invitation, go to dashboard
       if (!invitationId) {
         navigate("/dashboard");
       }
-      // If there's an invitation, let the hook handle it
+      // If there's an invitation, the handler will process it
     }
-  }, [isAuthenticated, isLoading, navigate, invitationId]);
+  }, [isAuthenticated, isLoading, navigate, invitationId, isProcessingInvitation]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -92,6 +93,7 @@ const Login = () => {
     try {
       await login(values.email, values.password);
       // The invitation will be handled automatically by the useInvitationHandler hook after auth
+      // No need to navigate here as the effect will handle it
     } catch (error) {
       // Error is handled in the auth context
       console.error("Login submission error:", error);
@@ -132,7 +134,7 @@ const Login = () => {
   };
 
   // If checking auth status, show loading
-  if (isLoading && isAuthenticated === null) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div>Loading...</div>

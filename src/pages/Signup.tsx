@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -67,15 +68,16 @@ const Signup = () => {
     loadInvitationDetails();
   }, [invitationId]);
   
-  // Redirect if already authenticated (invitation will be handled by the hook)
+  // If already authenticated and no invitation processing, redirect to dashboard
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
+    if (isAuthenticated && !isLoading && !isProcessingInvitation) {
+      // If there's no invitation, go to dashboard
       if (!invitationId) {
         navigate("/dashboard");
       }
-      // If there's an invitation, let the hook handle it
+      // If there's an invitation, the handler will process it
     }
-  }, [isAuthenticated, isLoading, navigate, invitationId]);
+  }, [isAuthenticated, isLoading, navigate, invitationId, isProcessingInvitation]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -140,7 +142,7 @@ const Signup = () => {
   };
 
   // If checking auth status, show loading
-  if (isLoading && isAuthenticated === null) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div>Loading...</div>

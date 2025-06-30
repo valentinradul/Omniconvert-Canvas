@@ -13,13 +13,18 @@ export function useInvitationHandler() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isProcessingInvitation, setIsProcessingInvitation] = useState(false);
+  const [hasProcessedInvitation, setHasProcessedInvitation] = useState(false);
 
   const invitationId = searchParams.get('invitation');
 
   useEffect(() => {
     const handleInvitation = async () => {
-      // Only process if user is authenticated and we have an invitation ID
-      if (!isAuthenticated || !user || !invitationId || isProcessingInvitation) {
+      // Only process if:
+      // 1. User is authenticated
+      // 2. We have an invitation ID
+      // 3. We haven't already processed this invitation
+      // 4. We're not currently processing
+      if (!isAuthenticated || !user || !invitationId || isProcessingInvitation || hasProcessedInvitation) {
         return;
       }
 
@@ -52,7 +57,8 @@ export function useInvitationHandler() {
             title: "Invalid invitation",
             description: "This invitation link is invalid or has already been used.",
           });
-          navigate('/dashboard');
+          // Clear the invitation parameter and redirect to dashboard
+          navigate('/dashboard', { replace: true });
           return;
         }
 
@@ -64,7 +70,7 @@ export function useInvitationHandler() {
             title: "Email mismatch",
             description: "This invitation was sent to a different email address.",
           });
-          navigate('/dashboard');
+          navigate('/dashboard', { replace: true });
           return;
         }
 
@@ -75,6 +81,7 @@ export function useInvitationHandler() {
         
         if (result) {
           console.log('Invitation accepted successfully');
+          setHasProcessedInvitation(true);
           toast({
             title: "Welcome to the team!",
             description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
@@ -96,7 +103,7 @@ export function useInvitationHandler() {
     };
 
     handleInvitation();
-  }, [isAuthenticated, user, invitationId, acceptInvitation, toast, navigate, isProcessingInvitation]);
+  }, [isAuthenticated, user, invitationId, acceptInvitation, toast, navigate, isProcessingInvitation, hasProcessedInvitation]);
 
   return {
     invitationId,
