@@ -105,14 +105,18 @@ export function useInvitationHandler() {
           console.log('Refreshing user companies before switching...');
           await refreshUserCompanies();
           
+          // Wait a bit longer to ensure companies are refreshed
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           // Switch to this company and redirect
           console.log('Switching to company:', invitation.company_id);
           switchCompany(invitation.company_id);
           
-          // Use a slight delay to ensure company context updates before navigation
+          // Clear URL parameters and redirect with a delay
           setTimeout(() => {
-            navigate('/dashboard', { replace: true });
-          }, 100);
+            window.history.replaceState({}, '', '/dashboard');
+            window.location.reload();
+          }, 200);
           return;
         }
 
@@ -129,6 +133,9 @@ export function useInvitationHandler() {
           console.log('Refreshing user companies after invitation acceptance...');
           await refreshUserCompanies();
           
+          // Wait longer to ensure companies are fully refreshed
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
           toast({
             title: "Welcome to the team!",
             description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
@@ -138,10 +145,11 @@ export function useInvitationHandler() {
           console.log('Switching to new company:', invitation.company_id);
           switchCompany(invitation.company_id);
           
-          // Use a slight delay to ensure company context updates before navigation
+          // Force a page reload to ensure clean state after company switch
           setTimeout(() => {
-            navigate('/dashboard', { replace: true });
-          }, 100);
+            window.history.replaceState({}, '', '/dashboard');
+            window.location.reload();
+          }, 300);
         }
       } catch (error) {
         console.error('Error processing invitation:', error);
