@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -216,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Enhanced logout function
+  // Enhanced logout function with better error handling for missing sessions
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
@@ -225,16 +226,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Enhanced cleanup before logout
       await deepCleanupAuthState();
       
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      
-      if (error) {
-        console.error('Logout error:', error);
-        // Don't throw on logout errors, still clean up
+      // Attempt logout but don't fail if session is already gone
+      try {
+        const { error } = await supabase.auth.signOut({ scope: 'global' });
+        
+        if (error) {
+          console.error('Logout error:', error);
+          // Check if it's just a missing session error
+          if (error.message?.includes('session_not_found') || 
+              error.message?.includes('Session not found') ||
+              error.message?.includes('No session found')) {
+            console.log('Session already cleared, continuing with cleanup');
+          } else {
+            // For other errors, log but continue with cleanup
+            console.log('Logout had errors but continuing with cleanup:', error.message);
+          }
+        } else {
+          console.log('Logout successful');
+        }
+      } catch (logoutError: any) {
+        console.log('Logout attempt failed, continuing with cleanup:', logoutError.message);
       }
       
-      // Force clear state even if logout had errors
+      // Force clear state regardless of logout success/failure
       setSession(null);
       setUser(null);
+      
+      // Additional cleanup
+      localStorage.removeItem('currentCompanyId');
+      localStorage.removeItem('userCompanies');
       
       toast({
         title: 'Logged out successfully',
@@ -246,13 +266,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         window.location.href = '/';
       }, 500);
     } catch (error: any) {
-      console.error('Logout failed:', error.message);
+      console.error('Logout process failed:', error.message);
+      
+      // Even if logout fails completely, clear local state
+      setSession(null);
+      setUser(null);
+      localStorage.removeItem('currentCompanyId');
+      localStorage.removeItem('userCompanies');
+      
       toast({
-        variant: 'destructive',
-        title: 'Logout failed',
-        description: error.message || 'There was an error logging out',
+        title: 'Logged out',
+        description: 'Session cleared locally',
       });
-      throw error;
+      
+      // Still redirect to ensure clean state
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
     } finally {
       setIsLoading(false);
     }
