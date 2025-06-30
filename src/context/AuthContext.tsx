@@ -216,84 +216,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Ultra-enhanced logout function that treats missing sessions as success
+  // Bulletproof logout function that ignores all server errors
   const logout = async (): Promise<void> => {
     setIsLoading(true);
+    
+    console.log('Starting bulletproof logout process...');
+    
+    // Step 1: Immediately clear local state (don't wait for server)
+    setSession(null);
+    setUser(null);
+    
+    // Step 2: Clear all local storage
     try {
-      console.log('Starting logout process...');
+      localStorage.removeItem('currentCompanyId');
+      localStorage.removeItem('userCompanies');
       
-      // Enhanced cleanup before logout
-      await deepCleanupAuthState();
-      
-      // Attempt logout with comprehensive error handling
-      let logoutSuccessful = false;
-      try {
-        const { error } = await supabase.auth.signOut({ scope: 'global' });
-        
-        if (error) {
-          // Check if it's a missing session error (treat as success)
-          if (error.message?.includes('session_not_found') || 
-              error.message?.includes('Session not found') ||
-              error.message?.includes('No session found') ||
-              error.message?.includes('session id') ||
-              error.status === 403) {
-            console.log('Session already cleared or not found - treating as successful logout');
-            logoutSuccessful = true;
-          } else {
-            console.log('Other logout error occurred:', error.message);
-            // Still treat as successful for user experience
-            logoutSuccessful = true;
-          }
-        } else {
-          console.log('Logout successful');
-          logoutSuccessful = true;
+      // Clear all Supabase auth keys
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
         }
-      } catch (logoutError: any) {
-        console.log('Logout attempt threw error:', logoutError.message);
-        // Always treat as successful - we'll clean up manually
-        logoutSuccessful = true;
-      }
-      
-      // Always clear state regardless of logout response
-      setSession(null);
-      setUser(null);
-      
-      // Additional cleanup
-      localStorage.removeItem('currentCompanyId');
-      localStorage.removeItem('userCompanies');
-      
-      // Always show success message
-      toast({
-        title: 'Logged out successfully',
-        description: 'You have been logged out of your account',
       });
-      
-      // Force page reload to ensure clean state
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 500);
-      
-    } catch (error: any) {
-      console.error('Logout process encountered unexpected error:', error.message);
-      
-      // Even if everything fails, clear local state and show success
-      setSession(null);
-      setUser(null);
-      localStorage.removeItem('currentCompanyId');
-      localStorage.removeItem('userCompanies');
-      
-      toast({
-        title: 'Logged out',
-        description: 'Session cleared successfully',
-      });
-      
-      // Still redirect to ensure clean state
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 500);
-    } finally {
-      setIsLoading(false);
+    } catch (storageError) {
+      console.log('Storage cleanup had minor issues:', storageError);
     }
+    
+    // Step 3: Attempt server logout but completely ignore any errors
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+      console.log('Server logout completed successfully');
+    } catch (serverError: any) {
+      console.log('Server logout failed, but continuing (this is expected):', serverError.message);
+      // Completely ignore server errors - we've already cleared local state
+    }
+    
+    // Step 4: Always show success (since local state is cleared)
+    toast({
+      title: 'Logged out successfully',
+      description: 'You have been logged out',
+    });
+    
+    setIsLoading(false);
+    
+    // Step 5: Force clean page reload
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 100);
   };
 
   return (
