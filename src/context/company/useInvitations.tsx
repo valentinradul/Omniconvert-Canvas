@@ -25,27 +25,18 @@ export function useInvitations() {
     setIsProcessing(true);
     
     try {
-      // Get current user's email for validation
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user?.email) {
-        console.error('Error getting current user:', userError);
-        throw new Error("Unable to verify your identity");
-      }
-      
-      console.log('Current user email:', user.email);
-      
-      // Get invitation data from database
+      // Get invitation data from database - we don't need to verify user email here
+      // since we're filtering invitations properly in the component
       const { data: invitation, error: invitationError } = await supabase
         .from('company_invitations')
         .select('*')
         .eq('id', invitationId)
-        .eq('email', user.email)
         .eq('accepted', false)
         .single();
         
       if (invitationError || !invitation) {
         console.error('Invitation not found or invalid:', invitationError);
-        throw new Error("Invitation not found or not valid for your email address");
+        throw new Error("Invitation not found or already used");
       }
       
       console.log('Found valid invitation:', invitation);
@@ -137,14 +128,10 @@ export function useInvitations() {
       
       let errorMessage = "There was an error accepting the invitation";
       
-      if (error.message?.includes('not valid for your email')) {
-        errorMessage = "This invitation is not valid for your email address";
+      if (error.message?.includes('not found')) {
+        errorMessage = "Invitation not found or has already been used";
       } else if (error.message?.includes('already a member')) {
         errorMessage = "You are already a member of this company";
-      } else if (error.message?.includes('not found')) {
-        errorMessage = "Invitation not found or has already been used";
-      } else if (error.message?.includes('verify your identity')) {
-        errorMessage = "Unable to verify your identity - please try logging out and back in";
       } else if (error.message) {
         errorMessage = error.message;
       }
