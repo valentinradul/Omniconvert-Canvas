@@ -54,7 +54,7 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
   }
 };
 
-// Load user invitations
+// Load user invitations with better error handling
 export const loadUserInvitations = async (userEmail: string): Promise<CompanyInvitation[]> => {
   console.log('Loading invitations for email:', userEmail);
   
@@ -74,7 +74,7 @@ export const loadUserInvitations = async (userEmail: string): Promise<CompanyInv
           name
         )
       `)
-      .eq('email', userEmail)
+      .eq('email', userEmail.toLowerCase().trim())
       .eq('accepted', false);
 
     if (error) {

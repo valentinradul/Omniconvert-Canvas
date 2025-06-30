@@ -61,7 +61,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     inviteMember,
     removeMember,
     updateMemberRole,
-    acceptInvitation,
+    acceptInvitation: baseAcceptInvitation,
     declineInvitation,
     unsendInvitation: apiUnsendInvitation
   } = useCompanyActions(
@@ -78,6 +78,29 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchUserCompanies
   );
 
+  // Enhanced accept invitation that properly refreshes everything
+  const acceptInvitation = async (invitationId: string) => {
+    console.log('CompanyContext: Starting invitation acceptance process');
+    
+    try {
+      await baseAcceptInvitation(invitationId);
+      
+      // Force refresh user companies after acceptance
+      console.log('CompanyContext: Refreshing user companies after invitation acceptance');
+      await fetchUserCompanies();
+      
+      // Also refresh user invitations to remove the accepted one
+      if (user?.email) {
+        await fetchUserInvitations(user.email);
+      }
+      
+      console.log('CompanyContext: Invitation acceptance process completed');
+    } catch (error) {
+      console.error('CompanyContext: Error in acceptInvitation:', error);
+      throw error;
+    }
+  };
+
   // Function to refresh pending invitations
   const refreshPendingInvitations = async () => {
     await fetchPendingInvitations();
@@ -92,6 +115,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Function to refresh user companies (useful after accepting invitations)
   const refreshUserCompanies = async () => {
+    console.log('CompanyContext: Refreshing user companies');
     await fetchUserCompanies();
   };
 
@@ -112,11 +136,13 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Clear any cached company data when user changes
       localStorage.removeItem('userCompanies');
       
+      // Fetch user companies and invitations
       fetchUserCompanies();
       if (user.email) {
         fetchUserInvitations(user.email);
       }
     } else {
+      // Clear all state when user logs out
       setCompanies([]);
       setCurrentCompany(null);
       setUserCompanyRole(null);
@@ -132,7 +158,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     if (currentCompany) {
-      console.log("Current company changed:", currentCompany.name);
+      console.log("CompanyContext: Current company changed:", currentCompany.name);
       fetchCompanyMembers();
       fetchUserRole();
       fetchPendingInvitations();
@@ -146,18 +172,21 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const storedCompanyId = localStorage.getItem('currentCompanyId');
       console.log("CompanyContext: Setting current company", { 
         companiesCount: companies.length,
-        storedCompanyId
+        storedCompanyId,
+        availableCompanies: companies.map(c => ({ id: c.id, name: c.name }))
       });
       
       if (storedCompanyId) {
         const company = companies.find(c => c.id === storedCompanyId);
         if (company) {
+          console.log('CompanyContext: Setting stored company as current:', company.name);
           setCurrentCompany(company);
         } else {
-          // If stored company doesn't exist in user's companies, set to first available
+          console.log('CompanyContext: Stored company not found, setting first available');
           setCurrentCompany(companies[0]);
         }
       } else {
+        console.log('CompanyContext: No stored company, setting first available');
         setCurrentCompany(companies[0]);
       }
     }

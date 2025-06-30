@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Mail, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useCompany } from '@/context/company/CompanyContext';
 import { useInvitations } from '@/context/company/useInvitations';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -20,6 +21,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
   onInvitationDeclined
 }) => {
   const { user, isAuthenticated } = useAuth();
+  const { refreshUserCompanies } = useCompany();
   const { acceptInvitation, declineInvitation, isProcessing } = useInvitations();
 
   console.log('CompanyInvitations render:', { 
@@ -68,12 +70,20 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
 
     try {
       const result = await acceptInvitation(invitationId, user.id, invitations);
-      if (result && onInvitationAccepted) {
-        console.log('Invitation accepted successfully, calling callback');
-        onInvitationAccepted();
+      if (result) {
+        console.log('Invitation accepted successfully, refreshing company data');
         
-        // Force refresh after acceptance to show new company data
+        // Refresh company data through context
+        await refreshUserCompanies();
+        
+        // Call the callback if provided
+        if (onInvitationAccepted) {
+          onInvitationAccepted();
+        }
+        
+        // Force a small delay then reload to ensure fresh state
         setTimeout(() => {
+          console.log('Reloading page to show fresh company data');
           window.location.reload();
         }, 1000);
       }
