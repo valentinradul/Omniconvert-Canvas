@@ -66,16 +66,22 @@ export const useCompanyData = (userId: string | undefined) => {
     }
   };
 
-  // Load pending invitations for current company
+  // Load pending invitations for current company - FIXED to properly update state
   const fetchPendingInvitations = async () => {
-    if (!currentCompany?.id) return;
+    if (!currentCompany?.id) {
+      console.log('No current company, clearing pending invitations');
+      setPendingInvitations([]);
+      return;
+    }
     
     try {
+      console.log('Fetching pending invitations for company:', currentCompany.id);
       const invitations = await loadCompanyInvitations(currentCompany.id);
-      console.log('Loaded pending invitations:', invitations);
+      console.log('Setting pending invitations:', invitations);
       setPendingInvitations(invitations);
     } catch (error) {
       console.error('Error loading pending invitations:', error);
+      setPendingInvitations([]);
     }
   };
 

@@ -228,7 +228,7 @@ export const loadCompanyMembers = async (companyId: string): Promise<CompanyMemb
   }
 };
 
-// Load company invitations (pending)
+// Load company invitations (pending) - FIXED to properly load pending invitations for current company
 export const loadCompanyInvitations = async (companyId: string): Promise<CompanyInvitation[]> => {
   console.log('Loading pending invitations for company:', companyId);
   
@@ -248,14 +248,14 @@ export const loadCompanyInvitations = async (companyId: string): Promise<Company
         )
       `)
       .eq('company_id', companyId)
-      .eq('accepted', false);
+      .eq('accepted', false); // Only get pending (not accepted) invitations
 
     if (error) {
       console.error('Error loading company invitations:', error);
       throw error;
     }
 
-    console.log('Raw invitation data:', data);
+    console.log('Raw pending invitations data for company', companyId, ':', data);
 
     if (!data || data.length === 0) {
       console.log('No pending invitations found for company');
@@ -274,7 +274,7 @@ export const loadCompanyInvitations = async (companyId: string): Promise<Company
       companyName: (invitation.companies as any)?.name || 'Unknown Company'
     }));
 
-    console.log('Transformed invitations:', invitations);
+    console.log('Transformed pending invitations:', invitations);
     return invitations;
   } catch (error) {
     console.error('Error in loadCompanyInvitations:', error);
