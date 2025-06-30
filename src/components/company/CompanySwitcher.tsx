@@ -26,8 +26,15 @@ const CompanySwitcher: React.FC = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const handleSelect = (companyId: string) => {
-    switchCompany(companyId);
-    setOpen(false);
+    // Only allow switching to companies the user has access to
+    const targetCompany = companies.find(c => c.id === companyId);
+    if (targetCompany) {
+      console.log('Switching to company:', targetCompany.name);
+      switchCompany(companyId);
+      setOpen(false);
+    } else {
+      console.warn('User does not have access to company:', companyId);
+    }
   };
 
   return (
@@ -49,13 +56,14 @@ const CompanySwitcher: React.FC = () => {
         <PopoverContent className="w-[200px] p-0">
           <Command>
             <CommandList>
-              <CommandInput placeholder="Search company..." />
-              <CommandEmpty>No company found.</CommandEmpty>
+              <CommandInput placeholder="Search companies..." />
+              <CommandEmpty>No companies found.</CommandEmpty>
               {companies.length > 0 && (
                 <CommandGroup heading="Your Companies">
                   {companies.map((company) => (
                     <CommandItem
                       key={company.id}
+                      value={company.name}
                       onSelect={() => handleSelect(company.id)}
                       className="cursor-pointer"
                     >
