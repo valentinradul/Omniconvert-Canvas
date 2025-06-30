@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useInvitations } from '@/context/company/useInvitations';
+import { useCompany } from '@/context/company/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -10,6 +11,7 @@ export function useInvitationHandler() {
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated } = useAuth();
   const { acceptInvitation } = useInvitations();
+  const { switchCompany } = useCompany();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isProcessingInvitation, setIsProcessingInvitation] = useState(false);
@@ -99,6 +101,8 @@ export function useInvitationHandler() {
             .update({ accepted: true })
             .eq('id', invitationId);
             
+          // Switch to this company and redirect
+          switchCompany(invitation.company_id);
           navigate('/dashboard', { replace: true });
           return;
         }
@@ -116,6 +120,9 @@ export function useInvitationHandler() {
             description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
           });
           
+          // Switch to the new company
+          switchCompany(invitation.company_id);
+          
           // Clear the invitation parameter from URL and redirect to dashboard
           navigate('/dashboard', { replace: true });
         }
@@ -132,7 +139,7 @@ export function useInvitationHandler() {
     };
 
     handleInvitation();
-  }, [isAuthenticated, user, invitationId, acceptInvitation, toast, navigate, isProcessingInvitation, hasProcessedInvitation]);
+  }, [isAuthenticated, user, invitationId, acceptInvitation, switchCompany, toast, navigate, isProcessingInvitation, hasProcessedInvitation]);
 
   return {
     invitationId,
