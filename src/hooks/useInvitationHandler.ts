@@ -57,7 +57,6 @@ export function useInvitationHandler() {
             title: "Invalid invitation",
             description: "This invitation link is invalid or has already been used.",
           });
-          // Clear the invitation parameter and redirect to dashboard
           navigate('/dashboard', { replace: true });
           return;
         }
@@ -70,6 +69,36 @@ export function useInvitationHandler() {
             title: "Email mismatch",
             description: "This invitation was sent to a different email address.",
           });
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        // Check if user is already a member of this company
+        const { data: existingMember, error: memberCheckError } = await supabase
+          .from('company_members')
+          .select('id, role')
+          .eq('user_id', user.id)
+          .eq('company_id', invitation.company_id)
+          .maybeSingle();
+
+        if (memberCheckError) {
+          console.error('Error checking existing membership:', memberCheckError);
+          throw new Error('Unable to verify membership status');
+        }
+
+        if (existingMember) {
+          console.log('User is already a member of this company');
+          toast({
+            title: "Already a member",
+            description: `You're already a member of ${(invitation.companies as any)?.name || 'this company'}`,
+          });
+          
+          // Mark invitation as accepted since user is already a member
+          await supabase
+            .from('company_invitations')
+            .update({ accepted: true })
+            .eq('id', invitationId);
+            
           navigate('/dashboard', { replace: true });
           return;
         }
