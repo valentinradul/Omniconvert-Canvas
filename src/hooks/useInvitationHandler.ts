@@ -11,7 +11,7 @@ export function useInvitationHandler() {
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated } = useAuth();
   const { acceptInvitation } = useInvitations();
-  const { switchCompany } = useCompany();
+  const { switchCompany, refreshUserCompanies } = useCompany();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isProcessingInvitation, setIsProcessingInvitation] = useState(false);
@@ -101,9 +101,18 @@ export function useInvitationHandler() {
             .update({ accepted: true })
             .eq('id', invitationId);
             
+          // Refresh companies to ensure we have the latest data
+          console.log('Refreshing user companies before switching...');
+          await refreshUserCompanies();
+          
           // Switch to this company and redirect
+          console.log('Switching to company:', invitation.company_id);
           switchCompany(invitation.company_id);
-          navigate('/dashboard', { replace: true });
+          
+          // Use a slight delay to ensure company context updates before navigation
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 100);
           return;
         }
 
@@ -115,16 +124,24 @@ export function useInvitationHandler() {
         if (result) {
           console.log('Invitation accepted successfully');
           setHasProcessedInvitation(true);
+          
+          // Refresh companies to get the newly joined company
+          console.log('Refreshing user companies after invitation acceptance...');
+          await refreshUserCompanies();
+          
           toast({
             title: "Welcome to the team!",
             description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
           });
           
           // Switch to the new company
+          console.log('Switching to new company:', invitation.company_id);
           switchCompany(invitation.company_id);
           
-          // Clear the invitation parameter from URL and redirect to dashboard
-          navigate('/dashboard', { replace: true });
+          // Use a slight delay to ensure company context updates before navigation
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 100);
         }
       } catch (error) {
         console.error('Error processing invitation:', error);
@@ -139,7 +156,7 @@ export function useInvitationHandler() {
     };
 
     handleInvitation();
-  }, [isAuthenticated, user, invitationId, acceptInvitation, switchCompany, toast, navigate, isProcessingInvitation, hasProcessedInvitation]);
+  }, [isAuthenticated, user, invitationId, acceptInvitation, switchCompany, refreshUserCompanies, toast, navigate, isProcessingInvitation, hasProcessedInvitation]);
 
   return {
     invitationId,
