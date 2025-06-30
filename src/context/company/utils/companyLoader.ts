@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
 
@@ -38,10 +37,10 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
 
     console.log('📊 Raw member data from company_members table:', memberData);
 
-    // ALWAYS check for accepted invitations, regardless of existing memberships
-    console.log('📋 Checking for accepted invitations...');
+    // ALWAYS check for invitations that match the user's email
+    console.log('📋 Checking for invitations for email:', userEmail);
     
-    const { data: acceptedInvitations, error: invitationError } = await supabase
+    const { data: userInvitations, error: invitationError } = await supabase
       .from('company_invitations')
       .select(`
         id,
@@ -56,29 +55,29 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
           created_at
         )
       `)
-      .eq('email', userEmail.toLowerCase().trim())
-      .eq('accepted', true);
+      .ilike('email', userEmail); // Use ilike for case-insensitive matching
 
     if (invitationError) {
-      console.error('❌ Error checking accepted invitations:', invitationError);
+      console.error('❌ Error checking invitations:', invitationError);
     } else {
-      console.log('📋 Accepted invitations found:', acceptedInvitations);
+      console.log('📋 All invitations found for user email:', userInvitations);
       
-      if (acceptedInvitations && acceptedInvitations.length > 0) {
-        console.log('🔄 Processing accepted invitations...');
+      if (userInvitations && userInvitations.length > 0) {
+        console.log('🔄 Processing invitations...');
         
-        // Check each accepted invitation and create missing memberships
-        for (const invitation of acceptedInvitations) {
-          console.log('🎯 Processing invitation for company:', invitation.company_id, 'with role:', invitation.role);
+        // Process each invitation
+        for (const invitation of userInvitations) {
+          console.log('🎯 Processing invitation:', invitation);
           
-          // Check if membership already exists for this exact company
+          // Check if membership already exists for this company
           const existingMembership = memberData?.find(member => 
             member.company_id === invitation.company_id
           );
           
           if (!existingMembership) {
-            console.log('➕ Creating missing membership for company:', invitation.company_id);
+            console.log('➕ Creating membership for company:', invitation.company_id);
             
+            // Create membership
             const { error: insertError } = await supabase
               .from('company_members')
               .insert({
@@ -88,11 +87,25 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
               });
               
             if (insertError) {
-              console.error('❌ Error creating membership from invitation:', insertError);
+              console.error('❌ Error creating membership:', insertError);
             } else {
               console.log('✅ Created membership for company:', invitation.company_id);
               
-              // Add this company to memberData for processing
+              // Mark invitation as accepted if it wasn't already
+              if (!invitation.accepted) {
+                const { error: updateError } = await supabase
+                  .from('company_invitations')
+                  .update({ accepted: true })
+                  .eq('id', invitation.id);
+                  
+                if (updateError) {
+                  console.error('❌ Error marking invitation as accepted:', updateError);
+                } else {
+                  console.log('✅ Marked invitation as accepted:', invitation.id);
+                }
+              }
+              
+              // Add this company to memberData
               if (invitation.companies) {
                 if (!memberData) memberData = [];
                 memberData.push({
@@ -104,34 +117,23 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
             }
           } else {
             console.log('✅ Membership already exists for company:', invitation.company_id);
+            
+            // Still mark invitation as accepted if it wasn't
+            if (!invitation.accepted) {
+              const { error: updateError } = await supabase
+                .from('company_invitations')
+                .update({ accepted: true })
+                .eq('id', invitation.id);
+                
+              if (updateError) {
+                console.error('❌ Error marking invitation as accepted:', updateError);
+              } else {
+                console.log('✅ Marked existing invitation as accepted:', invitation.id);
+              }
+            }
           }
         }
       }
-    }
-
-    // Also check for unaccepted invitations and log them
-    const { data: pendingInvitations, error: pendingError } = await supabase
-      .from('company_invitations')
-      .select(`
-        id,
-        company_id,
-        role,
-        accepted,
-        email,
-        companies (
-          id,
-          name,
-          created_by,
-          created_at
-        )
-      `)
-      .eq('email', userEmail.toLowerCase().trim())
-      .eq('accepted', false);
-
-    if (pendingError) {
-      console.error('❌ Error checking pending invitations:', pendingError);
-    } else {
-      console.log('📨 Pending invitations found:', pendingInvitations);
     }
 
     if (!memberData || memberData.length === 0) {
@@ -164,9 +166,9 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
   }
 };
 
-// Load user invitations with better error handling
+// Load user invitations with better email matching
 export const loadUserInvitations = async (userEmail: string): Promise<CompanyInvitation[]> => {
-  console.log('Loading invitations for email:', userEmail);
+  console.log('📧 Loading invitations for email:', userEmail);
   
   try {
     const { data, error } = await supabase
@@ -184,18 +186,18 @@ export const loadUserInvitations = async (userEmail: string): Promise<CompanyInv
           name
         )
       `)
-      .eq('email', userEmail.toLowerCase().trim())
+      .ilike('email', userEmail) // Use ilike for case-insensitive matching
       .eq('accepted', false);
 
     if (error) {
-      console.error('Error loading invitations:', error);
+      console.error('❌ Error loading invitations:', error);
       throw error;
     }
 
-    console.log('Raw invitation data:', data);
+    console.log('📋 Raw invitation data:', data);
 
     if (!data || data.length === 0) {
-      console.log('No invitations found for user');
+      console.log('ℹ️ No pending invitations found for user');
       return [];
     }
 
@@ -211,10 +213,10 @@ export const loadUserInvitations = async (userEmail: string): Promise<CompanyInv
       companyName: (invitation.companies as any)?.name || 'Unknown Company'
     }));
 
-    console.log('Transformed invitations:', invitations);
+    console.log('✅ Transformed invitations:', invitations);
     return invitations;
   } catch (error) {
-    console.error('Error in loadUserInvitations:', error);
+    console.error('💥 Error in loadUserInvitations:', error);
     throw error;
   }
 };
