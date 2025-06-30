@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
 
@@ -76,6 +77,21 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
           
           if (!existingMembership) {
             console.log('➕ Creating membership for company:', invitation.company_id);
+            
+            // Check if someone is already an owner of this company (due to new constraint)
+            if (invitation.role === 'owner') {
+              const { data: existingOwner } = await supabase
+                .from('company_members')
+                .select('id')
+                .eq('company_id', invitation.company_id)
+                .eq('role', 'owner')
+                .maybeSingle();
+                
+              if (existingOwner) {
+                console.log('⚠️ Company already has an owner, assigning admin role instead');
+                invitation.role = 'admin';
+              }
+            }
             
             // Create membership
             const { error: insertError } = await supabase
