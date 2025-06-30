@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
 
@@ -227,10 +228,9 @@ export const loadCompanyMembers = async (companyId: string): Promise<CompanyMemb
   }
 };
 
-// Load company invitations (pending) - ENHANCED with better debugging and data verification
+// Load company invitations (pending)
 export const loadCompanyInvitations = async (companyId: string): Promise<CompanyInvitation[]> => {
-  console.log('=== LOADING PENDING INVITATIONS ===');
-  console.log('Company ID:', companyId);
+  console.log('Loading pending invitations for company:', companyId);
   
   try {
     const { data, error } = await supabase
@@ -248,54 +248,33 @@ export const loadCompanyInvitations = async (companyId: string): Promise<Company
         )
       `)
       .eq('company_id', companyId)
-      .eq('accepted', false); // Only get pending (not accepted) invitations
-
-    console.log('Raw database query result:', { data, error });
+      .eq('accepted', false);
 
     if (error) {
-      console.error('Database error loading company invitations:', error);
+      console.error('Error loading company invitations:', error);
       throw error;
     }
 
-    console.log('Raw pending invitations data from DB:', data);
-    console.log('Number of records returned from DB:', data?.length || 0);
+    console.log('Raw invitation data:', data);
 
     if (!data || data.length === 0) {
-      console.log('No pending invitations found in database for company:', companyId);
+      console.log('No pending invitations found for company');
       return [];
     }
 
-    // Transform the data with detailed logging
-    const invitations: CompanyInvitation[] = data.map((invitation, index) => {
-      console.log(`Transforming invitation ${index + 1}:`, invitation);
-      
-      const transformed = {
-        id: invitation.id,
-        companyId: invitation.company_id,
-        email: invitation.email,
-        role: invitation.role as CompanyRole,
-        accepted: invitation.accepted,
-        createdAt: new Date(invitation.created_at),
-        invitedBy: invitation.invited_by,
-        companyName: (invitation.companies as any)?.name || 'Unknown Company'
-      };
-      
-      console.log(`Transformed invitation ${index + 1}:`, transformed);
-      return transformed;
-    });
+    // Transform the data
+    const invitations: CompanyInvitation[] = data.map(invitation => ({
+      id: invitation.id,
+      companyId: invitation.company_id,
+      email: invitation.email,
+      role: invitation.role as CompanyRole,
+      accepted: invitation.accepted,
+      createdAt: new Date(invitation.created_at),
+      invitedBy: invitation.invited_by,
+      companyName: (invitation.companies as any)?.name || 'Unknown Company'
+    }));
 
-    console.log('=== FINAL TRANSFORMED INVITATIONS ===');
-    console.log('Total invitations:', invitations.length);
-    invitations.forEach((inv, i) => {
-      console.log(`Final invitation ${i + 1}:`, {
-        id: inv.id,
-        email: inv.email,
-        role: inv.role,
-        companyName: inv.companyName,
-        accepted: inv.accepted
-      });
-    });
-    
+    console.log('Transformed invitations:', invitations);
     return invitations;
   } catch (error) {
     console.error('Error in loadCompanyInvitations:', error);
