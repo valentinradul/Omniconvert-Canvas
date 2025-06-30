@@ -69,32 +69,42 @@ export const useCompanyData = (userId: string | undefined) => {
   // Load pending invitations for current company - ENHANCED with better debugging and error handling
   const fetchPendingInvitations = async () => {
     if (!currentCompany?.id) {
-      console.log('No current company, clearing pending invitations');
+      console.log('❌ No current company, clearing pending invitations');
       setPendingInvitations([]);
       return;
     }
     
     try {
-      console.log('Fetching pending invitations for company:', currentCompany.id, 'Company name:', currentCompany.name);
-      const invitations = await loadCompanyInvitations(currentCompany.id);
-      console.log('Raw pending invitations received:', invitations);
-      console.log('Number of pending invitations:', invitations.length);
+      console.log('🔍 FETCHING PENDING INVITATIONS - Company:', currentCompany.name, 'ID:', currentCompany.id);
       
-      // Log each invitation for debugging
-      invitations.forEach((inv, index) => {
-        console.log(`Invitation ${index + 1}:`, {
-          id: inv.id,
-          email: inv.email,
-          role: inv.role,
-          accepted: inv.accepted,
-          companyId: inv.companyId
-        });
+      const invitations = await loadCompanyInvitations(currentCompany.id);
+      
+      console.log('📥 RAW INVITATIONS RECEIVED:', {
+        count: invitations.length,
+        invitations: invitations,
+        companyId: currentCompany.id,
+        companyName: currentCompany.name
       });
       
-      setPendingInvitations(invitations);
-      console.log('Successfully set pending invitations state');
+      // Filter for non-accepted invitations (pending ones)
+      const pending = invitations.filter(inv => !inv.accepted);
+      
+      console.log('🔄 FILTERED PENDING INVITATIONS:', {
+        originalCount: invitations.length,
+        pendingCount: pending.length,
+        pendingInvitations: pending
+      });
+      
+      setPendingInvitations(pending);
+      console.log('✅ Successfully set pending invitations state:', pending.length, 'invitations');
+      
+      // Force a re-render check
+      setTimeout(() => {
+        console.log('🔄 STATE CHECK - pendingInvitations length:', pending.length);
+      }, 100);
+      
     } catch (error) {
-      console.error('Error loading pending invitations:', error);
+      console.error('❌ Error loading pending invitations:', error);
       setPendingInvitations([]);
     }
   };
@@ -103,15 +113,19 @@ export const useCompanyData = (userId: string | undefined) => {
   const switchCompany = (companyId: string) => {
     const company = companies.find(c => c.id === companyId);
     if (company) {
-      console.log('Switching to company:', company.name, 'ID:', company.id);
+      console.log('🔄 Switching to company:', company.name, 'ID:', company.id);
       setCurrentCompany(company);
       localStorage.setItem('currentCompanyId', company.id);
       
+      // Clear pending invitations first, then fetch new ones
+      setPendingInvitations([]);
+      console.log('🧹 Cleared pending invitations before switch');
+      
       // Force refresh of pending invitations when switching companies
-      console.log('About to fetch pending invitations for switched company');
       setTimeout(() => {
+        console.log('⏰ Triggered pending invitations fetch for switched company');
         fetchPendingInvitations();
-      }, 100);
+      }, 200);
     }
   };
 
