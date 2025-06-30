@@ -26,8 +26,8 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
   } = useCompany();
   const { toast } = useToast();
 
-  console.log('PendingInvitations - Pending invitations:', pendingInvitations.length);
-  console.log('PendingInvitations - Company members:', companyMembers.length);
+  console.log('PendingInvitations - Pending invitations:', pendingInvitations);
+  console.log('PendingInvitations - Company members:', companyMembers);
   console.log('PendingInvitations - User role:', userCompanyRole);
 
   const handleUnsendInvitation = async (invitationId: string, email: string) => {
@@ -64,17 +64,15 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Pending Invitations Section - More prominent */}
+      {/* Pending Invitations Section - Always show this card */}
       <Card className={`${pendingInvitations.length > 0 ? 'border-orange-200 bg-orange-50/30' : ''}`}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
             Pending Invitations 
-            {pendingInvitations.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {pendingInvitations.length}
-              </Badge>
-            )}
+            <Badge variant="secondary" className="ml-2">
+              {pendingInvitations.length}
+            </Badge>
           </CardTitle>
           {pendingInvitations.length > 0 && (
             <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -89,7 +87,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
               <Mail className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
               <p className="text-muted-foreground">No pending invitations</p>
               <p className="text-sm text-muted-foreground">
-                All invited members have accepted their invitations
+                When you invite team members, they will appear here until accepted
               </p>
             </div>
           ) : (
@@ -112,7 +110,7 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
                         </Badge>
                         <span>•</span>
                         <span>
-                          {formatDistanceToNow(invitation.createdAt, { addSuffix: true })}
+                          {formatDistanceToNow(new Date(invitation.createdAt), { addSuffix: true })}
                         </span>
                       </div>
                     </div>

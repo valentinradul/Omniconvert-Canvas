@@ -10,7 +10,13 @@ import PendingInvitations from '@/components/company/PendingInvitations';
 import EditMemberDialog from '@/components/company/EditMemberDialog';
 
 const TeamSettingsPage: React.FC = () => {
-  const { companyMembers, userCompanyRole, refreshPendingInvitations, refreshCompanyMembers } = useCompany();
+  const { 
+    companyMembers, 
+    userCompanyRole, 
+    pendingInvitations,
+    refreshPendingInvitations, 
+    refreshCompanyMembers 
+  } = useCompany();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedMember, setSelectedMember] = useState<CompanyMember | null>(null);
@@ -18,7 +24,8 @@ const TeamSettingsPage: React.FC = () => {
 
   console.log('TeamSettingsPage - Company members:', companyMembers.length);
   console.log('TeamSettingsPage - User role:', userCompanyRole);
-  console.log('TeamSettingsPage - All members:', companyMembers);
+  console.log('TeamSettingsPage - Pending invitations:', pendingInvitations.length);
+  console.log('TeamSettingsPage - All pending invitations:', pendingInvitations);
 
   const handleEditMember = (member: CompanyMember) => {
     console.log('Editing member:', member.id);
@@ -38,6 +45,7 @@ const TeamSettingsPage: React.FC = () => {
 
   // Function to handle invitation sent and refresh pending invitations
   const handleInvitationSent = () => {
+    console.log('Invitation sent, refreshing pending invitations...');
     refreshPendingInvitations();
     toast({
       title: "Invitation sent!",
@@ -47,6 +55,7 @@ const TeamSettingsPage: React.FC = () => {
 
   // Function to handle manual refresh
   const handleManualRefresh = () => {
+    console.log('Manual refresh triggered');
     refreshPendingInvitations();
     refreshCompanyMembers();
     toast({
@@ -71,6 +80,14 @@ const TeamSettingsPage: React.FC = () => {
       </div>
 
       <div className="space-y-6 mt-8">
+        {/* Debug Info */}
+        <div className="bg-muted/50 p-4 rounded-lg text-sm">
+          <p><strong>Debug Info:</strong></p>
+          <p>Members: {companyMembers.length}</p>
+          <p>Pending Invitations: {pendingInvitations.length}</p>
+          <p>User Role: {userCompanyRole}</p>
+        </div>
+
         {/* Invite New Member Section */}
         <div className="flex justify-center">
           <div className="w-full max-w-md">
