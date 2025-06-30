@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { CompanyMember, CompanyRole } from '@/types';
 import { useCompany } from '@/context/company/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 import { Trash2 } from 'lucide-react';
 
 interface EditMemberDialogProps {
@@ -21,6 +23,7 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
   onClose, 
   onMemberUpdated 
 }) => {
+  const { user } = useAuth();
   const { updateMemberRole, removeMember, userCompanyRole } = useCompany();
   const { toast } = useToast();
   const [selectedRole, setSelectedRole] = useState<CompanyRole>(member?.role || 'member');
@@ -94,8 +97,42 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
     return 'User';
   };
 
-  const canEditRole = userCompanyRole === 'owner';
-  const canDeleteMember = (userCompanyRole === 'owner' || userCompanyRole === 'admin') && member.role !== 'owner';
+  // Permission logic based on requirements:
+  // - Members can't edit anyone (including themselves)
+  // - Admins can edit members but not other admins or owners
+  // - Owners can edit everyone except other owners
+  const isEditingSelf = member.userId === user?.id;
+  const canEditRole = () => {
+    if (userCompanyRole === 'member') return false;
+    if (userCompanyRole === 'admin') {
+      return member.role === 'member' && !isEditingSelf;
+    }
+    if (userCompanyRole === 'owner') {
+      return member.role !== 'owner';
+    }
+    return false;
+  };
+
+  const canDeleteMember = () => {
+    if (userCompanyRole === 'member') return false;
+    if (member.role === 'owner') return false;
+    if (isEditingSelf) return false;
+    return userCompanyRole === 'owner' || (userCompanyRole === 'admin' && member.role === 'member');
+  };
+
+  // Available roles based on user permissions
+  const getAvailableRoles = (): CompanyRole[] => {
+    if (userCompanyRole === 'owner') {
+      // Owners can assign any role except owner to non-owners
+      return member.role === 'owner' ? ['owner'] : ['member', 'admin'];
+    }
+    if (userCompanyRole === 'admin') {
+      // Admins can only change members to member role
+      return ['member'];
+    }
+    // Members can't change roles
+    return [member.role];
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -113,9 +150,14 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
             <p className="text-sm text-muted-foreground">
               <strong>Current Role:</strong> <span className="capitalize">{member.role}</span>
             </p>
+            {isEditingSelf && (
+              <p className="text-xs text-muted-foreground mt-1">
+                (This is your profile)
+              </p>
+            )}
           </div>
 
-          {canEditRole && (
+          {canEditRole() && (
             <div>
               <h4 className="font-medium mb-2">Change Role</h4>
               <Select value={selectedRole} onValueChange={(value: CompanyRole) => setSelectedRole(value)}>
@@ -123,24 +165,29 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="member">Member</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="owner">Owner</SelectItem>
+                  {getAvailableRoles().map(role => (
+                    <SelectItem key={role} value={role} className="capitalize">
+                      {role}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           )}
 
-          {!canEditRole && !canDeleteMember && (
+          {!canEditRole() && !canDeleteMember() && (
             <p className="text-sm text-muted-foreground">
-              You don't have permission to edit this member.
+              {isEditingSelf && userCompanyRole === 'member' 
+                ? "Members cannot edit their own profile or roles."
+                : "You don't have permission to edit this member."
+              }
             </p>
           )}
         </div>
 
         <DialogFooter className="flex justify-between">
           <div>
-            {canDeleteMember && (
+            {canDeleteMember() && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm">
@@ -175,7 +222,7 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            {canEditRole && (
+            {canEditRole() && (
               <Button 
                 onClick={handleUpdateRole} 
                 disabled={isUpdating || selectedRole === member.role}

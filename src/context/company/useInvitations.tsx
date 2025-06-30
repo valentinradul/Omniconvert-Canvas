@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,7 +43,7 @@ export function useInvitations() {
       // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
         .from('company_members')
-        .select('id')
+        .select('*')
         .eq('user_id', userId)
         .eq('company_id', invitation.company_id)
         .maybeSingle();
@@ -53,27 +54,39 @@ export function useInvitations() {
       }
       
       if (existingMember) {
-        console.log('User is already a member of this company');
-        throw new Error("You are already a member of this company");
-      }
-      
-      console.log('Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
-      
-      // Add user to company members - this should now work with the new policy
-      const { error: memberError } = await supabase
-        .from('company_members')
-        .insert({
-          company_id: invitation.company_id,
-          user_id: userId,
-          role: invitation.role
-        });
+        console.log('User is already a member, updating role from', existingMember.role, 'to', invitation.role);
         
-      if (memberError) {
-        console.error('Error adding company member:', memberError);
-        throw memberError;
+        // Update existing membership role
+        const { error: updateError } = await supabase
+          .from('company_members')
+          .update({ role: invitation.role })
+          .eq('id', existingMember.id);
+          
+        if (updateError) {
+          console.error('Error updating member role:', updateError);
+          throw updateError;
+        }
+        
+        console.log('Successfully updated member role');
+      } else {
+        console.log('Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
+        
+        // Add user to company members
+        const { error: memberError } = await supabase
+          .from('company_members')
+          .insert({
+            company_id: invitation.company_id,
+            user_id: userId,
+            role: invitation.role
+          });
+          
+        if (memberError) {
+          console.error('Error adding company member:', memberError);
+          throw memberError;
+        }
+        
+        console.log('Successfully added user to company members');
       }
-      
-      console.log('Successfully added user to company members');
       
       // Mark invitation as accepted
       const { error: updateError } = await supabase
@@ -117,7 +130,7 @@ export function useInvitations() {
       
       toast({
         title: "Welcome to the team!",
-        description: `You are now a member of ${company.name}`,
+        description: `You are now a ${invitation.role} of ${company.name}`,
       });
       
       return { company, invitationId, role: invitation.role };
