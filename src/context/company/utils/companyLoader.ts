@@ -2,16 +2,17 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
 
-// Load user companies
+// Load user companies - enhanced to ensure all accessible companies are loaded
 export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
   console.log('Loading companies for user:', userId);
   
   try {
-    // First, get all companies the user is a member of
+    // Get all companies the user is a member of
     const { data: memberData, error: memberError } = await supabase
       .from('company_members')
       .select(`
         company_id,
+        role,
         companies (
           id,
           name,
@@ -29,7 +30,48 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
     console.log('Raw member data:', memberData);
 
     if (!memberData || memberData.length === 0) {
-      console.log('No companies found for user');
+      console.log('No companies found for user - checking for accepted invitations...');
+      
+      // Check if user has accepted invitations that haven't been converted to memberships yet
+      const { data: acceptedInvitations } = await supabase
+        .from('company_invitations')
+        .select(`
+          company_id,
+          role,
+          companies (
+            id,
+            name,
+            created_by,
+            created_at
+          )
+        `)
+        .eq('email', (await supabase.auth.getUser()).data.user?.email || '')
+        .eq('accepted', true);
+
+      if (acceptedInvitations && acceptedInvitations.length > 0) {
+        console.log('Found accepted invitations without memberships, creating memberships...');
+        
+        // Create missing memberships for accepted invitations
+        for (const invitation of acceptedInvitations) {
+          const { error: insertError } = await supabase
+            .from('company_members')
+            .insert({
+              user_id: userId,
+              company_id: invitation.company_id,
+              role: invitation.role
+            });
+            
+          if (insertError) {
+            console.error('Error creating membership from invitation:', insertError);
+          } else {
+            console.log('Created membership for company:', invitation.company_id);
+          }
+        }
+        
+        // Retry loading companies after creating memberships
+        return await loadUserCompanies(userId);
+      }
+      
       return [];
     }
 

@@ -49,7 +49,6 @@ export function useInvitationHandler() {
             )
           `)
           .eq('id', invitationId)
-          .eq('accepted', false)
           .single();
 
         if (invitationError || !invitation) {
@@ -57,7 +56,7 @@ export function useInvitationHandler() {
           toast({
             variant: "destructive",
             title: "Invalid invitation",
-            description: "This invitation link is invalid or has already been used.",
+            description: "This invitation link is invalid or no longer available.",
           });
           navigate('/dashboard', { replace: true });
           return;
@@ -90,10 +89,6 @@ export function useInvitationHandler() {
 
         if (existingMember) {
           console.log('User is already a member of this company');
-          toast({
-            title: "Already a member",
-            description: `You're already a member of ${(invitation.companies as any)?.name || 'this company'}`,
-          });
           
           // Mark invitation as accepted since user is already a member
           await supabase
@@ -101,56 +96,60 @@ export function useInvitationHandler() {
             .update({ accepted: true })
             .eq('id', invitationId);
             
+          toast({
+            title: "Welcome back!",
+            description: `You're already a member of ${(invitation.companies as any)?.name || 'this company'}`,
+          });
+          
           // Refresh companies to ensure we have the latest data
-          console.log('Refreshing user companies before switching...');
           await refreshUserCompanies();
           
-          // Wait a bit longer to ensure companies are refreshed
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Switch to this company and redirect
-          console.log('Switching to company:', invitation.company_id);
+          // Switch to this company
           switchCompany(invitation.company_id);
           
-          // Clear URL parameters and redirect with a delay
+          // Clear URL parameters and redirect
           setTimeout(() => {
             window.history.replaceState({}, '', '/dashboard');
-            window.location.reload();
-          }, 200);
+            navigate('/dashboard', { replace: true });
+          }, 500);
           return;
         }
 
-        console.log('Valid invitation found, accepting:', invitation);
+        // If invitation is not yet accepted, accept it
+        if (!invitation.accepted) {
+          console.log('Accepting invitation:', invitation);
 
-        // Accept the invitation
-        const result = await acceptInvitation(invitationId, user.id, [invitation]);
-        
-        if (result) {
-          console.log('Invitation accepted successfully');
-          setHasProcessedInvitation(true);
+          // Accept the invitation (this should create company membership)
+          const result = await acceptInvitation(invitationId, user.id, [invitation]);
           
-          // Refresh companies to get the newly joined company
-          console.log('Refreshing user companies after invitation acceptance...');
-          await refreshUserCompanies();
-          
-          // Wait longer to ensure companies are fully refreshed
-          await new Promise(resolve => setTimeout(resolve, 800));
-          
-          toast({
-            title: "Welcome to the team!",
-            description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
-          });
-          
-          // Switch to the new company
-          console.log('Switching to new company:', invitation.company_id);
-          switchCompany(invitation.company_id);
-          
-          // Force a page reload to ensure clean state after company switch
-          setTimeout(() => {
-            window.history.replaceState({}, '', '/dashboard');
-            window.location.reload();
-          }, 300);
+          if (result) {
+            console.log('Invitation accepted successfully');
+            setHasProcessedInvitation(true);
+            
+            toast({
+              title: "Welcome to the team!",
+              description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
+            });
+          }
         }
+
+        // Refresh companies to get the updated list
+        console.log('Refreshing user companies...');
+        await refreshUserCompanies();
+        
+        // Wait a bit to ensure companies are loaded
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Switch to the company
+        console.log('Switching to company:', invitation.company_id);
+        switchCompany(invitation.company_id);
+        
+        // Clear URL parameters and redirect
+        setTimeout(() => {
+          window.history.replaceState({}, '', '/dashboard');
+          navigate('/dashboard', { replace: true });
+        }, 500);
+        
       } catch (error) {
         console.error('Error processing invitation:', error);
         toast({
