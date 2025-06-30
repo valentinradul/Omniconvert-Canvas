@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, UserPlus, X, Edit } from 'lucide-react';
+import { Mail, UserPlus, X, Edit, Clock, AlertCircle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface PendingInvitationsProps {
   onInvitationResent?: () => void;
@@ -63,46 +64,73 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Pending Invitations Section */}
-      <Card>
+      {/* Pending Invitations Section - More prominent */}
+      <Card className={`${pendingInvitations.length > 0 ? 'border-orange-200 bg-orange-50/30' : ''}`}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Pending Invitations ({pendingInvitations.length})
+            Pending Invitations 
+            {pendingInvitations.length > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {pendingInvitations.length}
+              </Badge>
+            )}
           </CardTitle>
+          {pendingInvitations.length > 0 && (
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <AlertCircle className="h-4 w-4" />
+              These invitations are waiting for acceptance
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {pendingInvitations.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              No pending invitations
-            </p>
+            <div className="text-center py-8">
+              <Mail className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+              <p className="text-muted-foreground">No pending invitations</p>
+              <p className="text-sm text-muted-foreground">
+                All invited members have accepted their invitations
+              </p>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {pendingInvitations.map((invitation) => (
                 <div
                   key={invitation.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm"
                 >
                   <div className="flex items-center gap-3">
-                    <UserPlus className="h-4 w-4 text-muted-foreground" />
+                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-orange-600" />
+                    </div>
                     <div>
                       <p className="font-medium">{invitation.email}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Invited as <Badge variant="secondary" className="ml-1 capitalize">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>Invited as</span>
+                        <Badge variant="outline" className="capitalize">
                           {invitation.role}
                         </Badge>
-                      </p>
+                        <span>•</span>
+                        <span>
+                          {formatDistanceToNow(invitation.createdAt, { addSuffix: true })}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleUnsendInvitation(invitation.id, invitation.email)}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Cancel
-                    </Button>
+                    <Badge variant="outline" className="text-orange-600 border-orange-200">
+                      Pending
+                    </Badge>
+                    {canEditMembers && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleUnsendInvitation(invitation.id, invitation.email)}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Cancel
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -116,14 +144,18 @@ const PendingInvitations: React.FC<PendingInvitationsProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Current Members ({companyMembers.length})
+            Current Members 
+            <Badge variant="secondary" className="ml-2">
+              {companyMembers.length}
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {companyMembers.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              No members found
-            </p>
+            <div className="text-center py-8">
+              <UserPlus className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+              <p className="text-muted-foreground">No members found</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {companyMembers.map((member) => (

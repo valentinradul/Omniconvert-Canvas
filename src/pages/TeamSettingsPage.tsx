@@ -39,6 +39,10 @@ const TeamSettingsPage: React.FC = () => {
   // Function to handle invitation sent and refresh pending invitations
   const handleInvitationSent = () => {
     refreshPendingInvitations();
+    toast({
+      title: "Invitation sent!",
+      description: "The invitation has been sent and will appear in pending invitations below."
+    });
   };
 
   // Function to handle manual refresh
@@ -67,13 +71,7 @@ const TeamSettingsPage: React.FC = () => {
       </div>
 
       <div className="space-y-6 mt-8">
-        {/* PendingInvitations with manual refresh and edit functionality */}
-        <PendingInvitations 
-          onInvitationResent={refreshPendingInvitations} 
-          onEditMember={handleEditMember}
-        />
-        
-        {/* Invite New Member Section - Centered and Compact */}
+        {/* Invite New Member Section */}
         <div className="flex justify-center">
           <div className="w-full max-w-md">
             <div className="text-center space-y-3">
@@ -93,6 +91,12 @@ const TeamSettingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* PendingInvitations with manual refresh and edit functionality */}
+        <PendingInvitations 
+          onInvitationResent={refreshPendingInvitations} 
+          onEditMember={handleEditMember}
+        />
         
         <InviteMemberDialog 
           open={showInviteDialog} 
