@@ -39,6 +39,7 @@ export interface CompanyInvitation {
   accepted: boolean;
   invitedBy: string;
   createdAt: Date;
+  companyName?: string; // Add the missing companyName property
 }
 
 // Extended type for observation content that supports text, URLs, and images
