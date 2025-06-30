@@ -12,7 +12,7 @@ import CompanyInvitations from "@/components/company/CompanyInvitations";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { companyInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany } = useCompany();
+  const { companyInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
   
   // Initialize hooks with proper parameters
   const { experiments } = useExperiments(user, currentCompany);
@@ -25,14 +25,15 @@ const Dashboard: React.FC = () => {
 
   // Log dashboard data for debugging
   useEffect(() => {
-    console.log('Dashboard - Ideas count:', ideas.length);
-    console.log('Dashboard - Hypotheses count:', hypotheses.length);
-    console.log('Dashboard - Experiments count:', experiments.length);
-    console.log('Dashboard - Company invitations:', companyInvitations.length);
-    console.log('Dashboard - User email:', user?.email);
-    console.log('Dashboard - Current company:', currentCompany?.name);
-    console.log('Dashboard - All invitations:', companyInvitations);
-  }, [ideas.length, hypotheses.length, experiments.length, companyInvitations.length, user?.email, currentCompany, companyInvitations]);
+    console.log('📊 Dashboard - Ideas count:', ideas.length);
+    console.log('📊 Dashboard - Hypotheses count:', hypotheses.length);
+    console.log('📊 Dashboard - Experiments count:', experiments.length);
+    console.log('📊 Dashboard - Company invitations:', companyInvitations.length);
+    console.log('📊 Dashboard - User email:', user?.email);
+    console.log('📊 Dashboard - Current company:', currentCompany?.name, 'ID:', currentCompany?.id);
+    console.log('📊 Dashboard - All companies:', companies.map(c => ({ id: c.id, name: c.name })));
+    console.log('📊 Dashboard - All invitations:', companyInvitations);
+  }, [ideas.length, hypotheses.length, experiments.length, companyInvitations.length, user?.email, currentCompany, companyInvitations, companies]);
 
   // Calculate hypothesis statistics by status
   const hypothesesByStatus = hypotheses.reduce((acc, hypothesis) => {
@@ -41,7 +42,7 @@ const Dashboard: React.FC = () => {
     return acc;
   }, {} as Record<string, number>);
 
-  console.log('Dashboard - Hypothesis by status:', hypothesesByStatus);
+  console.log('📊 Dashboard - Hypothesis by status:', hypothesesByStatus);
 
   // Filter data based on search query
   const filteredIdeas = ideas.filter(idea => 
@@ -69,13 +70,13 @@ const Dashboard: React.FC = () => {
     : 0;
 
   const handleInvitationAccepted = () => {
-    console.log('Invitation accepted - refreshing data');
+    console.log('🎉 Invitation accepted - refreshing data');
     refreshUserCompanies();
     refreshCompanyMembers();
   };
 
   const handleInvitationDeclined = () => {
-    console.log('Invitation declined - refreshing data');
+    console.log('❌ Invitation declined - refreshing data');
     // No need to refresh company data, just remove the invitation from view
   };
 
@@ -96,6 +97,20 @@ const Dashboard: React.FC = () => {
         <p className="text-gray-600 mt-2">
           Welcome to your experiment management dashboard
         </p>
+        
+        {/* Debug Info for Company Access Issues */}
+        <div className="bg-muted/50 p-4 rounded-lg text-sm mt-4 border">
+          <p><strong>🔍 Company Access Debug Info:</strong></p>
+          <p>User Email: {user?.email || 'Not available'}</p>
+          <p>User ID: {user?.id || 'Not available'}</p>
+          <p>Total Companies: {companies.length}</p>
+          <p>Current Company: {currentCompany?.name || 'None selected'} (ID: {currentCompany?.id || 'N/A'})</p>
+          <p>Available Companies: {companies.map(c => `${c.name} (${c.id})`).join(', ') || 'None'}</p>
+          <p>Pending Invitations: {companyInvitations.length}</p>
+          {companyInvitations.length > 0 && (
+            <p>Invitation Details: {companyInvitations.map(inv => `${inv.companyName} - ${inv.email}`).join(', ')}</p>
+          )}
+        </div>
       </div>
 
       {/* Company Invitations - show if user has any invitations */}

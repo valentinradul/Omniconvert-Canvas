@@ -1,10 +1,9 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
 
 // Load user companies - enhanced to ensure all accessible companies are loaded
 export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
-  console.log('Loading companies for user:', userId);
+  console.log('🔍 Loading companies for user:', userId);
   
   try {
     // Get all companies the user is a member of
@@ -23,21 +22,33 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
       .eq('user_id', userId);
 
     if (memberError) {
-      console.error('Error loading user companies:', memberError);
+      console.error('❌ Error loading user companies:', memberError);
       throw memberError;
     }
 
-    console.log('Raw member data:', memberData);
+    console.log('📊 Raw member data from company_members table:', memberData);
 
     if (!memberData || memberData.length === 0) {
-      console.log('No companies found for user - checking for accepted invitations...');
+      console.log('⚠️ No companies found for user - checking for accepted invitations...');
+      
+      // Get user email to check invitations
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user?.email) {
+        console.error('❌ Could not get user email:', userError);
+        return [];
+      }
+
+      const userEmail = userData.user.email;
+      console.log('📧 User email for invitation check:', userEmail);
       
       // Check if user has accepted invitations that haven't been converted to memberships yet
-      const { data: acceptedInvitations } = await supabase
+      const { data: acceptedInvitations, error: invitationError } = await supabase
         .from('company_invitations')
         .select(`
           company_id,
           role,
+          accepted,
+          email,
           companies (
             id,
             name,
@@ -45,14 +56,22 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
             created_at
           )
         `)
-        .eq('email', (await supabase.auth.getUser()).data.user?.email || '')
+        .eq('email', userEmail)
         .eq('accepted', true);
 
+      if (invitationError) {
+        console.error('❌ Error checking accepted invitations:', invitationError);
+      } else {
+        console.log('📋 Accepted invitations found:', acceptedInvitations);
+      }
+
       if (acceptedInvitations && acceptedInvitations.length > 0) {
-        console.log('Found accepted invitations without memberships, creating memberships...');
+        console.log('🔄 Found accepted invitations without memberships, creating memberships...');
         
         // Create missing memberships for accepted invitations
         for (const invitation of acceptedInvitations) {
+          console.log('➕ Creating membership for company:', invitation.company_id, 'with role:', invitation.role);
+          
           const { error: insertError } = await supabase
             .from('company_members')
             .insert({
@@ -62,14 +81,39 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
             });
             
           if (insertError) {
-            console.error('Error creating membership from invitation:', insertError);
+            console.error('❌ Error creating membership from invitation:', insertError);
           } else {
-            console.log('Created membership for company:', invitation.company_id);
+            console.log('✅ Created membership for company:', invitation.company_id);
           }
         }
         
         // Retry loading companies after creating memberships
+        console.log('🔄 Retrying company load after creating memberships...');
         return await loadUserCompanies(userId);
+      }
+      
+      // Also check for unaccepted invitations
+      const { data: pendingInvitations, error: pendingError } = await supabase
+        .from('company_invitations')
+        .select(`
+          company_id,
+          role,
+          accepted,
+          email,
+          companies (
+            id,
+            name,
+            created_by,
+            created_at
+          )
+        `)
+        .eq('email', userEmail)
+        .eq('accepted', false);
+
+      if (pendingError) {
+        console.error('❌ Error checking pending invitations:', pendingError);
+      } else {
+        console.log('📨 Pending invitations found:', pendingInvitations);
       }
       
       return [];
@@ -77,9 +121,13 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
 
     // Transform the data to match our Company type
     const companies: Company[] = memberData
-      .filter(member => member.companies) // Filter out any null companies
+      .filter(member => {
+        console.log('🔍 Processing member data:', member);
+        return member.companies;
+      })
       .map(member => {
         const company = member.companies as any;
+        console.log('🏢 Transforming company:', company);
         return {
           id: company.id,
           name: company.name,
@@ -88,10 +136,10 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
         };
       });
 
-    console.log('Transformed companies:', companies);
+    console.log('✅ Final transformed companies:', companies);
     return companies;
   } catch (error) {
-    console.error('Error in loadUserCompanies:', error);
+    console.error('💥 Error in loadUserCompanies:', error);
     throw error;
   }
 };
