@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -43,14 +44,19 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Extracted fields:", { email, companyName, inviterName, role, invitationId });
 
-    if (!email || !companyName) {
-      console.error("Missing required fields:", { email, companyName });
-      throw new Error("Missing required fields: email and companyName are required");
+    if (!email || !companyName || !invitationId) {
+      console.error("Missing required fields:", { email, companyName, invitationId });
+      throw new Error("Missing required fields: email, companyName, and invitationId are required");
     }
 
     const roleName = role.charAt(0).toUpperCase() + role.slice(1);
     const sender = inviterName || "Someone";
     const appUrl = "https://experiment-flow-hub.lovable.app";
+    
+    // Create invitation URLs with the invitation ID
+    const signupUrl = `${appUrl}/signup?invitation=${invitationId}`;
+    const loginUrl = `${appUrl}/login?invitation=${invitationId}`;
+    
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
     // Enhanced API key logging
@@ -91,13 +97,16 @@ const handler = async (req: Request): Promise<Response> => {
             ${sender} has invited you to join <strong>${companyName}</strong> as a <strong>${roleName}</strong>.
           </p>
           <div style="margin: 30px 0;">
-            <a href="${appUrl}/signup" 
-               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            <a href="${signupUrl}" 
+               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; margin-right: 10px;">
               Create Account & Join Team
             </a>
           </div>
-          <p style="font-size: 14px; color: #777; margin-top: 30px;">
-            If you already have an account, you can sign in and check your invitations.
+          <p style="font-size: 14px; color: #777; margin-top: 20px;">
+            Already have an account? <a href="${loginUrl}" style="color: #2563eb; text-decoration: none;">Sign in here</a> to accept your invitation.
+          </p>
+          <p style="font-size: 12px; color: #999; margin-top: 30px;">
+            This invitation link is unique to you and cannot be shared with others.
           </p>
         </div>
       `,

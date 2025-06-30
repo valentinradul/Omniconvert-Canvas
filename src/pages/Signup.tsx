@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useInvitationHandler } from "@/hooks/useInvitationHandler";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -32,29 +33,73 @@ const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signup, isAuthenticated, isLoading } = useAuth();
+  const { invitationId, isProcessingInvitation } = useInvitationHandler();
+  const [invitationDetails, setInvitationDetails] = useState<any>(null);
   
-  // Redirect if already authenticated
+  // Load invitation details if invitation ID is present
+  useEffect(() => {
+    const loadInvitationDetails = async () => {
+      if (!invitationId) return;
+      
+      try {
+        const { data: invitation, error } = await supabase
+          .from('company_invitations')
+          .select(`
+            id,
+            email,
+            role,
+            companies (
+              name
+            )
+          `)
+          .eq('id', invitationId)
+          .eq('accepted', false)
+          .single();
+          
+        if (!error && invitation) {
+          setInvitationDetails(invitation);
+        }
+      } catch (error) {
+        console.error('Error loading invitation details:', error);
+      }
+    };
+    
+    loadInvitationDetails();
+  }, [invitationId]);
+  
+  // Redirect if already authenticated (invitation will be handled by the hook)
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      navigate("/dashboard");
+      if (!invitationId) {
+        navigate("/dashboard");
+      }
+      // If there's an invitation, let the hook handle it
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, invitationId]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      email: "",
+      email: invitationDetails?.email || "",
       password: "",
       confirmPassword: "",
     },
   });
+  
+  // Update form email when invitation details are loaded
+  useEffect(() => {
+    if (invitationDetails?.email) {
+      form.setValue('email', invitationDetails.email);
+    }
+  }, [invitationDetails, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       await signup(values.email, values.password, values.name);
       // Clear the form after successful signup
       form.reset();
+      // The invitation will be handled automatically by the useInvitationHandler hook after auth
     } catch (error) {
       // Error is handled in the auth context
       console.error("Signup submission error:", error);
@@ -63,10 +108,14 @@ const Signup = () => {
 
   const handleGoogleSignup = async () => {
     try {
+      const redirectTo = invitationId 
+        ? `${window.location.origin}/dashboard?invitation=${invitationId}`
+        : `${window.location.origin}/dashboard`;
+        
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo
         }
       });
       
@@ -98,6 +147,18 @@ const Signup = () => {
       </div>
     );
   }
+  
+  // Show processing state when handling invitation
+  if (isProcessingInvitation) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="mb-4">Processing your invitation...</div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -108,10 +169,26 @@ const Signup = () => {
             Back to Homepage
           </Link>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">Create your account</h2>
+        
+        {invitationDetails && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-800 mb-1">You're invited!</h3>
+            <p className="text-sm text-blue-600">
+              Join <strong>{(invitationDetails.companies as any)?.name}</strong> as a{' '}
+              <strong>{invitationDetails.role}</strong>
+            </p>
+          </div>
+        )}
+        
+        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+          {invitationDetails ? 'Create your account to join the team' : 'Create your account'}
+        </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+          <Link 
+            to={invitationId ? `/login?invitation=${invitationId}` : "/login"} 
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
             Sign in
           </Link>
         </p>
@@ -146,6 +223,7 @@ const Signup = () => {
                         type="email" 
                         placeholder="you@example.com" 
                         autoComplete="email" 
+                        disabled={!!invitationDetails?.email}
                         {...field} 
                       />
                     </FormControl>
