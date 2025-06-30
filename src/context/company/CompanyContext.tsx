@@ -138,12 +138,14 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       localStorage.removeItem('userCompanies');
       
       console.log('📊 CompanyContext: Fetching companies for authenticated user');
-      // Fetch user companies and invitations
-      fetchUserCompanies();
-      if (user.email) {
-        console.log('📧 CompanyContext: Fetching invitations for email:', user.email);
-        fetchUserInvitations(user.email);
-      }
+      // Add delay to ensure auth state is fully settled
+      setTimeout(() => {
+        fetchUserCompanies();
+        if (user.email) {
+          console.log('📧 CompanyContext: Fetching invitations for email:', user.email);
+          fetchUserInvitations(user.email);
+        }
+      }, 100);
     } else {
       // Clear all state when user logs out
       setCompanies([]);

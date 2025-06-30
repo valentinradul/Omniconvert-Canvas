@@ -98,18 +98,33 @@ const Dashboard: React.FC = () => {
           Welcome to your experiment management dashboard
         </p>
         
-        {/* Debug Info for Company Access Issues */}
-        <div className="bg-muted/50 p-4 rounded-lg text-sm mt-4 border">
-          <p><strong>🔍 Company Access Debug Info:</strong></p>
+        {/* Enhanced Debug Info for Company Access Issues */}
+        <div className="bg-red-50 border border-red-200 p-4 rounded-lg text-sm mt-4">
+          <p><strong>🔍 DETAILED Company Access Debug Info:</strong></p>
           <p>User Email: {user?.email || 'Not available'}</p>
           <p>User ID: {user?.id || 'Not available'}</p>
-          <p>Total Companies: {companies.length}</p>
+          <p>Total Companies Available: {companies.length}</p>
           <p>Current Company: {currentCompany?.name || 'None selected'} (ID: {currentCompany?.id || 'N/A'})</p>
-          <p>Available Companies: {companies.map(c => `${c.name} (${c.id})`).join(', ') || 'None'}</p>
+          <p>Available Companies: {companies.length > 0 ? companies.map(c => `${c.name} (${c.id})`).join(', ') : 'None'}</p>
           <p>Pending Invitations: {companyInvitations.length}</p>
           {companyInvitations.length > 0 && (
-            <p>Invitation Details: {companyInvitations.map(inv => `${inv.companyName} - ${inv.email}`).join(', ')}</p>
+            <div className="mt-2">
+              <p><strong>Invitation Details:</strong></p>
+              {companyInvitations.map(inv => (
+                <div key={inv.id} className="ml-4 text-xs bg-white p-2 rounded border mt-1">
+                  <p>• Company: {inv.companyName || 'Unknown'} (ID: {inv.companyId})</p>
+                  <p>• Email: {inv.email}</p>
+                  <p>• Role: {inv.role}</p>
+                  <p>• Accepted: {inv.accepted ? 'Yes' : 'No'}</p>
+                  <p>• Created: {inv.createdAt.toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
           )}
+          <div className="mt-2 text-xs text-red-600">
+            <p><strong>Expected Behavior:</strong> User with email "marketing@omniconvert.com" should see "Omniconvert" company in their dashboard.</p>
+            <p><strong>Check Console:</strong> Look for detailed logs in browser console to trace the issue.</p>
+          </div>
         </div>
       </div>
 
