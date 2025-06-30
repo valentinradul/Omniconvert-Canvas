@@ -36,12 +36,14 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     return null;
   }
 
-  // Filter invitations for current user's email - be more lenient with filtering
+  // Filter invitations for current user's email
   const userInvitations = invitations.filter(inv => {
     if (!user?.email || !inv.email) return false;
     const userEmailLower = user.email.toLowerCase().trim();
     const invEmailLower = inv.email.toLowerCase().trim();
-    return userEmailLower === invEmailLower;
+    const match = userEmailLower === invEmailLower;
+    console.log('Invitation email match:', { userEmail: userEmailLower, invEmail: invEmailLower, match });
+    return match;
   });
 
   console.log('Filtered user invitations:', { 
@@ -70,7 +72,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
         console.log('Invitation accepted successfully, calling callback');
         onInvitationAccepted();
         
-        // Force refresh company data after acceptance
+        // Force refresh after acceptance to show new company data
         setTimeout(() => {
           window.location.reload();
         }, 1000);

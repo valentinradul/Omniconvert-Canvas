@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,8 +24,7 @@ export function useInvitations() {
     setIsProcessing(true);
     
     try {
-      // Get invitation data from database - we don't need to verify user email here
-      // since we're filtering invitations properly in the component
+      // Get invitation data from database
       const { data: invitation, error: invitationError } = await supabase
         .from('company_invitations')
         .select('*')
@@ -61,7 +59,7 @@ export function useInvitations() {
       
       console.log('Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
       
-      // Add user to company members
+      // Add user to company members - this should now work with the new policy
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({

@@ -20,6 +20,7 @@ export const useCompanyData = (userId: string | undefined) => {
     
     try {
       const companiesData = await loadUserCompanies(userId);
+      console.log('Loaded user companies:', companiesData);
       setCompanies(companiesData);
     } catch (error) {
       console.error('Error loading companies:', error);
@@ -32,6 +33,7 @@ export const useCompanyData = (userId: string | undefined) => {
   const fetchUserInvitations = async (userEmail: string) => {
     try {
       const invitationsData = await loadUserInvitations(userEmail);
+      console.log('Loaded user invitations:', invitationsData);
       setCompanyInvitations(invitationsData);
     } catch (error) {
       console.error('Error loading invitations:', error);
@@ -44,6 +46,7 @@ export const useCompanyData = (userId: string | undefined) => {
     
     try {
       const role = await loadUserRole(userId, currentCompany.id);
+      console.log('Loaded user role:', role);
       setUserCompanyRole(role);
     } catch (error) {
       console.error('Error loading user role:', error);
@@ -56,6 +59,7 @@ export const useCompanyData = (userId: string | undefined) => {
     
     try {
       const members = await loadCompanyMembers(currentCompany.id);
+      console.log('Loaded company members:', members);
       setCompanyMembers(members);
     } catch (error) {
       console.error('Error loading company members:', error);
@@ -68,6 +72,7 @@ export const useCompanyData = (userId: string | undefined) => {
     
     try {
       const invitations = await loadCompanyInvitations(currentCompany.id);
+      console.log('Loaded pending invitations:', invitations);
       setPendingInvitations(invitations);
     } catch (error) {
       console.error('Error loading pending invitations:', error);
@@ -78,6 +83,7 @@ export const useCompanyData = (userId: string | undefined) => {
   const switchCompany = (companyId: string) => {
     const company = companies.find(c => c.id === companyId);
     if (company) {
+      console.log('Switching to company:', company.name);
       setCurrentCompany(company);
       localStorage.setItem('currentCompanyId', company.id);
     }
