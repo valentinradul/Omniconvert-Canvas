@@ -38,20 +38,15 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     return null;
   }
 
-  // Filter invitations for current user's email - be more lenient with matching
+  // Filter invitations for current user's email with better matching
   const userInvitations = invitations.filter(invitation => {
-    if (!invitation || !invitation.email || !user.email) {
-      return false;
-    }
-    
-    const invitationEmail = invitation.email.toLowerCase().trim();
-    const userEmail = user.email.toLowerCase().trim();
+    const invitationEmail = invitation.email?.toLowerCase().trim();
+    const userEmail = user.email?.toLowerCase().trim();
     
     console.log('🔍 Email comparison:', { 
       invitationEmail, 
       userEmail, 
-      matches: invitationEmail === userEmail,
-      invitation: invitation
+      matches: invitationEmail === userEmail 
     });
     
     return invitationEmail === userEmail;
@@ -63,6 +58,13 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     userSpecificInvitations: userInvitations.length,
     userInvitations 
   });
+
+  // Show debug info if we have invitations but none match the user
+  if (invitations.length > 0 && userInvitations.length === 0) {
+    console.log('⚠️ Invitations exist but none match user email');
+    console.log('📋 All invitation emails:', invitations.map(inv => inv.email));
+    console.log('👤 User email:', user.email);
+  }
 
   // Don't show if no invitations for this user
   if (userInvitations.length === 0) {
@@ -91,11 +93,11 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
           onInvitationAccepted();
         }
         
-        // Small delay then refresh the page to ensure fresh state
+        // Force a small delay then reload to ensure fresh state
         setTimeout(() => {
           console.log('🔄 Reloading page to show fresh company data');
           window.location.reload();
-        }, 1500);
+        }, 1000);
       }
     } catch (error) {
       console.error('❌ Error in handleAccept:', error);
@@ -119,7 +121,6 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
   // Safe date formatting function
   const formatInvitationDate = (dateString: string) => {
     try {
-      if (!dateString) return 'Recently';
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
         console.warn('⚠️ Invalid date string:', dateString);

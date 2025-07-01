@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
 
@@ -63,7 +64,7 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
       console.log('📋 All invitations found for user email:', userInvitations);
       
       if (userInvitations && userInvitations.length > 0) {
-        console.log('🔄 Processing invitations for automatic company access...');
+        console.log('🔄 Processing invitations...');
         
         // Process each invitation
         for (const invitation of userInvitations) {
@@ -78,7 +79,6 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
             console.log('➕ Creating membership for company:', invitation.company_id);
             
             // Check if someone is already an owner of this company (due to new constraint)
-            let roleToAssign = invitation.role;
             if (invitation.role === 'owner') {
               const { data: existingOwner } = await supabase
                 .from('company_members')
@@ -89,7 +89,7 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
                 
               if (existingOwner) {
                 console.log('⚠️ Company already has an owner, assigning admin role instead');
-                roleToAssign = 'admin';
+                invitation.role = 'admin';
               }
             }
             
@@ -99,7 +99,7 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
               .insert({
                 user_id: userId,
                 company_id: invitation.company_id,
-                role: roleToAssign
+                role: invitation.role
               });
               
             if (insertError) {
@@ -126,7 +126,7 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
                 if (!memberData) memberData = [];
                 memberData.push({
                   company_id: invitation.company_id,
-                  role: roleToAssign,
+                  role: invitation.role,
                   companies: invitation.companies
                 });
               }
@@ -182,7 +182,7 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
   }
 };
 
-// Load user invitations with better email matching and more detailed logging
+// Load user invitations with better email matching
 export const loadUserInvitations = async (userEmail: string): Promise<CompanyInvitation[]> => {
   console.log('📧 Loading invitations for email:', userEmail);
   
@@ -203,17 +203,17 @@ export const loadUserInvitations = async (userEmail: string): Promise<CompanyInv
         )
       `)
       .ilike('email', userEmail) // Use ilike for case-insensitive matching
-      .eq('accepted', false); // Only get pending invitations
+      .eq('accepted', false);
 
     if (error) {
       console.error('❌ Error loading invitations:', error);
       throw error;
     }
 
-    console.log('📋 Raw invitation data from database:', data);
+    console.log('📋 Raw invitation data:', data);
 
     if (!data || data.length === 0) {
-      console.log('ℹ️ No pending invitations found for user email:', userEmail);
+      console.log('ℹ️ No pending invitations found for user');
       return [];
     }
 
@@ -229,7 +229,7 @@ export const loadUserInvitations = async (userEmail: string): Promise<CompanyInv
       companyName: (invitation.companies as any)?.name || 'Unknown Company'
     }));
 
-    console.log('✅ Transformed invitations for dashboard:', invitations);
+    console.log('✅ Transformed invitations:', invitations);
     return invitations;
   } catch (error) {
     console.error('💥 Error in loadUserInvitations:', error);

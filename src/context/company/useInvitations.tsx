@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,9 +45,6 @@ export function useInvitations() {
       
       console.log('✅ Found valid invitation:', invitation);
       
-      // Initialize roleToAssign with the invitation role
-      let roleToAssign = invitation.role;
-      
       // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
         .from('company_members')
@@ -80,28 +78,13 @@ export function useInvitations() {
       } else {
         console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
         
-        // Check if someone is already an owner of this company (due to constraint)
-        if (invitation.role === 'owner') {
-          const { data: existingOwner } = await supabase
-            .from('company_members')
-            .select('id')
-            .eq('company_id', invitation.company_id)
-            .eq('role', 'owner')
-            .maybeSingle();
-            
-          if (existingOwner) {
-            console.log('⚠️ Company already has an owner, assigning admin role instead');
-            roleToAssign = 'admin';
-          }
-        }
-        
         // Add user to company members
         const { error: memberError } = await supabase
           .from('company_members')
           .insert({
             company_id: invitation.company_id,
             user_id: userId,
-            role: roleToAssign
+            role: invitation.role
           });
           
         if (memberError) {
@@ -121,8 +104,6 @@ export function useInvitations() {
       if (updateError) {
         console.error('❌ Error updating invitation status:', updateError);
         console.warn('⚠️ Failed to mark invitation as accepted, but user was added to company');
-      } else {
-        console.log('✅ Successfully marked invitation as accepted');
       }
       
       const company: Company = {
@@ -140,10 +121,10 @@ export function useInvitations() {
       
       toast({
         title: "Welcome to the team!",
-        description: `You are now a ${roleToAssign} of ${company.name}`,
+        description: `You are now a ${invitation.role} of ${company.name}`,
       });
       
-      return { company, invitationId, role: roleToAssign };
+      return { company, invitationId, role: invitation.role };
     } catch (error: any) {
       console.error('❌ Error accepting invitation:', error);
       

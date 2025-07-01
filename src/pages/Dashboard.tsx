@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useCompany } from "@/context/company/CompanyContext";
 import { useAuth } from "@/context/AuthContext";
@@ -12,7 +13,7 @@ import { useInvitationHandler } from "@/hooks/useInvitationHandler";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { userIncomingInvitations, companyInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
+  const { userIncomingInvitations,companyInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
   
   // Use the invitation handler to process any invitation in the URL
   const { invitationId, isProcessingInvitation } = useInvitationHandler();
