@@ -38,25 +38,19 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     return null;
   }
 
-  // Filter invitations for current user's email
-  const userInvitations = invitations.filter(inv => {
-    if (!user?.email || !inv.email) return false;
-    const userEmailLower = user.email.toLowerCase().trim();
-    const invEmailLower = inv.email.toLowerCase().trim();
-    const match = userEmailLower === invEmailLower;
-    console.log('Invitation email match:', { userEmail: userEmailLower, invEmail: invEmailLower, match });
-    return match;
-  });
+  // The invitations are already filtered by the context, so we don't need to filter again
+  // Just use the invitations passed as props
+  const userInvitations = invitations;
 
-  console.log('Filtered user invitations:', { 
+  console.log('Using invitations directly from props:', { 
     userEmail: user?.email,
-    filteredCount: userInvitations.length,
+    invitationsCount: userInvitations.length,
     userInvitations 
   });
 
-  // Don't show if no invitations for this user
+  // Don't show if no invitations
   if (userInvitations.length === 0) {
-    console.log('No invitations for user, not showing component');
+    console.log('No invitations to show');
     return null;
   }
 
