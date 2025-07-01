@@ -33,12 +33,12 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
   });
 
   // Don't show if user not authenticated
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated || !user?.email) {
     console.log('❌ User not authenticated, not showing invitations');
     return null;
   }
 
-  // Filter invitations for current user's email with better matching
+  // Filter invitations for current user's email - more robust matching
   const userInvitations = invitations.filter(invitation => {
     const invitationEmail = invitation.email?.toLowerCase().trim();
     const userEmail = user.email?.toLowerCase().trim();
@@ -47,10 +47,11 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
       invitationEmail, 
       userEmail, 
       matches: invitationEmail === userEmail,
-      invitationId: invitation.id
+      invitationId: invitation.id,
+      accepted: invitation.accepted
     });
     
-    // Only show non-accepted invitations
+    // Only show non-accepted invitations that match user's email
     return invitationEmail === userEmail && !invitation.accepted;
   });
 
@@ -80,7 +81,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
       if (result) {
         console.log('🎉 Invitation accepted successfully, refreshing company data');
         
-        // Refresh company data through context
+        // Refresh company data
         await refreshUserCompanies();
         
         // Call the callback if provided
@@ -88,11 +89,11 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
           onInvitationAccepted();
         }
         
-        // Force a small delay then reload to ensure fresh state
+        // Small delay then reload to ensure fresh state
         setTimeout(() => {
           console.log('🔄 Reloading page to show fresh company data');
           window.location.reload();
-        }, 1000);
+        }, 1500);
       }
     } catch (error) {
       console.error('❌ Error in handleAccept:', error);

@@ -2,13 +2,12 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Company, CompanyRole } from '@/types';
 
 export function useInvitations() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // Accept invitation function with enhanced company access
+  // Accept invitation function
   const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
     console.log('🚀 Starting invitation acceptance process:', { invitationId, userId });
     
@@ -25,7 +24,7 @@ export function useInvitations() {
     setIsProcessing(true);
     
     try {
-      // Get invitation data from database
+      // Get invitation data from database to ensure we have the latest info
       const { data: invitation, error: invitationError } = await supabase
         .from('company_invitations')
         .select(`
@@ -40,7 +39,7 @@ export function useInvitations() {
         .single();
         
       if (invitationError || !invitation) {
-        console.error('❌ Invitation not found or invalid:', invitationError);
+        console.error('❌ Invitation not found or already accepted:', invitationError);
         throw new Error("Invitation not found or already used");
       }
       
@@ -107,16 +106,12 @@ export function useInvitations() {
         console.warn('⚠️ Failed to mark invitation as accepted, but user was added to company');
       }
       
-      const company: Company = {
+      const company = {
         id: invitation.company_id,
         name: (invitation.companies as any)?.name || 'Unknown Company',
         createdAt: new Date(),
         createdBy: invitation.invited_by
       };
-      
-      // Clear cached data and ensure fresh state
-      localStorage.removeItem('userCompanies');
-      localStorage.setItem('currentCompanyId', company.id);
       
       console.log('🎉 Successfully processed invitation acceptance');
       
