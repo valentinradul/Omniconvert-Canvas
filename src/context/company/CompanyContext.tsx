@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -88,51 +87,29 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     console.log('🚀 CompanyContext: Starting invitation acceptance process');
     
     try {
-      const result = await baseAcceptInvitation(invitationId);
+      await baseAcceptInvitation(invitationId);
       
-      if (result) {
-        console.log('🔄 CompanyContext: Invitation accepted, performing comprehensive refresh');
-        
-        // Clear localStorage to force fresh data
-        localStorage.removeItem('userCompanies');
-        localStorage.removeItem('currentCompanyId');
-        
-        // Refresh user companies first
-        await fetchUserCompanies();
-        
-        // Refresh user incoming invitations to remove the accepted one
-        if (user?.email) {
-          await fetchUserIncomingInvitations(user.email);
-        }
-        
-        // Find the newly joined company and switch to it immediately
-        const newCompany = result.company;
-        console.log('🎯 CompanyContext: Switching to newly joined company:', newCompany.name);
-        
-        // Add the new company to the companies list if not already there
-        setCompanies(prevCompanies => {
-          const exists = prevCompanies.find(c => c.id === newCompany.id);
-          if (!exists) {
-            return [...prevCompanies, newCompany];
-          }
-          return prevCompanies;
-        });
-        
-        // Switch to the new company immediately
-        setCurrentCompany(newCompany);
-        setUserCompanyRole(result.role as CompanyRole);
-        localStorage.setItem('currentCompanyId', newCompany.id);
-        
-        // Force a complete refresh after a short delay to ensure everything is updated
-        setTimeout(async () => {
-          console.log('🔄 CompanyContext: Final refresh for new company data');
-          await fetchCompanyMembers();
-          await fetchUserRole();
-          await fetchPendingInvitations();
-        }, 100);
-        
-        console.log('✅ CompanyContext: Invitation acceptance process completed');
+      console.log('🔄 CompanyContext: Invitation accepted, performing comprehensive refresh');
+      
+      // Clear localStorage to force fresh data
+      localStorage.removeItem('userCompanies');
+      localStorage.removeItem('currentCompanyId');
+      
+      // Refresh user companies first
+      await fetchUserCompanies();
+      
+      // Refresh user incoming invitations to remove the accepted one
+      if (user?.email) {
+        await fetchUserIncomingInvitations(user.email);
       }
+      
+      // Add a small delay to ensure database changes are committed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Refresh companies again to get the latest data
+      await fetchUserCompanies();
+      
+      console.log('✅ CompanyContext: Invitation acceptance process completed');
     } catch (error) {
       console.error('❌ CompanyContext: Error in acceptInvitation:', error);
       throw error;
@@ -277,4 +254,3 @@ export const useCompany = (): CompanyContextType => {
   }
   return context;
 };
-
