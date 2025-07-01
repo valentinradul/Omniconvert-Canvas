@@ -106,7 +106,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Company Invitations - Always show if there are invitations */}
-      <p>company invitaion:</p>
+      
       <CompanyInvitations 
         invitations={userIncomingInvitations}
         onInvitationAccepted={handleInvitationAccepted}
