@@ -11,6 +11,7 @@ import StatisticsChart from "@/components/dashboard/StatisticsChart";
 import CompanyInvitations from "@/components/company/CompanyInvitations";
 import { useInvitationHandler } from "@/hooks/useInvitationHandler";
 import { supabase } from '@/integrations/supabase/client';
+
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { userIncomingInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
@@ -26,59 +27,52 @@ const Dashboard: React.FC = () => {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
-const loadUserInvitations = async (userEmail: string): Promise<any[]> => {
-  console.log('📧 Loading invitations for email:', userEmail);
   
-  try {
-    const { data, error } = await supabase
-      .from('company_invitations')
-      .select(`
-        id,
-        company_id,
-        email,
-        role,
-        accepted,
-        created_at,
-        invited_by,
-        companies (
+  // Testing state for debugging invitations
+  const [testInvitations, setTestInvitations] = useState<any[]>([]);
+
+  // Test function to manually load invitations
+  const testLoadInvitations = async () => {
+    if (!user?.email) {
+      console.log('❌ No user email for testing invitations');
+      return;
+    }
+
+    console.log('🧪 TESTING: Loading invitations directly for email:', user.email);
+    
+    try {
+      const { data, error } = await supabase
+        .from('company_invitations')
+        .select(`
           id,
-          name
-        )
-      `)
-      .ilike('email', userEmail) // Use ilike for case-insensitive matching
-      .eq('accepted', false);
-    console.log("_____________________________________________________________________________________________")
-    if (error) {
-      console.error('❌ Error loading invitations:', error);
-      throw error;
+          company_id,
+          email,
+          role,
+          accepted,
+          created_at,
+          invited_by,
+          companies (
+            id,
+            name
+          )
+        `)
+        .ilike('email', user.email)
+        .eq('accepted', false);
+
+      if (error) {
+        console.error('❌ TESTING: Error loading invitations:', error);
+        return;
+      }
+
+      console.log('🧪 TESTING: Direct query results:', data);
+      console.log('🧪 TESTING: Number of invitations found:', data?.length || 0);
+      
+      setTestInvitations(data || []);
+    } catch (error) {
+      console.error('💥 TESTING: Error in testLoadInvitations:', error);
     }
+  };
 
-    console.log('📋 Raw invitation data:', data);
-
-    if (!data || data.length === 0) {
-      console.log('ℹ️ No pending invitations found for user');
-      return [];
-    }
-
-    // Transform the data
-    const invitations: any[] = data.map(invitation => ({
-      id: invitation.id,
-      companyId: invitation.company_id,
-      email: invitation.email,
-      role: invitation.role ,
-      accepted: invitation.accepted,
-      createdAt: new Date(invitation.created_at),
-      invitedBy: invitation.invited_by,
-      companyName: (invitation.companies as any)?.name || 'Unknown Company'
-    }));
-
-    console.log('✅ Transformed invitations:', invitations);
-    return invitations;
-  } catch (error) {
-    console.error('💥 Error in loadUserInvitations:', error);
-    throw error;
-  }
-};
   // Log dashboard data for debugging
   useEffect(() => {
     console.log('📊 Dashboard - Ideas count:', ideas.length);
@@ -91,7 +85,16 @@ const loadUserInvitations = async (userEmail: string): Promise<any[]> => {
     console.log('📊 Dashboard - User incoming invitations:', userIncomingInvitations);
     console.log('📊 Dashboard - Is processing invitation from URL:', isProcessingInvitation);
     console.log('📊 Dashboard - Should show invitations?', userIncomingInvitations.length > 0);
-  }, [ideas.length, hypotheses.length, experiments.length, userIncomingInvitations.length, user?.email, currentCompany, userIncomingInvitations, companies, isProcessingInvitation]);
+    console.log('🧪 Dashboard - Test invitations count:', testInvitations.length);
+    console.log('🧪 Dashboard - Test invitations data:', testInvitations);
+  }, [ideas.length, hypotheses.length, experiments.length, userIncomingInvitations.length, user?.email, currentCompany, userIncomingInvitations, companies, isProcessingInvitation, testInvitations]);
+
+  // Load test invitations when component mounts
+  useEffect(() => {
+    if (user?.email) {
+      testLoadInvitations();
+    }
+  }, [user?.email]);
 
   // Calculate hypothesis statistics by status
   const hypothesesByStatus = hypotheses.reduce((acc, hypothesis) => {
@@ -148,6 +151,22 @@ const loadUserInvitations = async (userEmail: string): Promise<any[]> => {
     setHasActiveFilters(false);
   };
 
+  // Filter data based on search query
+  const filteredIdeas = ideas.filter(idea => 
+    idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    idea.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredHypotheses = hypotheses.filter(hypothesis =>
+    hypothesis.observation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    hypothesis.initiative.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredExperiments = experiments.filter(experiment =>
+    experiment.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    experiment.hypothesisId.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -157,12 +176,43 @@ const loadUserInvitations = async (userEmail: string): Promise<any[]> => {
         </p>
       </div>
 
+      {/* Debug Section - Remove this after testing */}
+      {testInvitations.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h3 className="font-semibold text-yellow-800 mb-2">🧪 DEBUG: Test Invitations Found</h3>
+          <p className="text-yellow-700 mb-2">Found {testInvitations.length} invitation(s) directly from database:</p>
+          <pre className="text-xs text-yellow-600 bg-yellow-100 p-2 rounded">
+            {JSON.stringify(testInvitations, null, 2)}
+          </pre>
+          <button 
+            onClick={testLoadInvitations}
+            className="mt-2 px-3 py-1 bg-yellow-200 text-yellow-800 rounded text-sm hover:bg-yellow-300"
+          >
+            Refresh Test Data
+          </button>
+        </div>
+      )}
+
       {/* Company Invitations - Always show if there are invitations */}
       <CompanyInvitations 
         invitations={userIncomingInvitations}
         onInvitationAccepted={handleInvitationAccepted}
         onInvitationDeclined={handleInvitationDeclined}
       />
+
+      {/* Also test with the direct data */}
+      {testInvitations.length > 0 && (
+        <div className="border-2 border-blue-300 rounded-lg">
+          <div className="bg-blue-50 p-2 border-b border-blue-200">
+            <h3 className="font-semibold text-blue-800">🧪 Testing with Direct Data</h3>
+          </div>
+          <CompanyInvitations 
+            invitations={testInvitations}
+            onInvitationAccepted={handleInvitationAccepted}
+            onInvitationDeclined={handleInvitationDeclined}
+          />
+        </div>
+      )}
 
       {isProcessingInvitation && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
