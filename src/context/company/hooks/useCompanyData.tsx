@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
 import { loadUserCompanies, loadUserInvitations, loadUserRole, loadCompanyMembers, loadCompanyInvitations } from '../utils';
@@ -43,11 +44,19 @@ export const useCompanyData = (userId: string | undefined) => {
   // Load user incoming invitations (new - specifically for dashboard)
   const fetchUserIncomingInvitations = async (userEmail: string) => {
     try {
+      console.log('🔍 fetchUserIncomingInvitations called with email:', userEmail);
       const invitationsData = await loadUserInvitations(userEmail);
-      console.log('Loaded user incoming invitations:', invitationsData);
+      console.log('✅ Loaded user incoming invitations:', invitationsData);
       setUserIncomingInvitations(invitationsData);
+      
+      // Also log the state after setting
+      setTimeout(() => {
+        console.log('📋 User incoming invitations state after setting:', invitationsData);
+      }, 100);
     } catch (error) {
-      console.error('Error loading incoming invitations:', error);
+      console.error('❌ Error loading incoming invitations:', error);
+      // Set empty array on error to ensure clean state
+      setUserIncomingInvitations([]);
     }
   };
   
