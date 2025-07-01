@@ -30,15 +30,18 @@ const Dashboard: React.FC = () => {
   
   // Testing state for debugging invitations
   const [testInvitations, setTestInvitations] = useState<any[]>([]);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   // Test function to manually load invitations
   const testLoadInvitations = async () => {
     if (!user?.email) {
       console.log('❌ No user email for testing invitations');
+      setDebugInfo('❌ No user email for testing invitations');
       return;
     }
 
     console.log('🧪 TESTING: Loading invitations directly for email:', user.email);
+    setDebugInfo(`🧪 TESTING: Loading invitations directly for email: ${user.email}`);
     
     try {
       const { data, error } = await supabase
@@ -61,6 +64,7 @@ const Dashboard: React.FC = () => {
 
       if (error) {
         console.error('❌ TESTING: Error loading invitations:', error);
+        setDebugInfo(`❌ TESTING: Error loading invitations: ${error.message}`);
         return;
       }
 
@@ -68,8 +72,10 @@ const Dashboard: React.FC = () => {
       console.log('🧪 TESTING: Number of invitations found:', data?.length || 0);
       
       setTestInvitations(data || []);
+      setDebugInfo(`🧪 TESTING: Found ${data?.length || 0} invitations directly from database`);
     } catch (error) {
       console.error('💥 TESTING: Error in testLoadInvitations:', error);
+      setDebugInfo(`💥 TESTING: Error in testLoadInvitations: ${error}`);
     }
   };
 
@@ -105,7 +111,7 @@ const Dashboard: React.FC = () => {
 
   console.log('📊 Dashboard - Hypothesis by status:', hypothesesByStatus);
 
-  // Filter data based on search query
+  // Filter data based on search query - SINGLE DECLARATION
   const filteredIdeas = ideas.filter(idea => 
     idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     idea.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -151,22 +157,6 @@ const Dashboard: React.FC = () => {
     setHasActiveFilters(false);
   };
 
-  // Filter data based on search query
-  const filteredIdeas = ideas.filter(idea => 
-    idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    idea.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredHypotheses = hypotheses.filter(hypothesis =>
-    hypothesis.observation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    hypothesis.initiative.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredExperiments = experiments.filter(experiment =>
-    experiment.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    experiment.hypothesisId.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
     <div className="space-y-6">
       <div>
@@ -177,21 +167,23 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Debug Section - Remove this after testing */}
-      {testInvitations.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="font-semibold text-yellow-800 mb-2">🧪 DEBUG: Test Invitations Found</h3>
-          <p className="text-yellow-700 mb-2">Found {testInvitations.length} invitation(s) directly from database:</p>
-          <pre className="text-xs text-yellow-600 bg-yellow-100 p-2 rounded">
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <h3 className="font-semibold text-yellow-800 mb-2">🧪 DEBUG: Invitation Testing</h3>
+        <p className="text-yellow-700 mb-2">Debug Info: {debugInfo}</p>
+        <p className="text-yellow-700 mb-2">Context Invitations: {userIncomingInvitations.length}</p>
+        <p className="text-yellow-700 mb-2">Direct DB Invitations: {testInvitations.length}</p>
+        {testInvitations.length > 0 && (
+          <pre className="text-xs text-yellow-600 bg-yellow-100 p-2 rounded mb-2">
             {JSON.stringify(testInvitations, null, 2)}
           </pre>
-          <button 
-            onClick={testLoadInvitations}
-            className="mt-2 px-3 py-1 bg-yellow-200 text-yellow-800 rounded text-sm hover:bg-yellow-300"
-          >
-            Refresh Test Data
-          </button>
-        </div>
-      )}
+        )}
+        <button 
+          onClick={testLoadInvitations}
+          className="px-3 py-1 bg-yellow-200 text-yellow-800 rounded text-sm hover:bg-yellow-300"
+        >
+          Refresh Test Data
+        </button>
+      </div>
 
       {/* Company Invitations - Always show if there are invitations */}
       <CompanyInvitations 
