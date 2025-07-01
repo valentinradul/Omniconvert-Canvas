@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,34 +45,54 @@ export function useInvitations() {
       
       console.log('✅ Found valid invitation:', invitation);
       
-      // Try to add user to company members with better error handling
-      console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
-      
-      const { data: insertData, error: memberError } = await supabase
+      // Check if user is already a member of this company
+      const { data: existingMember, error: memberCheckError } = await supabase
         .from('company_members')
-        .insert({
-          company_id: invitation.company_id,
-          user_id: userId,
-          role: invitation.role
-        })
-        .select()
-        .single();
+        .select('*')
+        .eq('user_id', userId)
+        .eq('company_id', invitation.company_id)
+        .maybeSingle();
         
-      if (memberError) {
-        // If it's a duplicate key error, that's okay - user is already a member
-        if (memberError.code === '23505') {
-          console.log('ℹ️ User is already a member of this company');
-          // Still mark invitation as accepted even if user was already a member
-        } else {
-          console.error('❌ Error adding company member:', memberError);
-          // Check if it's a permission error and provide better feedback
-          if (memberError.message?.includes('permission denied')) {
-            throw new Error("Permission denied - please contact an administrator");
+      if (memberCheckError) {
+        console.error('❌ Error checking existing membership:', memberCheckError);
+        throw new Error("Unable to verify membership status");
+      }
+      
+      if (existingMember) {
+        console.log('ℹ️ User is already a member of this company');
+        
+        // Update existing membership role if different
+        if (existingMember.role !== invitation.role) {
+          console.log('🔄 Updating member role from', existingMember.role, 'to', invitation.role);
+          
+          const { error: updateError } = await supabase
+            .from('company_members')
+            .update({ role: invitation.role })
+            .eq('id', existingMember.id);
+            
+          if (updateError) {
+            console.error('❌ Error updating member role:', updateError);
+            throw updateError;
           }
-          throw memberError;
         }
       } else {
-        console.log('✅ Successfully added user to company:', insertData);
+        console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
+        
+        // Add user to company members
+        const { error: memberError } = await supabase
+          .from('company_members')
+          .insert({
+            company_id: invitation.company_id,
+            user_id: userId,
+            role: invitation.role
+          });
+          
+        if (memberError) {
+          console.error('❌ Error adding company member:', memberError);
+          throw memberError;
+        }
+        
+        console.log('✅ Successfully added user to company');
       }
       
       // Mark invitation as accepted
@@ -109,8 +130,6 @@ export function useInvitations() {
         errorMessage = "Invitation not found or has already been used";
       } else if (error.message?.includes('already a member')) {
         errorMessage = "You are already a member of this company";
-      } else if (error.message?.includes('Permission denied')) {
-        errorMessage = "Permission denied - please contact an administrator";
       } else if (error.message) {
         errorMessage = error.message;
       }
