@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,6 +44,9 @@ export function useInvitations() {
       
       console.log('✅ Found valid invitation:', invitation);
       
+      // Initialize roleToAssign with the invitation role
+      let roleToAssign = invitation.role;
+      
       // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
         .from('company_members')
@@ -79,7 +81,6 @@ export function useInvitations() {
         console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
         
         // Check if someone is already an owner of this company (due to constraint)
-        let roleToAssign = invitation.role;
         if (invitation.role === 'owner') {
           const { data: existingOwner } = await supabase
             .from('company_members')
@@ -139,10 +140,10 @@ export function useInvitations() {
       
       toast({
         title: "Welcome to the team!",
-        description: `You are now a ${roleToAssign || invitation.role} of ${company.name}`,
+        description: `You are now a ${roleToAssign} of ${company.name}`,
       });
       
-      return { company, invitationId, role: roleToAssign || invitation.role };
+      return { company, invitationId, role: roleToAssign };
     } catch (error: any) {
       console.error('❌ Error accepting invitation:', error);
       
