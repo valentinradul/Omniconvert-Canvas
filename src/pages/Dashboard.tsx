@@ -9,10 +9,14 @@ import StatisticsPanel from "@/components/dashboard/StatisticsPanel";
 import FilterBar from "@/components/dashboard/FilterBar";
 import StatisticsChart from "@/components/dashboard/StatisticsChart";
 import CompanyInvitations from "@/components/company/CompanyInvitations";
+import { useInvitationHandler } from "@/hooks/useInvitationHandler";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { companyInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
+  const { userIncomingInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
+  
+  // Use the invitation handler to process any invitation in the URL
+  const { invitationId, isProcessingInvitation } = useInvitationHandler();
   
   // Initialize hooks with proper parameters
   const { experiments } = useExperiments(user, currentCompany);
@@ -28,12 +32,13 @@ const Dashboard: React.FC = () => {
     console.log('📊 Dashboard - Ideas count:', ideas.length);
     console.log('📊 Dashboard - Hypotheses count:', hypotheses.length);
     console.log('📊 Dashboard - Experiments count:', experiments.length);
-    console.log('📊 Dashboard - User invitations count:', companyInvitations.length);
+    console.log('📊 Dashboard - User incoming invitations count:', userIncomingInvitations.length);
     console.log('📊 Dashboard - User email:', user?.email);
     console.log('📊 Dashboard - Current company:', currentCompany?.name, 'ID:', currentCompany?.id);
     console.log('📊 Dashboard - All companies:', companies.map(c => ({ id: c.id, name: c.name })));
-    console.log('📊 Dashboard - User invitations:', companyInvitations);
-  }, [ideas.length, hypotheses.length, experiments.length, companyInvitations.length, user?.email, currentCompany, companyInvitations, companies]);
+    console.log('📊 Dashboard - User incoming invitations:', userIncomingInvitations);
+    console.log('📊 Dashboard - Is processing invitation from URL:', isProcessingInvitation);
+  }, [ideas.length, hypotheses.length, experiments.length, userIncomingInvitations.length, user?.email, currentCompany, userIncomingInvitations, companies, isProcessingInvitation]);
 
   // Calculate hypothesis statistics by status
   const hypothesesByStatus = hypotheses.reduce((acc, hypothesis) => {
@@ -100,12 +105,21 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Company Invitations - show incoming invitations for current user */}
-      {companyInvitations.length > 0 && (
+      {userIncomingInvitations.length > 0 && (
         <CompanyInvitations 
-          invitations={companyInvitations}
+          invitations={userIncomingInvitations}
           onInvitationAccepted={handleInvitationAccepted}
           onInvitationDeclined={handleInvitationDeclined}
         />
+      )}
+
+      {isProcessingInvitation && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+            <p className="text-blue-800">Processing your invitation...</p>
+          </div>
+        </div>
       )}
 
       <FilterBar 

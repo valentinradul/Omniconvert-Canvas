@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -11,6 +10,7 @@ type CompanyContextType = {
   userCompanyRole: CompanyRole | null;
   companyMembers: CompanyMember[];
   companyInvitations: CompanyInvitation[];
+  userIncomingInvitations: CompanyInvitation[];
   pendingInvitations: CompanyInvitation[];
   isLoading: boolean;
   createCompany: (name: string) => Promise<void>;
@@ -24,6 +24,7 @@ type CompanyContextType = {
   refreshPendingInvitations: () => Promise<void>;
   refreshCompanyMembers: () => Promise<void>;
   refreshUserCompanies: () => Promise<void>;
+  refreshUserIncomingInvitations: () => Promise<void>;
 };
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -44,11 +45,14 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setCompanyMembers,
     companyInvitations,
     setCompanyInvitations,
+    userIncomingInvitations,
+    setUserIncomingInvitations,
     pendingInvitations,
     setPendingInvitations,
     isLoading,
     fetchUserCompanies,
     fetchUserInvitations,
+    fetchUserIncomingInvitations,
     fetchUserRole,
     fetchCompanyMembers,
     fetchPendingInvitations,
@@ -89,9 +93,9 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.log('🔄 CompanyContext: Refreshing user companies after invitation acceptance');
       await fetchUserCompanies();
       
-      // Also refresh user invitations to remove the accepted one
+      // Also refresh user incoming invitations to remove the accepted one
       if (user?.email) {
-        await fetchUserInvitations(user.email);
+        await fetchUserIncomingInvitations(user.email);
       }
       
       console.log('✅ CompanyContext: Invitation acceptance process completed');
@@ -119,6 +123,14 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await fetchUserCompanies();
   };
 
+  // Function to refresh user incoming invitations
+  const refreshUserIncomingInvitations = async () => {
+    if (user?.email) {
+      console.log('🔄 CompanyContext: Manually refreshing user incoming invitations');
+      await fetchUserIncomingInvitations(user.email);
+    }
+  };
+
   // Wrapper for unsend invitation that refreshes pending invitations
   const unsendInvitation = async (invitationId: string) => {
     await apiUnsendInvitation(invitationId, setPendingInvitations);
@@ -142,8 +154,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setTimeout(() => {
         fetchUserCompanies();
         if (user.email) {
-          console.log('📧 CompanyContext: Fetching invitations for email:', user.email);
-          fetchUserInvitations(user.email);
+          console.log('📧 CompanyContext: Fetching incoming invitations for email:', user.email);
+          fetchUserIncomingInvitations(user.email);
         }
       }, 100);
     } else {
@@ -153,6 +165,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setUserCompanyRole(null);
       setCompanyMembers([]);
       setCompanyInvitations([]);
+      setUserIncomingInvitations([]);
       setPendingInvitations([]);
       
       // Clear localStorage when user logs out
@@ -205,6 +218,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         userCompanyRole,
         companyMembers,
         companyInvitations,
+        userIncomingInvitations,
         pendingInvitations,
         isLoading,
         createCompany,
@@ -217,7 +231,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         unsendInvitation,
         refreshPendingInvitations,
         refreshCompanyMembers,
-        refreshUserCompanies
+        refreshUserCompanies,
+        refreshUserIncomingInvitations
       }}
     >
       {children}

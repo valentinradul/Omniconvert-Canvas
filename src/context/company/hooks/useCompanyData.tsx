@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
 import { loadUserCompanies, loadUserInvitations, loadUserRole, loadCompanyMembers, loadCompanyInvitations } from '../utils';
@@ -9,6 +8,7 @@ export const useCompanyData = (userId: string | undefined) => {
   const [userCompanyRole, setUserCompanyRole] = useState<CompanyRole | null>(null);
   const [companyMembers, setCompanyMembers] = useState<CompanyMember[]>([]);
   const [companyInvitations, setCompanyInvitations] = useState<CompanyInvitation[]>([]);
+  const [userIncomingInvitations, setUserIncomingInvitations] = useState<CompanyInvitation[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<CompanyInvitation[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -29,14 +29,25 @@ export const useCompanyData = (userId: string | undefined) => {
     }
   };
   
-  // Load user invitations
+  // Load user invitations (legacy - keeping for backward compatibility)
   const fetchUserInvitations = async (userEmail: string) => {
     try {
       const invitationsData = await loadUserInvitations(userEmail);
-      console.log('Loaded user invitations:', invitationsData);
+      console.log('Loaded user invitations (legacy):', invitationsData);
       setCompanyInvitations(invitationsData);
     } catch (error) {
       console.error('Error loading invitations:', error);
+    }
+  };
+
+  // Load user incoming invitations (new - specifically for dashboard)
+  const fetchUserIncomingInvitations = async (userEmail: string) => {
+    try {
+      const invitationsData = await loadUserInvitations(userEmail);
+      console.log('Loaded user incoming invitations:', invitationsData);
+      setUserIncomingInvitations(invitationsData);
+    } catch (error) {
+      console.error('Error loading incoming invitations:', error);
     }
   };
   
@@ -100,11 +111,14 @@ export const useCompanyData = (userId: string | undefined) => {
     setCompanyMembers,
     companyInvitations,
     setCompanyInvitations,
+    userIncomingInvitations,
+    setUserIncomingInvitations,
     pendingInvitations,
     setPendingInvitations,
     isLoading,
     fetchUserCompanies,
     fetchUserInvitations,
+    fetchUserIncomingInvitations,
     fetchUserRole,
     fetchCompanyMembers,
     fetchPendingInvitations,
