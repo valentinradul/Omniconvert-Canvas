@@ -33,12 +33,22 @@ export function useInvitations() {
       
       console.log('✅ Found invitation in local data:', localInvitation);
       
+      // Get the company ID from the invitation (handle both companyId and company_id)
+      const companyId = localInvitation.companyId || localInvitation.company_id;
+      
+      if (!companyId) {
+        console.error('❌ No company ID found in invitation:', localInvitation);
+        throw new Error("Invalid invitation - missing company information");
+      }
+      
+      console.log('🔍 Checking membership for company:', companyId);
+      
       // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
         .from('company_members')
         .select('*')
         .eq('user_id', userId)
-        .eq('company_id', localInvitation.company_id)
+        .eq('company_id', companyId)
         .maybeSingle();
         
       if (memberCheckError) {
@@ -64,13 +74,13 @@ export function useInvitations() {
           }
         }
       } else {
-        console.log('➕ Adding user to company members:', { userId, companyId: localInvitation.company_id, role: localInvitation.role });
+        console.log('➕ Adding user to company members:', { userId, companyId, role: localInvitation.role });
         
         // Add user to company members
         const { error: memberError } = await supabase
           .from('company_members')
           .insert({
-            company_id: localInvitation.company_id,
+            company_id: companyId,
             user_id: userId,
             role: localInvitation.role
           });
@@ -96,7 +106,7 @@ export function useInvitations() {
       }
       
       const company = {
-        id: localInvitation.company_id,
+        id: companyId,
         name: localInvitation.companyName || localInvitation.company_name || 'Unknown Company',
         createdAt: new Date(),
         createdBy: localInvitation.invited_by
