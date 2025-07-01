@@ -75,10 +75,18 @@ const Dashboard: React.FC = () => {
     ? Math.round((winningExperiments.length / completedExperiments.length) * 100)
     : 0;
 
-  const handleInvitationAccepted = () => {
-    console.log('🎉 Invitation accepted - refreshing data');
-    refreshUserCompanies();
-    refreshCompanyMembers();
+  const handleInvitationAccepted = async () => {
+    console.log('🎉 Dashboard: Invitation accepted - triggering comprehensive refresh');
+    
+    // Force refresh all company-related data
+    await refreshUserCompanies();
+    await refreshCompanyMembers();
+    
+    // Add a small delay and refresh again to ensure the new company data is loaded
+    setTimeout(async () => {
+      console.log('🔄 Dashboard: Secondary refresh after invitation acceptance');
+      await refreshUserCompanies();
+    }, 1000);
   };
 
   const handleInvitationDeclined = () => {

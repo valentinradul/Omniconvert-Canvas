@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -82,23 +83,56 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchUserCompanies
   );
 
-  // Enhanced accept invitation that properly refreshes everything
+  // Enhanced accept invitation that properly refreshes everything and switches to new company
   const acceptInvitation = async (invitationId: string) => {
     console.log('🚀 CompanyContext: Starting invitation acceptance process');
     
     try {
-      await baseAcceptInvitation(invitationId);
+      const result = await baseAcceptInvitation(invitationId);
       
-      // Force refresh user companies after acceptance
-      console.log('🔄 CompanyContext: Refreshing user companies after invitation acceptance');
-      await fetchUserCompanies();
-      
-      // Also refresh user incoming invitations to remove the accepted one
-      if (user?.email) {
-        await fetchUserIncomingInvitations(user.email);
+      if (result) {
+        console.log('🔄 CompanyContext: Invitation accepted, performing comprehensive refresh');
+        
+        // Clear localStorage to force fresh data
+        localStorage.removeItem('userCompanies');
+        localStorage.removeItem('currentCompanyId');
+        
+        // Refresh user companies first
+        await fetchUserCompanies();
+        
+        // Refresh user incoming invitations to remove the accepted one
+        if (user?.email) {
+          await fetchUserIncomingInvitations(user.email);
+        }
+        
+        // Find the newly joined company and switch to it immediately
+        const newCompany = result.company;
+        console.log('🎯 CompanyContext: Switching to newly joined company:', newCompany.name);
+        
+        // Add the new company to the companies list if not already there
+        setCompanies(prevCompanies => {
+          const exists = prevCompanies.find(c => c.id === newCompany.id);
+          if (!exists) {
+            return [...prevCompanies, newCompany];
+          }
+          return prevCompanies;
+        });
+        
+        // Switch to the new company immediately
+        setCurrentCompany(newCompany);
+        setUserCompanyRole(result.role as CompanyRole);
+        localStorage.setItem('currentCompanyId', newCompany.id);
+        
+        // Force a complete refresh after a short delay to ensure everything is updated
+        setTimeout(async () => {
+          console.log('🔄 CompanyContext: Final refresh for new company data');
+          await fetchCompanyMembers();
+          await fetchUserRole();
+          await fetchPendingInvitations();
+        }, 100);
+        
+        console.log('✅ CompanyContext: Invitation acceptance process completed');
       }
-      
-      console.log('✅ CompanyContext: Invitation acceptance process completed');
     } catch (error) {
       console.error('❌ CompanyContext: Error in acceptInvitation:', error);
       throw error;
@@ -112,18 +146,15 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await fetchCompanyMembers();
   };
 
-  // Function to refresh company members
   const refreshCompanyMembers = async () => {
     await fetchCompanyMembers();
   };
 
-  // Function to refresh user companies (useful after accepting invitations)
   const refreshUserCompanies = async () => {
     console.log('🔄 CompanyContext: Manually refreshing user companies');
     await fetchUserCompanies();
   };
 
-  // Function to refresh user incoming invitations
   const refreshUserIncomingInvitations = async () => {
     if (user?.email) {
       console.log('🔄 CompanyContext: Manually refreshing user incoming invitations');
@@ -131,7 +162,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Wrapper for unsend invitation that refreshes pending invitations
   const unsendInvitation = async (invitationId: string) => {
     await apiUnsendInvitation(invitationId, setPendingInvitations);
     await refreshPendingInvitations();
@@ -247,3 +277,4 @@ export const useCompany = (): CompanyContextType => {
   }
   return context;
 };
+

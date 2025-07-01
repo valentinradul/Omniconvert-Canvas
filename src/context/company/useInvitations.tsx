@@ -7,7 +7,7 @@ export function useInvitations() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // Accept invitation function
+  // Accept invitation function with immediate refresh
   const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
     console.log('🚀 Starting invitation acceptance process:', { invitationId, userId });
     
@@ -119,6 +119,9 @@ export function useInvitations() {
         title: "Welcome to the team!",
         description: `You are now a ${invitation.role} of ${company.name}`,
       });
+      
+      // Force a small delay to ensure database changes are committed
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       return { company, invitationId, role: invitation.role };
     } catch (error: any) {
