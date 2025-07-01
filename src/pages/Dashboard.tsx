@@ -49,6 +49,9 @@ const Dashboard: React.FC = () => {
 
   console.log('📊 Dashboard - Hypothesis by status:', hypothesesByStatus);
 
+
+  console.log("company's invitation length:",userIncomingInvitations);
+
   // Filter data based on search query
   const filteredIdeas = ideas.filter(idea => 
     idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
