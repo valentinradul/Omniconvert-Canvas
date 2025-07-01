@@ -182,12 +182,25 @@ export const loadUserCompanies = async (userId: string): Promise<Company[]> => {
   }
 };
 
-// Load user invitations with better email matching
+// Enhanced user invitations loading with better debugging and flexible email matching
 export const loadUserInvitations = async (userEmail: string): Promise<CompanyInvitation[]> => {
-  console.log('📧 Loading invitations for email:', userEmail);
+  console.log('🔍 Loading invitations for email:', userEmail);
   
   try {
-    const { data, error } = await supabase
+    // First, get the current authenticated user's email to compare
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    let actualUserEmail = userEmail;
+    
+    if (userData?.user?.email) {
+      actualUserEmail = userData.user.email;
+      console.log('📧 Actual authenticated user email:', actualUserEmail);
+    }
+    
+    // Try multiple approaches to find invitations
+    console.log('🔍 Searching for invitations with multiple email patterns...');
+    
+    // Approach 1: Direct email match (case-insensitive)
+    let { data: directMatches, error: directError } = await supabase
       .from('company_invitations')
       .select(`
         id,
@@ -202,23 +215,84 @@ export const loadUserInvitations = async (userEmail: string): Promise<CompanyInv
           name
         )
       `)
-      .ilike('email', userEmail) // Use ilike for case-insensitive matching
+      .ilike('email', actualUserEmail)
       .eq('accepted', false);
 
-    if (error) {
-      console.error('❌ Error loading invitations:', error);
-      throw error;
+    if (directError) {
+      console.error('❌ Error in direct email search:', directError);
+    } else {
+      console.log('✅ Direct email matches found:', directMatches?.length || 0, directMatches);
     }
 
-    console.log('📋 Raw invitation data:', data);
+    // Approach 2: Also search for the passed email if different
+    let additionalMatches: any[] = [];
+    if (userEmail !== actualUserEmail) {
+      console.log('🔍 Also searching for originally passed email:', userEmail);
+      
+      const { data: extraMatches, error: extraError } = await supabase
+        .from('company_invitations')
+        .select(`
+          id,
+          company_id,
+          email,
+          role,
+          accepted,
+          created_at,
+          invited_by,
+          companies (
+            id,
+            name
+          )
+        `)
+        .ilike('email', userEmail)
+        .eq('accepted', false);
 
-    if (!data || data.length === 0) {
-      console.log('ℹ️ No pending invitations found for user');
+      if (extraError) {
+        console.error('❌ Error in additional email search:', extraError);
+      } else {
+        console.log('✅ Additional email matches found:', extraMatches?.length || 0, extraMatches);
+        additionalMatches = extraMatches || [];
+      }
+    }
+
+    // Approach 3: Broad search for debugging - get all invitations to see what's there
+    const { data: allInvitations, error: allError } = await supabase
+      .from('company_invitations')
+      .select(`
+        id,
+        company_id,
+        email,
+        role,
+        accepted,
+        created_at,
+        invited_by,
+        companies (
+          id,
+          name
+        )
+      `)
+      .eq('accepted', false)
+      .limit(10);
+
+    if (!allError && allInvitations) {
+      console.log('🔍 All pending invitations in database (first 10):', allInvitations);
+    }
+
+    // Combine all matches and remove duplicates
+    const allMatches = [...(directMatches || []), ...additionalMatches];
+    const uniqueMatches = allMatches.filter((invitation, index, self) => 
+      index === self.findIndex(i => i.id === invitation.id)
+    );
+
+    console.log('📋 Final combined unique matches:', uniqueMatches);
+
+    if (!uniqueMatches || uniqueMatches.length === 0) {
+      console.log('⚠️ No pending invitations found for user');
       return [];
     }
 
     // Transform the data
-    const invitations: CompanyInvitation[] = data.map(invitation => ({
+    const invitations: CompanyInvitation[] = uniqueMatches.map(invitation => ({
       id: invitation.id,
       companyId: invitation.company_id,
       email: invitation.email,
@@ -229,7 +303,7 @@ export const loadUserInvitations = async (userEmail: string): Promise<CompanyInv
       companyName: (invitation.companies as any)?.name || 'Unknown Company'
     }));
 
-    console.log('✅ Transformed invitations:', invitations);
+    console.log('✅ Final transformed invitations:', invitations);
     return invitations;
   } catch (error) {
     console.error('💥 Error in loadUserInvitations:', error);

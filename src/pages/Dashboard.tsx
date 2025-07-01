@@ -13,7 +13,7 @@ import { useInvitationHandler } from "@/hooks/useInvitationHandler";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { userIncomingInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
+  const { userIncomingInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies, refreshUserIncomingInvitations } = useCompany();
   
   // Use the invitation handler to process any invitation in the URL
   const { invitationId, isProcessingInvitation } = useInvitationHandler();
@@ -27,7 +27,7 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
 
-  // Log dashboard data for debugging
+  // Enhanced logging for debugging invitations
   useEffect(() => {
     console.log('📊 Dashboard - Ideas count:', ideas.length);
     console.log('📊 Dashboard - Hypotheses count:', hypotheses.length);
@@ -39,6 +39,14 @@ const Dashboard: React.FC = () => {
     console.log('📊 Dashboard - User incoming invitations:', userIncomingInvitations);
     console.log('📊 Dashboard - Is processing invitation from URL:', isProcessingInvitation);
     console.log('📊 Dashboard - Should show invitations?', userIncomingInvitations.length > 0);
+    
+    // Additional debugging: Force refresh invitations if user is authenticated but no invitations
+    if (user?.email && userIncomingInvitations.length === 0 && !isProcessingInvitation) {
+      console.log('🔄 Dashboard - No invitations found, forcing refresh...');
+      setTimeout(() => {
+        refreshUserIncomingInvitations();
+      }, 1000);
+    }
   }, [ideas.length, hypotheses.length, experiments.length, userIncomingInvitations.length, user?.email, currentCompany, userIncomingInvitations, companies, isProcessingInvitation]);
 
   // Calculate hypothesis statistics by status
@@ -105,7 +113,20 @@ const Dashboard: React.FC = () => {
         </p>
       </div>
 
-      {/* Company Invitations - Always show if there are invitations */}
+      {/* Debug info for invitations */}
+      {user && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm">
+          <p><strong>Debug Info:</strong></p>
+          <p>User Email: {user.email}</p>
+          <p>Incoming Invitations: {userIncomingInvitations.length}</p>
+          <p>Processing Invitation: {isProcessingInvitation ? 'Yes' : 'No'}</p>
+          {userIncomingInvitations.length > 0 && (
+            <p>Invitation Emails: {userIncomingInvitations.map(inv => inv.email).join(', ')}</p>
+          )}
+        </div>
+      )}
+
+      {/* Company Invitations - Always show the component to help with debugging */}
       <CompanyInvitations 
         invitations={userIncomingInvitations}
         onInvitationAccepted={handleInvitationAccepted}
