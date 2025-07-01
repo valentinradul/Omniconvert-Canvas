@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,27 +44,34 @@ export function useInvitations() {
       
       console.log('✅ Found valid invitation:', invitation);
       
-      // Directly try to add user to company members - let the database handle duplicates
+      // Try to add user to company members with better error handling
       console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
       
-      const { error: memberError } = await supabase
+      const { data: insertData, error: memberError } = await supabase
         .from('company_members')
         .insert({
           company_id: invitation.company_id,
           user_id: userId,
           role: invitation.role
-        });
+        })
+        .select()
+        .single();
         
       if (memberError) {
         // If it's a duplicate key error, that's okay - user is already a member
         if (memberError.code === '23505') {
           console.log('ℹ️ User is already a member of this company');
+          // Still mark invitation as accepted even if user was already a member
         } else {
           console.error('❌ Error adding company member:', memberError);
+          // Check if it's a permission error and provide better feedback
+          if (memberError.message?.includes('permission denied')) {
+            throw new Error("Permission denied - please contact an administrator");
+          }
           throw memberError;
         }
       } else {
-        console.log('✅ Successfully added user to company');
+        console.log('✅ Successfully added user to company:', insertData);
       }
       
       // Mark invitation as accepted
@@ -103,6 +109,8 @@ export function useInvitations() {
         errorMessage = "Invitation not found or has already been used";
       } else if (error.message?.includes('already a member')) {
         errorMessage = "You are already a member of this company";
+      } else if (error.message?.includes('Permission denied')) {
+        errorMessage = "Permission denied - please contact an administrator";
       } else if (error.message) {
         errorMessage = error.message;
       }
