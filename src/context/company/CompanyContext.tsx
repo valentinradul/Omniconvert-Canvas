@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -127,7 +126,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Function to refresh user incoming invitations
   const refreshUserIncomingInvitations = async () => {
     if (user?.email) {
-      console.log('🔄 CompanyContext: Manually refreshing user incoming invitations for email:', user.email);
+      console.log('🔄 CompanyContext: Manually refreshing user incoming invitations');
       await fetchUserIncomingInvitations(user.email);
     }
   };
@@ -210,19 +209,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     }
   }, [companies, user]);
-
-  // Additional effect to ensure invitations are refreshed periodically
-  useEffect(() => {
-    if (user?.email) {
-      // Set up a periodic refresh for invitations every 30 seconds
-      const intervalId = setInterval(() => {
-        console.log('🔄 CompanyContext: Periodic refresh of incoming invitations');
-        fetchUserIncomingInvitations(user.email);
-      }, 30000);
-
-      return () => clearInterval(intervalId);
-    }
-  }, [user?.email]);
   
   return (
     <CompanyContext.Provider
