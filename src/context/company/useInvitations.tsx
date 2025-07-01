@@ -45,53 +45,26 @@ export function useInvitations() {
       
       console.log('✅ Found valid invitation:', invitation);
       
-      // Check if user is already a member of this company
-      const { data: existingMember, error: memberCheckError } = await supabase
-        .from('company_members')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('company_id', invitation.company_id)
-        .maybeSingle();
-        
-      if (memberCheckError) {
-        console.error('❌ Error checking existing membership:', memberCheckError);
-        throw new Error("Unable to verify membership status");
-      }
+      // Directly try to add user to company members - let the database handle duplicates
+      console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
       
-      if (existingMember) {
-        console.log('ℹ️ User is already a member of this company');
+      const { error: memberError } = await supabase
+        .from('company_members')
+        .insert({
+          company_id: invitation.company_id,
+          user_id: userId,
+          role: invitation.role
+        });
         
-        // Update existing membership role if different
-        if (existingMember.role !== invitation.role) {
-          console.log('🔄 Updating member role from', existingMember.role, 'to', invitation.role);
-          
-          const { error: updateError } = await supabase
-            .from('company_members')
-            .update({ role: invitation.role })
-            .eq('id', existingMember.id);
-            
-          if (updateError) {
-            console.error('❌ Error updating member role:', updateError);
-            throw updateError;
-          }
-        }
-      } else {
-        console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
-        
-        // Add user to company members
-        const { error: memberError } = await supabase
-          .from('company_members')
-          .insert({
-            company_id: invitation.company_id,
-            user_id: userId,
-            role: invitation.role
-          });
-          
-        if (memberError) {
+      if (memberError) {
+        // If it's a duplicate key error, that's okay - user is already a member
+        if (memberError.code === '23505') {
+          console.log('ℹ️ User is already a member of this company');
+        } else {
           console.error('❌ Error adding company member:', memberError);
           throw memberError;
         }
-        
+      } else {
         console.log('✅ Successfully added user to company');
       }
       
