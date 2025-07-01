@@ -204,7 +204,7 @@ export const loadUserInvitations = async (userEmail: string): Promise<CompanyInv
       `)
       .ilike('email', userEmail) // Use ilike for case-insensitive matching
       .eq('accepted', false);
-
+    console.log("_____________________________________________________________________________________________")
     if (error) {
       console.error('❌ Error loading invitations:', error);
       throw error;
