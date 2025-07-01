@@ -26,57 +26,7 @@ const Dashboard: React.FC = () => {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
-  const getInvitations=()=>{
-     try {
-    const { data, error } = await supabase
-      .from('company_invitations')
-      .select(`
-        id,
-        company_id,
-        email,
-        role,
-        accepted,
-        created_at,
-        invited_by,
-        companies (
-          id,
-          name
-        )
-      `)
-      .ilike('email', userEmail) // Use ilike for case-insensitive matching
-      .eq('accepted', false);
-    console.log("_____________________________________________________________________________________________")
-    if (error) {
-      console.error('❌ Error loading invitations:', error);
-      throw error;
-    }
 
-    console.log('📋 Raw invitation data:', data);
-
-    if (!data || data.length === 0) {
-      console.log('ℹ️ No pending invitations found for user');
-      return [];
-    }
-
-    // Transform the data
-    const invitations: CompanyInvitation[] = data.map(invitation => ({
-      id: invitation.id,
-      companyId: invitation.company_id,
-      email: invitation.email,
-      role: invitation.role as CompanyRole,
-      accepted: invitation.accepted,
-      createdAt: new Date(invitation.created_at),
-      invitedBy: invitation.invited_by,
-      companyName: (invitation.companies as any)?.name || 'Unknown Company'
-    }));
-
-    console.log('✅ Transformed invitations:', invitations);
-    return invitations;
-  } catch (error) {
-    console.error('💥 Error in loadUserInvitations:', error);
-    throw error;
-  }
-  }
   // Log dashboard data for debugging
   useEffect(() => {
     console.log('📊 Dashboard - Ideas count:', ideas.length);
@@ -90,9 +40,7 @@ const Dashboard: React.FC = () => {
     console.log('📊 Dashboard - Is processing invitation from URL:', isProcessingInvitation);
     console.log('📊 Dashboard - Should show invitations?', userIncomingInvitations.length > 0);
   }, [ideas.length, hypotheses.length, experiments.length, userIncomingInvitations.length, user?.email, currentCompany, userIncomingInvitations, companies, isProcessingInvitation]);
-  useEffect(()=>{
-    getInvitations()
-  },[])
+
   // Calculate hypothesis statistics by status
   const hypothesesByStatus = hypotheses.reduce((acc, hypothesis) => {
     const status = hypothesis.status || 'Backlog';
