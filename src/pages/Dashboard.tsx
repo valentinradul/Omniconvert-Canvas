@@ -32,12 +32,13 @@ const Dashboard: React.FC = () => {
     console.log('📊 Dashboard - Ideas count:', ideas.length);
     console.log('📊 Dashboard - Hypotheses count:', hypotheses.length);
     console.log('📊 Dashboard - Experiments count:', experiments.length);
-    console.log('📊 Dashboard - User incoming invitations count:', userIncomingInvitations.length);
+    console.log('📊 Dashboard - User incoming invitations count:', userIncomingInvitations);
     console.log('📊 Dashboard - User email:', user?.email);
     console.log('📊 Dashboard - Current company:', currentCompany?.name, 'ID:', currentCompany?.id);
     console.log('📊 Dashboard - All companies:', companies.map(c => ({ id: c.id, name: c.name })));
     console.log('📊 Dashboard - User incoming invitations:', userIncomingInvitations);
     console.log('📊 Dashboard - Is processing invitation from URL:', isProcessingInvitation);
+    console.log('📊 Dashboard - Should show invitations?', userIncomingInvitations.length > 0);
   }, [ideas.length, hypotheses.length, experiments.length, userIncomingInvitations.length, user?.email, currentCompany, userIncomingInvitations, companies, isProcessingInvitation]);
 
   // Calculate hypothesis statistics by status
@@ -104,14 +105,13 @@ const Dashboard: React.FC = () => {
         </p>
       </div>
 
-      {/* Company Invitations - Show if user has invitations */}
-      {userIncomingInvitations.length > 0 && (
-        <CompanyInvitations 
-          invitations={userIncomingInvitations}
-          onInvitationAccepted={handleInvitationAccepted}
-          onInvitationDeclined={handleInvitationDeclined}
-        />
-      )}
+      {/* Company Invitations - Always show if there are invitations */}
+      
+      <CompanyInvitations 
+        invitations={userIncomingInvitations}
+        onInvitationAccepted={handleInvitationAccepted}
+        onInvitationDeclined={handleInvitationDeclined}
+      />
 
       {isProcessingInvitation && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
