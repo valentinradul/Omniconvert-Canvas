@@ -24,7 +24,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
   const { refreshUserCompanies } = useCompany();
   const { acceptInvitation, declineInvitation, isProcessing } = useInvitations();
 
-  console.log('CompanyInvitations render:', { 
+  console.log('🔔 CompanyInvitations render:', { 
     invitationsCount: invitations.length, 
     userId: user?.id,
     userEmail: user?.email,
@@ -34,38 +34,40 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
 
   // Don't show if user not authenticated
   if (!isAuthenticated || !user) {
-    console.log('User not authenticated, not showing invitations');
+    console.log('❌ User not authenticated, not showing invitations');
     return null;
   }
 
-  // The invitations are already filtered by the context, so we don't need to filter again
-  // Just use the invitations passed as props
-  const userInvitations = invitations;
+  // Filter invitations for current user's email
+  const userInvitations = invitations.filter(invitation => 
+    invitation.email && invitation.email.toLowerCase() === user.email?.toLowerCase()
+  );
 
-  console.log('Using invitations directly from props:', { 
+  console.log('📧 Filtered invitations for user:', { 
     userEmail: user?.email,
-    invitationsCount: userInvitations.length,
+    totalInvitations: invitations.length,
+    userSpecificInvitations: userInvitations.length,
     userInvitations 
   });
 
-  // Don't show if no invitations
+  // Don't show if no invitations for this user
   if (userInvitations.length === 0) {
-    console.log('No invitations to show');
+    console.log('📭 No invitations for this user');
     return null;
   }
 
   const handleAccept = async (invitationId: string) => {
-    console.log('Handling invitation acceptance:', { invitationId, userId: user.id });
+    console.log('✅ Handling invitation acceptance:', { invitationId, userId: user.id });
     
     if (!isAuthenticated || !user) {
-      console.error('User not authenticated when trying to accept invitation');
+      console.error('❌ User not authenticated when trying to accept invitation');
       return;
     }
 
     try {
       const result = await acceptInvitation(invitationId, user.id, invitations);
       if (result) {
-        console.log('Invitation accepted successfully, refreshing company data');
+        console.log('🎉 Invitation accepted successfully, refreshing company data');
         
         // Refresh company data through context
         await refreshUserCompanies();
@@ -77,26 +79,26 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
         
         // Force a small delay then reload to ensure fresh state
         setTimeout(() => {
-          console.log('Reloading page to show fresh company data');
+          console.log('🔄 Reloading page to show fresh company data');
           window.location.reload();
         }, 1000);
       }
     } catch (error) {
-      console.error('Error in handleAccept:', error);
+      console.error('❌ Error in handleAccept:', error);
     }
   };
 
   const handleDecline = async (invitationId: string) => {
-    console.log('Handling invitation decline:', invitationId);
+    console.log('❌ Handling invitation decline:', invitationId);
     
     try {
       const result = await declineInvitation(invitationId);
       if (result && onInvitationDeclined) {
-        console.log('Invitation declined successfully, calling callback');
+        console.log('✅ Invitation declined successfully, calling callback');
         onInvitationDeclined();
       }
     } catch (error) {
-      console.error('Error in handleDecline:', error);
+      console.error('❌ Error in handleDecline:', error);
     }
   };
 
@@ -105,15 +107,17 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        console.warn('Invalid date string:', dateString);
+        console.warn('⚠️ Invalid date string:', dateString);
         return 'Recently';
       }
       return formatDistanceToNow(date, { addSuffix: true });
     } catch (error) {
-      console.error('Error formatting date:', error, dateString);
+      console.error('❌ Error formatting date:', error, dateString);
       return 'Recently';
     }
   };
+
+  console.log('🎨 Rendering CompanyInvitations with', userInvitations.length, 'invitations');
 
   return (
     <Card className="mb-6">

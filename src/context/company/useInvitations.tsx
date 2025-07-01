@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,10 +10,10 @@ export function useInvitations() {
 
   // Accept invitation function with enhanced company access
   const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
-    console.log('Starting invitation acceptance process:', { invitationId, userId });
+    console.log('🚀 Starting invitation acceptance process:', { invitationId, userId });
     
     if (!userId) {
-      console.error('No user ID provided for invitation acceptance');
+      console.error('❌ No user ID provided for invitation acceptance');
       toast({
         variant: "destructive",
         title: "Authentication required",
@@ -27,17 +28,22 @@ export function useInvitations() {
       // Get invitation data from database
       const { data: invitation, error: invitationError } = await supabase
         .from('company_invitations')
-        .select('*')
+        .select(`
+          *,
+          companies (
+            id,
+            name
+          )
+        `)
         .eq('id', invitationId)
-        .eq('accepted', false)
         .single();
         
       if (invitationError || !invitation) {
-        console.error('Invitation not found or invalid:', invitationError);
+        console.error('❌ Invitation not found or invalid:', invitationError);
         throw new Error("Invitation not found or already used");
       }
       
-      console.log('Found valid invitation:', invitation);
+      console.log('✅ Found valid invitation:', invitation);
       
       // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
@@ -48,16 +54,16 @@ export function useInvitations() {
         .maybeSingle();
         
       if (memberCheckError) {
-        console.error('Error checking existing membership:', memberCheckError);
+        console.error('❌ Error checking existing membership:', memberCheckError);
         throw new Error("Unable to verify membership status");
       }
       
       if (existingMember) {
-        console.log('User is already a member of this company');
+        console.log('ℹ️ User is already a member of this company');
         
         // Update existing membership role if different
         if (existingMember.role !== invitation.role) {
-          console.log('Updating member role from', existingMember.role, 'to', invitation.role);
+          console.log('🔄 Updating member role from', existingMember.role, 'to', invitation.role);
           
           const { error: updateError } = await supabase
             .from('company_members')
@@ -65,12 +71,12 @@ export function useInvitations() {
             .eq('id', existingMember.id);
             
           if (updateError) {
-            console.error('Error updating member role:', updateError);
+            console.error('❌ Error updating member role:', updateError);
             throw updateError;
           }
         }
       } else {
-        console.log('Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
+        console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
         
         // Add user to company members
         const { error: memberError } = await supabase
@@ -82,11 +88,11 @@ export function useInvitations() {
           });
           
         if (memberError) {
-          console.error('Error adding company member:', memberError);
+          console.error('❌ Error adding company member:', memberError);
           throw memberError;
         }
         
-        console.log('Successfully added user to company');
+        console.log('✅ Successfully added user to company');
       }
       
       // Mark invitation as accepted
@@ -96,34 +102,22 @@ export function useInvitations() {
         .eq('id', invitationId);
         
       if (updateError) {
-        console.error('Error updating invitation status:', updateError);
-        console.warn('Failed to mark invitation as accepted, but user was added to company');
-      }
-      
-      // Get company details
-      const { data: companyData, error: companyError } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('id', invitation.company_id)
-        .single();
-        
-      if (companyError) {
-        console.error('Error fetching company data:', companyError);
-        throw companyError;
+        console.error('❌ Error updating invitation status:', updateError);
+        console.warn('⚠️ Failed to mark invitation as accepted, but user was added to company');
       }
       
       const company: Company = {
-        id: companyData.id,
-        name: companyData.name,
-        createdAt: new Date(companyData.created_at),
-        createdBy: companyData.created_by
+        id: invitation.company_id,
+        name: (invitation.companies as any)?.name || 'Unknown Company',
+        createdAt: new Date(),
+        createdBy: invitation.invited_by
       };
       
       // Clear cached data and ensure fresh state
       localStorage.removeItem('userCompanies');
       localStorage.setItem('currentCompanyId', company.id);
       
-      console.log('Successfully processed invitation acceptance');
+      console.log('🎉 Successfully processed invitation acceptance');
       
       toast({
         title: "Welcome to the team!",
@@ -132,7 +126,7 @@ export function useInvitations() {
       
       return { company, invitationId, role: invitation.role };
     } catch (error: any) {
-      console.error('Error accepting invitation:', error);
+      console.error('❌ Error accepting invitation:', error);
       
       let errorMessage = "There was an error accepting the invitation";
       
@@ -158,7 +152,7 @@ export function useInvitations() {
   
   // Decline invitation function
   const declineInvitation = async (invitationId: string) => {
-    console.log('Declining invitation:', invitationId);
+    console.log('❌ Declining invitation:', invitationId);
     setIsProcessing(true);
     
     try {
@@ -168,11 +162,11 @@ export function useInvitations() {
         .eq('id', invitationId);
         
       if (error) {
-        console.error('Error declining invitation:', error);
+        console.error('❌ Error declining invitation:', error);
         throw error;
       }
       
-      console.log('Successfully declined invitation');
+      console.log('✅ Successfully declined invitation');
       
       toast({
         title: "Invitation declined",
@@ -181,7 +175,7 @@ export function useInvitations() {
       
       return invitationId;
     } catch (error: any) {
-      console.error('Error declining invitation:', error);
+      console.error('❌ Error declining invitation:', error);
       
       toast({
         variant: "destructive",
