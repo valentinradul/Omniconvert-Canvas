@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,32 +24,33 @@ export function useInvitations() {
     setIsProcessing(true);
     
     try {
-      // Find the invitation in the passed invitations array first
-      const localInvitation = invitations.find(inv => inv.id === invitationId);
-      
-      if (!localInvitation) {
-        console.error('❌ Invitation not found in local data');
-        throw new Error("Invitation not found");
+      // Get invitation data from database to ensure we have the latest info
+      const { data: invitation, error: invitationError } = await supabase
+        .from('company_invitations')
+        .select(`
+          *,
+          companies (
+            id,
+            name
+          )
+        `)
+        .eq('id', invitationId)
+        .eq('accepted', false)
+        .single();
+        
+      if (invitationError || !invitation) {
+        console.error('❌ Invitation not found or already accepted:', invitationError);
+        throw new Error("Invitation not found or already used");
       }
       
-      console.log('✅ Found invitation in local data:', localInvitation);
-      
-      // Get the company ID from the invitation (handle both companyId and company_id)
-      const companyId = localInvitation.companyId || localInvitation.company_id;
-      
-      if (!companyId) {
-        console.error('❌ No company ID found in invitation:', localInvitation);
-        throw new Error("Invalid invitation - missing company information");
-      }
-      
-      console.log('🔍 Checking membership for company:', companyId);
+      console.log('✅ Found valid invitation:', invitation);
       
       // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
         .from('company_members')
         .select('*')
         .eq('user_id', userId)
-        .eq('company_id', companyId)
+        .eq('company_id', invitation.company_id)
         .maybeSingle();
         
       if (memberCheckError) {
@@ -60,12 +62,12 @@ export function useInvitations() {
         console.log('ℹ️ User is already a member of this company');
         
         // Update existing membership role if different
-        if (existingMember.role !== localInvitation.role) {
-          console.log('🔄 Updating member role from', existingMember.role, 'to', localInvitation.role);
+        if (existingMember.role !== invitation.role) {
+          console.log('🔄 Updating member role from', existingMember.role, 'to', invitation.role);
           
           const { error: updateError } = await supabase
             .from('company_members')
-            .update({ role: localInvitation.role })
+            .update({ role: invitation.role })
             .eq('id', existingMember.id);
             
           if (updateError) {
@@ -74,15 +76,15 @@ export function useInvitations() {
           }
         }
       } else {
-        console.log('➕ Adding user to company members:', { userId, companyId, role: localInvitation.role });
+        console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
         
         // Add user to company members
         const { error: memberError } = await supabase
           .from('company_members')
           .insert({
-            company_id: companyId,
+            company_id: invitation.company_id,
             user_id: userId,
-            role: localInvitation.role
+            role: invitation.role
           });
           
         if (memberError) {
@@ -93,12 +95,11 @@ export function useInvitations() {
         console.log('✅ Successfully added user to company');
       }
       
-      // Mark invitation as accepted - use a simple update without selecting
+      // Mark invitation as accepted
       const { error: updateError } = await supabase
         .from('company_invitations')
         .update({ accepted: true })
-        .eq('id', invitationId)
-        .eq('email', localInvitation.email); // Add email filter to avoid RLS issues
+        .eq('id', invitationId);
         
       if (updateError) {
         console.error('❌ Error updating invitation status:', updateError);
@@ -106,20 +107,20 @@ export function useInvitations() {
       }
       
       const company = {
-        id: companyId,
-        name: localInvitation.companyName || localInvitation.company_name || 'Unknown Company',
+        id: invitation.company_id,
+        name: (invitation.companies as any)?.name || 'Unknown Company',
         createdAt: new Date(),
-        createdBy: localInvitation.invited_by
+        createdBy: invitation.invited_by
       };
       
       console.log('🎉 Successfully processed invitation acceptance');
       
       toast({
         title: "Welcome to the team!",
-        description: `You are now a ${localInvitation.role} of ${company.name}`,
+        description: `You are now a ${invitation.role} of ${company.name}`,
       });
       
-      return { company, invitationId, role: localInvitation.role };
+      return { company, invitationId, role: invitation.role };
     } catch (error: any) {
       console.error('❌ Error accepting invitation:', error);
       
