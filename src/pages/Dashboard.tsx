@@ -10,7 +10,7 @@ import FilterBar from "@/components/dashboard/FilterBar";
 import StatisticsChart from "@/components/dashboard/StatisticsChart";
 import CompanyInvitations from "@/components/company/CompanyInvitations";
 import { useInvitationHandler } from "@/hooks/useInvitationHandler";
-
+import { supabase } from '@/integrations/supabase/client';
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { userIncomingInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
@@ -26,7 +26,59 @@ const Dashboard: React.FC = () => {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
+const loadUserInvitations = async (userEmail: string): Promise<any[]> => {
+  console.log('📧 Loading invitations for email:', userEmail);
+  
+  try {
+    const { data, error } = await supabase
+      .from('company_invitations')
+      .select(`
+        id,
+        company_id,
+        email,
+        role,
+        accepted,
+        created_at,
+        invited_by,
+        companies (
+          id,
+          name
+        )
+      `)
+      .ilike('email', userEmail) // Use ilike for case-insensitive matching
+      .eq('accepted', false);
+    console.log("_____________________________________________________________________________________________")
+    if (error) {
+      console.error('❌ Error loading invitations:', error);
+      throw error;
+    }
 
+    console.log('📋 Raw invitation data:', data);
+
+    if (!data || data.length === 0) {
+      console.log('ℹ️ No pending invitations found for user');
+      return [];
+    }
+
+    // Transform the data
+    const invitations: any[] = data.map(invitation => ({
+      id: invitation.id,
+      companyId: invitation.company_id,
+      email: invitation.email,
+      role: invitation.role ,
+      accepted: invitation.accepted,
+      createdAt: new Date(invitation.created_at),
+      invitedBy: invitation.invited_by,
+      companyName: (invitation.companies as any)?.name || 'Unknown Company'
+    }));
+
+    console.log('✅ Transformed invitations:', invitations);
+    return invitations;
+  } catch (error) {
+    console.error('💥 Error in loadUserInvitations:', error);
+    throw error;
+  }
+};
   // Log dashboard data for debugging
   useEffect(() => {
     console.log('📊 Dashboard - Ideas count:', ideas.length);
