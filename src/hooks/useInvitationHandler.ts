@@ -63,9 +63,6 @@ export function useInvitationHandler() {
         }
 
         console.log('Found invitation:', invitation);
-        console.log('Invitation company ID:', invitation.company_id);
-        console.log('User email from auth:', user.email);
-        console.log('Invitation email:', invitation.email);
 
         // Check if the invitation email matches the current user's email
         if (invitation.email.toLowerCase() !== user.email?.toLowerCase()) {
@@ -79,12 +76,12 @@ export function useInvitationHandler() {
           return;
         }
 
-        // Check if user is already a member of this company with the EXACT same company ID
+        // Check if user is already a member of this company
         const { data: existingMember, error: memberCheckError } = await supabase
           .from('company_members')
           .select('id, role, company_id')
           .eq('user_id', user.id)
-          .eq('company_id', invitation.company_id) // Ensure exact company ID match
+          .eq('company_id', invitation.company_id)
           .maybeSingle();
 
         if (memberCheckError) {
@@ -92,27 +89,10 @@ export function useInvitationHandler() {
           throw new Error('Unable to verify membership status');
         }
 
-        console.log('Existing member check:', existingMember);
-        console.log('Expected company ID:', invitation.company_id);
-
         if (existingMember) {
-          console.log('User is already a member of this company with matching company ID:', existingMember.company_id);
+          console.log('User is already a member of this company');
           
-          // Verify the company IDs match exactly
-          if (existingMember.company_id !== invitation.company_id) {
-            console.error('Company ID mismatch in existing membership:', {
-              existingCompanyId: existingMember.company_id,
-              invitationCompanyId: invitation.company_id
-            });
-            toast({
-              variant: "destructive",
-              title: "Company mismatch",
-              description: "There's a mismatch in company information. Please contact support.",
-            });
-            return;
-          }
-          
-          // Mark invitation as accepted since user is already a member with correct company ID
+          // Mark invitation as accepted
           await supabase
             .from('company_invitations')
             .update({ accepted: true })
@@ -122,75 +102,41 @@ export function useInvitationHandler() {
             title: "Welcome back!",
             description: `You're already a member of ${(invitation.companies as any)?.name || 'this company'}`,
           });
-          
-          // Refresh companies to ensure we have the latest data
-          await refreshUserCompanies();
-          
-          // Switch to this company using the exact company ID from invitation
-          switchCompany(invitation.company_id);
-          
-          // Clear URL parameters and redirect
-          setTimeout(() => {
-            window.history.replaceState({}, '', '/dashboard');
-            navigate('/dashboard', { replace: true });
-          }, 500);
-          return;
-        }
+        } else if (!invitation.accepted) {
+          console.log('Accepting invitation...');
 
-        // If invitation is not yet accepted, accept it with exact company ID matching
-        if (!invitation.accepted) {
-          console.log('Accepting invitation with company ID:', invitation.company_id);
-
-          // Accept the invitation (this should create company membership with exact company ID)
+          // Accept the invitation
           const result = await acceptInvitation(invitationId, user.id, [invitation]);
           
-          if (result) {
-            console.log('Invitation accepted successfully');
-            
-            // Verify the company membership was created with the correct company ID
-            const { data: newMember, error: verifyError } = await supabase
-              .from('company_members')
-              .select('company_id, role')
-              .eq('user_id', user.id)
-              .eq('company_id', invitation.company_id)
-              .single();
-              
-            if (verifyError || !newMember) {
-              console.error('Failed to verify new membership with correct company ID:', verifyError);
-              toast({
-                variant: "destructive",
-                title: "Membership verification failed",
-                description: "Unable to verify your company membership. Please try again.",
-              });
-              return;
-            }
-            
-            console.log('Verified new membership with correct company ID:', newMember.company_id);
-            setHasProcessedInvitation(true);
-            
-            toast({
-              title: "Welcome to the team!",
-              description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
-            });
+          if (!result) {
+            throw new Error('Failed to accept invitation');
           }
+
+          console.log('Invitation accepted successfully');
+          setHasProcessedInvitation(true);
+          
+          toast({
+            title: "Welcome to the team!",
+            description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
+          });
         }
 
-        // Refresh companies to get the updated list
+        // Force refresh user companies to get the updated list
         console.log('Refreshing user companies...');
         await refreshUserCompanies();
         
-        // Wait a bit to ensure companies are loaded
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait for companies to be refreshed
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // Switch to the company using exact company ID from invitation
+        // Switch to the company
         console.log('Switching to company with ID:', invitation.company_id);
         switchCompany(invitation.company_id);
         
-        // Clear URL parameters and redirect
+        // Clear URL parameters and redirect to dashboard
         setTimeout(() => {
           window.history.replaceState({}, '', '/dashboard');
           navigate('/dashboard', { replace: true });
-        }, 500);
+        }, 1000);
         
       } catch (error) {
         console.error('Error processing invitation:', error);
