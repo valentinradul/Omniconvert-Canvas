@@ -38,10 +38,19 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     return null;
   }
 
-  // Filter invitations for current user's email
-  const userInvitations = invitations.filter(invitation => 
-    invitation.email && invitation.email.toLowerCase() === user.email?.toLowerCase()
-  );
+  // Filter invitations for current user's email with better matching
+  const userInvitations = invitations.filter(invitation => {
+    const invitationEmail = invitation.email?.toLowerCase().trim();
+    const userEmail = user.email?.toLowerCase().trim();
+    
+    console.log('🔍 Email comparison:', { 
+      invitationEmail, 
+      userEmail, 
+      matches: invitationEmail === userEmail 
+    });
+    
+    return invitationEmail === userEmail;
+  });
 
   console.log('📧 Filtered invitations for user:', { 
     userEmail: user?.email,
@@ -49,6 +58,13 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     userSpecificInvitations: userInvitations.length,
     userInvitations 
   });
+
+  // Show debug info if we have invitations but none match the user
+  if (invitations.length > 0 && userInvitations.length === 0) {
+    console.log('⚠️ Invitations exist but none match user email');
+    console.log('📋 All invitation emails:', invitations.map(inv => inv.email));
+    console.log('👤 User email:', user.email);
+  }
 
   // Don't show if no invitations for this user
   if (userInvitations.length === 0) {
