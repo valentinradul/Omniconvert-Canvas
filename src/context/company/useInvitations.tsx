@@ -78,7 +78,7 @@ export function useInvitations() {
       } else {
         console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
         
-        // Add user to company members
+        // Add user to company members - simplified approach
         const { error: memberError } = await supabase
           .from('company_members')
           .insert({
