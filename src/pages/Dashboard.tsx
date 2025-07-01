@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
     console.log('📊 Dashboard - Ideas count:', ideas.length);
     console.log('📊 Dashboard - Hypotheses count:', hypotheses.length);
     console.log('📊 Dashboard - Experiments count:', experiments.length);
-    console.log('📊 Dashboard - User incoming invitations count:', userIncomingInvitations.length);
+    console.log('📊 Dashboard - User incoming invitations count:', companyInvitations.length);
     console.log('📊 Dashboard - User email:', user?.email);
     console.log('📊 Dashboard - Current company:', currentCompany?.name, 'ID:', currentCompany?.id);
     console.log('📊 Dashboard - All companies:', companies.map(c => ({ id: c.id, name: c.name })));
@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
       {/* Company Invitations - Always show if there are invitations */}
       
       <CompanyInvitations 
-        invitations={companyInvitations}
+        invitations={userIncomingInvitations}
         onInvitationAccepted={handleInvitationAccepted}
         onInvitationDeclined={handleInvitationDeclined}
       />
