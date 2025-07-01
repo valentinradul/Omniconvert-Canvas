@@ -13,7 +13,7 @@ import { useInvitationHandler } from "@/hooks/useInvitationHandler";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { userIncomingInvitations,companyInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
+  const { userIncomingInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
   
   // Use the invitation handler to process any invitation in the URL
   const { invitationId, isProcessingInvitation } = useInvitationHandler();
@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
     console.log('📊 Dashboard - Ideas count:', ideas.length);
     console.log('📊 Dashboard - Hypotheses count:', hypotheses.length);
     console.log('📊 Dashboard - Experiments count:', experiments.length);
-    console.log('📊 Dashboard - User incoming invitations count:', companyInvitations.length);
+    console.log('📊 Dashboard - User incoming invitations count:', userIncomingInvitations.length);
     console.log('📊 Dashboard - User email:', user?.email);
     console.log('📊 Dashboard - Current company:', currentCompany?.name, 'ID:', currentCompany?.id);
     console.log('📊 Dashboard - All companies:', companies.map(c => ({ id: c.id, name: c.name })));
@@ -106,7 +106,6 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Company Invitations - Always show if there are invitations */}
-      
       <CompanyInvitations 
         invitations={userIncomingInvitations}
         onInvitationAccepted={handleInvitationAccepted}

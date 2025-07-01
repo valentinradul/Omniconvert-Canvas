@@ -76,67 +76,47 @@ export function useInvitationHandler() {
           return;
         }
 
-        // Check if user is already a member of this company
-        const { data: existingMember, error: memberCheckError } = await supabase
-          .from('company_members')
-          .select('id, role, company_id')
-          .eq('user_id', user.id)
-          .eq('company_id', invitation.company_id)
-          .maybeSingle();
-
-        if (memberCheckError) {
-          console.error('Error checking existing membership:', memberCheckError);
-          throw new Error('Unable to verify membership status');
+        // Check if invitation is already accepted
+        if (invitation.accepted) {
+          console.log('Invitation already accepted');
+          toast({
+            title: "Already accepted",
+            description: `You've already joined ${(invitation.companies as any)?.name || 'this company'}`,
+          });
+          navigate('/dashboard', { replace: true });
+          return;
         }
 
-        if (existingMember) {
-          console.log('User is already a member of this company');
-          
-          // Mark invitation as accepted
-          await supabase
-            .from('company_invitations')
-            .update({ accepted: true })
-            .eq('id', invitationId);
-            
-          toast({
-            title: "Welcome back!",
-            description: `You're already a member of ${(invitation.companies as any)?.name || 'this company'}`,
-          });
-        } else if (!invitation.accepted) {
-          console.log('Accepting invitation...');
-
-          // Accept the invitation
-          const result = await acceptInvitation(invitationId, user.id, [invitation]);
-          
-          if (!result) {
-            throw new Error('Failed to accept invitation');
-          }
-
+        // Accept the invitation
+        console.log('Accepting invitation...');
+        const result = await acceptInvitation(invitationId, user.id, [invitation]);
+        
+        if (result) {
           console.log('Invitation accepted successfully');
           setHasProcessedInvitation(true);
+          
+          // Force refresh user companies to get the updated list
+          console.log('Refreshing user companies...');
+          await refreshUserCompanies();
+          
+          // Wait for companies to be refreshed
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Switch to the company
+          console.log('Switching to company with ID:', invitation.company_id);
+          switchCompany(invitation.company_id);
           
           toast({
             title: "Welcome to the team!",
             description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
           });
         }
-
-        // Force refresh user companies to get the updated list
-        console.log('Refreshing user companies...');
-        await refreshUserCompanies();
-        
-        // Wait for companies to be refreshed
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Switch to the company
-        console.log('Switching to company with ID:', invitation.company_id);
-        switchCompany(invitation.company_id);
         
         // Clear URL parameters and redirect to dashboard
         setTimeout(() => {
           window.history.replaceState({}, '', '/dashboard');
           navigate('/dashboard', { replace: true });
-        }, 1000);
+        }, 2000);
         
       } catch (error) {
         console.error('Error processing invitation:', error);

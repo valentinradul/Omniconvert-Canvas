@@ -46,10 +46,12 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     console.log('🔍 Email comparison:', { 
       invitationEmail, 
       userEmail, 
-      matches: invitationEmail === userEmail 
+      matches: invitationEmail === userEmail,
+      invitationId: invitation.id
     });
     
-    return invitationEmail === userEmail;
+    // Only show non-accepted invitations
+    return invitationEmail === userEmail && !invitation.accepted;
   });
 
   console.log('📧 Filtered invitations for user:', { 
@@ -59,16 +61,9 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     userInvitations 
   });
 
-  // Show debug info if we have invitations but none match the user
-  if (invitations.length > 0 && userInvitations.length === 0) {
-    console.log('⚠️ Invitations exist but none match user email');
-    console.log('📋 All invitation emails:', invitations.map(inv => inv.email));
-    console.log('👤 User email:', user.email);
-  }
-
   // Don't show if no invitations for this user
   if (userInvitations.length === 0) {
-    console.log('📭 No invitations for this user');
+    console.log('📭 No pending invitations for this user');
     return null;
   }
 

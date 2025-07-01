@@ -36,6 +36,7 @@ export function useInvitations() {
           )
         `)
         .eq('id', invitationId)
+        .eq('accepted', false)
         .single();
         
       if (invitationError || !invitation) {
