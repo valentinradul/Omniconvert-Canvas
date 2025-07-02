@@ -75,6 +75,7 @@ export function useCompanyData(userId: string | undefined) {
         .eq('email', userEmail.toLowerCase())
         .eq('accepted', false); // Only get non-accepted invitations
 
+      console.log("dataaaaaaaaaaaaaa",data);
       if (error) {
         console.error('❌ Error fetching user invitations:', error);
         return;
