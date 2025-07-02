@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -82,15 +83,15 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchUserCompanies
   );
 
-  // Enhanced accept invitation that properly refreshes everything and switches to new company
+  // FIXED: Only accept invitation when explicitly called - NO AUTOMATIC PROCESSING
   const acceptInvitation = async (invitationId: string) => {
-    console.log('🚀 CompanyContext: Starting invitation acceptance process');
+    console.log('🚀 CompanyContext: MANUAL invitation acceptance triggered by user click');
     
     try {
       const result = await baseAcceptInvitation(invitationId);
       
       if (result && result.company && result.role) {
-        console.log('🔄 CompanyContext: Invitation accepted, performing comprehensive refresh');
+        console.log('🔄 CompanyContext: Manual invitation accepted, performing comprehensive refresh');
         
         // Clear localStorage to force fresh data
         localStorage.removeItem('userCompanies');
@@ -100,7 +101,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const newCompany = result.company;
         const newRole = result.role as CompanyRole;
         
-        console.log('🎯 CompanyContext: New company joined:', newCompany.name, 'Role:', newRole);
+        console.log('🎯 CompanyContext: New company joined via MANUAL acceptance:', newCompany.name, 'Role:', newRole);
         
         // Add the new company to the companies list
         setCompanies(prevCompanies => {
@@ -132,10 +133,10 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         await fetchUserRole();
         await fetchPendingInvitations();
         
-        console.log('✅ CompanyContext: Successfully switched to new company and refreshed all data');
+        console.log('✅ CompanyContext: Successfully processed MANUAL invitation acceptance');
       }
     } catch (error) {
-      console.error('❌ CompanyContext: Error in acceptInvitation:', error);
+      console.error('❌ CompanyContext: Error in MANUAL acceptInvitation:', error);
       throw error;
     }
   };

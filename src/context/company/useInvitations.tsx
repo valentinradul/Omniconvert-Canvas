@@ -7,9 +7,9 @@ export function useInvitations() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // Accept invitation function - only called by explicit user action
+  // Accept invitation function - ONLY called by explicit user action (button click)
   const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
-    console.log('🚀 User explicitly clicked accept invitation:', { invitationId, userId });
+    console.log('🚀 EXPLICIT USER CLICK: User clicked accept invitation button:', { invitationId, userId });
     
     if (!userId) {
       console.error('❌ No user ID provided for invitation acceptance');
@@ -75,7 +75,7 @@ export function useInvitations() {
         return null;
       }
       
-      console.log('✅ Found valid pending invitation:', invitation);
+      console.log('✅ Found valid pending invitation for MANUAL processing:', invitation);
       
       // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
@@ -96,7 +96,7 @@ export function useInvitations() {
       }
       
       if (existingMember) {
-        console.log('ℹ️ User is already a member of this company');
+        console.log('ℹ️ User is already a member of this company - marking invitation as accepted');
         
         // Mark invitation as accepted since user is already a member
         const { error: updateError } = await supabase
@@ -119,7 +119,7 @@ export function useInvitations() {
         return null;
       }
       
-      console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
+      console.log('➕ Adding user to company members via MANUAL acceptance:', { userId, companyId: invitation.company_id, role: invitation.role });
       
       // Add user to company members
       const { error: memberError } = await supabase
@@ -140,7 +140,7 @@ export function useInvitations() {
         return null;
       }
       
-      console.log('✅ Successfully added user to company');
+      console.log('✅ Successfully added user to company via MANUAL acceptance');
       
       // Mark invitation as accepted - ONLY after successful member addition
       const { error: updateError } = await supabase
@@ -164,7 +164,7 @@ export function useInvitations() {
         createdBy: invitation.invited_by
       };
       
-      console.log('🎉 Successfully processed manual invitation acceptance');
+      console.log('🎉 Successfully processed MANUAL invitation acceptance');
       
       toast({
         title: "Welcome to the team!",
