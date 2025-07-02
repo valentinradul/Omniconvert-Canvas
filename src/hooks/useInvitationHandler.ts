@@ -16,17 +16,17 @@ export function useInvitationHandler() {
   const invitationId = searchParams.get('invitation');
 
   useEffect(() => {
-    // Only validate and show notification about invitation, no processing
+    // ONLY validate and show notification about invitation - NO AUTOMATIC PROCESSING
     const handleInvitationInUrl = async () => {
       if (!isAuthenticated || !user?.email || !invitationId || hasProcessedInvitation) {
         return;
       }
 
-      console.log('🔗 Invitation ID found in URL, validating invitation only:', { invitationId, userId: user.id, userEmail: user.email });
+      console.log('🔗 Invitation ID found in URL, validating invitation only (NO AUTO-PROCESSING):', { invitationId, userId: user.id, userEmail: user.email });
       setIsProcessingInvitation(true);
 
       try {
-        // Just validate that the invitation exists and is for this user
+        // Just validate that the invitation exists and is for this user - DO NOT PROCESS IT
         const { data: invitation, error: invitationError } = await supabase
           .from('company_invitations')
           .select(`
@@ -46,7 +46,6 @@ export function useInvitationHandler() {
 
         if (invitationError || !invitation) {
           console.log('ℹ️ Invitation not found, expired, or already accepted - redirecting to dashboard');
-          // Clean up URL and redirect
           navigate('/dashboard', { replace: true });
           return;
         }
@@ -58,16 +57,16 @@ export function useInvitationHandler() {
           return;
         }
 
-        console.log('✅ Valid invitation found - showing notification');
+        console.log('✅ Valid invitation found - showing notification (NO AUTO-PROCESSING)');
         setHasProcessedInvitation(true);
         
-        // Show notification that invitation is available on dashboard
+        // Show notification that invitation is available on dashboard - DO NOT AUTO-ACCEPT
         toast({
           title: "Invitation pending",
           description: `You have a pending invitation to join ${(invitation.companies as any)?.name || 'the company'}. Go to your dashboard to accept or decline it.`,
         });
         
-        // Navigate to dashboard - invitation will be shown there for manual acceptance
+        // Navigate to dashboard - invitation will be shown there for MANUAL acceptance
         navigate('/dashboard', { replace: true });
         
       } catch (error) {

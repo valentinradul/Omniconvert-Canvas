@@ -102,10 +102,13 @@ export function useInvitations() {
         const { error: updateError } = await supabase
           .from('company_invitations')
           .update({ accepted: true })
-          .eq('id', invitationId);
+          .eq('id', invitationId)
+          .eq('email', invitation.email); // Only update the specific invitation for this email
           
         if (updateError) {
           console.error('❌ Error updating invitation status:', updateError);
+        } else {
+          console.log('✅ Marked invitation as accepted for existing member');
         }
         
         toast({
@@ -139,16 +142,19 @@ export function useInvitations() {
       
       console.log('✅ Successfully added user to company');
       
-      // Mark invitation as accepted
+      // Mark invitation as accepted - ONLY after successful member addition
       const { error: updateError } = await supabase
         .from('company_invitations')
         .update({ accepted: true })
-        .eq('id', invitationId);
+        .eq('id', invitationId)
+        .eq('email', invitation.email); // Ensure we only update the correct invitation
         
       if (updateError) {
         console.error('❌ Error updating invitation status:', updateError);
         // Don't return null here as the user was successfully added to the company
         console.warn('⚠️ Failed to mark invitation as accepted, but user was added to company');
+      } else {
+        console.log('✅ Successfully marked invitation as accepted');
       }
       
       const company = {
