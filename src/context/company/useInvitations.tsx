@@ -96,41 +96,24 @@ export function useInvitations() {
       }
       
       if (existingMember) {
-        console.log('ℹ️ User is already a member of this company, updating invitation status');
+        console.log('ℹ️ User is already a member of this company');
         
         // Mark invitation as accepted since user is already a member
         const { error: updateError } = await supabase
           .from('company_invitations')
           .update({ accepted: true })
-          .eq('id', invitationId)
-          .eq('email', (await supabase.auth.getUser()).data.user?.email || '');
+          .eq('id', invitationId);
           
         if (updateError) {
           console.error('❌ Error updating invitation status:', updateError);
-          toast({
-            variant: "destructive",
-            title: "Error updating invitation",
-            description: "Failed to update invitation status. Please try again.",
-          });
-          return null;
         }
-        
-        console.log('✅ Successfully marked invitation as accepted');
         
         toast({
           title: "Already a member",
-          description: "You are already a member of this company. Invitation has been marked as accepted.",
+          description: "You are already a member of this company.",
         });
         
-        // Return the company info so the UI can be updated
-        const company = {
-          id: invitation.company_id,
-          name: (invitation.companies as any)?.name || 'Unknown Company',
-          createdAt: new Date(),
-          createdBy: invitation.invited_by
-        };
-        
-        return { company, invitationId, role: invitation.role };
+        return null;
       }
       
       console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
@@ -160,8 +143,7 @@ export function useInvitations() {
       const { error: updateError } = await supabase
         .from('company_invitations')
         .update({ accepted: true })
-        .eq('id', invitationId)
-        .eq('email', (await supabase.auth.getUser()).data.user?.email || '');
+        .eq('id', invitationId);
         
       if (updateError) {
         console.error('❌ Error updating invitation status:', updateError);
