@@ -7,9 +7,9 @@ export function useInvitations() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // Accept invitation function with proper checks to prevent auto-acceptance
+  // Accept invitation function - only called by explicit user action
   const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
-    console.log('🚀 Starting manual invitation acceptance process:', { invitationId, userId });
+    console.log('🚀 User clicked accept invitation:', { invitationId, userId });
     
     if (!userId) {
       console.error('❌ No user ID provided for invitation acceptance');
@@ -22,13 +22,15 @@ export function useInvitations() {
     }
     
     if (isProcessing) {
-      console.log('⏳ Already processing an invitation, skipping...');
+      console.log('⏳ Already processing an invitation, preventing duplicate...');
       return null;
     }
     
     setIsProcessing(true);
     
     try {
+      console.log('🔍 Checking invitation status before accepting...');
+      
       // First, get the invitation and check if it's already accepted
       const { data: invitation, error: invitationError } = await supabase
         .from('company_invitations')
@@ -63,7 +65,7 @@ export function useInvitations() {
         return null;
       }
       
-      console.log('✅ Found valid invitation for manual acceptance:', invitation);
+      console.log('✅ Found valid pending invitation:', invitation);
       
       // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
@@ -181,7 +183,7 @@ export function useInvitations() {
   
   // Decline invitation function
   const declineInvitation = async (invitationId: string) => {
-    console.log('❌ Declining invitation:', invitationId);
+    console.log('❌ User clicked decline invitation:', invitationId);
     setIsProcessing(true);
     
     try {
