@@ -1,12 +1,12 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Company, CompanyMember, CompanyInvitation } from '@/types';
+import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
 
 export function useCompanyData(userId: string | undefined) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
-  const [userCompanyRole, setUserCompanyRole] = useState<string | null>(null);
+  const [userCompanyRole, setUserCompanyRole] = useState<CompanyRole | null>(null);
   const [companyMembers, setCompanyMembers] = useState<CompanyMember[]>([]);
   const [companyInvitations, setCompanyInvitations] = useState<CompanyInvitation[]>([]);
   const [userIncomingInvitations, setUserIncomingInvitations] = useState<CompanyInvitation[]>([]);
@@ -84,9 +84,9 @@ export function useCompanyData(userId: string | undefined) {
         id: invitation.id,
         companyId: invitation.company_id,
         email: invitation.email,
-        role: invitation.role,
+        role: invitation.role as CompanyRole,
         accepted: invitation.accepted,
-        createdAt: invitation.created_at,
+        createdAt: new Date(invitation.created_at),
         invitedBy: invitation.invited_by,
         companyName: (invitation.companies as any)?.name || 'Unknown Company'
       })) || [];
@@ -115,7 +115,7 @@ export function useCompanyData(userId: string | undefined) {
         return;
       }
 
-      setUserCompanyRole(roleData?.role || null);
+      setUserCompanyRole(roleData?.role as CompanyRole || null);
     } catch (error) {
       console.error('❌ Error in fetchUserRole:', error);
     }
@@ -145,7 +145,7 @@ export function useCompanyData(userId: string | undefined) {
         id: member.id,
         companyId: member.company_id,
         userId: member.user_id,
-        role: member.role,
+        role: member.role as CompanyRole,
         createdAt: new Date(member.created_at),
         profile: {
           fullName: (member.profiles as any)?.full_name || '',
@@ -178,9 +178,9 @@ export function useCompanyData(userId: string | undefined) {
         id: invitation.id,
         companyId: invitation.company_id,
         email: invitation.email,
-        role: invitation.role,
+        role: invitation.role as CompanyRole,
         accepted: invitation.accepted,
-        createdAt: invitation.created_at,
+        createdAt: new Date(invitation.created_at),
         invitedBy: invitation.invited_by
       })) || [];
 

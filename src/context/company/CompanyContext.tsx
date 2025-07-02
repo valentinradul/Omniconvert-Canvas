@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
