@@ -9,7 +9,7 @@ export function useInvitations() {
 
   // Accept invitation function - only called by explicit user action
   const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
-    console.log('🚀 User clicked accept invitation:', { invitationId, userId });
+    console.log('🚀 User explicitly clicked accept invitation:', { invitationId, userId });
     
     if (!userId) {
       console.error('❌ No user ID provided for invitation acceptance');
@@ -31,7 +31,7 @@ export function useInvitations() {
     try {
       console.log('🔍 Checking invitation status before accepting...');
       
-      // First, get the invitation and check if it's already accepted
+      // First, get the invitation and check if it's still valid
       const { data: invitation, error: invitationError } = await supabase
         .from('company_invitations')
         .select(`
@@ -44,8 +44,18 @@ export function useInvitations() {
         .eq('id', invitationId)
         .single();
         
-      if (invitationError || !invitation) {
-        console.error('❌ Invitation not found:', invitationError);
+      if (invitationError) {
+        console.error('❌ Error fetching invitation:', invitationError);
+        toast({
+          variant: "destructive",
+          title: "Invitation not found",
+          description: "This invitation may have been removed or is invalid.",
+        });
+        return null;
+      }
+
+      if (!invitation) {
+        console.error('❌ Invitation not found');
         toast({
           variant: "destructive",
           title: "Invitation not found",
@@ -161,10 +171,12 @@ export function useInvitations() {
       
       let errorMessage = "There was an error accepting the invitation";
       
-      if (error.message?.includes('not found')) {
+      if (error.message?.includes('not found') || error.message?.includes('duplicate')) {
         errorMessage = "Invitation not found or has already been used";
       } else if (error.message?.includes('already a member')) {
-        errorMessage = "You are already a member of this company";
+        errorMessage = "You are already a member of this company";  
+      } else if (error.code === 'PGRST106') {
+        errorMessage = "Invitation not found or has already been used";
       } else if (error.message) {
         errorMessage = error.message;
       }
