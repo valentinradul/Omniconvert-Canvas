@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
+import { Company, CompanyMember, CompanyInvitation } from '@/types';
 
 export function useCompanyData(userId: string | undefined) {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -84,7 +84,7 @@ export function useCompanyData(userId: string | undefined) {
         id: invitation.id,
         companyId: invitation.company_id,
         email: invitation.email,
-        role: invitation.role as CompanyRole, // Type cast to CompanyRole
+        role: invitation.role,
         accepted: invitation.accepted,
         createdAt: invitation.created_at,
         invitedBy: invitation.invited_by,
@@ -145,7 +145,7 @@ export function useCompanyData(userId: string | undefined) {
         id: member.id,
         companyId: member.company_id,
         userId: member.user_id,
-        role: member.role as CompanyRole, // Type cast to CompanyRole
+        role: member.role,
         createdAt: new Date(member.created_at),
         profile: {
           fullName: (member.profiles as any)?.full_name || '',
@@ -178,7 +178,7 @@ export function useCompanyData(userId: string | undefined) {
         id: invitation.id,
         companyId: invitation.company_id,
         email: invitation.email,
-        role: invitation.role as CompanyRole, // Type cast to CompanyRole
+        role: invitation.role,
         accepted: invitation.accepted,
         createdAt: invitation.created_at,
         invitedBy: invitation.invited_by

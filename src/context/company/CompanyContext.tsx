@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -70,7 +71,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     unsendInvitation: apiUnsendInvitation
   } = useCompanyActions(
     user?.id,
-    userCompanyRole as CompanyRole | null, // Type cast the role
+    userCompanyRole,
     currentCompany?.id || null,
     companyMembers,
     companyInvitations,
@@ -98,7 +99,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         // Get the new company details
         const newCompany = result.company;
-        const newRole = result.role as CompanyRole; // Type cast to CompanyRole
+        const newRole = result.role as CompanyRole;
         
         console.log('🎯 CompanyContext: New company joined via MANUAL acceptance:', newCompany.name, 'Role:', newRole);
         
@@ -246,7 +247,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       value={{
         companies,
         currentCompany,
-        userCompanyRole: userCompanyRole as CompanyRole | null, // Type cast the role
+        userCompanyRole,
         companyMembers,
         companyInvitations,
         userIncomingInvitations,
