@@ -16,7 +16,7 @@ export function useInvitationHandler() {
   const invitationId = searchParams.get('invitation');
 
   useEffect(() => {
-    const handleInvitation = async () => {
+    const validateInvitation = async () => {
       // Only validate invitation existence, don't auto-accept
       if (!isAuthenticated || !user?.email || !invitationId || isProcessingInvitation || hasProcessedInvitation) {
         return;
@@ -94,7 +94,7 @@ export function useInvitationHandler() {
 
     // Only run if we have an invitation ID in the URL
     if (invitationId) {
-      handleInvitation();
+      validateInvitation();
     }
   }, [isAuthenticated, user, invitationId, toast, navigate, isProcessingInvitation, hasProcessedInvitation]);
 

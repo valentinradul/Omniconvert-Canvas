@@ -9,7 +9,7 @@ export function useInvitations() {
 
   // Accept invitation function with proper checks to prevent auto-acceptance
   const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
-    console.log('🚀 Starting invitation acceptance process:', { invitationId, userId });
+    console.log('🚀 Starting manual invitation acceptance process:', { invitationId, userId });
     
     if (!userId) {
       console.error('❌ No user ID provided for invitation acceptance');
@@ -63,7 +63,7 @@ export function useInvitations() {
         return null;
       }
       
-      console.log('✅ Found valid invitation:', invitation);
+      console.log('✅ Found valid invitation for manual acceptance:', invitation);
       
       // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
@@ -146,7 +146,7 @@ export function useInvitations() {
         createdBy: invitation.invited_by
       };
       
-      console.log('🎉 Successfully processed invitation acceptance');
+      console.log('🎉 Successfully processed manual invitation acceptance');
       
       toast({
         title: "Welcome to the team!",
