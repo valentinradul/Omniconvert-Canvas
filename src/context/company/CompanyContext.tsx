@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -90,7 +89,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const result = await baseAcceptInvitation(invitationId);
       
-      if (result) {
+      if (result && result.company && result.role) {
         console.log('🔄 CompanyContext: Invitation accepted, performing comprehensive refresh');
         
         // Clear localStorage to force fresh data

@@ -1,3 +1,4 @@
+
 import { useToast } from '@/hooks/use-toast';
 import { useCompanyCreation } from '../useCompanyCreation';
 import { useCompanyManagement } from '../useCompanyManagement';
@@ -76,7 +77,7 @@ export const useCompanyActions = (
     }
   };
   
-  // Accept invitation
+  // Accept invitation - now properly returns the result
   const acceptInvitation = async (invitationId: string) => {
     try {
       const result = await apiAcceptInvitation(invitationId, userId, companyInvitations);
@@ -91,8 +92,11 @@ export const useCompanyActions = (
         
         fetchUserCompanies();
       }
+      
+      return result; // Return the result so it can be used in CompanyContext
     } catch (error) {
       console.error('Error in acceptInvitation:', error);
+      throw error;
     }
   };
   
