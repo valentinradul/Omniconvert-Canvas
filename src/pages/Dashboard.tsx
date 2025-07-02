@@ -76,16 +76,12 @@ const Dashboard: React.FC = () => {
     : 0;
 
   const handleInvitationAccepted = async () => {
-    console.log('🎉 Dashboard: Invitation accepted - triggering comprehensive refresh');
+    console.log('🎉 Dashboard: Invitation accepted - dashboard should automatically update with new company data');
     
-    // Force refresh all company-related data
-    await refreshUserCompanies();
-    await refreshCompanyMembers();
-    
-    // Add a small delay and refresh again to ensure the new company data is loaded
-    setTimeout(async () => {
-      console.log('🔄 Dashboard: Secondary refresh after invitation acceptance');
-      await refreshUserCompanies();
+    // The CompanyContext now handles all the switching and refreshing
+    // We just need to wait a moment for the context to finish its work
+    setTimeout(() => {
+      console.log('📊 Dashboard: Invitation acceptance complete, new company data should now be visible');
     }, 1000);
   };
 
