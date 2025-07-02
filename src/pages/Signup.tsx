@@ -101,7 +101,7 @@ const Signup = () => {
       await signup(values.email, values.password, values.name);
       // Clear the form after successful signup
       form.reset();
-      // The invitation will be handled automatically by the useInvitationHandler hook after auth
+      // The invitation will be shown on the dashboard for manual acceptance
     } catch (error) {
       // Error is handled in the auth context
       console.error("Signup submission error:", error);
@@ -155,7 +155,7 @@ const Signup = () => {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
-          <div className="mb-4">Processing your invitation...</div>
+          <div className="mb-4">Setting up your invitation...</div>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
         </div>
       </div>
@@ -178,6 +178,9 @@ const Signup = () => {
             <p className="text-sm text-blue-600">
               Join <strong>{(invitationDetails.companies as any)?.name}</strong> as a{' '}
               <strong>{invitationDetails.role}</strong>
+            </p>
+            <p className="text-xs text-blue-500 mt-1">
+              After creating your account, you'll see the invitation on your dashboard to accept.
             </p>
           </div>
         )}
