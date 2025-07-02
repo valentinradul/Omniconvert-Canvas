@@ -24,7 +24,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
   const { refreshUserCompanies } = useCompany();
   const { acceptInvitation, declineInvitation, isProcessing } = useInvitations();
 
-  console.log('🔔 CompanyInvitations render:', { 
+  console.log('🔔 CompanyInvitations render (NO AUTO-PROCESSING):', { 
     invitationsCount: invitations.length, 
     userId: user?.id,
     userEmail: user?.email,
@@ -43,7 +43,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     const invitationEmail = invitation.email?.toLowerCase().trim();
     const userEmail = user.email?.toLowerCase().trim();
     
-    console.log('🔍 Email comparison:', { 
+    console.log('🔍 Email comparison (NO AUTO-PROCESSING):', { 
       invitationEmail, 
       userEmail, 
       matches: invitationEmail === userEmail,
@@ -55,7 +55,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     return invitationEmail === userEmail && !invitation.accepted;
   });
 
-  console.log('📧 Filtered invitations for user:', { 
+  console.log('📧 Filtered invitations for user (NO AUTO-PROCESSING):', { 
     userEmail: user?.email,
     totalInvitations: invitations.length,
     userSpecificInvitations: userInvitations.length,
@@ -68,8 +68,9 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     return null;
   }
 
+  // FIXED: Only accept on EXPLICIT user click - NO AUTOMATIC PROCESSING
   const handleAccept = async (invitationId: string) => {
-    console.log('✅ Handling invitation acceptance:', { invitationId, userId: user.id });
+    console.log('✅ EXPLICIT USER CLICK: Handling invitation acceptance:', { invitationId, userId: user.id });
     
     if (!isAuthenticated || !user) {
       console.error('❌ User not authenticated when trying to accept invitation');
@@ -129,7 +130,7 @@ const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
     }
   };
 
-  console.log('🎨 Rendering CompanyInvitations with', userInvitations.length, 'invitations');
+  console.log('🎨 Rendering CompanyInvitations with', userInvitations.length, 'invitations (NO AUTO-PROCESSING)');
 
   return (
     <Card className="mb-6">

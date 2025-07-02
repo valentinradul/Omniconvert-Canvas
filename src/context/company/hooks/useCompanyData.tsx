@@ -1,104 +1,202 @@
-import { useState, useEffect } from 'react';
-import { Company, CompanyMember, CompanyInvitation, CompanyRole } from '@/types';
-import { loadUserCompanies, loadUserInvitations, loadUserRole, loadCompanyMembers, loadCompanyInvitations } from '../utils';
 
-export const useCompanyData = (userId: string | undefined) => {
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Company, CompanyMember, CompanyInvitation } from '@/types';
+
+export function useCompanyData(userId: string | undefined) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
-  const [userCompanyRole, setUserCompanyRole] = useState<CompanyRole | null>(null);
+  const [userCompanyRole, setUserCompanyRole] = useState<string | null>(null);
   const [companyMembers, setCompanyMembers] = useState<CompanyMember[]>([]);
   const [companyInvitations, setCompanyInvitations] = useState<CompanyInvitation[]>([]);
   const [userIncomingInvitations, setUserIncomingInvitations] = useState<CompanyInvitation[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<CompanyInvitation[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Load user companies
-  const fetchUserCompanies = async () => {
+  const fetchUserCompanies = useCallback(async () => {
     if (!userId) return;
     
+    console.log('🔍 Fetching user companies (NO AUTO-PROCESSING)');
     setIsLoading(true);
     
     try {
-      const companiesData = await loadUserCompanies(userId);
-      console.log('Loaded user companies:', companiesData);
-      setCompanies(companiesData);
+      const { data: memberData, error: memberError } = await supabase
+        .from('company_members')
+        .select(`
+          *,
+          companies (
+            id,
+            name,
+            created_at,
+            created_by
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (memberError) {
+        console.error('❌ Error fetching user companies:', memberError);
+        return;
+      }
+
+      const userCompanies = memberData?.map(member => ({
+        id: (member.companies as any).id,
+        name: (member.companies as any).name,
+        createdAt: new Date((member.companies as any).created_at),
+        createdBy: (member.companies as any).created_by
+      })) || [];
+
+      console.log('✅ Fetched user companies:', userCompanies.length);
+      setCompanies(userCompanies);
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('userCompanies', JSON.stringify(userCompanies));
+      
     } catch (error) {
-      console.error('Error loading companies:', error);
+      console.error('❌ Error in fetchUserCompanies:', error);
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  // Load user invitations (legacy - keeping for backward compatibility)
-  const fetchUserInvitations = async (userEmail: string) => {
-    try {
-      const invitationsData = await loadUserInvitations(userEmail);
-      console.log('Loaded user invitations (legacy):', invitationsData);
-      setCompanyInvitations(invitationsData);
-    } catch (error) {
-      console.error('Error loading invitations:', error);
-    }
-  };
+  }, [userId]);
 
-  // Load user incoming invitations (new - specifically for dashboard)
-  const fetchUserIncomingInvitations = async (userEmail: string) => {
-    try {
-      const invitationsData = await loadUserInvitations(userEmail);
-      console.log('Loaded user incoming invitations:', invitationsData);
-      setUserIncomingInvitations(invitationsData);
-    } catch (error) {
-      console.error('Error loading incoming invitations:', error);
-    }
-  };
-  
-  // Load user role in company
-  const fetchUserRole = async () => {
-    if (!userId || !currentCompany?.id) return;
+  // FIXED: Only fetch invitations, NO AUTOMATIC PROCESSING
+  const fetchUserIncomingInvitations = useCallback(async (userEmail: string) => {
+    console.log('📧 Fetching incoming invitations for email (NO AUTO-PROCESSING):', userEmail);
     
     try {
-      const role = await loadUserRole(userId, currentCompany.id);
-      console.log('Loaded user role:', role);
-      setUserCompanyRole(role);
+      const { data: invitations, error } = await supabase
+        .from('company_invitations')
+        .select(`
+          *,
+          companies (
+            id,
+            name
+          )
+        `)
+        .eq('email', userEmail.toLowerCase())
+        .eq('accepted', false); // Only get non-accepted invitations
+
+      if (error) {
+        console.error('❌ Error fetching user invitations:', error);
+        return;
+      }
+
+      const formattedInvitations = invitations?.map(invitation => ({
+        id: invitation.id,
+        companyId: invitation.company_id,
+        email: invitation.email,
+        role: invitation.role,
+        accepted: invitation.accepted,
+        createdAt: invitation.created_at,
+        invitedBy: invitation.invited_by,
+        companyName: (invitation.companies as any)?.name || 'Unknown Company'
+      })) || [];
+
+      console.log('✅ Fetched user incoming invitations (NO AUTO-PROCESSING):', formattedInvitations.length);
+      setUserIncomingInvitations(formattedInvitations);
+      
     } catch (error) {
-      console.error('Error loading user role:', error);
+      console.error('❌ Error in fetchUserIncomingInvitations:', error);
     }
-  };
-  
-  // Load company members
-  const fetchCompanyMembers = async () => {
-    if (!currentCompany?.id) return;
+  }, []);
+
+  const fetchUserRole = useCallback(async () => {
+    if (!userId || !currentCompany) return;
     
     try {
-      const members = await loadCompanyMembers(currentCompany.id);
-      console.log('Loaded company members:', members);
-      setCompanyMembers(members);
-    } catch (error) {
-      console.error('Error loading company members:', error);
-    }
-  };
+      const { data: roleData, error } = await supabase
+        .from('company_members')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('company_id', currentCompany.id)
+        .single();
 
-  // Load pending invitations for current company
-  const fetchPendingInvitations = async () => {
-    if (!currentCompany?.id) return;
+      if (error) {
+        console.error('❌ Error fetching user role:', error);
+        return;
+      }
+
+      setUserCompanyRole(roleData?.role || null);
+    } catch (error) {
+      console.error('❌ Error in fetchUserRole:', error);
+    }
+  }, [userId, currentCompany]);
+
+  const fetchCompanyMembers = useCallback(async () => {
+    if (!currentCompany) return;
     
     try {
-      const invitations = await loadCompanyInvitations(currentCompany.id);
-      console.log('Loaded pending invitations:', invitations);
-      setPendingInvitations(invitations);
-    } catch (error) {
-      console.error('Error loading pending invitations:', error);
-    }
-  };
+      const { data: members, error } = await supabase
+        .from('company_members')
+        .select(`
+          *,
+          profiles (
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('company_id', currentCompany.id);
 
-  // Set current company by ID
-  const switchCompany = (companyId: string) => {
+      if (error) {
+        console.error('❌ Error fetching company members:', error);
+        return;
+      }
+
+      const formattedMembers = members?.map(member => ({
+        id: member.id,
+        companyId: member.company_id,
+        userId: member.user_id,
+        role: member.role,
+        createdAt: new Date(member.created_at),
+        profile: {
+          fullName: (member.profiles as any)?.full_name || '',
+          avatarUrl: (member.profiles as any)?.avatar_url || null
+        }
+      })) || [];
+
+      setCompanyMembers(formattedMembers);
+    } catch (error) {
+      console.error('❌ Error in fetchCompanyMembers:', error);
+    }
+  }, [currentCompany]);
+
+  const fetchPendingInvitations = useCallback(async () => {
+    if (!currentCompany) return;
+    
+    try {
+      const { data: invitations, error } = await supabase
+        .from('company_invitations')
+        .select('*')
+        .eq('company_id', currentCompany.id)
+        .eq('accepted', false);
+
+      if (error) {
+        console.error('❌ Error fetching pending invitations:', error);
+        return;
+      }
+
+      const formattedInvitations = invitations?.map(invitation => ({
+        id: invitation.id,
+        companyId: invitation.company_id,
+        email: invitation.email,
+        role: invitation.role,
+        accepted: invitation.accepted,
+        createdAt: invitation.created_at,
+        invitedBy: invitation.invited_by
+      })) || [];
+
+      setPendingInvitations(formattedInvitations);
+    } catch (error) {
+      console.error('❌ Error in fetchPendingInvitations:', error);
+    }
+  }, [currentCompany]);
+
+  const switchCompany = useCallback((companyId: string) => {
     const company = companies.find(c => c.id === companyId);
     if (company) {
-      console.log('Switching to company:', company.name);
       setCurrentCompany(company);
-      localStorage.setItem('currentCompanyId', company.id);
+      localStorage.setItem('currentCompanyId', companyId);
     }
-  };
+  }, [companies]);
 
   return {
     companies,
@@ -117,11 +215,11 @@ export const useCompanyData = (userId: string | undefined) => {
     setPendingInvitations,
     isLoading,
     fetchUserCompanies,
-    fetchUserInvitations,
+    fetchUserInvitations: fetchUserIncomingInvitations,
     fetchUserIncomingInvitations,
     fetchUserRole,
     fetchCompanyMembers,
     fetchPendingInvitations,
     switchCompany
   };
-};
+}
