@@ -7,7 +7,7 @@ export function useInvitations() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // Accept invitation function with immediate refresh
+  // Accept invitation function with proper checks to prevent auto-acceptance
   const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
     console.log('🚀 Starting invitation acceptance process:', { invitationId, userId });
     
@@ -21,10 +21,15 @@ export function useInvitations() {
       return null;
     }
     
+    if (isProcessing) {
+      console.log('⏳ Already processing an invitation, skipping...');
+      return null;
+    }
+    
     setIsProcessing(true);
     
     try {
-      // Get invitation data from database to ensure we have the latest info
+      // First, get the invitation and check if it's already accepted
       const { data: invitation, error: invitationError } = await supabase
         .from('company_invitations')
         .select(`
@@ -35,12 +40,27 @@ export function useInvitations() {
           )
         `)
         .eq('id', invitationId)
-        .eq('accepted', false)
         .single();
         
       if (invitationError || !invitation) {
-        console.error('❌ Invitation not found or already accepted:', invitationError);
-        throw new Error("Invitation not found or already used");
+        console.error('❌ Invitation not found:', invitationError);
+        toast({
+          variant: "destructive",
+          title: "Invitation not found",
+          description: "This invitation may have been removed or is invalid.",
+        });
+        return null;
+      }
+
+      // Check if invitation is already accepted
+      if (invitation.accepted) {
+        console.log('ℹ️ Invitation already accepted');
+        toast({
+          variant: "destructive",
+          title: "Invitation already accepted",
+          description: "This invitation has already been accepted.",
+        });
+        return null;
       }
       
       console.log('✅ Found valid invitation:', invitation);
@@ -55,45 +75,57 @@ export function useInvitations() {
         
       if (memberCheckError) {
         console.error('❌ Error checking existing membership:', memberCheckError);
-        throw new Error("Unable to verify membership status");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Unable to verify membership status. Please try again.",
+        });
+        return null;
       }
       
       if (existingMember) {
         console.log('ℹ️ User is already a member of this company');
         
-        // Update existing membership role if different
-        if (existingMember.role !== invitation.role) {
-          console.log('🔄 Updating member role from', existingMember.role, 'to', invitation.role);
+        // Mark invitation as accepted since user is already a member
+        const { error: updateError } = await supabase
+          .from('company_invitations')
+          .update({ accepted: true })
+          .eq('id', invitationId);
           
-          const { error: updateError } = await supabase
-            .from('company_members')
-            .update({ role: invitation.role })
-            .eq('id', existingMember.id);
-            
-          if (updateError) {
-            console.error('❌ Error updating member role:', updateError);
-            throw updateError;
-          }
-        }
-      } else {
-        console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
-        
-        // Add user to company members
-        const { error: memberError } = await supabase
-          .from('company_members')
-          .insert({
-            company_id: invitation.company_id,
-            user_id: userId,
-            role: invitation.role
-          });
-          
-        if (memberError) {
-          console.error('❌ Error adding company member:', memberError);
-          throw memberError;
+        if (updateError) {
+          console.error('❌ Error updating invitation status:', updateError);
         }
         
-        console.log('✅ Successfully added user to company');
+        toast({
+          title: "Already a member",
+          description: "You are already a member of this company.",
+        });
+        
+        return null;
       }
+      
+      console.log('➕ Adding user to company members:', { userId, companyId: invitation.company_id, role: invitation.role });
+      
+      // Add user to company members
+      const { error: memberError } = await supabase
+        .from('company_members')
+        .insert({
+          company_id: invitation.company_id,
+          user_id: userId,
+          role: invitation.role
+        });
+        
+      if (memberError) {
+        console.error('❌ Error adding company member:', memberError);
+        toast({
+          variant: "destructive",
+          title: "Failed to join company",
+          description: "There was an error adding you to the company. Please try again.",
+        });
+        return null;
+      }
+      
+      console.log('✅ Successfully added user to company');
       
       // Mark invitation as accepted
       const { error: updateError } = await supabase
@@ -103,6 +135,7 @@ export function useInvitations() {
         
       if (updateError) {
         console.error('❌ Error updating invitation status:', updateError);
+        // Don't return null here as the user was successfully added to the company
         console.warn('⚠️ Failed to mark invitation as accepted, but user was added to company');
       }
       
@@ -119,9 +152,6 @@ export function useInvitations() {
         title: "Welcome to the team!",
         description: `You are now a ${invitation.role} of ${company.name}`,
       });
-      
-      // Force a small delay to ensure database changes are committed
-      await new Promise(resolve => setTimeout(resolve, 500));
       
       return { company, invitationId, role: invitation.role };
     } catch (error: any) {

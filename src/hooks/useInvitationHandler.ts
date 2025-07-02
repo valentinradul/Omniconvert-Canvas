@@ -2,16 +2,12 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useInvitations } from '@/context/company/useInvitations';
-import { useCompany } from '@/context/company/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useInvitationHandler() {
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated } = useAuth();
-  const { acceptInvitation } = useInvitations();
-  const { switchCompany, refreshUserCompanies } = useCompany();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isProcessingInvitation, setIsProcessingInvitation] = useState(false);
@@ -21,16 +17,16 @@ export function useInvitationHandler() {
 
   useEffect(() => {
     const handleInvitation = async () => {
-      // Only process if we have everything we need and haven't already processed
+      // Only validate invitation existence, don't auto-accept
       if (!isAuthenticated || !user?.email || !invitationId || isProcessingInvitation || hasProcessedInvitation) {
         return;
       }
 
-      console.log('🔗 Processing invitation from URL:', { invitationId, userId: user.id, userEmail: user.email });
+      console.log('🔗 Validating invitation from URL:', { invitationId, userId: user.id, userEmail: user.email });
       setIsProcessingInvitation(true);
 
       try {
-        // First, verify the invitation exists and matches the user's email
+        // Just validate that the invitation exists and is for this user
         const { data: invitation, error: invitationError } = await supabase
           .from('company_invitations')
           .select(`
@@ -71,37 +67,24 @@ export function useInvitationHandler() {
           return;
         }
 
-        console.log('✅ Valid invitation found, accepting...');
+        console.log('✅ Valid invitation found - user can accept it manually on dashboard');
+        setHasProcessedInvitation(true);
         
-        // Accept the invitation using the existing hook
-        const result = await acceptInvitation(invitationId, user.id, [invitation]);
+        // Show success message that invitation is available
+        toast({
+          title: "Invitation ready",
+          description: `You have a pending invitation to join ${(invitation.companies as any)?.name || 'the company'}. Check your dashboard to accept it.`,
+        });
         
-        if (result) {
-          console.log('🎉 Invitation accepted from URL');
-          setHasProcessedInvitation(true);
-          
-          // Refresh user companies and switch to the new company
-          await refreshUserCompanies();
-          
-          // Small delay to ensure data is refreshed
-          setTimeout(() => {
-            switchCompany(invitation.company_id);
-            toast({
-              title: "Welcome to the team!",
-              description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
-            });
-            
-            // Clear URL parameters and redirect
-            navigate('/dashboard', { replace: true });
-          }, 1000);
-        }
+        // Navigate to dashboard without auto-accepting
+        navigate('/dashboard', { replace: true });
         
       } catch (error) {
-        console.error('❌ Error processing invitation from URL:', error);
+        console.error('❌ Error validating invitation from URL:', error);
         toast({
           variant: "destructive",
-          title: "Error processing invitation",
-          description: "There was an error processing your invitation. Please try again.",
+          title: "Error validating invitation",
+          description: "There was an error validating your invitation. Please try again.",
         });
         navigate('/dashboard', { replace: true });
       } finally {
@@ -113,7 +96,7 @@ export function useInvitationHandler() {
     if (invitationId) {
       handleInvitation();
     }
-  }, [isAuthenticated, user, invitationId, acceptInvitation, switchCompany, refreshUserCompanies, toast, navigate, isProcessingInvitation, hasProcessedInvitation]);
+  }, [isAuthenticated, user, invitationId, toast, navigate, isProcessingInvitation, hasProcessedInvitation]);
 
   return {
     invitationId,
