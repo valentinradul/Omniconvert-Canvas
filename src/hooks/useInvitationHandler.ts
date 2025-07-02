@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useInvitations } from '@/context/company/useInvitations';
 import { useCompany } from '@/context/company/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 export function useInvitationHandler() {
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated } = useAuth();
-  const { refreshUserIncomingInvitations } = useCompany();
+  const { acceptInvitation } = useInvitations();
+  const { switchCompany, refreshUserCompanies } = useCompany();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isProcessingInvitation, setIsProcessingInvitation] = useState(false);
@@ -69,20 +71,30 @@ export function useInvitationHandler() {
           return;
         }
 
-        console.log('✅ Valid invitation found, refreshing invitations list');
-        setHasProcessedInvitation(true);
+        console.log('✅ Valid invitation found, accepting...');
         
-        // Refresh user incoming invitations so they can see it on the dashboard
-        await refreshUserIncomingInvitations();
+        // Accept the invitation using the existing hook
+        const result = await acceptInvitation(invitationId, user.id, [invitation]);
         
-        // Show success message
-        toast({
-          title: "Invitation found!",
-          description: `You have an invitation to join ${(invitation.companies as any)?.name || 'the company'}. Please review and accept it below.`,
-        });
-        
-        // Clear URL parameters and redirect to dashboard
-        navigate('/dashboard', { replace: true });
+        if (result) {
+          console.log('🎉 Invitation accepted from URL');
+          setHasProcessedInvitation(true);
+          
+          // Refresh user companies and switch to the new company
+          await refreshUserCompanies();
+          
+          // Small delay to ensure data is refreshed
+          setTimeout(() => {
+            switchCompany(invitation.company_id);
+            toast({
+              title: "Welcome to the team!",
+              description: `You've successfully joined ${(invitation.companies as any)?.name || 'the company'}`,
+            });
+            
+            // Clear URL parameters and redirect
+            navigate('/dashboard', { replace: true });
+          }, 1000);
+        }
         
       } catch (error) {
         console.error('❌ Error processing invitation from URL:', error);
@@ -101,7 +113,7 @@ export function useInvitationHandler() {
     if (invitationId) {
       handleInvitation();
     }
-  }, [isAuthenticated, user, invitationId, refreshUserIncomingInvitations, toast, navigate, isProcessingInvitation, hasProcessedInvitation]);
+  }, [isAuthenticated, user, invitationId, acceptInvitation, switchCompany, refreshUserCompanies, toast, navigate, isProcessingInvitation, hasProcessedInvitation]);
 
   return {
     invitationId,
