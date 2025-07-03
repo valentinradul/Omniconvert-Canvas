@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Edit, FileEdit } from 'lucide-react';
+import { User, Eye, FileEdit } from 'lucide-react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/StatusBadge';
@@ -123,8 +123,8 @@ const ExperimentTableRow: React.FC<ExperimentTableRowProps> = ({
               variant="outline"
               onClick={() => navigate(`/experiment-details/${experiment.id}`)}
             >
-              <Edit className="h-3.5 w-3.5 mr-1" />
-              Edit Experiment
+              <Eye className="h-3.5 w-3.5 mr-1" />
+              View Experiment
             </Button>
           )}
         </div>
