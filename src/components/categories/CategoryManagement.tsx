@@ -106,7 +106,7 @@ const CategoryManagement: React.FC = () => {
                   Add Category
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-background border shadow-lg">
                 <DialogHeader>
                   <DialogTitle>Add New Category</DialogTitle>
                   <DialogDescription>
@@ -216,7 +216,7 @@ const CategoryManagement: React.FC = () => {
         
         {/* Edit Category Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent>
+          <DialogContent className="bg-background border shadow-lg">
             <DialogHeader>
               <DialogTitle>Edit Category</DialogTitle>
               <DialogDescription>
