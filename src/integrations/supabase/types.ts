@@ -115,6 +115,7 @@ export type Database = {
           hypothesisid: string | null
           id: string
           notes: string | null
+          notes_history: Json | null
           observationcontent: Json | null
           responsibleuserid: string | null
           startdate: string | null
@@ -133,6 +134,7 @@ export type Database = {
           hypothesisid?: string | null
           id?: string
           notes?: string | null
+          notes_history?: Json | null
           observationcontent?: Json | null
           responsibleuserid?: string | null
           startdate?: string | null
@@ -151,6 +153,7 @@ export type Database = {
           hypothesisid?: string | null
           id?: string
           notes?: string | null
+          notes_history?: Json | null
           observationcontent?: Json | null
           responsibleuserid?: string | null
           startdate?: string | null

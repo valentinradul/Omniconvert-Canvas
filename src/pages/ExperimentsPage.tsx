@@ -38,6 +38,7 @@ const getDraftExperiments = (getHypothesisById: (id: string) => any): Experiment
             endDate: draftData.endDate ? new Date(draftData.endDate) : null,
             status: draftData.status,
             notes: draftData.notes || '',
+            notes_history: [], // Initialize with empty array for drafts
             observationContent: draftData.observationContent,
             createdAt: new Date(), // Use current time for drafts
             updatedAt: new Date(),

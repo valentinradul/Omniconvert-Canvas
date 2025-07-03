@@ -17,7 +17,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { currentCompany } = useCompany();
   
   // Initialize our hooks
-  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId } = 
+  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId, addExperimentNote } = 
     useExperiments(user, currentCompany);
   
   const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById } = 
@@ -63,6 +63,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addExperiment,
     editExperiment,
     deleteExperiment,
+    addExperimentNote,
     updatePectiWeights,
     updateAllHypothesesWeights,
     getIdeaById,

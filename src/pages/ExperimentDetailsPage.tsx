@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import ExperimentNotesSection from '@/components/experiments/ExperimentNotesSection';
 
 const ExperimentDetailsPage: React.FC = () => {
   const { experimentId } = useParams();
@@ -27,7 +28,8 @@ const ExperimentDetailsPage: React.FC = () => {
     getHypothesisById, 
     getIdeaById, 
     editExperiment,
-    deleteExperiment
+    deleteExperiment,
+    addExperimentNote
   } = useApp();
   
   const experiment = experiments.find(e => e.id === experimentId);
@@ -91,6 +93,10 @@ const ExperimentDetailsPage: React.FC = () => {
     deleteExperiment(experiment.id);
     navigate('/experiments');
     toast.success('Experiment deleted successfully!');
+  };
+
+  const handleAddNote = (noteContent: string) => {
+    addExperimentNote(experiment.id, noteContent);
   };
   
   return (
@@ -267,18 +273,10 @@ const ExperimentDetailsPage: React.FC = () => {
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Experiment Notes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {experiment.notes ? (
-            <p>{experiment.notes}</p>
-          ) : (
-            <p className="text-muted-foreground">No notes added yet.</p>
-          )}
-        </CardContent>
-      </Card>
+      <ExperimentNotesSection 
+        notes_history={experiment.notes_history || []}
+        onAddNote={handleAddNote}
+      />
       
       <Card>
         <CardHeader>

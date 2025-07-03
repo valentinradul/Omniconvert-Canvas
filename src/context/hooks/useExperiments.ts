@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Experiment } from '@/types';
+import { Experiment, ExperimentNote } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -42,6 +42,7 @@ export const useExperiments = (
           endDate: exp.enddate ? new Date(exp.enddate) : null,
           status: exp.status as any || "Planned",
           notes: exp.notes || "",
+          notes_history: exp.notes_history ? (exp.notes_history as unknown as ExperimentNote[]) : [],
           observationContent: exp.observationcontent as any,
           createdAt: new Date(exp.createdat),
           updatedAt: new Date(exp.updatedat),
@@ -108,6 +109,7 @@ export const useExperiments = (
         endDate: data.enddate ? new Date(data.enddate) : null,
         status: data.status as any || "Planned",
         notes: data.notes || "",
+        notes_history: data.notes_history ? (data.notes_history as unknown as ExperimentNote[]) : [],
         observationContent: data.observationcontent as any,
         createdAt: new Date(data.createdat),
         updatedAt: new Date(data.updatedat),
@@ -214,6 +216,61 @@ export const useExperiments = (
   };
 
   const getExperimentByHypothesisId = (hypothesisId: string) => filteredExperiments.find(e => e.hypothesisId === hypothesisId);
+
+  const addExperimentNote = async (experimentId: string, noteContent: string) => {
+    if (!user || !noteContent.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Cannot add note',
+        description: 'You must be logged in and provide note content.',
+      });
+      return;
+    }
+
+    try {
+      const experiment = experiments.find(e => e.id === experimentId);
+      if (!experiment) {
+        throw new Error('Experiment not found');
+      }
+
+      const newNote: ExperimentNote = {
+        id: crypto.randomUUID(),
+        content: noteContent.trim(),
+        created_at: new Date().toISOString(),
+        created_by: user.id,
+        author_name: user.user_metadata?.full_name || user.email || 'Unknown User'
+      };
+
+      const updatedNotesHistory = [...(experiment.notes_history || []), newNote];
+
+      // Update the database
+      const { error } = await supabase
+        .from('experiments')
+        .update({ notes_history: updatedNotesHistory as any })
+        .eq('id', experimentId);
+
+      if (error) throw error;
+
+      // Update local state
+      setExperiments(experiments.map(exp => 
+        exp.id === experimentId 
+          ? { ...exp, notes_history: updatedNotesHistory, updatedAt: new Date() }
+          : exp
+      ));
+
+      toast({
+        title: 'Note added',
+        description: 'Your note has been added to the experiment.',
+      });
+    } catch (error: any) {
+      console.error('Error adding experiment note:', error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to add note',
+        description: error.message,
+      });
+    }
+  };
   
   return {
     experiments: filteredExperiments,
@@ -221,6 +278,7 @@ export const useExperiments = (
     addExperiment,
     editExperiment,
     deleteExperiment,
-    getExperimentByHypothesisId
+    getExperimentByHypothesisId,
+    addExperimentNote
   };
 };

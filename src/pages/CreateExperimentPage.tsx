@@ -86,6 +86,7 @@ const CreateExperimentPage: React.FC = () => {
         startDate: formData.startDate,
         endDate: formData.endDate,
         notes: formData.notes,
+        notes_history: [], // Initialize with empty array
         observationContent: formData.observationContent
       };
       

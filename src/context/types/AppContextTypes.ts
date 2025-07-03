@@ -20,6 +20,7 @@ export type AppContextType = {
   addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => void;
   editExperiment: (id: string, experiment: Partial<Experiment>) => void;
   deleteExperiment: (id: string) => void;
+  addExperimentNote: (experimentId: string, noteContent: string) => void;
   updatePectiWeights: (weights: Partial<PECTIWeights>) => void;
   updateAllHypothesesWeights: () => void;
   getIdeaById: (id: string) => GrowthIdea | undefined;
