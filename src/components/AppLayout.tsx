@@ -141,7 +141,7 @@ const AppLayout: React.FC = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
-                {(userCompanyRole === 'owner' || userCompanyRole === 'admin') && (
+                {userCompanyRole && (userCompanyRole === 'owner' || userCompanyRole === 'admin') && (
                   <SidebarMenuItem>
                     <SidebarMenuButton 
                       asChild 
