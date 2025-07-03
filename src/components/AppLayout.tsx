@@ -155,9 +155,11 @@ const AppLayout: React.FC = () => {
 
         <main className="flex-1 overflow-auto bg-white">
           {isAuthenticated && (
-            <div className="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
-              <CompanySwitcher />
-              <UserMenu />
+            <div className="p-4 border-b border-gray-200 bg-white flex justify-end">
+              <div className="flex items-center gap-3">
+                <CompanySwitcher />
+                <UserMenu />
+              </div>
             </div>
           )}
           <div className="p-6">
