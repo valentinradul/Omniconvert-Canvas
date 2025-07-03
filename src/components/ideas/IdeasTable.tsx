@@ -55,14 +55,14 @@ const IdeasTable: React.FC<IdeasTableProps> = ({ ideas, getDepartmentById }) => 
               </TableCell>
               <TableCell className="text-right">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/idea-details/${idea.id}`);
                   }}
                 >
-                  View
+                  View Idea
                 </Button>
               </TableCell>
             </TableRow>
