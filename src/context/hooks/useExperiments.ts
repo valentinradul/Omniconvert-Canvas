@@ -271,6 +271,53 @@ export const useExperiments = (
       });
     }
   };
+
+  const deleteExperimentNote = async (experimentId: string, noteId: string) => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication required',
+        description: 'You must be logged in to delete notes.',
+      });
+      return;
+    }
+
+    try {
+      const experiment = experiments.find(e => e.id === experimentId);
+      if (!experiment) {
+        throw new Error('Experiment not found');
+      }
+
+      const updatedNotesHistory = (experiment.notes_history || []).filter(note => note.id !== noteId);
+
+      // Update the database
+      const { error } = await supabase
+        .from('experiments')
+        .update({ notes_history: updatedNotesHistory as any })
+        .eq('id', experimentId);
+
+      if (error) throw error;
+
+      // Update local state
+      setExperiments(experiments.map(exp => 
+        exp.id === experimentId 
+          ? { ...exp, notes_history: updatedNotesHistory, updatedAt: new Date() }
+          : exp
+      ));
+
+      toast({
+        title: 'Note deleted',
+        description: 'The note has been removed from the experiment.',
+      });
+    } catch (error: any) {
+      console.error('Error deleting experiment note:', error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to delete note',
+        description: error.message,
+      });
+    }
+  };
   
   return {
     experiments: filteredExperiments,
@@ -279,6 +326,7 @@ export const useExperiments = (
     editExperiment,
     deleteExperiment,
     getExperimentByHypothesisId,
-    addExperimentNote
+    addExperimentNote,
+    deleteExperimentNote
   };
 };

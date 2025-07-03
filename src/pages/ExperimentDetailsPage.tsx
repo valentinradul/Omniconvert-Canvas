@@ -29,7 +29,8 @@ const ExperimentDetailsPage: React.FC = () => {
     getIdeaById, 
     editExperiment,
     deleteExperiment,
-    addExperimentNote
+    addExperimentNote,
+    deleteExperimentNote
   } = useApp();
   
   const experiment = experiments.find(e => e.id === experimentId);
@@ -97,6 +98,10 @@ const ExperimentDetailsPage: React.FC = () => {
 
   const handleAddNote = (noteContent: string) => {
     addExperimentNote(experiment.id, noteContent);
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    deleteExperimentNote(experiment.id, noteId);
   };
   
   return (
@@ -277,6 +282,7 @@ const ExperimentDetailsPage: React.FC = () => {
       <ExperimentNotesSection 
         notes_history={experiment.notes_history || []}
         onAddNote={handleAddNote}
+        onDeleteNote={handleDeleteNote}
       />
       
       <Card>
