@@ -12,6 +12,7 @@ import {
 import UserMenu from '@/components/UserMenu';
 import CompanySwitcher from '@/components/company/CompanySwitcher';
 import { useAuth } from '@/context/AuthContext';
+import { useCompany } from '@/context/company/CompanyContext';
 import Logo from '@/components/Logo';
 import { 
   LayoutDashboard, 
@@ -35,6 +36,7 @@ document.head.appendChild(sidebarStyles);
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
+  const { userCompanyRole } = useCompany();
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -135,19 +137,21 @@ const AppLayout: React.FC = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    className={`flex items-center py-3 px-4 ${isActive('/category-settings') 
-                      ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                      : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                  >
-                    <Link to="/category-settings" className="flex items-center">
-                      <Settings className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                      <span className="text-base">Category Settings</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {(userCompanyRole === 'owner' || userCompanyRole === 'admin') && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`flex items-center py-3 px-4 ${isActive('/category-settings') 
+                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                        : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                    >
+                      <Link to="/category-settings" className="flex items-center">
+                        <Settings className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                        <span className="text-base">Category Settings</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
 
                 <SidebarMenuItem>
                   <SidebarMenuButton 
