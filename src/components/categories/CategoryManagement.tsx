@@ -28,6 +28,10 @@ const CategoryManagement: React.FC = () => {
   
   const canManageCategories = userCompanyRole === 'owner' || userCompanyRole === 'admin';
   
+  // Debug logging
+  console.log('CategoryManagement - userCompanyRole:', userCompanyRole);
+  console.log('CategoryManagement - canManageCategories:', canManageCategories);
+  
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
       toast({
