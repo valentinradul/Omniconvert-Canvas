@@ -101,17 +101,11 @@ const ExperimentDetailsPage: React.FC = () => {
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{idea.title}</h1>
-          <p className="text-muted-foreground">
-            Created on {new Date(experiment.createdAt).toLocaleDateString()}
-          </p>
-        </div>
+      <div className="flex justify-between items-center">
+        <Button variant="outline" onClick={() => navigate('/experiments')}>
+          Back to Experiments
+        </Button>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/experiments')}>
-            Back to Experiments
-          </Button>
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">Edit Experiment</Button>
@@ -234,6 +228,13 @@ const ExperimentDetailsPage: React.FC = () => {
             </AlertDialogContent>
           </AlertDialog>
         </div>
+      </div>
+      
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">{idea.title}</h1>
+        <p className="text-muted-foreground">
+          Created on {new Date(experiment.createdAt).toLocaleDateString()}
+        </p>
       </div>
       
       <div className="flex justify-between items-center bg-accent/50 p-4 rounded-lg">
