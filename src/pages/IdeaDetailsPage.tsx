@@ -98,18 +98,9 @@ const IdeaDetailsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <Button variant="outline" onClick={() => navigate('/ideas')} className="mb-4">
-            Back to Ideas
-          </Button>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">{idea.title}</h1>
-            {idea.isPublic && <Badge>Public</Badge>}
-          </div>
-          <p className="text-muted-foreground">
-            {department?.name} · {idea.category} · Created on {new Date(idea.createdAt).toLocaleDateString()}
-          </p>
-        </div>
+        <Button variant="outline" onClick={() => navigate('/ideas')}>
+          Back to Ideas
+        </Button>
         <div className="flex gap-2">
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogTrigger asChild>
@@ -211,6 +202,16 @@ const IdeaDetailsPage: React.FC = () => {
             </AlertDialogContent>
           </AlertDialog>
         </div>
+      </div>
+      
+      <div>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">{idea.title}</h1>
+          {idea.isPublic && <Badge>Public</Badge>}
+        </div>
+        <p className="text-muted-foreground">
+          {department?.name} · {idea.category} · Created on {new Date(idea.createdAt).toLocaleDateString()}
+        </p>
       </div>
       
       <Card>
