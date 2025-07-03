@@ -4,6 +4,7 @@ export interface Category {
   id: string;
   name: string;
   company_id: string;
+  department_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -24,12 +25,13 @@ export const fetchCategories = async (companyId?: string): Promise<Category[]> =
   return data || [];
 };
 
-export const createCategory = async (name: string, companyId: string): Promise<Category> => {
+export const createCategory = async (name: string, companyId: string, departmentId?: string): Promise<Category> => {
   const { data, error } = await supabase
     .from('categories')
     .insert({
       name: name.trim(),
-      company_id: companyId
+      company_id: companyId,
+      department_id: departmentId || null
     })
     .select()
     .single();
@@ -41,10 +43,13 @@ export const createCategory = async (name: string, companyId: string): Promise<C
   return data;
 };
 
-export const updateCategory = async (id: string, name: string): Promise<Category> => {
+export const updateCategory = async (id: string, name: string, departmentId?: string): Promise<Category> => {
   const { data, error } = await supabase
     .from('categories')
-    .update({ name: name.trim() })
+    .update({ 
+      name: name.trim(),
+      department_id: departmentId || null
+    })
     .eq('id', id)
     .select()
     .single();

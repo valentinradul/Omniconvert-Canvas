@@ -35,7 +35,7 @@ export const useCategories = (currentCompany: any) => {
     loadCategories();
   }, [currentCompany, toast]);
   
-  const addCategory = async (name: string): Promise<Category | null> => {
+  const addCategory = async (name: string, departmentId?: string): Promise<Category | null> => {
     if (!currentCompany?.id) {
       toast({
         variant: 'destructive',
@@ -46,7 +46,7 @@ export const useCategories = (currentCompany: any) => {
     }
     
     try {
-      const newCategory = await createCategory(name, currentCompany.id);
+      const newCategory = await createCategory(name, currentCompany.id, departmentId);
       setCategories([...categories, newCategory]);
       
       toast({
@@ -65,9 +65,9 @@ export const useCategories = (currentCompany: any) => {
     }
   };
   
-  const editCategory = async (id: string, name: string): Promise<void> => {
+  const editCategory = async (id: string, name: string, departmentId?: string): Promise<void> => {
     try {
-      const updatedCategory = await updateCategory(id, name);
+      const updatedCategory = await updateCategory(id, name, departmentId);
       setCategories(categories.map(cat => 
         cat.id === id ? updatedCategory : cat
       ));
