@@ -10,6 +10,7 @@ import {
   SidebarMenuButton 
 } from '@/components/ui/sidebar';
 import UserMenu from '@/components/UserMenu';
+import CompanySwitcher from '@/components/company/CompanySwitcher';
 import { useAuth } from '@/context/AuthContext';
 import Logo from '@/components/Logo';
 import { 
@@ -154,7 +155,8 @@ const AppLayout: React.FC = () => {
 
         <main className="flex-1 overflow-auto bg-white">
           {isAuthenticated && (
-            <div className="p-4 border-b border-gray-200 bg-white flex justify-end">
+            <div className="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
+              <CompanySwitcher />
               <UserMenu />
             </div>
           )}
