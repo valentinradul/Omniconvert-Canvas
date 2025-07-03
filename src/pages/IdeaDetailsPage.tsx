@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { ALL_CATEGORIES, Category } from '@/types';
+import { Category } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ const IdeaDetailsPage: React.FC = () => {
     editIdea, 
     deleteIdea, 
     departments, 
+    categories,
     getHypothesisByIdeaId 
   } = useApp();
   
@@ -138,13 +139,13 @@ const IdeaDetailsPage: React.FC = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {ALL_CATEGORIES.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
+                        <SelectContent>
+                          <SelectGroup>
+                            {categories.map(cat => (
+                              <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
                     </Select>
                   </div>
                   <div className="grid gap-2">

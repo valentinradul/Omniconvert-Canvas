@@ -11,7 +11,7 @@ import IdeasTable from '@/components/ideas/IdeasTable';
 import EmptyIdeasState from '@/components/ideas/EmptyIdeasState';
 
 const IdeasPage: React.FC = () => {
-  const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
+  const { ideas, departments, categories, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
   const { user } = useAuth();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -89,6 +89,7 @@ const IdeasPage: React.FC = () => {
         responsibleFilter={responsibleFilter}
         setResponsibleFilter={setResponsibleFilter}
         departments={departments}
+        categories={categories}
         allUsers={allUsers}
         clearFilters={clearFilters}
         hasActiveFilters={hasActiveFilters}
@@ -105,6 +106,7 @@ const IdeasPage: React.FC = () => {
       
       <AddIdeaDialog 
         departments={departments}
+        categories={categories}
         addIdea={addIdea}
         isOpen={isDialogOpen}
         setIsOpen={setIsDialogOpen}

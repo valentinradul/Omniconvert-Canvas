@@ -9,12 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import TagInput from '@/components/TagInput';
 import DraftIndicator from '@/components/DraftIndicator';
-import { Category, ALL_CATEGORIES, GrowthIdea } from '@/types';
+import { Category, GrowthIdea } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useDraftState } from '@/hooks/useDraftState';
 
 interface AddIdeaDialogProps {
   departments: any[];
+  categories: { id: string; name: string }[];
   addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => Promise<GrowthIdea | null>;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -22,6 +23,7 @@ interface AddIdeaDialogProps {
 
 const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
   departments,
+  categories,
   addIdea,
   isOpen,
   setIsOpen
@@ -153,9 +155,9 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ALL_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.name}>
+                      {cat.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

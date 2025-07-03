@@ -1,8 +1,10 @@
 
 import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag, PECTIWeights } from '@/types';
+import { Category } from '@/services/categoriesService';
 
 export type AppContextType = {
   departments: Department[];
+  categories: Category[];
   ideas: GrowthIdea[];
   hypotheses: Hypothesis[];
   experiments: Experiment[];

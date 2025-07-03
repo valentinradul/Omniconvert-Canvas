@@ -1,28 +1,8 @@
 
 import { Tag } from './common';
 
-export type Category = 
-  | "Outreach" 
-  | "Paid Ads" 
-  | "Events" 
-  | "Onboarding" 
-  | "Product-led" 
-  | "Content Marketing"
-  | "SEO"
-  | "Partnerships"
-  | "Other";
-
-export const ALL_CATEGORIES: Category[] = [
-  "Outreach",
-  "Paid Ads",
-  "Events",
-  "Onboarding",
-  "Product-led",
-  "Content Marketing",
-  "SEO",
-  "Partnerships",
-  "Other"
-];
+// Category is now dynamic and fetched from database
+export type Category = string;
 
 export type GrowthIdea = {
   id: string;

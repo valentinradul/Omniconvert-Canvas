@@ -7,6 +7,7 @@ import { useIdeas } from './hooks/useIdeas';
 import { useHypotheses } from './hooks/useHypotheses';
 import { useExperiments } from './hooks/useExperiments';
 import { usePectiWeights } from './hooks/usePectiWeights';
+import { useCategories } from './hooks/useCategories';
 import { getAllTags, getAllUserNames } from './utils/dataUtils';
 import { AppContextType } from './types/AppContextTypes';
 
@@ -31,6 +32,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const { pectiWeights, updatePectiWeights } = usePectiWeights();
   
+  const { categories } = useCategories(currentCompany);
+  
   // Create wrapper functions that have access to all hooks
   const allItems = [...ideas, ...hypotheses, ...experiments];
   
@@ -46,6 +49,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const appContextValue: AppContextType = {
     departments,
+    categories,
     ideas,
     hypotheses,
     experiments,

@@ -3,7 +3,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Category, ALL_CATEGORIES } from '@/types';
+import { Category } from '@/types';
 import { Search, Filter, User, FilterX } from 'lucide-react';
 
 interface IdeasFilterBarProps {
@@ -16,6 +16,7 @@ interface IdeasFilterBarProps {
   responsibleFilter: string;
   setResponsibleFilter: (user: string) => void;
   departments: any[];
+  categories: { id: string; name: string }[];
   allUsers: { id: string; name: string }[];
   clearFilters: () => void;
   hasActiveFilters: boolean;
@@ -31,6 +32,7 @@ const IdeasFilterBar: React.FC<IdeasFilterBarProps> = ({
   responsibleFilter,
   setResponsibleFilter,
   departments,
+  categories,
   allUsers,
   clearFilters,
   hasActiveFilters
@@ -70,8 +72,8 @@ const IdeasFilterBar: React.FC<IdeasFilterBarProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              {ALL_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>

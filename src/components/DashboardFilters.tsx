@@ -2,13 +2,14 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Category, ALL_CATEGORIES, Tag, Department, ALL_HYPOTHESIS_STATUSES } from '@/types';
+import { Category, Tag, Department, ALL_HYPOTHESIS_STATUSES } from '@/types';
 import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 interface DashboardFiltersProps {
   departments: Department[];
+  categories: { id: string; name: string }[];
   allTags: Tag[];
   allUsers: { id: string; name: string }[];
   filters: {
@@ -25,6 +26,7 @@ interface DashboardFiltersProps {
 
 const DashboardFilters: React.FC<DashboardFiltersProps> = ({
   departments,
+  categories,
   allTags,
   allUsers,
   filters,
@@ -123,9 +125,9 @@ const DashboardFilters: React.FC<DashboardFiltersProps> = ({
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              {ALL_CATEGORIES.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.name}>
+                  {category.name}
                 </SelectItem>
               ))}
             </SelectContent>
