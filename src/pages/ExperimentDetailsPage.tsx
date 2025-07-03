@@ -101,17 +101,17 @@ const ExperimentDetailsPage: React.FC = () => {
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start">
         <div>
-          <Button variant="outline" onClick={() => navigate('/experiments')} className="mb-4">
-            Back to Experiments
-          </Button>
           <h1 className="text-3xl font-bold tracking-tight">{idea.title}</h1>
           <p className="text-muted-foreground">
             Created on {new Date(experiment.createdAt).toLocaleDateString()}
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/experiments')}>
+            Back to Experiments
+          </Button>
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">Edit Experiment</Button>
