@@ -36,7 +36,11 @@ document.head.appendChild(sidebarStyles);
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
-  const { userCompanyRole } = useCompany();
+  const { userCompanyRole, currentCompany } = useCompany();
+  
+  // Debug logging for role detection
+  console.log('AppLayout - userCompanyRole:', userCompanyRole);
+  console.log('AppLayout - currentCompany:', currentCompany);
   
   const isActive = (path: string) => {
     return location.pathname === path;
