@@ -33,8 +33,7 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
     description: '',
     category: undefined as Category | undefined,
     departmentId: undefined as string | undefined,
-    tags: [] as string[],
-    isPublic: false
+    tags: [] as string[]
   };
 
   const {
@@ -75,8 +74,7 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
         description: formData.description,
         category: formData.category,
         departmentId: formData.departmentId || undefined,
-        tags: formData.tags,
-        isPublic: formData.isPublic
+        tags: formData.tags
       };
 
       console.log('Submitting idea with department:', newIdea.departmentId);
@@ -185,18 +183,6 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="public-idea"
-              checked={formData.isPublic}
-              onCheckedChange={(checked) => updateField('isPublic', checked)}
-            />
-            <Label htmlFor="public-idea">Make this idea public</Label>
-            <p className="text-xs text-muted-foreground ml-2">
-              Public ideas can be viewed by anyone
-            </p>
           </div>
         </div>
         

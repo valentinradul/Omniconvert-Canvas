@@ -38,7 +38,7 @@ const IdeaDetailsPage: React.FC = () => {
   const [description, setDescription] = useState(idea?.description || '');
   const [category, setCategory] = useState<Category | ''>(idea?.category || '');
   const [departmentId, setDepartmentId] = useState(idea?.departmentId || '');
-  const [isPublic, setIsPublic] = useState(idea?.isPublic || false);
+  
   
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   
@@ -53,7 +53,6 @@ const IdeaDetailsPage: React.FC = () => {
       setDepartmentId(currentIdea.departmentId);
       setDepartment(getDepartmentById(currentIdea.departmentId));
       setHypothesis(getHypothesisByIdeaId(currentIdea.id));
-      setIsPublic(currentIdea.isPublic || false);
     } else {
       navigate('/ideas');
     }
@@ -79,8 +78,7 @@ const IdeaDetailsPage: React.FC = () => {
       title,
       description,
       category: category as Category,
-      departmentId,
-      isPublic
+      departmentId
     });
     
     setEditDialogOpen(false);
@@ -166,14 +164,6 @@ const IdeaDetailsPage: React.FC = () => {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="public-idea"
-                      checked={isPublic}
-                      onCheckedChange={setIsPublic}
-                    />
-                    <Label htmlFor="public-idea">Make this idea public</Label>
                   </div>
                 </div>
                 <DialogFooter>
