@@ -15,7 +15,7 @@ type CompanyContextType = {
   isLoading: boolean;
   createCompany: (name: string) => Promise<void>;
   switchCompany: (companyId: string) => void;
-  inviteMember: (email: string, role: CompanyRole) => Promise<void>;
+  inviteMember: (email: string, role: CompanyRole, departmentPermissions?: { all: boolean; departmentIds: string[] }) => Promise<void>;
   removeMember: (userId: string) => Promise<void>;
   updateMemberRole: (userId: string, role: CompanyRole) => Promise<void>;
   acceptInvitation: (invitationId: string) => Promise<void>;
@@ -61,10 +61,10 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   // Then use the company data
   const {
-    createCompany,
-    inviteMember,
-    removeMember,
-    updateMemberRole,
+    createCompany: baseCreateCompany,
+    inviteMember: baseInviteMember,
+    removeMember: baseRemoveMember,
+    updateMemberRole: baseUpdateMemberRole,
     acceptInvitation: baseAcceptInvitation,
     declineInvitation,
     unsendInvitation: apiUnsendInvitation
@@ -82,8 +82,25 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchUserCompanies
   );
 
+  // Wrap functions to return void
+  const createCompany = async (name: string): Promise<void> => {
+    await baseCreateCompany(name);
+  };
+
+  const inviteMember = async (email: string, role: CompanyRole, departmentPermissions?: { all: boolean; departmentIds: string[] }): Promise<void> => {
+    await baseInviteMember(email, role, departmentPermissions);
+  };
+
+  const removeMember = async (userId: string): Promise<void> => {
+    await baseRemoveMember(userId);
+  };
+
+  const updateMemberRole = async (userId: string, role: CompanyRole): Promise<void> => {
+    await baseUpdateMemberRole(userId, role);
+  };
+
   // FIXED: Only accept invitation when explicitly called - NO AUTOMATIC PROCESSING
-  const acceptInvitation = async (invitationId: string) => {
+  const acceptInvitation = async (invitationId: string): Promise<void> => {
     console.log('🚀 CompanyContext: MANUAL invitation acceptance triggered by user click');
     
     try {
@@ -141,29 +158,29 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Function to refresh pending invitations
-  const refreshPendingInvitations = async () => {
+  const refreshPendingInvitations = async (): Promise<void> => {
     await fetchPendingInvitations();
     // Also refresh company members in case someone accepted an invitation
     await fetchCompanyMembers();
   };
 
-  const refreshCompanyMembers = async () => {
+  const refreshCompanyMembers = async (): Promise<void> => {
     await fetchCompanyMembers();
   };
 
-  const refreshUserCompanies = async () => {
+  const refreshUserCompanies = async (): Promise<void> => {
     console.log('🔄 CompanyContext: Manually refreshing user companies');
     await fetchUserCompanies();
   };
 
-  const refreshUserIncomingInvitations = async () => {
+  const refreshUserIncomingInvitations = async (): Promise<void> => {
     if (user?.email) {
       console.log('🔄 CompanyContext: Manually refreshing user incoming invitations');
       await fetchUserIncomingInvitations(user.email);
     }
   };
 
-  const unsendInvitation = async (invitationId: string) => {
+  const unsendInvitation = async (invitationId: string): Promise<void> => {
     await apiUnsendInvitation(invitationId, setPendingInvitations);
     await refreshPendingInvitations();
   };
