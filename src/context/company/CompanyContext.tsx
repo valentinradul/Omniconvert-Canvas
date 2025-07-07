@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -64,7 +65,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     removeMember: baseRemoveMember,
     updateMemberRole: baseUpdateMemberRole,
     acceptInvitation: baseAcceptInvitation,
-    declineInvitation,
+    declineInvitation: baseDeclineInvitation,
     unsendInvitation: apiUnsendInvitation
   } = useCompanyActions(
     user?.id,
@@ -143,6 +144,10 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.error('❌ CompanyContext: Error in MANUAL acceptInvitation:', error);
       throw error;
     }
+  };
+
+  const declineInvitation = async (invitationId: string): Promise<void> => {
+    await baseDeclineInvitation(invitationId);
   };
 
   const refreshPendingInvitations = async (): Promise<void> => {

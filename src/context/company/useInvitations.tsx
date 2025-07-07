@@ -283,7 +283,7 @@ export function useInvitations() {
         description: "The invitation has been declined",
       });
       
-      return invitationId;
+      return;
     } catch (error: any) {
       console.error('❌ Error declining invitation:', error);
       
@@ -293,7 +293,7 @@ export function useInvitations() {
         description: error.message || "There was an error declining the invitation",
       });
       
-      return null;
+      throw error;
     } finally {
       setIsProcessing(false);
     }
