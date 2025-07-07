@@ -1,7 +1,6 @@
 
 import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag, PECTIWeights } from '@/types';
 import { Category } from '@/services/categoriesService';
-import { CompanyRole } from '@/types';
 
 export type AppContextType = {
   departments: Department[];
@@ -34,28 +33,4 @@ export type AppContextType = {
   getDepartmentById: (id: string) => Department | undefined;
   getAllTags: () => Tag[];
   getAllUserNames: () => {id: string; name: string}[];
-};
-
-// Updated company context types to include department permissions
-export type CompanyContextType = {
-  companies: any[];
-  currentCompany: any | null;
-  userCompanyRole: CompanyRole | null;
-  companyMembers: any[];
-  companyInvitations: any[];
-  userIncomingInvitations: any[];
-  pendingInvitations: any[];
-  isLoading: boolean;
-  createCompany: (name: string) => Promise<void>;
-  switchCompany: (companyId: string) => void;
-  inviteMember: (email: string, role: CompanyRole, departmentPermissions?: { all: boolean; departmentIds: string[] }) => Promise<void>;
-  removeMember: (userId: string) => Promise<void>;
-  updateMemberRole: (userId: string, role: CompanyRole) => Promise<void>;
-  acceptInvitation: (invitationId: string) => Promise<void>;
-  declineInvitation: (invitationId: string) => Promise<void>;
-  unsendInvitation: (invitationId: string) => Promise<void>;
-  refreshPendingInvitations: () => Promise<void>;
-  refreshCompanyMembers: () => Promise<void>;
-  refreshUserCompanies: () => Promise<void>;
-  refreshUserIncomingInvitations: () => Promise<void>;
 };

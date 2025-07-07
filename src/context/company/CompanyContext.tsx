@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -16,7 +15,7 @@ type CompanyContextType = {
   isLoading: boolean;
   createCompany: (name: string) => Promise<void>;
   switchCompany: (companyId: string) => void;
-  inviteMember: (email: string, role: CompanyRole, departmentPermissions?: { all: boolean; departmentIds: string[] }) => Promise<void>;
+  inviteMember: (email: string, role: CompanyRole) => Promise<void>;
   removeMember: (userId: string) => Promise<void>;
   updateMemberRole: (userId: string, role: CompanyRole) => Promise<void>;
   acceptInvitation: (invitationId: string) => Promise<void>;
@@ -33,6 +32,7 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   
+  // Define data state first before using it
   const companyData = useCompanyData(user?.id);
   const {
     companies,
@@ -59,13 +59,14 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     switchCompany
   } = companyData;
   
+  // Then use the company data
   const {
-    createCompany: baseCreateCompany,
-    inviteMember: baseInviteMember,
-    removeMember: baseRemoveMember,
-    updateMemberRole: baseUpdateMemberRole,
+    createCompany,
+    inviteMember,
+    removeMember,
+    updateMemberRole,
     acceptInvitation: baseAcceptInvitation,
-    declineInvitation: baseDeclineInvitation,
+    declineInvitation,
     unsendInvitation: apiUnsendInvitation
   } = useCompanyActions(
     user?.id,
@@ -81,23 +82,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchUserCompanies
   );
 
-  const createCompany = async (name: string): Promise<void> => {
-    await baseCreateCompany(name);
-  };
-
-  const inviteMember = async (email: string, role: CompanyRole, departmentPermissions?: { all: boolean; departmentIds: string[] }): Promise<void> => {
-    await baseInviteMember(email, role, departmentPermissions);
-  };
-
-  const removeMember = async (userId: string): Promise<void> => {
-    await baseRemoveMember(userId);
-  };
-
-  const updateMemberRole = async (userId: string, role: CompanyRole): Promise<void> => {
-    await baseUpdateMemberRole(userId, role);
-  };
-
-  const acceptInvitation = async (invitationId: string): Promise<void> => {
+  // FIXED: Only accept invitation when explicitly called - NO AUTOMATIC PROCESSING
+  const acceptInvitation = async (invitationId: string) => {
     console.log('🚀 CompanyContext: MANUAL invitation acceptance triggered by user click');
     
     try {
@@ -106,14 +92,17 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (result && result.company && result.role) {
         console.log('🔄 CompanyContext: Manual invitation accepted, performing comprehensive refresh');
         
+        // Clear localStorage to force fresh data
         localStorage.removeItem('userCompanies');
         localStorage.removeItem('currentCompanyId');
         
+        // Get the new company details
         const newCompany = result.company;
         const newRole = result.role as CompanyRole;
         
         console.log('🎯 CompanyContext: New company joined via MANUAL acceptance:', newCompany.name, 'Role:', newRole);
         
+        // Add the new company to the companies list
         setCompanies(prevCompanies => {
           const exists = prevCompanies.find(c => c.id === newCompany.id);
           if (!exists) {
@@ -122,18 +111,23 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return prevCompanies;
         });
         
+        // Immediately switch to the new company
         setCurrentCompany(newCompany);
         setUserCompanyRole(newRole);
         localStorage.setItem('currentCompanyId', newCompany.id);
         
+        // Refresh user incoming invitations to remove the accepted one
         if (user?.email) {
           await fetchUserIncomingInvitations(user.email);
         }
         
+        // Refresh all company-related data for the new company
         await fetchUserCompanies();
         
+        // Small delay to ensure database changes are committed
         await new Promise(resolve => setTimeout(resolve, 500));
         
+        // Force refresh of company-specific data
         await fetchCompanyMembers();
         await fetchUserRole();
         await fetchPendingInvitations();
@@ -146,36 +140,35 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const declineInvitation = async (invitationId: string): Promise<void> => {
-    await baseDeclineInvitation(invitationId);
-  };
-
-  const refreshPendingInvitations = async (): Promise<void> => {
+  // Function to refresh pending invitations
+  const refreshPendingInvitations = async () => {
     await fetchPendingInvitations();
+    // Also refresh company members in case someone accepted an invitation
     await fetchCompanyMembers();
   };
 
-  const refreshCompanyMembers = async (): Promise<void> => {
+  const refreshCompanyMembers = async () => {
     await fetchCompanyMembers();
   };
 
-  const refreshUserCompanies = async (): Promise<void> => {
+  const refreshUserCompanies = async () => {
     console.log('🔄 CompanyContext: Manually refreshing user companies');
     await fetchUserCompanies();
   };
 
-  const refreshUserIncomingInvitations = async (): Promise<void> => {
+  const refreshUserIncomingInvitations = async () => {
     if (user?.email) {
       console.log('🔄 CompanyContext: Manually refreshing user incoming invitations');
       await fetchUserIncomingInvitations(user.email);
     }
   };
 
-  const unsendInvitation = async (invitationId: string): Promise<void> => {
+  const unsendInvitation = async (invitationId: string) => {
     await apiUnsendInvitation(invitationId, setPendingInvitations);
     await refreshPendingInvitations();
   };
 
+  // Effects to handle auth and company state changes
   useEffect(() => {
     console.log('🔄 CompanyContext: User or auth state changed', { 
       userId: user?.id,
@@ -184,9 +177,11 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
     
     if (user) {
+      // Clear any cached company data when user changes
       localStorage.removeItem('userCompanies');
       
       console.log('📊 CompanyContext: Fetching companies for authenticated user');
+      // Add delay to ensure auth state is fully settled
       setTimeout(() => {
         fetchUserCompanies();
         if (user.email) {
@@ -195,6 +190,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       }, 100);
     } else {
+      // Clear all state when user logs out
       setCompanies([]);
       setCurrentCompany(null);
       setUserCompanyRole(null);
@@ -203,6 +199,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setUserIncomingInvitations([]);
       setPendingInvitations([]);
       
+      // Clear localStorage when user logs out
       localStorage.removeItem('currentCompanyId');
       localStorage.removeItem('userCompanies');
     }

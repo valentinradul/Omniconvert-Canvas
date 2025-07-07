@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ExtendedCompanyInvitation } from '@/types/company';
 
 export function useInvitations() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -104,7 +103,7 @@ export function useInvitations() {
           .from('company_invitations')
           .update({ accepted: true })
           .eq('id', invitationId)
-          .eq('email', invitation.email);
+          .eq('email', invitation.email); // Only update the specific invitation for this email
           
         if (updateError) {
           console.error('❌ Error updating invitation status:', updateError);
@@ -143,73 +142,16 @@ export function useInvitations() {
       
       console.log('✅ Successfully added user to company via MANUAL acceptance');
       
-      // Grant department permissions if user is a member and invitation has department_permissions
-      const extendedInvitation = invitation as ExtendedCompanyInvitation;
-      if (invitation.role === 'member' && extendedInvitation.department_permissions) {
-        console.log('🏢 Setting up department permissions for member:', extendedInvitation.department_permissions);
-        
-        try {
-          const deptPermissions = extendedInvitation.department_permissions;
-          
-          // Clear existing permissions first
-          const { error: clearError } = await supabase
-            .from('member_department_permissions')
-            .delete()
-            .eq('user_id', userId)
-            .eq('company_id', invitation.company_id);
-          
-          if (clearError) {
-            console.error('❌ Error clearing existing permissions:', clearError);
-          }
-          
-          if (deptPermissions.all) {
-            // Grant access to all departments (NULL department_id)
-            const { error: insertError } = await supabase
-              .from('member_department_permissions')
-              .insert({
-                user_id: userId,
-                company_id: invitation.company_id,
-                department_id: null
-              });
-              
-            if (insertError) {
-              console.error('❌ Error granting all department permissions:', insertError);
-            } else {
-              console.log('✅ Granted access to all departments');
-            }
-          } else if (deptPermissions.departmentIds && deptPermissions.departmentIds.length > 0) {
-            // Grant specific department permissions
-            const permissionsToInsert = deptPermissions.departmentIds.map(deptId => ({
-              user_id: userId,
-              company_id: invitation.company_id,
-              department_id: deptId
-            }));
-            
-            const { error: insertError } = await supabase
-              .from('member_department_permissions')
-              .insert(permissionsToInsert);
-            
-            if (insertError) {
-              console.error('❌ Error granting specific department permissions:', insertError);
-            } else {
-              console.log('✅ Granted specific department permissions');
-            }
-          }
-        } catch (permissionError) {
-          console.error('❌ Error processing department permissions:', permissionError);
-          // Don't fail the whole process
-        }
-      }
-      
       // Mark invitation as accepted - ONLY after successful member addition
       const { error: updateError } = await supabase
         .from('company_invitations')
         .update({ accepted: true })
         .eq('id', invitationId)
-        .eq('email', invitation.email);
+        .eq('email', invitation.email); // Ensure we only update the correct invitation
         
       if (updateError) {
         console.error('❌ Error updating invitation status:', updateError);
+        // Don't return null here as the user was successfully added to the company
         console.warn('⚠️ Failed to mark invitation as accepted, but user was added to company');
       } else {
         console.log('✅ Successfully marked invitation as accepted');
@@ -258,7 +200,7 @@ export function useInvitations() {
   };
   
   // Decline invitation function
-  const declineInvitation = async (invitationId: string): Promise<void> => {
+  const declineInvitation = async (invitationId: string) => {
     console.log('❌ User clicked decline invitation:', invitationId);
     setIsProcessing(true);
     
@@ -279,6 +221,8 @@ export function useInvitations() {
         title: "Invitation declined",
         description: "The invitation has been declined",
       });
+      
+      return invitationId;
     } catch (error: any) {
       console.error('❌ Error declining invitation:', error);
       
@@ -288,7 +232,7 @@ export function useInvitations() {
         description: error.message || "There was an error declining the invitation",
       });
       
-      throw error;
+      return null;
     } finally {
       setIsProcessing(false);
     }

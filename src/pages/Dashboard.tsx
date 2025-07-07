@@ -110,7 +110,11 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Company Invitations - Always show if there are invitations */}
-      <CompanyInvitations />
+      <CompanyInvitations 
+        invitations={userIncomingInvitations}
+        onInvitationAccepted={handleInvitationAccepted}
+        onInvitationDeclined={handleInvitationDeclined}
+      />
 
       {isProcessingInvitation && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
