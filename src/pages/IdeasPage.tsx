@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/context/company/CompanyContext';
@@ -16,7 +16,7 @@ const IdeasPage: React.FC = () => {
   const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
   const { user } = useAuth();
   const { currentCompany } = useCompany();
-  const { categories } = useCategories(currentCompany);
+  const { categories, isLoading: categoriesLoading } = useCategories(currentCompany);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
@@ -25,6 +25,16 @@ const IdeasPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('all');
+  
+  // Reset category filter if the selected category no longer exists
+  useEffect(() => {
+    if (categoryFilter !== 'all' && !categoriesLoading) {
+      const categoryExists = categories.some(cat => cat.id === categoryFilter);
+      if (!categoryExists) {
+        setCategoryFilter('all');
+      }
+    }
+  }, [categories, categoryFilter, categoriesLoading]);
   
   // Get all user names for the filter
   const allUsers = getAllUserNames();
