@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useCompany } from '@/context/company/CompanyContext';
+import { useApp } from '@/context/AppContext';
 import { CompanyRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -13,14 +15,19 @@ import { Loader2 } from 'lucide-react';
 interface InviteMemberDialogProps {
   open: boolean;
   onClose: () => void;
-  onInviteSent?: () => void;  // New callback for when invitation is sent
+  onInviteSent?: () => void;
 }
 
 const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, onInviteSent }) => {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<CompanyRole>('member');
+  const [departmentPermissions, setDepartmentPermissions] = useState<{ all: boolean; departmentIds: string[] }>({
+    all: true,
+    departmentIds: []
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { inviteMember, currentCompany } = useCompany();
+  const { departments } = useApp();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,8 +36,8 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
 
     setIsSubmitting(true);
     try {
-      console.log('Sending invitation to:', email, 'with role:', role);
-      await inviteMember(email, role);
+      console.log('Sending invitation with department permissions:', departmentPermissions);
+      await inviteMember(email, role, departmentPermissions);
       
       console.log('Invitation sent successfully');
       toast({
@@ -40,8 +47,8 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
       
       setEmail('');
       setRole('member');
+      setDepartmentPermissions({ all: true, departmentIds: [] });
       
-      // Call the onInviteSent callback if provided to refresh the pending invitations
       if (onInviteSent) {
         console.log('Triggering invitation refresh callback');
         onInviteSent();
@@ -64,25 +71,42 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
     if (!isSubmitting) {
       setEmail('');
       setRole('member');
+      setDepartmentPermissions({ all: true, departmentIds: [] });
       onClose();
     }
+  };
+
+  const handleDepartmentToggle = (departmentId: string, checked: boolean) => {
+    setDepartmentPermissions(prev => ({
+      ...prev,
+      departmentIds: checked 
+        ? [...prev.departmentIds, departmentId]
+        : prev.departmentIds.filter(id => id !== departmentId)
+    }));
+  };
+
+  const handleAllDepartmentsToggle = (checked: boolean) => {
+    setDepartmentPermissions({
+      all: checked,
+      departmentIds: checked ? [] : departments.map(d => d.id)
+    });
   };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
       if (!isOpen) handleClose();
     }}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Invite Team Member</DialogTitle>
             <DialogDescription>
-              Invite a team member to join your company.
+              Invite a team member to join your company and specify which departments they can access.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="col-span-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">
                 Email Address
               </Label>
               <Input
@@ -91,13 +115,12 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="colleague@company.com"
-                className="col-span-4"
                 disabled={isSubmitting}
                 required
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="col-span-4">
+            <div className="grid gap-2">
+              <Label htmlFor="role">
                 Role
               </Label>
               <Select 
@@ -105,7 +128,7 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
                 onValueChange={(value: CompanyRole) => setRole(value)}
                 disabled={isSubmitting}
               >
-                <SelectTrigger className="col-span-4">
+                <SelectTrigger>
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -114,6 +137,43 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
                 </SelectContent>
               </Select>
             </div>
+            
+            {role === 'member' && (
+              <div className="grid gap-2">
+                <Label>Department Access</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="all-departments"
+                      checked={departmentPermissions.all}
+                      onCheckedChange={handleAllDepartmentsToggle}
+                      disabled={isSubmitting}
+                    />
+                    <Label htmlFor="all-departments" className="font-medium">
+                      All Departments
+                    </Label>
+                  </div>
+                  
+                  {!departmentPermissions.all && (
+                    <div className="ml-6 space-y-2 max-h-32 overflow-y-auto">
+                      {departments.map((department) => (
+                        <div key={department.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`dept-${department.id}`}
+                            checked={departmentPermissions.departmentIds.includes(department.id)}
+                            onCheckedChange={(checked) => handleDepartmentToggle(department.id, checked as boolean)}
+                            disabled={isSubmitting}
+                          />
+                          <Label htmlFor={`dept-${department.id}`} className="text-sm">
+                            {department.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button

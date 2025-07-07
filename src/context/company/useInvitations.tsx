@@ -103,7 +103,7 @@ export function useInvitations() {
           .from('company_invitations')
           .update({ accepted: true })
           .eq('id', invitationId)
-          .eq('email', invitation.email); // Only update the specific invitation for this email
+          .eq('email', invitation.email);
           
         if (updateError) {
           console.error('❌ Error updating invitation status:', updateError);
@@ -142,16 +142,45 @@ export function useInvitations() {
       
       console.log('✅ Successfully added user to company via MANUAL acceptance');
       
+      // Grant department permissions if user is a member
+      if (invitation.role === 'member' && invitation.department_permissions) {
+        console.log('🏢 Setting up department permissions for member:', invitation.department_permissions);
+        
+        try {
+          const deptPermissions = invitation.department_permissions as any;
+          let departmentIds = null;
+          
+          if (!deptPermissions.all && deptPermissions.departmentIds && deptPermissions.departmentIds.length > 0) {
+            departmentIds = deptPermissions.departmentIds;
+          }
+          
+          const { error: permError } = await supabase.rpc('grant_department_permissions', {
+            p_user_id: userId,
+            p_company_id: invitation.company_id,
+            p_department_ids: departmentIds
+          });
+          
+          if (permError) {
+            console.error('❌ Error setting department permissions:', permError);
+            // Don't fail the whole process, just log the error
+          } else {
+            console.log('✅ Department permissions set successfully');
+          }
+        } catch (permissionError) {
+          console.error('❌ Error processing department permissions:', permissionError);
+          // Don't fail the whole process
+        }
+      }
+      
       // Mark invitation as accepted - ONLY after successful member addition
       const { error: updateError } = await supabase
         .from('company_invitations')
         .update({ accepted: true })
         .eq('id', invitationId)
-        .eq('email', invitation.email); // Ensure we only update the correct invitation
+        .eq('email', invitation.email);
         
       if (updateError) {
         console.error('❌ Error updating invitation status:', updateError);
-        // Don't return null here as the user was successfully added to the company
         console.warn('⚠️ Failed to mark invitation as accepted, but user was added to company');
       } else {
         console.log('✅ Successfully marked invitation as accepted');
