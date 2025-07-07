@@ -1,154 +1,195 @@
+
 import React from 'react';
-import { Outlet, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { 
+  SidebarProvider, 
+  Sidebar, 
+  SidebarContent, 
+  SidebarMenu, 
+  SidebarMenuItem, 
+  SidebarMenuButton 
+} from '@/components/ui/sidebar';
 import UserMenu from '@/components/UserMenu';
 import CompanySwitcher from '@/components/company/CompanySwitcher';
-import { 
-  Lightbulb, 
-  TestTube, 
-  FlaskConical, 
-  BarChart3, 
-  Building2, 
-  Users, 
-  Settings,
-  Shield,
-  Folder
-} from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useCompany } from '@/context/company/CompanyContext';
 import Logo from '@/components/Logo';
+import { 
+  LayoutDashboard, 
+  FlaskConical, 
+  Lightbulb, 
+  LineChart, 
+  Building, 
+  Settings, 
+  Users 
+} from 'lucide-react';
+
+// Add custom CSS to force white background for sidebar
+const sidebarStyles = document.createElement('style');
+sidebarStyles.innerHTML = `
+  [data-sidebar="sidebar"] {
+    background-color: white !important;
+  }
+`;
+document.head.appendChild(sidebarStyles);
 
 const AppLayout: React.FC = () => {
-  const { user } = useAuth();
-  const { isSuperAdmin } = useSuperAdmin();
   const location = useLocation();
-
-  if (!user) {
-    return null;
-  }
-
-  const navigationItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-    { path: '/ideas', label: 'Ideas', icon: Lightbulb },
-    { path: '/hypotheses', label: 'Hypotheses', icon: TestTube },
-    { path: '/experiments', label: 'Experiments', icon: FlaskConical },
-  ];
-
-  const settingsItems = [
-    { path: '/departments', label: 'Departments', icon: Building2 },
-    { path: '/categories', label: 'Categories', icon: Folder },
-    { path: '/team-settings', label: 'Team', icon: Users },
-    { path: '/account-settings', label: 'Account', icon: Settings },
-  ];
-
-  const isActivePath = (path: string) => {
+  const { isAuthenticated } = useAuth();
+  const { userCompanyRole, currentCompany } = useCompany();
+  
+  // Debug logging for role detection
+  console.log('AppLayout - userCompanyRole:', userCompanyRole);
+  console.log('AppLayout - currentCompany:', currentCompany);
+  
+  const isActive = (path: string) => {
     return location.pathname === path;
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b">
-        <div className="flex h-16 items-center px-4">
-          <Logo />
-          <div className="mx-6 hidden md:flex">
-            <CompanySwitcher />
-          </div>
-          <div className="ml-auto flex items-center space-x-4">
-            <UserMenu />
-          </div>
-        </div>
-      </header>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <Sidebar className="z-10 border-r border-gray-200 !bg-white">
+          <SidebarContent className="!bg-white">
+            <div className="py-6 px-4 border-b border-gray-200 bg-white">
+              <Logo className="flex items-center" />
+              <p className="text-xs text-gray-600 mt-1">Growth experimentation platform</p>
+            </div>
+            <SidebarMenu className="py-4 bg-white">
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  className={`flex items-center py-3 px-4 ${isActive('/dashboard') 
+                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                >
+                  <Link to="/dashboard" className="flex items-center">
+                    <LayoutDashboard className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                    <span className="text-base">Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  className={`flex items-center py-3 px-4 ${isActive('/ideas') 
+                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                >
+                  <Link to="/ideas" className="flex items-center">
+                    <Lightbulb className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                    <span className="text-base">Growth Ideas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  className={`flex items-center py-3 px-4 ${isActive('/hypotheses') 
+                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                >
+                  <Link to="/hypotheses" className="flex items-center">
+                    <FlaskConical className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                    <span className="text-base">Hypotheses</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  className={`flex items-center py-3 px-4 ${isActive('/experiments') 
+                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                >
+                  <Link to="/experiments" className="flex items-center">
+                    <LineChart className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                    <span className="text-base">Experiments</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  className={`flex items-center py-3 px-4 ${isActive('/departments') 
+                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                >
+                  <Link to="/departments" className="flex items-center">
+                    <Building className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                    <span className="text-base">Departments</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 border-r bg-muted/10 min-h-[calc(100vh-4rem)]">
-          <div className="space-y-4 py-4">
-            {/* Main Navigation */}
-            <div className="px-3 py-2">
-              <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-                Growth Lab
-              </h2>
-              <div className="space-y-1">
-                {navigationItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Button
-                      key={item.path}
-                      variant={isActivePath(item.path) ? "secondary" : "ghost"}
-                      className="w-full justify-start"
-                      asChild
+              <div className="mt-6 pt-6 border-t border-gray-200 bg-white">
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    asChild 
+                    className={`flex items-center py-3 px-4 ${isActive('/team-settings') 
+                      ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                      : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                  >
+                    <Link to="/team-settings" className="flex items-center">
+                      <Users className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                      <span className="text-base">Team Settings</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                {userCompanyRole && (userCompanyRole === 'owner' || userCompanyRole === 'admin') && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`flex items-center py-3 px-4 ${isActive('/category-settings') 
+                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                        : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
                     >
-                      <Link to={item.path}>
-                        <Icon className="mr-2 h-4 w-4" />
-                        {item.label}
+                      <Link to="/category-settings" className="flex items-center">
+                        <Settings className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                        <span className="text-base">Category Settings</span>
                       </Link>
-                    </Button>
-                  );
-                })}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    asChild 
+                    className={`flex items-center py-3 px-4 ${isActive('/account-settings') 
+                      ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                      : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                  >
+                    <Link to="/account-settings" className="flex items-center">
+                      <Settings className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                      <span className="text-base">Account Settings</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </div>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+
+        <main className="flex-1 overflow-auto bg-white">
+          {isAuthenticated && (
+            <div className="p-4 border-b border-gray-200 bg-white flex justify-end">
+              <div className="flex items-center gap-3">
+                <CompanySwitcher />
+                <UserMenu />
               </div>
             </div>
-
-            <Separator />
-
-            {/* Settings */}
-            <div className="px-3 py-2">
-              <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-                Settings
-              </h2>
-              <div className="space-y-1">
-                {settingsItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Button
-                      key={item.path}
-                      variant={isActivePath(item.path) ? "secondary" : "ghost"}
-                      className="w-full justify-start"
-                      asChild
-                    >
-                      <Link to={item.path}>
-                        <Icon className="mr-2 h-4 w-4" />
-                        {item.label}
-                      </Link>
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Super Admin Section */}
-            {isSuperAdmin && (
-              <>
-                <Separator />
-                <div className="px-3 py-2">
-                  <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-primary">
-                    Super Admin
-                  </h2>
-                  <div className="space-y-1">
-                    <Button
-                      variant={isActivePath('/super-admin') ? "secondary" : "ghost"}
-                      className="w-full justify-start"
-                      asChild
-                    >
-                      <Link to="/super-admin">
-                        <Shield className="mr-2 h-4 w-4" />
-                        System Management
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </>
-            )}
+          )}
+          <div className="p-6">
+            <Outlet />
           </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-6">
-          <Outlet />
         </main>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
