@@ -1,192 +1,209 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Mail, Clock, CheckCircle, XCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/context/company/CompanyContext';
 import { useInvitations } from '@/context/company/useInvitations';
-import { formatDistanceToNow } from 'date-fns';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Mail, Clock, Users, Building2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-interface CompanyInvitationsProps {
-  invitations: any[];
-  onInvitationAccepted?: () => void;
-  onInvitationDeclined?: () => void;
-}
-
-const CompanyInvitations: React.FC<CompanyInvitationsProps> = ({
-  invitations,
-  onInvitationAccepted,
-  onInvitationDeclined
-}) => {
-  const { user, isAuthenticated } = useAuth();
-  const { refreshUserCompanies } = useCompany();
+const CompanyInvitations: React.FC = () => {
+  const { user } = useAuth();
+  const { userIncomingInvitations, refreshUserIncomingInvitations } = useCompany();
   const { acceptInvitation, declineInvitation, isProcessing } = useInvitations();
+  const { toast } = useToast();
+  const [processingInvitations, setProcessingInvitations] = useState<Set<string>>(new Set());
 
-  console.log('🔔 CompanyInvitations render (NO AUTO-PROCESSING):', { 
-    invitationsCount: invitations.length, 
-    userId: user?.id,
-    userEmail: user?.email,
-    isAuthenticated,
-    allInvitations: invitations
-  });
+  // Auto-refresh invitations when component mounts
+  useEffect(() => {
+    console.log('📧 CompanyInvitations: Component mounted, refreshing invitations');
+    refreshUserIncomingInvitations();
+  }, [refreshUserIncomingInvitations]);
 
-  // Don't show if user not authenticated
-  if (!isAuthenticated || !user?.email) {
-    console.log('❌ User not authenticated, not showing invitations');
-    return null;
-  }
-
-  // Filter invitations for current user's email - more robust matching
-  const userInvitations = invitations.filter(invitation => {
-    const invitationEmail = invitation.email?.toLowerCase().trim();
-    const userEmail = user.email?.toLowerCase().trim();
+  const handleAcceptInvitation = async (invitationId: string) => {
+    console.log('🎯 CompanyInvitations: User clicked ACCEPT for invitation:', invitationId);
     
-    console.log('🔍 Email comparison (NO AUTO-PROCESSING):', { 
-      invitationEmail, 
-      userEmail, 
-      matches: invitationEmail === userEmail,
-      invitationId: invitation.id,
-      accepted: invitation.accepted
-    });
-    
-    // Only show non-accepted invitations that match user's email
-    return invitationEmail === userEmail && !invitation.accepted;
-  });
-
-  console.log('📧 Filtered invitations for user (NO AUTO-PROCESSING):', { 
-    userEmail: user?.email,
-    totalInvitations: invitations.length,
-    userSpecificInvitations: userInvitations.length,
-    userInvitations 
-  });
-
-  // Don't show if no invitations for this user
-  if (userInvitations.length === 0) {
-    console.log('📭 No pending invitations for this user');
-    return null;
-  }
-
-  // FIXED: Only accept on EXPLICIT user click - NO AUTOMATIC PROCESSING
-  const handleAccept = async (invitationId: string) => {
-    console.log('✅ EXPLICIT USER CLICK: Handling invitation acceptance:', { invitationId, userId: user.id });
-    
-    if (!isAuthenticated || !user) {
-      console.error('❌ User not authenticated when trying to accept invitation');
+    if (processingInvitations.has(invitationId)) {
+      console.log('⏳ Already processing this invitation, skipping...');
       return;
     }
-
-    try {
-      const result = await acceptInvitation(invitationId, user.id, invitations);
-      if (result) {
-        console.log('🎉 Invitation accepted successfully, refreshing company data');
-        
-        // Refresh company data
-        await refreshUserCompanies();
-        
-        // Call the callback if provided
-        if (onInvitationAccepted) {
-          onInvitationAccepted();
-        }
-        
-        // Small delay then reload to ensure fresh state
-        setTimeout(() => {
-          console.log('🔄 Reloading page to show fresh company data');
-          window.location.reload();
-        }, 1500);
-      }
-    } catch (error) {
-      console.error('❌ Error in handleAccept:', error);
-    }
-  };
-
-  const handleDecline = async (invitationId: string) => {
-    console.log('❌ Handling invitation decline:', invitationId);
+    
+    setProcessingInvitations(prev => new Set(prev).add(invitationId));
     
     try {
-      const result = await declineInvitation(invitationId);
-      if (result && onInvitationDeclined) {
-        console.log('✅ Invitation declined successfully, calling callback');
-        onInvitationDeclined();
+      console.log('🚀 CompanyInvitations: Starting MANUAL acceptance process for:', invitationId);
+      
+      const result = await acceptInvitation(invitationId, user?.id, userIncomingInvitations);
+      
+      if (result) {
+        console.log('✅ CompanyInvitations: Successfully accepted invitation, refreshing list');
+        await refreshUserIncomingInvitations();
+        
+        toast({
+          title: "Welcome aboard! 🎉",
+          description: `You have successfully joined ${result.company.name}`,
+        });
+      } else {
+        console.log('ℹ️ CompanyInvitations: Invitation acceptance returned null (likely already processed)');
       }
-    } catch (error) {
-      console.error('❌ Error in handleDecline:', error);
+    } catch (error: any) {
+      console.error('❌ CompanyInvitations: Error accepting invitation:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to accept invitation",
+        description: error.message || "Please try again later",
+      });
+    } finally {
+      setProcessingInvitations(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(invitationId);
+        return newSet;
+      });
     }
   };
 
-  // Safe date formatting function
-  const formatInvitationDate = (dateString: string) => {
+  const handleDeclineInvitation = async (invitationId: string) => {
+    console.log('❌ CompanyInvitations: User clicked DECLINE for invitation:', invitationId);
+    
+    if (processingInvitations.has(invitationId)) {
+      console.log('⏳ Already processing this invitation, skipping...');
+      return;
+    }
+    
+    setProcessingInvitations(prev => new Set(prev).add(invitationId));
+    
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        console.warn('⚠️ Invalid date string:', dateString);
-        return 'Recently';
-      }
-      return formatDistanceToNow(date, { addSuffix: true });
-    } catch (error) {
-      console.error('❌ Error formatting date:', error, dateString);
-      return 'Recently';
+      console.log('🗑️ CompanyInvitations: Starting decline process for:', invitationId);
+      
+      await declineInvitation(invitationId);
+      
+      console.log('✅ CompanyInvitations: Successfully declined invitation, refreshing list');
+      await refreshUserIncomingInvitations();
+      
+      toast({
+        title: "Invitation declined",
+        description: "The invitation has been declined successfully",
+      });
+    } catch (error: any) {
+      console.error('❌ CompanyInvitations: Error declining invitation:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to decline invitation",
+        description: error.message || "Please try again later",
+      });
+    } finally {
+      setProcessingInvitations(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(invitationId);
+        return newSet;
+      });
     }
   };
 
-  console.log('🎨 Rendering CompanyInvitations with', userInvitations.length, 'invitations (NO AUTO-PROCESSING)');
+  const formatRole = (role: string) => {
+    return role.charAt(0).toUpperCase() + role.slice(1);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  console.log('📊 CompanyInvitations: Rendering with', userIncomingInvitations.length, 'invitations');
+
+  if (userIncomingInvitations.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="text-center py-8">
+          <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Mail className="w-6 h-6 text-gray-400" />
+          </div>
+          <CardTitle className="text-lg">No Pending Invitations</CardTitle>
+          <CardDescription>
+            You don't have any pending company invitations at the moment.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5 text-blue-600" />
-          Company Invitations
-          <Badge variant="secondary">{userInvitations.length}</Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {userInvitations.map((invitation) => (
-            <div key={invitation.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Mail className="h-5 w-5 text-muted-foreground" />
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Mail className="w-5 h-5 text-blue-600" />
+        <h3 className="text-lg font-semibold">Pending Invitations</h3>
+        <Badge variant="secondary" className="ml-2">
+          {userIncomingInvitations.length}
+        </Badge>
+      </div>
+      
+      {userIncomingInvitations.map((invitation) => (
+        <Card key={invitation.id} className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                </div>
                 <div>
-                  <div className="font-medium">
-                    Join {invitation.companyName || invitation.company_name || 'Company'}
-                  </div>
-                  <div className="text-sm text-muted-foreground flex items-center">
-                    <Badge variant="outline" className="mr-2 capitalize">
-                      {invitation.role}
-                    </Badge>
-                    <Clock className="h-3 w-3 mr-1" />
-                    <span>
-                      Invited {formatInvitationDate(invitation.created_at || invitation.createdAt)}
-                    </span>
-                  </div>
+                  <CardTitle className="text-lg">
+                    {(invitation as any).companies?.name || 'Unknown Company'}
+                  </CardTitle>
+                  <CardDescription className="flex items-center gap-1 mt-1">
+                    <Users className="w-4 h-4" />
+                    Invited as {formatRole(invitation.role)}
+                  </CardDescription>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleAccept(invitation.id)}
-                  disabled={isProcessing}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Accept
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDecline(invitation.id)}
-                  disabled={isProcessing}
-                >
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Decline
-                </Button>
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Clock className="w-4 h-4" />
+                {formatDate(invitation.created_at)}
               </div>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </CardHeader>
+          
+          <CardContent className="pt-0">
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => handleAcceptInvitation(invitation.id)}
+                disabled={isProcessing || processingInvitations.has(invitation.id)}
+                className="flex-1"
+              >
+                {processingInvitations.has(invitation.id) ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Accepting...
+                  </>
+                ) : (
+                  'Accept'
+                )}
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => handleDeclineInvitation(invitation.id)}
+                disabled={isProcessing || processingInvitations.has(invitation.id)}
+                className="flex-1"
+              >
+                {processingInvitations.has(invitation.id) ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Declining...
+                  </>
+                ) : (
+                  'Decline'
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 };
 
