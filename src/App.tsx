@@ -8,6 +8,7 @@ import { AppProvider } from "./context/AppContext";
 import { AuthProvider } from "./context/AuthContext";
 import { CompanyProvider } from "./context/company/CompanyContext";
 import AppLayout from "./components/AppLayout";
+import SuperAdminLayout from "./components/SuperAdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -27,9 +28,13 @@ import DepartmentsPage from "./pages/DepartmentsPage";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
 import TeamSettingsPage from "./pages/TeamSettingsPage";
 import CategorySettingsPage from "./pages/CategorySettingsPage";
-import SuperAdminSettingsPage from "./pages/SuperAdminSettingsPage";
 import DataRecoveryPage from "./pages/DataRecoveryPage";
 import NotFound from "./pages/NotFound";
+
+// Super Admin Pages
+import SuperAdminCompaniesPage from "./pages/super-admin/CompaniesPage";
+import SuperAdminMembersPage from "./pages/super-admin/MembersPage";
+import SuperAdminDepartmentsPage from "./pages/super-admin/DepartmentsPage";
 
 const queryClient = new QueryClient();
 
@@ -51,7 +56,7 @@ const App = () => (
                 <Route path="reset-password" element={<ResetPassword />} />
                 <Route path="data-recovery" element={<DataRecoveryPage />} />
                 
-                {/* Protected routes */}
+                {/* Protected regular app routes */}
                 <Route element={<ProtectedRoute />}>
                   <Route element={<AppLayout />}>
                     <Route path="dashboard" element={<Dashboard />} />
@@ -67,10 +72,21 @@ const App = () => (
                     <Route path="account-settings" element={<AccountSettingsPage />} />
                     <Route path="team-settings" element={<TeamSettingsPage />} />
                     <Route path="category-settings" element={<CategorySettingsPage />} />
-                    <Route path="super-admin-settings" element={<SuperAdminSettingsPage />} />
 
                     {/* Redirect root path to dashboard when authenticated */}
                     <Route path="" element={<Navigate to="/dashboard" replace />} />
+                  </Route>
+                </Route>
+
+                {/* Protected Super Admin routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="super-admin" element={<SuperAdminLayout />}>
+                    <Route path="companies" element={<SuperAdminCompaniesPage />} />
+                    <Route path="members" element={<SuperAdminMembersPage />} />
+                    <Route path="departments" element={<SuperAdminDepartmentsPage />} />
+                    
+                    {/* Redirect /super-admin to companies by default */}
+                    <Route path="" element={<Navigate to="/super-admin/companies" replace />} />
                   </Route>
                 </Route>
                 

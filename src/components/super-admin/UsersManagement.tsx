@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,8 +65,8 @@ const UsersManagement: React.FC = () => {
         .from('company_members')
         .select(`
           *,
-          profiles!company_members_user_id_fkey(id, full_name, avatar_url, created_at),
-          companies!company_members_company_id_fkey(id, name)
+          profiles(id, full_name, avatar_url, created_at),
+          companies(id, name)
         `)
         .order('created_at', { ascending: false });
 
