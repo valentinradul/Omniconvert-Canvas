@@ -9,7 +9,6 @@ import { AuthProvider } from "./context/AuthContext";
 import { CompanyProvider } from "./context/company/CompanyContext";
 import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
-import SuperAdminRoute from "./components/SuperAdminRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -29,7 +28,6 @@ import AccountSettingsPage from "./pages/AccountSettingsPage";
 import TeamSettingsPage from "./pages/TeamSettingsPage";
 import CategorySettingsPage from "./pages/CategorySettingsPage";
 import DataRecoveryPage from "./pages/DataRecoveryPage";
-import SuperAdminPage from "./pages/SuperAdminPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,13 +66,6 @@ const App = () => (
                     <Route path="account-settings" element={<AccountSettingsPage />} />
                     <Route path="team-settings" element={<TeamSettingsPage />} />
                     <Route path="category-settings" element={<CategorySettingsPage />} />
-
-                    {/* Super Admin Route */}
-                    <Route path="super-admin" element={
-                      <SuperAdminRoute>
-                        <SuperAdminPage />
-                      </SuperAdminRoute>
-                    } />
 
                     {/* Redirect root path to dashboard when authenticated */}
                     <Route path="" element={<Navigate to="/dashboard" replace />} />
