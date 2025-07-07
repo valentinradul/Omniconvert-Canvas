@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -36,6 +35,9 @@ const IdeasFilterBar: React.FC<IdeasFilterBarProps> = ({
   clearFilters,
   hasActiveFilters
 }) => {
+  console.log('IdeasFilterBar - categories:', categories);
+  console.log('IdeasFilterBar - categoryFilter:', categoryFilter);
+  
   return (
     <div className="bg-white rounded-lg border p-4 mb-6 space-y-4">
       <div className="flex items-center gap-2">
@@ -64,18 +66,27 @@ const IdeasFilterBar: React.FC<IdeasFilterBarProps> = ({
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select 
             value={categoryFilter} 
-            onValueChange={(value) => setCategoryFilter(value)}
+            onValueChange={(value) => {
+              console.log('Category filter changed to:', value);
+              setCategoryFilter(value);
+            }}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by Category" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
+              {categories && categories.length > 0 ? (
+                categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="no-categories" disabled>
+                  No categories available
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
