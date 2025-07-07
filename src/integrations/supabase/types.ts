@@ -104,6 +104,7 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string
+          department_id: string | null
           id: string
           role: string
           user_id: string
@@ -111,6 +112,7 @@ export type Database = {
         Insert: {
           company_id: string
           created_at?: string
+          department_id?: string | null
           id?: string
           role: string
           user_id: string
@@ -118,6 +120,7 @@ export type Database = {
         Update: {
           company_id?: string
           created_at?: string
+          department_id?: string | null
           id?: string
           role?: string
           user_id?: string
@@ -131,10 +134,52 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "company_members_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_company_members_user_id"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -395,6 +440,30 @@ export type Database = {
           },
         ]
       }
+      super_admin_users: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          is_active: boolean
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           created_at: string
@@ -504,6 +573,10 @@ export type Database = {
         Args: { company_id: string }
         Returns: boolean
       }
+      is_super_admin: {
+        Args: { user_id?: string }
+        Returns: boolean
+      }
       user_has_company_access: {
         Args: { user_id: string; company_id: string }
         Returns: boolean
@@ -519,6 +592,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "member"
+      super_admin_role: "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -647,6 +721,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "member"],
+      super_admin_role: ["super_admin"],
     },
   },
 } as const
