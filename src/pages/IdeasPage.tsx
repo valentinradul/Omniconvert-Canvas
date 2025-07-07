@@ -38,9 +38,8 @@ const IdeasPage: React.FC = () => {
       return false;
     }
     
-    // Category filter - now using category names
+    // Category filter - using category names
     if (categoryFilter !== 'all') {
-      // Find the category by ID to get the name
       const selectedCategory = categories.find(cat => cat.id === categoryFilter);
       if (!selectedCategory || idea.category !== selectedCategory.name) {
         return false;
