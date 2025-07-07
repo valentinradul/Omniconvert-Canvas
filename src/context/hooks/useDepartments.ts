@@ -1,107 +1,135 @@
 
 import { useState, useEffect } from 'react';
-import { Department } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { generateId } from '../utils/dataUtils';
+import { supabase } from '@/integrations/supabase/client';
 
-// Function to check if a string is a valid UUID
-const isValidUUID = (str: string) => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-};
+interface Department {
+  id: string;
+  name: string;
+  company_id: string;
+  created_at: string;
+}
 
-// Function to migrate old departments to have proper UUIDs
-const migrateDepartments = (departments: Department[]): Department[] => {
-  let migrationNeeded = false;
-  const migratedDepartments = departments.map(dept => {
-    if (!isValidUUID(dept.id)) {
-      migrationNeeded = true;
-      console.log('Migrating department:', dept.name, 'from ID:', dept.id, 'to new UUID');
-      return { ...dept, id: generateId() };
-    }
-    return dept;
-  });
-  
-  if (migrationNeeded) {
-    console.log('Department migration completed:', migratedDepartments);
-  }
-  
-  return migratedDepartments;
-};
-
-export const useDepartments = () => {
-  const [departments, setDepartments] = useState<Department[]>(() => {
-    const storedValue = localStorage.getItem('departments');
-    
-    if (storedValue) {
-      try {
-        const parsedDepartments = JSON.parse(storedValue);
-        // Always migrate any departments with invalid UUIDs
-        const migratedDepartments = migrateDepartments(parsedDepartments);
-        
-        // Check if migration was needed
-        const needsMigration = parsedDepartments.some((dept: Department) => !isValidUUID(dept.id));
-        if (needsMigration) {
-          console.log('Migrating departments to use proper UUIDs and saving immediately');
-          // Save the migrated departments immediately
-          localStorage.setItem('departments', JSON.stringify(migratedDepartments));
-        }
-        
-        return migratedDepartments;
-      } catch (error) {
-        console.error('Error parsing stored departments, using defaults');
-      }
-    }
-    
-    // Default departments with proper UUIDs
-    const defaultDepartments = [
-      { id: generateId(), name: 'Marketing' },
-      { id: generateId(), name: 'Sales' },
-      { id: generateId(), name: 'Product' }
-    ];
-    
-    // Save defaults to localStorage immediately
-    localStorage.setItem('departments', JSON.stringify(defaultDepartments));
-    console.log('Created default departments with UUIDs:', defaultDepartments);
-    
-    return defaultDepartments;
-  });
-  
+export const useDepartments = (currentCompany?: { id: string } | null) => {
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
-  // Force save departments to localStorage whenever they change
   useEffect(() => {
-    console.log('Saving departments to localStorage:', departments);
-    localStorage.setItem('departments', JSON.stringify(departments));
-  }, [departments]);
+    if (currentCompany) {
+      fetchDepartments();
+    } else {
+      setDepartments([]);
+      setLoading(false);
+    }
+  }, [currentCompany]);
 
-  const addDepartment = (name: string) => {
-    const newDepartment = { id: generateId(), name };
-    console.log('Adding new department with UUID:', newDepartment);
-    setDepartments([...departments, newDepartment]);
-  };
-  
-  const editDepartment = (id: string, name: string) => {
-    console.log('Editing department:', id, 'to name:', name);
-    setDepartments(departments.map(dept => 
-      dept.id === id ? { ...dept, name } : dept
-    ));
-  };
-  
-  const deleteDepartment = (id: string, ideas: any[]) => {
-    const ideasUsingDepartment = ideas.some(idea => idea.departmentId === id);
-    
-    if (ideasUsingDepartment) {
+  const fetchDepartments = async () => {
+    if (!currentCompany) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('company_id', currentCompany.id)
+        .order('name');
+
+      if (error) throw error;
+
+      setDepartments(data || []);
+    } catch (error: any) {
+      console.error('Error fetching departments:', error);
       toast({
         variant: 'destructive',
-        title: 'Cannot delete department',
-        description: 'Cannot delete department that has ideas associated with it.',
+        title: 'Error',
+        description: 'Failed to fetch departments'
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-    
-    console.log('Deleting department:', id);
-    setDepartments(departments.filter(dept => dept.id !== id));
+  };
+
+  const addDepartment = async (name: string) => {
+    if (!currentCompany) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('departments')
+        .insert({
+          name: name.trim(),
+          company_id: currentCompany.id,
+          created_by: user.id
+        });
+
+      if (error) throw error;
+
+      await fetchDepartments();
+      
+      toast({
+        title: 'Success',
+        description: 'Department created successfully'
+      });
+    } catch (error: any) {
+      console.error('Error creating department:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to create department'
+      });
+    }
+  };
+  
+  const editDepartment = async (id: string, name: string) => {
+    try {
+      const { error } = await supabase
+        .from('departments')
+        .update({ name: name.trim() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await fetchDepartments();
+      
+      toast({
+        title: 'Success',
+        description: 'Department updated successfully'
+      });
+    } catch (error: any) {
+      console.error('Error updating department:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update department'
+      });
+    }
+  };
+  
+  const deleteDepartment = async (id: string, ideas?: any[]) => {
+    try {
+      const { error } = await supabase
+        .from('departments')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await fetchDepartments();
+      
+      toast({
+        title: 'Success',
+        description: 'Department deleted successfully'
+      });
+    } catch (error: any) {
+      console.error('Error deleting department:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete department'
+      });
+    }
   };
 
   const getDepartmentById = (id: string) => {
@@ -112,9 +140,11 @@ export const useDepartments = () => {
   
   return {
     departments,
+    loading,
     addDepartment,
     editDepartment,
     deleteDepartment,
-    getDepartmentById
+    getDepartmentById,
+    refetch: fetchDepartments
   };
 };
