@@ -49,7 +49,7 @@ export const superAdminService = {
         role,
         department_id,
         created_at,
-        profiles!company_members_user_id_fkey(full_name),
+        profiles!fk_company_members_user_id(full_name),
         departments(name)
       `)
       .order('created_at', { ascending: false });

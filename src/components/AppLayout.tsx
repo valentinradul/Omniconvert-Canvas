@@ -1,12 +1,11 @@
-
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { UserMenu } from '@/components/UserMenu';
-import { CompanySwitcher } from '@/components/company/CompanySwitcher';
+import UserMenu from '@/components/UserMenu';
+import CompanySwitcher from '@/components/company/CompanySwitcher';
 import { 
   Lightbulb, 
   TestTube, 
@@ -18,7 +17,7 @@ import {
   Shield,
   Folder
 } from 'lucide-react';
-import { Logo } from '@/components/Logo';
+import Logo from '@/components/Logo';
 
 const AppLayout: React.FC = () => {
   const { user } = useAuth();
