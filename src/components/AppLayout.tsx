@@ -170,6 +170,21 @@ const AppLayout: React.FC = () => {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                {/* Super Admin Settings - Only visible to super admins */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    asChild 
+                    className={`flex items-center py-3 px-4 ${isActive('/super-admin-settings') 
+                      ? 'bg-red-50 text-red-600 border-l-4 border-red-500 font-medium' 
+                      : 'bg-white text-red-600 hover:bg-red-50 hover:text-red-700'}`}
+                  >
+                    <Link to="/super-admin-settings" className="flex items-center">
+                      <Settings className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                      <span className="text-base">Super Admin</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </div>
             </SidebarMenu>
           </SidebarContent>
