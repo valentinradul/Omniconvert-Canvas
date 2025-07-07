@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Users } from 'lucide-react';
+import { Plus, Trash2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -22,10 +22,7 @@ const CompaniesManagement: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCompanyName, setNewCompanyName] = useState('');
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
-  const [editCompanyName, setEditCompanyName] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -96,36 +93,6 @@ const CompaniesManagement: React.FC = () => {
     }
   };
 
-  const updateCompany = async () => {
-    if (!editingCompany || !editCompanyName.trim()) return;
-
-    try {
-      const { error } = await supabase
-        .from('companies')
-        .update({ name: editCompanyName.trim() })
-        .eq('id', editingCompany.id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'Company updated successfully'
-      });
-
-      setEditingCompany(null);
-      setEditCompanyName('');
-      setIsEditDialogOpen(false);
-      fetchCompanies();
-    } catch (error: any) {
-      console.error('Error updating company:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to update company'
-      });
-    }
-  };
-
   const deleteCompany = async (companyId: string) => {
     if (!confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
       return;
@@ -153,12 +120,6 @@ const CompaniesManagement: React.FC = () => {
         description: 'Failed to delete company'
       });
     }
-  };
-
-  const openEditDialog = (company: Company) => {
-    setEditingCompany(company);
-    setEditCompanyName(company.name);
-    setIsEditDialogOpen(true);
   };
 
   if (loading) {
@@ -220,13 +181,6 @@ const CompaniesManagement: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditDialog(company)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => deleteCompany(company.id)}
@@ -239,33 +193,6 @@ const CompaniesManagement: React.FC = () => {
           </Card>
         ))}
       </div>
-
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Company</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-company-name">Company Name</Label>
-              <Input
-                id="edit-company-name"
-                value={editCompanyName}
-                onChange={(e) => setEditCompanyName(e.target.value)}
-                placeholder="Enter company name"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={updateCompany} disabled={!editCompanyName.trim()}>
-                Update Company
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
