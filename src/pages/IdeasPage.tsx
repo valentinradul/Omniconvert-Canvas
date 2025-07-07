@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
+import { useCompany } from '@/context/company/CompanyContext';
+import { useCategories } from '@/context/hooks/useCategories';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { DialogTrigger } from '@/components/ui/dialog';
@@ -11,8 +13,10 @@ import IdeasTable from '@/components/ideas/IdeasTable';
 import EmptyIdeasState from '@/components/ideas/EmptyIdeasState';
 
 const IdeasPage: React.FC = () => {
-  const { ideas, departments, categories, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
+  const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
   const { user } = useAuth();
+  const { currentCompany } = useCompany();
+  const { categories } = useCategories(currentCompany);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
@@ -34,9 +38,13 @@ const IdeasPage: React.FC = () => {
       return false;
     }
     
-    // Category filter
-    if (categoryFilter !== 'all' && idea.category !== categoryFilter) {
-      return false;
+    // Category filter - now using category names
+    if (categoryFilter !== 'all') {
+      // Find the category by ID to get the name
+      const selectedCategory = categories.find(cat => cat.id === categoryFilter);
+      if (!selectedCategory || idea.category !== selectedCategory.name) {
+        return false;
+      }
     }
     
     // Department filter
