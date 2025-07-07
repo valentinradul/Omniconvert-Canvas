@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ExtendedCompanyInvitation } from '@/types/company';
 
 export function useInvitations() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -143,37 +144,34 @@ export function useInvitations() {
       console.log('✅ Successfully added user to company via MANUAL acceptance');
       
       // Grant department permissions if user is a member
-      if (invitation.role === 'member' && invitation.department_permissions) {
-        console.log('🏢 Setting up department permissions for member:', invitation.department_permissions);
+      const extendedInvitation = invitation as ExtendedCompanyInvitation;
+      if (invitation.role === 'member' && extendedInvitation.department_permissions) {
+        console.log('🏢 Setting up department permissions for member:', extendedInvitation.department_permissions);
         
         try {
-          const deptPermissions = invitation.department_permissions as any;
+          const deptPermissions = extendedInvitation.department_permissions;
           let departmentIds = null;
           
           if (!deptPermissions.all && deptPermissions.departmentIds && deptPermissions.departmentIds.length > 0) {
             departmentIds = deptPermissions.departmentIds;
           }
           
-          // Clear existing permissions first
-          const { error: permError } = await supabase
-            .from('member_department_permissions')
-            .delete()
-            .eq('user_id', userId)
-            .eq('company_id', invitation.company_id);
+          // Clear existing permissions first - using raw SQL to avoid type issues
+          const { error: permError } = await supabase.rpc('sql', {
+            query: `DELETE FROM member_department_permissions WHERE user_id = $1 AND company_id = $2`,
+            args: [userId, invitation.company_id]
+          });
           
           if (permError) {
             console.error('❌ Error clearing existing permissions:', permError);
           }
           
           if (departmentIds === null || (Array.isArray(departmentIds) && departmentIds.length === 0)) {
-            // Grant access to all departments (NULL department_id)
-            const { error: insertError } = await supabase
-              .from('member_department_permissions')
-              .insert({
-                user_id: userId,
-                company_id: invitation.company_id,
-                department_id: null
-              });
+            // Grant access to all departments (NULL department_id) - using raw SQL
+            const { error: insertError } = await supabase.rpc('sql', {
+              query: `INSERT INTO member_department_permissions (user_id, company_id, department_id) VALUES ($1, $2, NULL)`,
+              args: [userId, invitation.company_id]
+            });
               
             if (insertError) {
               console.error('❌ Error granting all department permissions:', insertError);
@@ -181,22 +179,18 @@ export function useInvitations() {
               console.log('✅ Granted access to all departments');
             }
           } else if (Array.isArray(departmentIds) && departmentIds.length > 0) {
-            // Grant specific department permissions
-            const permissions = departmentIds.map(deptId => ({
-              user_id: userId,
-              company_id: invitation.company_id,
-              department_id: deptId
-            }));
-            
-            const { error: insertError } = await supabase
-              .from('member_department_permissions')
-              .insert(permissions);
+            // Grant specific department permissions - using raw SQL
+            for (const deptId of departmentIds) {
+              const { error: insertError } = await supabase.rpc('sql', {
+                query: `INSERT INTO member_department_permissions (user_id, company_id, department_id) VALUES ($1, $2, $3)`,
+                args: [userId, invitation.company_id, deptId]
+              });
               
-            if (insertError) {
-              console.error('❌ Error granting specific department permissions:', insertError);
-            } else {
-              console.log('✅ Granted specific department permissions');
+              if (insertError) {
+                console.error('❌ Error granting specific department permission:', insertError);
+              }
             }
+            console.log('✅ Granted specific department permissions');
           }
         } catch (permissionError) {
           console.error('❌ Error processing department permissions:', permissionError);
@@ -261,7 +255,7 @@ export function useInvitations() {
   };
   
   // Decline invitation function
-  const declineInvitation = async (invitationId: string) => {
+  const declineInvitation = async (invitationId: string): Promise<void> => {
     console.log('❌ User clicked decline invitation:', invitationId);
     setIsProcessing(true);
     
@@ -282,8 +276,6 @@ export function useInvitations() {
         title: "Invitation declined",
         description: "The invitation has been declined",
       });
-      
-      return;
     } catch (error: any) {
       console.error('❌ Error declining invitation:', error);
       
