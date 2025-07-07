@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
+import { useDepartments } from '@/context/hooks/useDepartments';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -8,19 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { supabase } from '@/integrations/supabase/client';
-
-interface Department {
-  id: string;
-  name: string;
-  company_id: string;
-  created_at: string;
-}
 
 const DepartmentsPage: React.FC = () => {
   const { currentCompany, userCompanyRole } = useCompany();
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { departments, loading, addDepartment, editDepartment, deleteDepartment } = useDepartments(currentCompany);
   const [newDepartmentName, setNewDepartmentName] = useState('');
   const [editDepartmentId, setEditDepartmentId] = useState<string | null>(null);
   const [editDepartmentName, setEditDepartmentName] = useState('');
@@ -30,95 +22,6 @@ const DepartmentsPage: React.FC = () => {
 
   const canManageDepartments = userCompanyRole === 'owner' || userCompanyRole === 'admin';
   
-  useEffect(() => {
-    if (currentCompany) {
-      fetchDepartments();
-    }
-  }, [currentCompany]);
-
-  const fetchDepartments = async () => {
-    if (!currentCompany) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('departments')
-        .select('*')
-        .eq('company_id', currentCompany.id)
-        .order('name');
-
-      if (error) throw error;
-
-      setDepartments(data || []);
-    } catch (error: any) {
-      console.error('Error fetching departments:', error);
-      toast.error('Failed to fetch departments');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addDepartment = async (name: string) => {
-    if (!currentCompany) return;
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('departments')
-        .insert({
-          name: name.trim(),
-          company_id: currentCompany.id,
-          created_by: user.id
-        });
-
-      if (error) throw error;
-
-      await fetchDepartments();
-      return true;
-    } catch (error: any) {
-      console.error('Error creating department:', error);
-      toast.error('Failed to create department');
-      return false;
-    }
-  };
-
-  const editDepartment = async (id: string, name: string) => {
-    try {
-      const { error } = await supabase
-        .from('departments')
-        .update({ name: name.trim() })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      await fetchDepartments();
-      return true;
-    } catch (error: any) {
-      console.error('Error updating department:', error);
-      toast.error('Failed to update department');
-      return false;
-    }
-  };
-
-  const deleteDepartment = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('departments')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      await fetchDepartments();
-      return true;
-    } catch (error: any) {
-      console.error('Error deleting department:', error);
-      toast.error('Failed to delete department');
-      return false;
-    }
-  };
-  
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -127,12 +30,10 @@ const DepartmentsPage: React.FC = () => {
       return;
     }
     
-    const success = await addDepartment(newDepartmentName);
-    if (success) {
-      setNewDepartmentName('');
-      setNewDialogOpen(false);
-      toast.success('Department created successfully!');
-    }
+    await addDepartment(newDepartmentName);
+    setNewDepartmentName('');
+    setNewDialogOpen(false);
+    toast.success('Department created successfully!');
   };
   
   const handleEdit = async (e: React.FormEvent) => {
@@ -144,27 +45,23 @@ const DepartmentsPage: React.FC = () => {
     }
     
     if (editDepartmentId) {
-      const success = await editDepartment(editDepartmentId, editDepartmentName);
-      if (success) {
-        setEditDepartmentId(null);
-        setEditDepartmentName('');
-        setEditDialogOpen(false);
-        toast.success('Department updated successfully!');
-      }
+      await editDepartment(editDepartmentId, editDepartmentName);
+      setEditDepartmentId(null);
+      setEditDepartmentName('');
+      setEditDialogOpen(false);
+      toast.success('Department updated successfully!');
     }
   };
   
-  const openEditDialog = (department: Department) => {
+  const openEditDialog = (department: any) => {
     setEditDepartmentId(department.id);
     setEditDepartmentName(department.name);
     setEditDialogOpen(true);
   };
   
   const handleDelete = async (departmentId: string) => {
-    const success = await deleteDepartment(departmentId);
-    if (success) {
-      toast.success('Department deleted successfully!');
-    }
+    await deleteDepartment(departmentId);
+    toast.success('Department deleted successfully!');
   };
 
   if (loading) {

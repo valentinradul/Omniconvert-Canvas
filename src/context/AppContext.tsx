@@ -28,7 +28,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     useIdeas(user, currentCompany, hypotheses);
   
   const { departments, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = 
-    useDepartments();
+    useDepartments(currentCompany);
   
   const { pectiWeights, updatePectiWeights } = usePectiWeights();
   
