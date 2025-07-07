@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,9 +23,9 @@ const CategoryManagement: React.FC = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<{id: string, name: string, department_id: string | null} | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryDepartment, setNewCategoryDepartment] = useState<string>('');
+  const [newCategoryDepartment, setNewCategoryDepartment] = useState<string>('no-department');
   const [editCategoryName, setEditCategoryName] = useState('');
-  const [editCategoryDepartment, setEditCategoryDepartment] = useState<string>('');
+  const [editCategoryDepartment, setEditCategoryDepartment] = useState<string>('no-department');
   
   const canManageCategories = userCompanyRole === 'owner' || userCompanyRole === 'admin';
   
@@ -42,10 +43,11 @@ const CategoryManagement: React.FC = () => {
       return;
     }
     
-    const result = await addCategory(newCategoryName.trim(), newCategoryDepartment || undefined);
+    const departmentId = newCategoryDepartment === 'no-department' ? undefined : newCategoryDepartment;
+    const result = await addCategory(newCategoryName.trim(), departmentId);
     if (result) {
       setNewCategoryName('');
-      setNewCategoryDepartment('');
+      setNewCategoryDepartment('no-department');
       setShowAddDialog(false);
     }
   };
@@ -60,10 +62,11 @@ const CategoryManagement: React.FC = () => {
       return;
     }
     
-    await editCategory(editingCategory.id, editCategoryName.trim(), editCategoryDepartment || undefined);
+    const departmentId = editCategoryDepartment === 'no-department' ? undefined : editCategoryDepartment;
+    await editCategory(editingCategory.id, editCategoryName.trim(), departmentId);
     setEditingCategory(null);
     setEditCategoryName('');
-    setEditCategoryDepartment('');
+    setEditCategoryDepartment('no-department');
     setShowEditDialog(false);
   };
   
@@ -74,7 +77,7 @@ const CategoryManagement: React.FC = () => {
   const openEditDialog = (category: {id: string, name: string, department_id: string | null}) => {
     setEditingCategory(category);
     setEditCategoryName(category.name);
-    setEditCategoryDepartment(category.department_id || '');
+    setEditCategoryDepartment(category.department_id || 'no-department');
     setShowEditDialog(true);
   };
   
@@ -130,7 +133,7 @@ const CategoryManagement: React.FC = () => {
                         <SelectValue placeholder="Select department" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No Department</SelectItem>
+                        <SelectItem value="no-department">No Department</SelectItem>
                         {departments.map((dept) => (
                           <SelectItem key={dept.id} value={dept.id}>
                             {dept.name}
@@ -240,7 +243,7 @@ const CategoryManagement: React.FC = () => {
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Department</SelectItem>
+                    <SelectItem value="no-department">No Department</SelectItem>
                     {departments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}
