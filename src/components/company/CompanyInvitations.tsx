@@ -162,7 +162,7 @@ const CompanyInvitations: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Clock className="w-4 h-4" />
-                {formatDate(invitation.created_at)}
+                {formatDate(invitation.createdAt)}
               </div>
             </div>
           </CardHeader>

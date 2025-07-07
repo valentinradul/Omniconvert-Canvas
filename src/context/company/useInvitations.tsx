@@ -143,54 +143,57 @@ export function useInvitations() {
       
       console.log('✅ Successfully added user to company via MANUAL acceptance');
       
-      // Grant department permissions if user is a member
+      // Grant department permissions if user is a member and invitation has department_permissions
       const extendedInvitation = invitation as ExtendedCompanyInvitation;
       if (invitation.role === 'member' && extendedInvitation.department_permissions) {
         console.log('🏢 Setting up department permissions for member:', extendedInvitation.department_permissions);
         
         try {
           const deptPermissions = extendedInvitation.department_permissions;
-          let departmentIds = null;
           
-          if (!deptPermissions.all && deptPermissions.departmentIds && deptPermissions.departmentIds.length > 0) {
-            departmentIds = deptPermissions.departmentIds;
+          // Clear existing permissions first
+          const { error: clearError } = await supabase
+            .from('member_department_permissions')
+            .delete()
+            .eq('user_id', userId)
+            .eq('company_id', invitation.company_id);
+          
+          if (clearError) {
+            console.error('❌ Error clearing existing permissions:', clearError);
           }
           
-          // Clear existing permissions first - using raw SQL to avoid type issues
-          const { error: permError } = await supabase.rpc('sql', {
-            query: `DELETE FROM member_department_permissions WHERE user_id = $1 AND company_id = $2`,
-            args: [userId, invitation.company_id]
-          });
-          
-          if (permError) {
-            console.error('❌ Error clearing existing permissions:', permError);
-          }
-          
-          if (departmentIds === null || (Array.isArray(departmentIds) && departmentIds.length === 0)) {
-            // Grant access to all departments (NULL department_id) - using raw SQL
-            const { error: insertError } = await supabase.rpc('sql', {
-              query: `INSERT INTO member_department_permissions (user_id, company_id, department_id) VALUES ($1, $2, NULL)`,
-              args: [userId, invitation.company_id]
-            });
+          if (deptPermissions.all) {
+            // Grant access to all departments (NULL department_id)
+            const { error: insertError } = await supabase
+              .from('member_department_permissions')
+              .insert({
+                user_id: userId,
+                company_id: invitation.company_id,
+                department_id: null
+              });
               
             if (insertError) {
               console.error('❌ Error granting all department permissions:', insertError);
             } else {
               console.log('✅ Granted access to all departments');
             }
-          } else if (Array.isArray(departmentIds) && departmentIds.length > 0) {
-            // Grant specific department permissions - using raw SQL
-            for (const deptId of departmentIds) {
-              const { error: insertError } = await supabase.rpc('sql', {
-                query: `INSERT INTO member_department_permissions (user_id, company_id, department_id) VALUES ($1, $2, $3)`,
-                args: [userId, invitation.company_id, deptId]
-              });
-              
-              if (insertError) {
-                console.error('❌ Error granting specific department permission:', insertError);
-              }
+          } else if (deptPermissions.departmentIds && deptPermissions.departmentIds.length > 0) {
+            // Grant specific department permissions
+            const permissionsToInsert = deptPermissions.departmentIds.map(deptId => ({
+              user_id: userId,
+              company_id: invitation.company_id,
+              department_id: deptId
+            }));
+            
+            const { error: insertError } = await supabase
+              .from('member_department_permissions')
+              .insert(permissionsToInsert);
+            
+            if (insertError) {
+              console.error('❌ Error granting specific department permissions:', insertError);
+            } else {
+              console.log('✅ Granted specific department permissions');
             }
-            console.log('✅ Granted specific department permissions');
           }
         } catch (permissionError) {
           console.error('❌ Error processing department permissions:', permissionError);
