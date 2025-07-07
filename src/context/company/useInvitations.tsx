@@ -154,7 +154,7 @@ export function useInvitations() {
             departmentIds = deptPermissions.departmentIds;
           }
           
-          // Use the SQL function directly instead of RPC
+          // Clear existing permissions first
           const { error: permError } = await supabase
             .from('member_department_permissions')
             .delete()
