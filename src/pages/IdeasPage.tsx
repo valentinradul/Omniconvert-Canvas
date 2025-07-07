@@ -26,12 +26,6 @@ const IdeasPage: React.FC = () => {
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('all');
   
-  // Debug logging
-  console.log('IdeasPage - currentCompany:', currentCompany);
-  console.log('IdeasPage - categories:', categories);
-  console.log('IdeasPage - categoriesLoading:', categoriesLoading);
-  console.log('IdeasPage - user:', user);
-  
   // Reset category filter if the selected category no longer exists
   useEffect(() => {
     if (categoryFilter !== 'all' && !categoriesLoading) {
