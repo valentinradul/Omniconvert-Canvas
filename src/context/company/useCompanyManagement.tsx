@@ -36,16 +36,46 @@ export const useCompanyManagement = () => {
     setIsProcessing(true);
     
     try {
-      // First, check if there's already a pending invitation for this email
-      const { data: existingInvites } = await supabase
-        .from('company_invitations')
+      // First, check if user is already a member of this company
+      const { data: existingMember } = await supabase
+        .from('company_members')
         .select('id')
         .eq('company_id', currentCompanyId)
-        .eq('email', email)
-        .eq('accepted', false);
+        .eq('user_id', userId);
+        
+      if (existingMember && existingMember.length > 0) {
+        throw new Error('This user is already a member of your company');
+      }
+
+      // Check if there's already a pending invitation for this email
+      const { data: existingInvites } = await supabase
+        .from('company_invitations')
+        .select('id, accepted')
+        .eq('company_id', currentCompanyId)
+        .eq('email', email.toLowerCase().trim());
         
       if (existingInvites && existingInvites.length > 0) {
-        throw new Error('This email already has a pending invitation');
+        const pendingInvite = existingInvites.find(invite => !invite.accepted);
+        if (pendingInvite) {
+          // Update the existing invitation instead of creating a new one
+          const { error: updateError } = await supabase
+            .from('company_invitations')
+            .update({
+              role,
+              department_permissions: departmentPermissions,
+              invited_by: userId
+            })
+            .eq('id', pendingInvite.id);
+            
+          if (updateError) throw updateError;
+          
+          toast({
+            title: 'Invitation updated',
+            description: `Updated the existing invitation for ${email} with new permissions.`,
+          });
+          
+          return { id: pendingInvite.id };
+        }
       }
       
       // Fetch company info
@@ -69,7 +99,7 @@ export const useCompanyManagement = () => {
         .from('company_invitations')
         .insert({
           company_id: currentCompanyId,
-          email,
+          email: email.toLowerCase().trim(),
           role,
           invited_by: userId,
           department_permissions: departmentPermissions
@@ -84,7 +114,7 @@ export const useCompanyManagement = () => {
         console.log("Calling send-invitation edge function");
         const { error: fnError } = await supabase.functions.invoke('send-invitation', {
           body: {
-            email,
+            email: email.toLowerCase().trim(),
             companyName: companyData.name,
             inviterName: profileData?.full_name || null,
             role,
@@ -117,10 +147,16 @@ export const useCompanyManagement = () => {
       return invitation;
     } catch (error: any) {
       console.error('Error inviting member:', error.message);
+      
+      let errorMessage = error.message;
+      if (error.message.includes('duplicate key value violates unique constraint')) {
+        errorMessage = 'This email already has a pending invitation. Please wait for them to respond or cancel the existing invitation first.';
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Failed to send invitation',
-        description: error.message,
+        description: errorMessage,
       });
       throw error;
     } finally {
