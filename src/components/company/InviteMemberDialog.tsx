@@ -69,15 +69,16 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
         selectedDepartments: role === 'member' ? selectedDepartments : []
       });
 
-      // For owners/admins, they get access to all departments by default
+      // For owners/admins, they get access to all departments by default (no specific permissions needed)
       // For members, pass the department permissions based on selection
       const departmentPermissions = (role === 'owner' || role === 'admin') 
-        ? [] 
+        ? [] // Empty array means no specific restrictions (access to all)
         : allDepartmentsSelected 
-          ? [] 
-          : selectedDepartments;
+          ? [] // Empty array for members with all departments access
+          : selectedDepartments; // Specific department IDs for restricted access
 
-      // Pass department permissions as the third parameter
+      console.log('Final department permissions being sent:', departmentPermissions);
+
       await inviteMember(email, role, departmentPermissions);
       
       toast({
@@ -167,7 +168,7 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
               </Select>
             </div>
 
-            {/* Show department selection for members, even if no departments exist yet */}
+            {/* Show department selection for members */}
             {role === 'member' && (
               <>
                 {departments.length > 0 ? (

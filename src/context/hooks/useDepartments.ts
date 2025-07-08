@@ -28,15 +28,46 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
     if (!currentCompany) return;
 
     try {
-      const { data, error } = await supabase
-        .from('departments')
-        .select('*')
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // First, get user's role in the company
+      const { data: memberData, error: memberError } = await supabase
+        .from('company_members')
+        .select('role, id')
+        .eq('user_id', user.id)
         .eq('company_id', currentCompany.id)
-        .order('name');
+        .single();
 
-      if (error) throw error;
+      if (memberError) throw memberError;
 
-      setDepartments(data || []);
+      // If user is owner or admin, fetch all departments
+      if (memberData.role === 'owner' || memberData.role === 'admin') {
+        const { data, error } = await supabase
+          .from('departments')
+          .select('*')
+          .eq('company_id', currentCompany.id)
+          .order('name');
+
+        if (error) throw error;
+        setDepartments(data || []);
+      } else {
+        // For regular members, only fetch departments they have permission to access
+        const { data, error } = await supabase
+          .from('departments')
+          .select(`
+            *,
+            member_department_permissions!inner(
+              member_id
+            )
+          `)
+          .eq('company_id', currentCompany.id)
+          .eq('member_department_permissions.member_id', memberData.id)
+          .order('name');
+
+        if (error) throw error;
+        setDepartments(data || []);
+      }
     } catch (error: any) {
       console.error('Error fetching departments:', error);
       toast({
