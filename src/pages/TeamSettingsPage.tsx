@@ -1,132 +1,227 @@
-
 import React, { useState } from 'react';
-import { useCompany } from '@/context/company/CompanyContext';
-import { CompanyRole, CompanyMember } from '@/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
-import { useToast } from '@/hooks/use-toast';
+import { Plus, Users, Settings, Eye } from 'lucide-react';
+import { useCompany } from '@/context/company/CompanyContext';
+import { useCompanyManagement } from '@/context/company/useCompanyManagement';
 import InviteMemberDialog from '@/components/company/InviteMemberDialog';
 import PendingInvitations from '@/components/company/PendingInvitations';
-import EditMemberDialog from '@/components/company/EditMemberDialog';
+import ContentVisibilitySettings from '@/components/settings/ContentVisibilitySettings';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreHorizontal } from 'lucide-react';
+import { CompanyRole } from '@/types';
 
 const TeamSettingsPage: React.FC = () => {
   const { 
+    currentCompany, 
     companyMembers, 
+    pendingInvitations, 
     userCompanyRole, 
-    pendingInvitations,
-    refreshPendingInvitations, 
-    refreshCompanyMembers 
+    isLoading, 
+    user,
+    refetchMembers,
+    refetchInvitations 
   } = useCompany();
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<CompanyMember | null>(null);
-  const { toast } = useToast();
+  
+  const { removeMember, updateMemberRole, unsendInvitation } = useCompanyManagement();
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
-  console.log('TeamSettingsPage - Company members:', companyMembers.length);
-  console.log('TeamSettingsPage - User role:', userCompanyRole);
-  console.log('TeamSettingsPage - Pending invitations:', pendingInvitations.length);
-  console.log('TeamSettingsPage - All pending invitations:', pendingInvitations);
+  const canManageTeam = userCompanyRole === 'owner' || userCompanyRole === 'admin';
 
-  const handleEditMember = (member: CompanyMember) => {
-    console.log('Editing member:', member.id);
-    setSelectedMember(member);
-    setShowEditDialog(true);
-  };
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-  const handleCloseEditDialog = () => {
-    setShowEditDialog(false);
-    setSelectedMember(null);
-  };
-
-  const handleMemberUpdated = () => {
-    refreshCompanyMembers();
-    refreshPendingInvitations();
-  };
-
-  // Function to handle invitation sent and refresh pending invitations
-  const handleInvitationSent = () => {
-    console.log('Invitation sent, refreshing pending invitations...');
-    refreshPendingInvitations();
-    toast({
-      title: "Invitation sent!",
-      description: "The invitation has been sent and will appear in pending invitations below."
-    });
-  };
-
-  // Function to handle manual refresh
-  const handleManualRefresh = () => {
-    console.log('Manual refresh triggered');
-    refreshPendingInvitations();
-    refreshCompanyMembers();
-    toast({
-      title: "Refreshed",
-      description: "Team data has been refreshed"
-    });
-  };
+  if (!currentCompany) {
+    return (
+      <div className="text-center py-8">
+        <h2 className="text-xl font-semibold mb-2">No Company Selected</h2>
+        <p className="text-muted-foreground">Please select a company to manage team settings.</p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="md:flex md:items-center md:justify-between space-y-4 md:space-y-0">
-        <div>
-          <h1 className="text-2xl font-bold">Team Settings</h1>
-          <p className="text-muted-foreground">Manage your team members and their roles.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleManualRefresh}>
-            Refresh Data
-          </Button>
-        </div>
+    <div className="container mx-auto py-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Team Settings</h1>
+        <p className="text-gray-600">Manage your team members, invitations, and content visibility</p>
       </div>
 
-      <div className="space-y-6 mt-8">
-        {/* Debug Info */}
-        <div className="bg-muted/50 p-4 rounded-lg text-sm">
-          <p><strong>Debug Info:</strong></p>
-          <p>Members: {companyMembers.length}</p>
-          <p>Pending Invitations: {pendingInvitations.length}</p>
-          <p>User Role: {userCompanyRole}</p>
-        </div>
+      <Tabs defaultValue="members" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="members" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Members
+          </TabsTrigger>
+          <TabsTrigger value="invitations" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Invitations
+          </TabsTrigger>
+          <TabsTrigger value="content" className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            Content Visibility
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Invite New Member Section */}
-        <div className="flex justify-center">
-          <div className="w-full max-w-md">
-            <div className="text-center space-y-3">
-              <h3 className="text-lg font-medium">Invite New Member</h3>
-              <Button 
-                onClick={() => setShowInviteDialog(true)} 
-                disabled={userCompanyRole !== 'owner' && userCompanyRole !== 'admin'}
-                className="w-full"
-              >
-                Invite Team Member
-              </Button>
-              {(userCompanyRole !== 'owner' && userCompanyRole !== 'admin') && (
-                <p className="text-sm text-muted-foreground">
-                  Only owners and admins can invite members
+        <TabsContent value="members">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Team Members</CardTitle>
+                  <CardDescription>
+                    Manage members of {currentCompany.name}
+                  </CardDescription>
+                </div>
+                {canManageTeam && (
+                  <Button onClick={() => setInviteDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Invite Member
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {companyMembers.map((member) => (
+                    <TableRow key={member.userId}>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Avatar>
+                            <AvatarImage src={member.profile?.avatar_url || ""} />
+                            <AvatarFallback>{member.profile?.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                          </Avatar>
+                          <span>{member.profile?.full_name || "Unknown"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{member.profile?.email || "N/A"}</TableCell>
+                      <TableCell>
+                        {userCompanyRole === 'owner' ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-auto">
+                                <span className="font-normal">{member.role}</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Update Role</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => updateMemberRole(member.userId, 'member', currentCompany.id, userCompanyRole).then(() => refetchMembers())}>
+                                Member
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateMemberRole(member.userId, 'admin', currentCompany.id, userCompanyRole).then(() => refetchMembers())}>
+                                Admin
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <Badge variant="secondary">{member.role}</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {canManageTeam && user?.id !== member.userId && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => removeMember(member.userId, currentCompany.id, userCompanyRole, companyMembers).then(() => refetchMembers())}>
+                                Remove Member
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="invitations">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Invitations</CardTitle>
+              <CardDescription>
+                Manage pending invitations for {currentCompany.name}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PendingInvitations
+                invitations={pendingInvitations}
+                onUnsendInvitation={unsendInvitation}
+                onInvitationChange={() => {
+                  refetchInvitations();
+                  refetchMembers();
+                }}
+                canManage={canManageTeam}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="content">
+          {canManageTeam ? (
+            <ContentVisibilitySettings />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Content Visibility Settings</CardTitle>
+                <CardDescription>
+                  Only company owners and admins can manage content visibility settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  You don't have permission to modify these settings.
                 </p>
-              )}
-            </div>
-          </div>
-        </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
-        {/* PendingInvitations with manual refresh and edit functionality */}
-        <PendingInvitations 
-          onInvitationResent={refreshPendingInvitations} 
-          onEditMember={handleEditMember}
-        />
-        
-        <InviteMemberDialog 
-          open={showInviteDialog} 
-          onClose={() => setShowInviteDialog(false)}
-          onInviteSent={handleInvitationSent}
-        />
-
-        <EditMemberDialog
-          member={selectedMember}
-          open={showEditDialog}
-          onClose={handleCloseEditDialog}
-          onMemberUpdated={handleMemberUpdated}
-        />
-      </div>
+      <InviteMemberDialog
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+        onInviteSent={() => {
+          refetchInvitations();
+          refetchMembers();
+        }}
+      />
     </div>
   );
 };

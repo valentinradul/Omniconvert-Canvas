@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Experiment, ExperimentNote } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanyContentSettings } from './useCompanyContentSettings';
+import { useDepartments } from './useDepartments';
 
 export const useExperiments = (
   user: any,
@@ -10,6 +12,8 @@ export const useExperiments = (
   const [experiments, setExperiments] = useState<Experiment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { restrictToDepartments } = useCompanyContentSettings(currentCompany);
+  const { departments } = useDepartments(currentCompany);
   
   // Fetch experiments from Supabase when user or company changes
   useEffect(() => {
@@ -23,7 +27,18 @@ export const useExperiments = (
       setIsLoading(true);
       
       try {
-        let query = supabase.from('experiments').select('*');
+        let query = supabase.from('experiments').select(`
+          *,
+          hypotheses!inner(
+            id,
+            ideaid,
+            ideas!inner(
+              id,
+              title,
+              departmentid
+            )
+          )
+        `);
         
         // Filter by company if applicable
         if (currentCompany?.id) {
@@ -48,7 +63,9 @@ export const useExperiments = (
           updatedAt: new Date(exp.updatedat),
           userId: exp.userid,
           userName: exp.username,
-          companyId: exp.company_id
+          companyId: exp.company_id,
+          // Add department info for filtering
+          departmentId: exp.hypotheses?.ideas?.departmentid
         }));
         
         setExperiments(formattedExperiments);
@@ -67,7 +84,22 @@ export const useExperiments = (
     fetchExperiments();
   }, [user, currentCompany]);
   
-  const filteredExperiments = experiments;
+  // Filter experiments based on department access
+  const filteredExperiments = experiments.filter(experiment => {
+    // If content is not restricted to departments, show all experiments
+    if (!restrictToDepartments) {
+      return true;
+    }
+    
+    // If experiment has no department, show it (public experiments)
+    if (!experiment.departmentId) {
+      return true;
+    }
+    
+    // Check if user has access to the experiment's department
+    const hasAccessToDepartment = departments.some(dept => dept.id === experiment.departmentId);
+    return hasAccessToDepartment;
+  });
   
   const addExperiment = async (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user || !currentCompany?.id) {

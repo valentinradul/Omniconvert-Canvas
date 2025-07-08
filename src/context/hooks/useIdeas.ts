@@ -4,6 +4,8 @@ import { GrowthIdea, Hypothesis } from '@/types';
 import { fetchIdeas, createIdea, updateIdea, deleteIdeaById, NewIdea } from '@/services/ideasService';
 import { canDeleteIdea } from '@/validators/ideaValidators';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanyContentSettings } from './useCompanyContentSettings';
+import { useDepartments } from './useDepartments';
 
 export const useIdeas = (
   user: any,
@@ -13,6 +15,8 @@ export const useIdeas = (
   const [ideas, setIdeas] = useState<GrowthIdea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { restrictToDepartments } = useCompanyContentSettings(currentCompany);
+  const { departments } = useDepartments(currentCompany);
   
   // Fetch ideas from Supabase when user or company changes
   useEffect(() => {
@@ -42,7 +46,22 @@ export const useIdeas = (
     loadIdeas();
   }, [user, currentCompany, toast]);
   
-  const filteredIdeas = ideas;
+  // Filter ideas based on department access
+  const filteredIdeas = ideas.filter(idea => {
+    // If content is not restricted to departments, show all ideas
+    if (!restrictToDepartments) {
+      return true;
+    }
+    
+    // If idea has no department, show it (public ideas)
+    if (!idea.departmentId) {
+      return true;
+    }
+    
+    // Check if user has access to the idea's department
+    const hasAccessToDepartment = departments.some(dept => dept.id === idea.departmentId);
+    return hasAccessToDepartment;
+  });
   
   const addIdea = async (idea: Omit<GrowthIdea, 'id' | 'createdAt'>): Promise<GrowthIdea | null> => {
     if (!user || !currentCompany?.id) {
