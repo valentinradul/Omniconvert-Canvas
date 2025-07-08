@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, UserPlus } from 'lucide-react';
+import { Plus, Edit, Trash2, UserPlus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -35,6 +36,8 @@ interface Company {
   name: string;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const UsersManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [members, setMembers] = useState<CompanyMember[]>([]);
@@ -44,35 +47,60 @@ const UsersManagement: React.FC = () => {
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [selectedRole, setSelectedRole] = useState('member');
   const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
+  
+  // Pagination states
+  const [usersPage, setUsersPage] = useState(1);
+  const [membersPage, setMembersPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalMembers, setTotalMembers] = useState(0);
+  
+  // Search states
+  const [usersSearch, setUsersSearch] = useState('');
+  const [membersSearch, setMembersSearch] = useState('');
+  
   const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [usersPage, membersPage, usersSearch, membersSearch]);
 
   const fetchData = async () => {
     try {
-      // Fetch all users
-      const { data: usersData, error: usersError } = await supabase
+      setLoading(true);
+      
+      // Fetch users with pagination and search
+      let usersQuery = supabase
         .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((usersPage - 1) * ITEMS_PER_PAGE, usersPage * ITEMS_PER_PAGE - 1);
 
+      if (usersSearch) {
+        usersQuery = usersQuery.ilike('full_name', `%${usersSearch}%`);
+      }
+
+      const { data: usersData, error: usersError, count: usersCount } = await usersQuery;
       if (usersError) throw usersError;
 
-      // Fetch all company members with profile and company info
-      const { data: membersData, error: membersError } = await supabase
+      // Fetch company members with pagination and search
+      let membersQuery = supabase
         .from('company_members')
         .select(`
           *,
           profiles(id, full_name, avatar_url, created_at),
           companies(id, name)
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((membersPage - 1) * ITEMS_PER_PAGE, membersPage * ITEMS_PER_PAGE - 1);
 
+      if (membersSearch) {
+        membersQuery = membersQuery.or(`profiles.full_name.ilike.%${membersSearch}%,companies.name.ilike.%${membersSearch}%`);
+      }
+
+      const { data: membersData, error: membersError, count: membersCount } = await membersQuery;
       if (membersError) throw membersError;
 
-      // Fetch all companies
+      // Fetch all companies for the dropdown
       const { data: companiesData, error: companiesError } = await supabase
         .from('companies')
         .select('id, name')
@@ -83,6 +111,8 @@ const UsersManagement: React.FC = () => {
       setUsers(usersData || []);
       setMembers(membersData || []);
       setCompanies(companiesData || []);
+      setTotalUsers(usersCount || 0);
+      setTotalMembers(membersCount || 0);
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({
@@ -206,31 +236,100 @@ const UsersManagement: React.FC = () => {
     }
   };
 
+  const PaginationControls = ({ 
+    currentPage, 
+    totalItems, 
+    onPageChange, 
+    itemsPerPage = ITEMS_PER_PAGE 
+  }: {
+    currentPage: number;
+    totalItems: number;
+    onPageChange: (page: number) => void;
+    itemsPerPage?: number;
+  }) => {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    return (
+      <div className="flex items-center justify-between px-4 py-3 border-t">
+        <div className="flex items-center text-sm text-gray-700">
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} results
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          <span className="text-sm">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return <div className="flex justify-center py-8">Loading users...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* All Users Section */}
         <Card>
           <CardHeader>
             <CardTitle className="flex justify-between items-center">
-              All Users ({users.length})
+              All Users ({totalUsers})
             </CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search users..."
+                value={usersSearch}
+                onChange={(e) => {
+                  setUsersSearch(e.target.value);
+                  setUsersPage(1); // Reset to first page when searching
+                }}
+                className="pl-10"
+              />
+            </div>
           </CardHeader>
-          <CardContent className="space-y-3 max-h-96 overflow-y-auto">
-            {users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <div className="font-medium">{user.full_name || 'Unnamed User'}</div>
-                  <div className="text-sm text-gray-600">
-                    Joined: {new Date(user.created_at).toLocaleDateString()}
+          <CardContent className="p-0">
+            <div className="space-y-3 p-6 max-h-96 overflow-y-auto">
+              {users.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <div className="font-medium">{user.full_name || 'Unnamed User'}</div>
+                    <div className="text-sm text-gray-600">
+                      Joined: {new Date(user.created_at).toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+              {users.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No users found
+                </div>
+              )}
+            </div>
+            <PaginationControls
+              currentPage={usersPage}
+              totalItems={totalUsers}
+              onPageChange={setUsersPage}
+            />
           </CardContent>
         </Card>
 
@@ -238,7 +337,7 @@ const UsersManagement: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex justify-between items-center">
-              Company Members ({members.length})
+              Company Members ({totalMembers})
               <Dialog open={isAddMemberDialogOpen} onOpenChange={setIsAddMemberDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="flex items-center gap-2">
@@ -309,41 +408,65 @@ const UsersManagement: React.FC = () => {
                 </DialogContent>
               </Dialog>
             </CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search members or companies..."
+                value={membersSearch}
+                onChange={(e) => {
+                  setMembersSearch(e.target.value);
+                  setMembersPage(1); // Reset to first page when searching
+                }}
+                className="pl-10"
+              />
+            </div>
           </CardHeader>
-          <CardContent className="space-y-3 max-h-96 overflow-y-auto">
-            {members.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex-1">
-                  <div className="font-medium">{member.profiles.full_name || 'Unnamed User'}</div>
-                  <div className="text-sm text-gray-600">{member.companies.name}</div>
-                  <Badge variant={getRoleBadgeVariant(member.role)} className="mt-1">
-                    {member.role}
-                  </Badge>
+          <CardContent className="p-0">
+            <div className="space-y-3 p-6 max-h-96 overflow-y-auto">
+              {members.map((member) => (
+                <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">{member.profiles.full_name || 'Unnamed User'}</div>
+                    <div className="text-sm text-gray-600">{member.companies.name}</div>
+                    <Badge variant={getRoleBadgeVariant(member.role)} className="mt-1">
+                      {member.role}
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Select
+                      value={member.role}
+                      onValueChange={(role) => updateMemberRole(member.id, role)}
+                    >
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="member">Member</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="owner">Owner</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeMember(member.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Select
-                    value={member.role}
-                    onValueChange={(role) => updateMemberRole(member.id, role)}
-                  >
-                    <SelectTrigger className="w-24">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="member">Member</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="owner">Owner</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => removeMember(member.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+              ))}
+              {members.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No members found
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
+            <PaginationControls
+              currentPage={membersPage}
+              totalItems={totalMembers}
+              onPageChange={setMembersPage}
+            />
           </CardContent>
         </Card>
       </div>
