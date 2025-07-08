@@ -10,6 +10,7 @@ import { CompanyProvider } from "./context/company/CompanyContext";
 import AppLayout from "./components/AppLayout";
 import SuperAdminLayout from "./components/SuperAdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SuperAdminProtectedRoute from "./components/SuperAdminProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -79,7 +80,7 @@ const App = () => (
                 </Route>
 
                 {/* Protected Super Admin routes */}
-                <Route element={<ProtectedRoute />}>
+                <Route element={<SuperAdminProtectedRoute />}>
                   <Route path="super-admin" element={<SuperAdminLayout />}>
                     <Route path="companies" element={<SuperAdminCompaniesPage />} />
                     <Route path="members" element={<SuperAdminMembersPage />} />
