@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -139,7 +140,7 @@ export function useInvitations() {
       console.log('✅ Successfully added user to company via MANUAL acceptance');
       
       // Handle department permissions for members
-      if (invitation.role === 'member' && invitation.department_permissions && invitation.department_permissions.length > 0) {
+      if (invitation.role === 'member' && invitation.department_permissions && Array.isArray(invitation.department_permissions) && invitation.department_permissions.length > 0) {
         console.log('🏢 Setting up department permissions for member:', invitation.department_permissions);
         
         const departmentPermissions = invitation.department_permissions.map((deptId: string) => ({
