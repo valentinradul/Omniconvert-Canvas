@@ -1,16 +1,18 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { CompanyMember, CompanyRole } from '@/types';
 import { useCompany } from '@/context/company/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useDepartments } from '@/context/hooks/useDepartments';
 import { supabase } from '@/integrations/supabase/client';
-import { Trash2, Settings } from 'lucide-react';
+import { Trash2, Settings, User, Shield, Building } from 'lucide-react';
 import DepartmentPermissionSelector from './DepartmentPermissionSelector';
 
 interface EditMemberDialogProps {
@@ -278,93 +280,163 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
     return true;
   };
 
+  const getRoleBadgeVariant = (role: CompanyRole) => {
+    switch (role) {
+      case 'owner': return 'default';
+      case 'admin': return 'secondary';
+      case 'member': return 'outline';
+      default: return 'outline';
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Member</DialogTitle>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Edit Team Member
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
-          <div>
-            <h4 className="font-medium mb-2">Member Details</h4>
-            <p className="text-sm text-muted-foreground">
-              <strong>Name:</strong> {getUserDisplayName()}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              <strong>Current Role:</strong> <span className="capitalize">{member.role}</span>
-            </p>
-            {isEditingSelf && (
-              <p className="text-xs text-muted-foreground mt-1">
-                (This is your profile)
-              </p>
-            )}
-          </div>
-
-          {canEditRole() && (
-            <div>
-              <h4 className="font-medium mb-2">Change Role</h4>
-              <Select value={selectedRole} onValueChange={(value: CompanyRole) => setSelectedRole(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getAvailableRoles().map(role => (
-                    <SelectItem key={role} value={role} className="capitalize">
-                      {role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {canEditDepartments() && !departmentsLoading && departments.length > 0 && (
-            <div>
-              <h4 className="font-medium mb-2 flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Department Access
-              </h4>
-              {isDepartmentPermissionsLoading ? (
-                <div className="text-sm text-muted-foreground">Loading permissions...</div>
-              ) : (
-                <DepartmentPermissionSelector
-                  departments={departments}
-                  selectedDepartments={selectedDepartments}
-                  onDepartmentChange={handleDepartmentChange}
-                  allDepartmentsSelected={allDepartmentsSelected}
-                  onAllDepartmentsChange={handleAllDepartmentsChange}
-                />
+          {/* Member Information Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Member Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Name:</span>
+                <span className="font-medium">{getUserDisplayName()}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Current Role:</span>
+                <Badge variant={getRoleBadgeVariant(member.role)} className="capitalize">
+                  {member.role}
+                </Badge>
+              </div>
+              {isEditingSelf && (
+                <div className="mt-2 p-2 bg-muted rounded-md">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    This is your profile
+                  </p>
+                </div>
               )}
-            </div>
+            </CardContent>
+          </Card>
+
+          {/* Role Management Card */}
+          {canEditRole() && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Role Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                      Assign Role
+                    </label>
+                    <Select value={selectedRole} onValueChange={(value: CompanyRole) => setSelectedRole(value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableRoles().map(role => (
+                          <SelectItem key={role} value={role} className="capitalize">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={getRoleBadgeVariant(role)} className="capitalize text-xs">
+                                {role}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {selectedRole !== member.role && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="text-xs text-blue-700">
+                        Role will be changed from <strong>{member.role}</strong> to <strong>{selectedRole}</strong>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
+          {/* Department Access Card */}
+          {canEditDepartments() && !departmentsLoading && departments.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Building className="h-4 w-4" />
+                  Department Access
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isDepartmentPermissionsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-muted-foreground">Loading permissions...</div>
+                  </div>
+                ) : (
+                  <DepartmentPermissionSelector
+                    departments={departments}
+                    selectedDepartments={selectedDepartments}
+                    onDepartmentChange={handleDepartmentChange}
+                    allDepartmentsSelected={allDepartmentsSelected}
+                    onAllDepartmentsChange={handleAllDepartmentsChange}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* No Permissions Message */}
           {!canEditRole() && !canEditDepartments() && !canDeleteMember() && (
-            <p className="text-sm text-muted-foreground">
-              {isEditingSelf && userCompanyRole === 'member' 
-                ? "Members cannot edit their own profile or roles."
-                : "You don't have permission to edit this member."
-              }
-            </p>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-sm text-muted-foreground">
+                    {isEditingSelf && userCompanyRole === 'member' 
+                      ? "Members cannot edit their own profile or roles."
+                      : "You don't have permission to edit this member."
+                    }
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
 
-        <DialogFooter className="flex justify-between">
+        <Separator className="my-4" />
+
+        <DialogFooter className="flex justify-between items-center">
           <div>
             {canDeleteMember() && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Remove
+                  <Button variant="destructive" size="sm" className="flex items-center gap-2">
+                    <Trash2 className="h-4 w-4" />
+                    Remove Member
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Remove Member</AlertDialogTitle>
+                    <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to remove {getUserDisplayName()} from the company? 
-                      This action cannot be undone.
+                      Are you sure you want to remove <strong>{getUserDisplayName()}</strong> from the company? 
+                      This action cannot be undone and they will lose access to all company resources.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -382,7 +454,7 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
             )}
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
@@ -390,6 +462,7 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
               <Button 
                 onClick={handleUpdateRole} 
                 disabled={isUpdating || selectedRole === member.role}
+                className="flex items-center gap-2"
               >
                 {isUpdating ? "Updating..." : "Update Role"}
               </Button>
@@ -399,8 +472,10 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
                 onClick={handleUpdateDepartmentPermissions} 
                 disabled={isUpdating}
                 variant="secondary"
+                className="flex items-center gap-2"
               >
-                {isUpdating ? "Updating..." : "Update Permissions"}
+                <Settings className="h-4 w-4" />
+                {isUpdating ? "Updating..." : "Update Access"}
               </Button>
             )}
           </div>
