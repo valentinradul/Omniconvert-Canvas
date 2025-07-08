@@ -1,115 +1,87 @@
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Company, Hypothesis, GrowthIdea, Experiment, PECTIWeights, Tag, HypothesisStatus, PECTI } from '@/types';
+import React, { createContext, useContext } from 'react';
+import { useAuth } from './AuthContext';
 import { useCompany } from './company/CompanyContext';
-import { useCategories } from './hooks/useCategories';
 import { useDepartments } from './hooks/useDepartments';
 import { useIdeas } from './hooks/useIdeas';
 import { useHypotheses } from './hooks/useHypotheses';
 import { useExperiments } from './hooks/useExperiments';
 import { usePectiWeights } from './hooks/usePectiWeights';
-
-interface Department {
-  id: string;
-  name: string;
-  company_id: string;
-  created_at: string;
-}
-
-interface AppContextType {
-  departments: Department[];
-  categories: any[];
-  ideas: GrowthIdea[];
-  hypotheses: Hypothesis[];
-  experiments: Experiment[];
-  pectiWeights: PECTIWeights;
-  isLoading: boolean;
-  fetchDepartments: () => Promise<void>;
-  addDepartment: (name: string) => Promise<void>;
-  editDepartment: (id: string, name: string) => Promise<void>;
-  deleteDepartment: (id: string) => Promise<void>;
-  addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => Promise<GrowthIdea | null>;
-  editIdea: (id: string, idea: Partial<GrowthIdea>) => Promise<void>;
-  deleteIdea: (id: string) => Promise<void>;
-  addHypothesis: (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => Promise<void>;
-  editHypothesis: (id: string, hypothesis: Partial<Hypothesis>) => Promise<void>;
-  deleteHypothesis: (id: string) => Promise<void>;
-  addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  editExperiment: (id: string, experiment: Partial<Experiment>) => Promise<void>;
-  deleteExperiment: (id: string) => Promise<void>;
-  addExperimentNote: (experimentId: string, noteContent: string) => Promise<void>;
-  deleteExperimentNote: (experimentId: string, noteId: string) => Promise<void>;
-  updatePectiWeights: (weights: Partial<PECTIWeights>) => void;
-  updateAllHypothesesWeights: () => void;
-  getIdeaById: (id: string) => GrowthIdea | undefined;
-  getHypothesisByIdeaId: (ideaId: string) => Hypothesis | undefined;
-  getHypothesisById: (id: string) => Hypothesis | undefined;
-  getExperimentByHypothesisId: (hypothesisId: string) => Experiment | undefined;
-  getDepartmentById: (id: string) => Department | undefined;
-  getAllTags: () => Tag[];
-  getAllUserNames: () => {id: string; name: string}[];
-}
+import { useCategories } from './hooks/useCategories';
+import { getAllTags, getAllUserNames } from './utils/dataUtils';
+import { AppContextType } from './types/AppContextTypes';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentCompany, userCompanyRole } = useCompany();
   const { user } = useAuth();
-
-  // Use existing hooks
+  const { currentCompany } = useCompany();
+  
+  // Initialize our hooks
+  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId, addExperimentNote, deleteExperimentNote } = 
+    useExperiments(user, currentCompany);
+  
+  const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById } = 
+    useHypotheses(user, currentCompany, experiments);
+  
+  const { ideas, isLoading: ideasLoading, addIdea, editIdea, deleteIdea, getIdeaById } = 
+    useIdeas(user, currentCompany, hypotheses);
+  
+  const { departments, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = 
+    useDepartments(currentCompany);
+  
+  const { pectiWeights, updatePectiWeights } = usePectiWeights();
+  
   const { categories } = useCategories(currentCompany);
-  const { departments, addDepartment, editDepartment, deleteDepartment, refetch: fetchDepartments } = useDepartments(currentCompany);
-  const { ideas, addIdea, editIdea, deleteIdea, getIdeaById, getAllTags, getAllUserNames } = useIdeas(user, currentCompany);
-  const { hypotheses, addHypothesis, editHypothesis, deleteHypothesis, getHypothesisByIdeaId, getHypothesisById } = useHypotheses(user, currentCompany, []);
-  const { experiments, addExperiment, editExperiment, deleteExperiment, addExperimentNote, deleteExperimentNote, getExperimentByHypothesisId } = useExperiments(user, currentCompany);
-  const { pectiWeights, updatePectiWeights, updateAllHypothesesWeights } = usePectiWeights();
+  
+  // Create wrapper functions that have access to all hooks
+  const allItems = [...ideas, ...hypotheses, ...experiments];
+  
+  const wrappedDeleteDepartment = (id: string) => {
+    deleteDepartment(id, ideas);
+  };
+  
+  const updateAllHypothesesWeights = () => {
+    updateAllHypothesesWeightsBase(pectiWeights);
+  };
 
-  const [isLoading, setIsLoading] = useState(false);
-
-  const getDepartmentById = useCallback((id: string) => {
-    const department = departments.find(d => d.id === id);
-    console.log('Looking for department with ID:', id, 'found:', department);
-    return department;
-  }, [departments]);
-
+  const isLoading = ideasLoading || hypothesesLoading || experimentsLoading;
+  
+  const appContextValue: AppContextType = {
+    departments,
+    categories,
+    ideas,
+    hypotheses,
+    experiments,
+    pectiWeights,
+    isLoading,
+    addDepartment,
+    editDepartment,
+    deleteDepartment: wrappedDeleteDepartment,
+    addIdea,
+    editIdea,
+    deleteIdea,
+    addHypothesis,
+    editHypothesis,
+    deleteHypothesis,
+    addExperiment,
+    editExperiment,
+    deleteExperiment,
+    addExperimentNote,
+    deleteExperimentNote,
+    updatePectiWeights,
+    updateAllHypothesesWeights,
+    getIdeaById,
+    getHypothesisByIdeaId,
+    getHypothesisById,
+    getExperimentByHypothesisId,
+    getDepartmentById,
+    getAllTags: () => getAllTags(ideas),
+    getAllUserNames: () => getAllUserNames(allItems)
+  };
+  
   return (
-    <AppContext.Provider
-      value={{
-        departments,
-        categories,
-        ideas,
-        hypotheses,
-        experiments,
-        pectiWeights,
-        isLoading,
-        fetchDepartments,
-        addDepartment,
-        editDepartment,
-        deleteDepartment,
-        addIdea,
-        editIdea,
-        deleteIdea,
-        addHypothesis,
-        editHypothesis,
-        deleteHypothesis,
-        addExperiment,
-        editExperiment,
-        deleteExperiment,
-        addExperimentNote,
-        deleteExperimentNote,
-        updatePectiWeights,
-        updateAllHypothesesWeights,
-        getIdeaById,
-        getHypothesisByIdeaId,
-        getHypothesisById,
-        getExperimentByHypothesisId,
-        getDepartmentById,
-        getAllTags,
-        getAllUserNames
-      }}
-    >
+    <AppContext.Provider value={appContextValue}>
       {children}
     </AppContext.Provider>
   );
@@ -118,7 +90,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 export const useApp = (): AppContextType => {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useApp must be used within a AppProvider');
+    throw new Error('useApp must be used within an AppProvider');
   }
   return context;
 };
