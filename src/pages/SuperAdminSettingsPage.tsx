@@ -5,8 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import CompaniesManagement from '@/components/super-admin/CompaniesManagement';
 import UsersManagement from '@/components/super-admin/UsersManagement';
 import DepartmentsManagement from '@/components/super-admin/DepartmentsManagement';
-import ContentSettingsManagement from '@/components/super-admin/ContentSettingsManagement';
-import { Shield, Building, Users, FolderTree, Eye } from 'lucide-react';
+import { Shield, Building, Users, FolderTree } from 'lucide-react';
 
 const SuperAdminSettingsPage: React.FC = () => {
   return (
@@ -15,12 +14,12 @@ const SuperAdminSettingsPage: React.FC = () => {
         <Shield className="h-8 w-8 text-red-600" />
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Super Admin Settings</h1>
-          <p className="text-gray-600">Manage all companies, users, departments, and content settings across the platform</p>
+          <p className="text-gray-600">Manage all companies, users, and departments across the platform</p>
         </div>
       </div>
 
       <Tabs defaultValue="companies" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="companies" className="flex items-center gap-2">
             <Building className="h-4 w-4" />
             Companies
@@ -32,10 +31,6 @@ const SuperAdminSettingsPage: React.FC = () => {
           <TabsTrigger value="departments" className="flex items-center gap-2">
             <FolderTree className="h-4 w-4" />
             Departments
-          </TabsTrigger>
-          <TabsTrigger value="content" className="flex items-center gap-2">
-            <Eye className="h-4 w-4" />
-            Content Settings
           </TabsTrigger>
         </TabsList>
 
@@ -77,20 +72,6 @@ const SuperAdminSettingsPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <DepartmentsManagement />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="content">
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Settings Management</CardTitle>
-              <CardDescription>
-                Manage content visibility settings for all companies
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ContentSettingsManagement />
             </CardContent>
           </Card>
         </TabsContent>
