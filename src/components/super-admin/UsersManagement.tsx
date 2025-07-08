@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, UserPlus, UserX } from 'lucide-react';
+import { Plus, Edit, Trash2, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -92,56 +92,6 @@ const UsersManagement: React.FC = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const deleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to permanently delete user "${userName}"? This action cannot be undone and will remove all their data.`)) {
-      return;
-    }
-
-    try {
-      // Get the current session to send with the request
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'You must be logged in to delete users'
-        });
-        return;
-      }
-
-      // Call the edge function to delete the user
-      const response = await fetch('/functions/v1/delete-user', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete user');
-      }
-
-      toast({
-        title: 'Success',
-        description: `User "${userName}" has been deleted successfully`
-      });
-
-      fetchData();
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to delete user. Please try again.'
-      });
     }
   };
 
@@ -279,15 +229,6 @@ const UsersManagement: React.FC = () => {
                     Joined: {new Date(user.created_at).toLocaleDateString()}
                   </div>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => deleteUser(user.id, user.full_name || 'Unnamed User')}
-                  className="flex items-center gap-2"
-                >
-                  <UserX className="h-4 w-4" />
-                  Delete
-                </Button>
               </div>
             ))}
           </CardContent>
