@@ -72,23 +72,16 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
 
         if (permissionError) {
           console.error('Error fetching department permissions:', permissionError);
-          // If there's an error or no specific permissions, member has access to all departments
-          const { data: allDepts, error: allDeptsError } = await supabase
-            .from('departments')
-            .select('*')
-            .eq('company_id', currentCompany.id)
-            .order('name');
-
-          if (allDeptsError) throw allDeptsError;
-          console.log('Member - All departments (fallback):', allDepts);
-          setDepartments(allDepts || []);
+          // If there's an error, set empty departments to be safe
+          setDepartments([]);
         } else if (permissionData && permissionData.length > 0) {
           // Extract departments from the joined data
           const allowedDepartments = permissionData.map(perm => perm.departments).filter(Boolean);
           console.log('Member - Specific departments:', allowedDepartments);
           setDepartments(allowedDepartments);
         } else {
-          // No specific permissions found, give access to all departments
+          // No specific permissions found - this means they have access to all departments
+          // This is the default behavior when no restrictions are set
           const { data: allDepts, error: allDeptsError } = await supabase
             .from('departments')
             .select('*')
@@ -107,6 +100,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
         title: 'Error',
         description: 'Failed to fetch departments'
       });
+      setDepartments([]);
     } finally {
       setLoading(false);
     }
