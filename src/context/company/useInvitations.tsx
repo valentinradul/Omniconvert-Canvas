@@ -139,18 +139,17 @@ export function useInvitations() {
       console.log('✅ Successfully added user to company via MANUAL acceptance');
       
       // Handle department permissions for members
-      const departmentPermissions = invitation.department_permissions;
-      if (invitation.role === 'member' && departmentPermissions && Array.isArray(departmentPermissions) && departmentPermissions.length > 0) {
-        console.log('🏢 Setting up department permissions for member:', departmentPermissions);
+      if (invitation.role === 'member' && invitation.department_permissions && invitation.department_permissions.length > 0) {
+        console.log('🏢 Setting up department permissions for member:', invitation.department_permissions);
         
-        const departmentPermissionsData = departmentPermissions.map((deptId: string) => ({
+        const departmentPermissions = invitation.department_permissions.map((deptId: string) => ({
           member_id: newMember.id,
           department_id: deptId
         }));
         
         const { error: permissionError } = await supabase
           .from('member_department_permissions')
-          .insert(departmentPermissionsData);
+          .insert(departmentPermissions);
           
         if (permissionError) {
           console.error('❌ Error setting department permissions:', permissionError);

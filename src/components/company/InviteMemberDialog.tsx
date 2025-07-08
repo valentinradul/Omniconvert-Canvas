@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -72,7 +73,6 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
           ? [] 
           : selectedDepartments;
 
-      // Fix: Call inviteMember with the correct parameters
       await inviteMember(email, role, departmentPermissions);
       
       toast({
