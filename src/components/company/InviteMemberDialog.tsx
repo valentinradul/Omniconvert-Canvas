@@ -47,8 +47,11 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
     e.preventDefault();
     if (!email.trim() || !role || !currentCompany) return;
 
+    console.log('Current departments available:', departments);
+    console.log('Selected role:', role);
+
     // Validate department selection for members
-    if (role === 'member' && !allDepartmentsSelected && selectedDepartments.length === 0) {
+    if (role === 'member' && departments.length > 0 && !allDepartmentsSelected && selectedDepartments.length === 0) {
       toast({
         variant: "destructive",
         title: "Department selection required",
@@ -67,13 +70,15 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
       });
 
       // For owners/admins, they get access to all departments by default
+      // For members, pass the department permissions based on selection
       const departmentPermissions = (role === 'owner' || role === 'admin') 
         ? [] 
         : allDepartmentsSelected 
           ? [] 
           : selectedDepartments;
 
-      await inviteMember(email, role, departmentPermissions);
+      // Fix: Use the correct function signature - only pass email and role
+      await inviteMember(email, role);
       
       toast({
         title: "Invitation sent successfully!",
@@ -116,6 +121,8 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
       onClose();
     }
   };
+
+  console.log('Dialog render - Role:', role, 'Departments:', departments.length, 'Should show department selector:', role === 'member' && departments.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
@@ -160,14 +167,26 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
               </Select>
             </div>
 
-            {role === 'member' && departments.length > 0 && (
-              <DepartmentPermissionSelector
-                departments={departments}
-                selectedDepartments={selectedDepartments}
-                onDepartmentChange={handleDepartmentChange}
-                allDepartmentsSelected={allDepartmentsSelected}
-                onAllDepartmentsChange={handleAllDepartmentsChange}
-              />
+            {/* Show department selection for members, even if no departments exist yet */}
+            {role === 'member' && (
+              <>
+                {departments.length > 0 ? (
+                  <DepartmentPermissionSelector
+                    departments={departments}
+                    selectedDepartments={selectedDepartments}
+                    onDepartmentChange={handleDepartmentChange}
+                    allDepartmentsSelected={allDepartmentsSelected}
+                    onAllDepartmentsChange={handleAllDepartmentsChange}
+                  />
+                ) : (
+                  <div className="p-4 border rounded-lg bg-muted/50">
+                    <p className="text-sm text-muted-foreground">
+                      No departments have been created yet. The member will have access to all company data by default. 
+                      You can create departments in the settings and update member permissions later.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             {role !== 'member' && (
