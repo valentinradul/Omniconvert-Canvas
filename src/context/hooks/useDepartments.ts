@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +40,8 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
 
       if (memberError) throw memberError;
 
+      console.log('User role in company:', memberData.role, 'Member ID:', memberData.id);
+
       // If user is owner or admin, fetch all departments
       if (memberData.role === 'owner' || memberData.role === 'admin') {
         const { data, error } = await supabase
@@ -50,23 +51,54 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
           .order('name');
 
         if (error) throw error;
+        console.log('Admin/Owner - All departments:', data);
         setDepartments(data || []);
       } else {
-        // For regular members, only fetch departments they have permission to access
-        const { data, error } = await supabase
-          .from('departments')
+        // For regular members, check if they have specific department permissions
+        const { data: permissionData, error: permissionError } = await supabase
+          .from('member_department_permissions')
           .select(`
-            *,
-            member_department_permissions!inner(
-              member_id
+            department_id,
+            departments!inner(
+              id,
+              name,
+              company_id,
+              created_at
             )
           `)
-          .eq('company_id', currentCompany.id)
-          .eq('member_department_permissions.member_id', memberData.id)
-          .order('name');
+          .eq('member_id', memberData.id);
 
-        if (error) throw error;
-        setDepartments(data || []);
+        console.log('Member department permissions query result:', permissionData, permissionError);
+
+        if (permissionError) {
+          console.error('Error fetching department permissions:', permissionError);
+          // If there's an error or no specific permissions, member has access to all departments
+          const { data: allDepts, error: allDeptsError } = await supabase
+            .from('departments')
+            .select('*')
+            .eq('company_id', currentCompany.id)
+            .order('name');
+
+          if (allDeptsError) throw allDeptsError;
+          console.log('Member - All departments (fallback):', allDepts);
+          setDepartments(allDepts || []);
+        } else if (permissionData && permissionData.length > 0) {
+          // Extract departments from the joined data
+          const allowedDepartments = permissionData.map(perm => perm.departments).filter(Boolean);
+          console.log('Member - Specific departments:', allowedDepartments);
+          setDepartments(allowedDepartments);
+        } else {
+          // No specific permissions found, give access to all departments
+          const { data: allDepts, error: allDeptsError } = await supabase
+            .from('departments')
+            .select('*')
+            .eq('company_id', currentCompany.id)
+            .order('name');
+
+          if (allDeptsError) throw allDeptsError;
+          console.log('Member - All departments (no restrictions):', allDepts);
+          setDepartments(allDepts || []);
+        }
       }
     } catch (error: any) {
       console.error('Error fetching departments:', error);
