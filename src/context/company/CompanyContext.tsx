@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -15,7 +16,7 @@ type CompanyContextType = {
   isLoading: boolean;
   createCompany: (name: string) => Promise<void>;
   switchCompany: (companyId: string) => void;
-  inviteMember: (email: string, role: CompanyRole) => Promise<void>;
+  inviteMember: (email: string, role: CompanyRole, departmentPermissions?: string[]) => Promise<void>;
   removeMember: (userId: string) => Promise<void>;
   updateMemberRole: (userId: string, role: CompanyRole) => Promise<void>;
   acceptInvitation: (invitationId: string) => Promise<void>;

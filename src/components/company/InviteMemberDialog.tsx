@@ -77,8 +77,8 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
           ? [] 
           : selectedDepartments;
 
-      // Fix: Use the correct function signature - only pass email and role
-      await inviteMember(email, role);
+      // Pass department permissions as the third parameter
+      await inviteMember(email, role, departmentPermissions);
       
       toast({
         title: "Invitation sent successfully!",
