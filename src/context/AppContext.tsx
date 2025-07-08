@@ -1,8 +1,15 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Company } from '@/types';
+import { Company, Hypothesis, GrowthIdea, Experiment, PECTIWeights, Tag, HypothesisStatus, PECTI } from '@/types';
 import { useCompany } from './company/CompanyContext';
+import { useCategories } from './hooks/useCategories';
+import { useDepartments } from './hooks/useDepartments';
+import { useIdeas } from './hooks/useIdeas';
+import { useHypotheses } from './hooks/useHypotheses';
+import { useExperiments } from './hooks/useExperiments';
+import { usePectiWeights } from './hooks/usePectiWeights';
 
 interface Department {
   id: string;
@@ -13,70 +20,94 @@ interface Department {
 
 interface AppContextType {
   departments: Department[];
+  categories: any[];
+  ideas: GrowthIdea[];
+  hypotheses: Hypothesis[];
+  experiments: Experiment[];
+  pectiWeights: PECTIWeights;
+  isLoading: boolean;
   fetchDepartments: () => Promise<void>;
+  addDepartment: (name: string) => Promise<void>;
+  editDepartment: (id: string, name: string) => Promise<void>;
+  deleteDepartment: (id: string) => Promise<void>;
+  addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => Promise<GrowthIdea | null>;
+  editIdea: (id: string, idea: Partial<GrowthIdea>) => Promise<void>;
+  deleteIdea: (id: string) => Promise<void>;
+  addHypothesis: (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => Promise<void>;
+  editHypothesis: (id: string, hypothesis: Partial<Hypothesis>) => Promise<void>;
+  deleteHypothesis: (id: string) => Promise<void>;
+  addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  editExperiment: (id: string, experiment: Partial<Experiment>) => Promise<void>;
+  deleteExperiment: (id: string) => Promise<void>;
+  addExperimentNote: (experimentId: string, noteContent: string) => Promise<void>;
+  deleteExperimentNote: (experimentId: string, noteId: string) => Promise<void>;
+  updatePectiWeights: (weights: Partial<PECTIWeights>) => void;
+  updateAllHypothesesWeights: () => void;
+  getIdeaById: (id: string) => GrowthIdea | undefined;
+  getHypothesisByIdeaId: (ideaId: string) => Hypothesis | undefined;
+  getHypothesisById: (id: string) => Hypothesis | undefined;
+  getExperimentByHypothesisId: (hypothesisId: string) => Experiment | undefined;
+  getDepartmentById: (id: string) => Department | undefined;
+  getAllTags: () => Tag[];
+  getAllUserNames: () => {id: string; name: string}[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [departments, setDepartments] = useState<Department[]>([]);
   const { currentCompany, userCompanyRole } = useCompany();
   const { user } = useAuth();
 
-  const fetchDepartments = useCallback(async () => {
-    if (!currentCompany) {
-      setDepartments([]);
-      return;
-    }
+  // Use existing hooks
+  const { categories } = useCategories(currentCompany);
+  const { departments, addDepartment, editDepartment, deleteDepartment, refetch: fetchDepartments } = useDepartments(currentCompany);
+  const { ideas, addIdea, editIdea, deleteIdea, getIdeaById, getAllTags, getAllUserNames } = useIdeas(user, currentCompany);
+  const { hypotheses, addHypothesis, editHypothesis, deleteHypothesis, getHypothesisByIdeaId, getHypothesisById } = useHypotheses(user, currentCompany, []);
+  const { experiments, addExperiment, editExperiment, deleteExperiment, addExperimentNote, deleteExperimentNote, getExperimentByHypothesisId } = useExperiments(user, currentCompany);
+  const { pectiWeights, updatePectiWeights, updateAllHypothesesWeights } = usePectiWeights();
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const [isLoading, setIsLoading] = useState(false);
 
-      // If user is owner or admin, show all departments
-      if (userCompanyRole === 'owner' || userCompanyRole === 'admin') {
-        const { data, error } = await supabase
-          .from('departments')
-          .select('*')
-          .eq('company_id', currentCompany.id)
-          .order('name');
-
-        if (error) throw error;
-        setDepartments(data || []);
-      } else {
-        // For regular members, only show departments they have access to
-        const { data, error } = await supabase
-          .from('departments')
-          .select(`
-            *,
-            member_department_permissions!inner (
-              member_id,
-              company_members!inner (
-                user_id
-              )
-            )
-          `)
-          .eq('company_id', currentCompany.id)
-          .eq('member_department_permissions.company_members.user_id', user.id)
-          .order('name');
-
-        if (error) throw error;
-        setDepartments(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-    }
-  }, [currentCompany, userCompanyRole, user]);
-
-  useEffect(() => {
-    fetchDepartments();
-  }, [fetchDepartments, currentCompany]);
+  const getDepartmentById = useCallback((id: string) => {
+    const department = departments.find(d => d.id === id);
+    console.log('Looking for department with ID:', id, 'found:', department);
+    return department;
+  }, [departments]);
 
   return (
     <AppContext.Provider
       value={{
         departments,
-        fetchDepartments
+        categories,
+        ideas,
+        hypotheses,
+        experiments,
+        pectiWeights,
+        isLoading,
+        fetchDepartments,
+        addDepartment,
+        editDepartment,
+        deleteDepartment,
+        addIdea,
+        editIdea,
+        deleteIdea,
+        addHypothesis,
+        editHypothesis,
+        deleteHypothesis,
+        addExperiment,
+        editExperiment,
+        deleteExperiment,
+        addExperimentNote,
+        deleteExperimentNote,
+        updatePectiWeights,
+        updateAllHypothesesWeights,
+        getIdeaById,
+        getHypothesisByIdeaId,
+        getHypothesisById,
+        getExperimentByHypothesisId,
+        getDepartmentById,
+        getAllTags,
+        getAllUserNames
       }}
     >
       {children}
