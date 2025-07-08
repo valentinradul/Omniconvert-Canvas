@@ -203,24 +203,10 @@ export const useCompanyManagement = () => {
     setIsProcessing(true);
     
     try {
-      // Get the user's email from auth.users table
-      const { data: userData, error: userError } = await supabase
-        .rpc('get_current_user_email')
-        .then(async () => {
-          // Get the user's profile to find their email
-          const { data: authData } = await supabase.auth.admin.getUserById(memberUserId);
-          return { data: authData.user?.email, error: null };
-        })
-        .catch(async () => {
-          // Fallback: try to get email from the member profile if available
-          const member = companyMembers.find(m => m.userId === memberUserId);
-          if (member?.profile?.email) {
-            return { data: member.profile.email, error: null };
-          }
-          return { data: null, error: 'Could not find user email' };
-        });
-
-      // Get the company member record
+      // First get all existing invitations for this email to delete them completely
+      console.log('Starting member removal process for user:', memberUserId);
+      
+      // Get the company member record first
       const { data: memberData } = await supabase
         .from('company_members')
         .select('id')
@@ -230,10 +216,14 @@ export const useCompanyManagement = () => {
 
       if (memberData) {
         // Remove department permissions first
-        await supabase
+        const { error: deptPermError } = await supabase
           .from('member_department_permissions')
           .delete()
           .eq('member_id', memberData.id);
+          
+        if (deptPermError) {
+          console.warn('Error cleaning up department permissions:', deptPermError);
+        }
       }
 
       // Remove the company membership
@@ -246,21 +236,7 @@ export const useCompanyManagement = () => {
       if (error) throw error;
 
       // Clean up ALL invitations for this company and user combination
-      // First, try to clean up by email if we have it
-      if (userData?.data) {
-        console.log('Cleaning up invitations for email:', userData.data);
-        const { error: emailCleanupError } = await supabase
-          .from('company_invitations')
-          .delete()
-          .eq('company_id', currentCompanyId)
-          .eq('email', userData.data.toLowerCase().trim());
-          
-        if (emailCleanupError) {
-          console.warn('Error cleaning up invitations by email:', emailCleanupError);
-        }
-      }
-
-      // Additional cleanup: remove any invitations that might have been created by this user
+      // Method 1: Clean up invitations created BY this user
       const { error: inviterCleanupError } = await supabase
         .from('company_invitations')
         .delete()
@@ -269,6 +245,43 @@ export const useCompanyManagement = () => {
         
       if (inviterCleanupError) {
         console.warn('Error cleaning up invitations created by user:', inviterCleanupError);
+      }
+
+      // Method 2: Try to find and clean up invitations FOR this user
+      // We need to find the user's email to clean up invitations sent TO them
+      try {
+        // Try to get user's email from profiles or member data
+        const member = companyMembers.find(m => m.userId === memberUserId);
+        let userEmail = null;
+        
+        if (member?.profile?.email) {
+          userEmail = member.profile.email;
+        } else {
+          // Try to get from auth (this might not work for other users)
+          try {
+            const { data: authUser } = await supabase.auth.admin.getUserById(memberUserId);
+            userEmail = authUser.user?.email;
+          } catch (authError) {
+            console.warn('Could not get user email from auth:', authError);
+          }
+        }
+
+        if (userEmail) {
+          console.log('Cleaning up invitations for email:', userEmail);
+          const { error: emailCleanupError } = await supabase
+            .from('company_invitations')
+            .delete()
+            .eq('company_id', currentCompanyId)
+            .eq('email', userEmail.toLowerCase().trim());
+            
+          if (emailCleanupError) {
+            console.warn('Error cleaning up invitations by email:', emailCleanupError);
+          }
+        } else {
+          console.warn('Could not determine user email for invitation cleanup');
+        }
+      } catch (emailLookupError) {
+        console.warn('Error during email lookup for invitation cleanup:', emailLookupError);
       }
 
       toast({
