@@ -143,6 +143,7 @@ const UsersManagement: React.FC = () => {
         return;
       }
 
+      // Direct database insertion for super admin
       const { error } = await supabase
         .from('company_members')
         .insert({
@@ -388,7 +389,7 @@ const UsersManagement: React.FC = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="member">Member</SelectItem>
-                          
+                          <SelectItem value="admin">Admin</SelectItem>
                           <SelectItem value="owner">Owner</SelectItem>
                         </SelectContent>
                       </Select>
