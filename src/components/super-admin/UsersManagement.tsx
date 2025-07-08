@@ -231,7 +231,7 @@ const UsersManagement: React.FC = () => {
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'owner': return 'default';
-      case 'admin': return 'secondary';
+   ;
       case 'member': return 'outline';
       default: return 'outline';
     }
@@ -389,7 +389,7 @@ const UsersManagement: React.FC = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="member">Member</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
+                         
                           <SelectItem value="owner">Owner</SelectItem>
                         </SelectContent>
                       </Select>
