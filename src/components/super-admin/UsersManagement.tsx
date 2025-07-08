@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,25 +101,34 @@ const UsersManagement: React.FC = () => {
     }
 
     try {
-      // First, remove all company memberships for this user
-      const { error: membersError } = await supabase
-        .from('company_members')
-        .delete()
-        .eq('user_id', userId);
-
-      if (membersError) throw membersError;
-
-      // Delete the user profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-
-      if (profileError) throw profileError;
-
-      // Note: We cannot delete from auth.users table directly via the client
-      // The profile deletion will cascade due to the foreign key relationship
+      // Get the current session to send with the request
+      const { data: { session } } = await supabase.auth.getSession();
       
+      if (!session) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'You must be logged in to delete users'
+        });
+        return;
+      }
+
+      // Call the edge function to delete the user
+      const response = await fetch('/functions/v1/delete-user', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete user');
+      }
+
       toast({
         title: 'Success',
         description: `User "${userName}" has been deleted successfully`
@@ -132,7 +140,7 @@ const UsersManagement: React.FC = () => {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to delete user. Please try again.'
+        description: error.message || 'Failed to delete user. Please try again.'
       });
     }
   };
