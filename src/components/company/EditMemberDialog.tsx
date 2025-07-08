@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,7 +8,10 @@ import { CompanyMember, CompanyRole } from '@/types';
 import { useCompany } from '@/context/company/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { Trash2 } from 'lucide-react';
+import { useDepartments } from '@/context/hooks/useDepartments';
+import { supabase } from '@/integrations/supabase/client';
+import { Trash2, Settings } from 'lucide-react';
+import DepartmentPermissionSelector from './DepartmentPermissionSelector';
 
 interface EditMemberDialogProps {
   member: CompanyMember | null;
@@ -24,18 +27,76 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
   onMemberUpdated 
 }) => {
   const { user } = useAuth();
-  const { updateMemberRole, removeMember, userCompanyRole } = useCompany();
+  const { updateMemberRole, removeMember, userCompanyRole, currentCompany } = useCompany();
+  const { departments, loading: departmentsLoading } = useDepartments(currentCompany);
   const { toast } = useToast();
   const [selectedRole, setSelectedRole] = useState<CompanyRole>(member?.role || 'member');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Department permissions state
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(true);
+  const [isDepartmentPermissionsLoading, setIsDepartmentPermissionsLoading] = useState(false);
 
   // Update selected role when member changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (member) {
       setSelectedRole(member.role);
     }
   }, [member]);
+
+  // Load department permissions when dialog opens
+  useEffect(() => {
+    if (open && member && currentCompany && departments.length > 0) {
+      loadMemberDepartmentPermissions();
+    }
+  }, [open, member, currentCompany, departments]);
+
+  const loadMemberDepartmentPermissions = async () => {
+    if (!member || !currentCompany) return;
+
+    setIsDepartmentPermissionsLoading(true);
+    try {
+      // Get the member's company_members record
+      const { data: memberData, error: memberError } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('user_id', member.userId)
+        .eq('company_id', currentCompany.id)
+        .single();
+
+      if (memberError) throw memberError;
+
+      // Get department permissions for this member
+      const { data: permissions, error: permissionsError } = await supabase
+        .from('member_department_permissions')
+        .select('department_id')
+        .eq('member_id', memberData.id);
+
+      if (permissionsError) throw permissionsError;
+
+      const departmentIds = permissions.map(p => p.department_id);
+      
+      // If no specific permissions are set, user has access to all departments
+      if (departmentIds.length === 0) {
+        setAllDepartmentsSelected(true);
+        setSelectedDepartments([]);
+      } else {
+        setAllDepartmentsSelected(false);
+        setSelectedDepartments(departmentIds);
+      }
+    } catch (error: any) {
+      console.error('Error loading department permissions:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load department permissions",
+      });
+    } finally {
+      setIsDepartmentPermissionsLoading(false);
+    }
+  };
 
   const handleUpdateRole = async () => {
     if (!member || selectedRole === member.role) {
@@ -58,6 +119,60 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
         variant: "destructive",
         title: "Failed to update role",
         description: error.message || "There was an error updating the member role",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateDepartmentPermissions = async () => {
+    if (!member || !currentCompany) return;
+
+    setIsUpdating(true);
+    try {
+      // Get the member's company_members record
+      const { data: memberData, error: memberError } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('user_id', member.userId)
+        .eq('company_id', currentCompany.id)
+        .single();
+
+      if (memberError) throw memberError;
+
+      // Delete existing permissions
+      const { error: deleteError } = await supabase
+        .from('member_department_permissions')
+        .delete()
+        .eq('member_id', memberData.id);
+
+      if (deleteError) throw deleteError;
+
+      // If not all departments selected, add specific permissions
+      if (!allDepartmentsSelected && selectedDepartments.length > 0) {
+        const permissionsToInsert = selectedDepartments.map(departmentId => ({
+          member_id: memberData.id,
+          department_id: departmentId
+        }));
+
+        const { error: insertError } = await supabase
+          .from('member_department_permissions')
+          .insert(permissionsToInsert);
+
+        if (insertError) throw insertError;
+      }
+
+      toast({
+        title: "Department permissions updated",
+        description: "Member's department access has been updated successfully",
+      });
+      onMemberUpdated();
+    } catch (error: any) {
+      console.error('Error updating department permissions:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to update permissions",
+        description: error.message || "There was an error updating department permissions",
       });
     } finally {
       setIsUpdating(false);
@@ -88,6 +203,21 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
     }
   };
 
+  const handleDepartmentChange = (departmentId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedDepartments(prev => [...prev, departmentId]);
+    } else {
+      setSelectedDepartments(prev => prev.filter(id => id !== departmentId));
+    }
+  };
+
+  const handleAllDepartmentsChange = (checked: boolean) => {
+    setAllDepartmentsSelected(checked);
+    if (checked) {
+      setSelectedDepartments([]);
+    }
+  };
+
   if (!member) return null;
 
   const getUserDisplayName = () => {
@@ -113,6 +243,11 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
     return false;
   };
 
+  const canEditDepartments = () => {
+    // Only owners can edit department permissions for members
+    return userCompanyRole === 'owner' && member.role === 'member';
+  };
+
   const canDeleteMember = () => {
     if (userCompanyRole === 'member') return false;
     if (member.role === 'owner') return false;
@@ -132,6 +267,15 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
     }
     // Members can't change roles
     return [member.role];
+  };
+
+  const hasChanges = () => {
+    return selectedRole !== member.role;
+  };
+
+  const hasDepartmentChanges = () => {
+    // This would need to compare with loaded state - simplified for now
+    return true;
   };
 
   return (
@@ -175,7 +319,27 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
             </div>
           )}
 
-          {!canEditRole() && !canDeleteMember() && (
+          {canEditDepartments() && !departmentsLoading && departments.length > 0 && (
+            <div>
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Department Access
+              </h4>
+              {isDepartmentPermissionsLoading ? (
+                <div className="text-sm text-muted-foreground">Loading permissions...</div>
+              ) : (
+                <DepartmentPermissionSelector
+                  departments={departments}
+                  selectedDepartments={selectedDepartments}
+                  onDepartmentChange={handleDepartmentChange}
+                  allDepartmentsSelected={allDepartmentsSelected}
+                  onAllDepartmentsChange={handleAllDepartmentsChange}
+                />
+              )}
+            </div>
+          )}
+
+          {!canEditRole() && !canEditDepartments() && !canDeleteMember() && (
             <p className="text-sm text-muted-foreground">
               {isEditingSelf && userCompanyRole === 'member' 
                 ? "Members cannot edit their own profile or roles."
@@ -228,6 +392,15 @@ const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
                 disabled={isUpdating || selectedRole === member.role}
               >
                 {isUpdating ? "Updating..." : "Update Role"}
+              </Button>
+            )}
+            {canEditDepartments() && (
+              <Button 
+                onClick={handleUpdateDepartmentPermissions} 
+                disabled={isUpdating}
+                variant="secondary"
+              >
+                {isUpdating ? "Updating..." : "Update Permissions"}
               </Button>
             )}
           </div>
