@@ -1,107 +1,132 @@
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Settings, Eye } from 'lucide-react';
+
+import React, { useState } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
+import { CompanyRole, CompanyMember } from '@/types';
+import { Button } from '@/components/ui/button';
+
+import { useToast } from '@/hooks/use-toast';
 import InviteMemberDialog from '@/components/company/InviteMemberDialog';
 import PendingInvitations from '@/components/company/PendingInvitations';
 import EditMemberDialog from '@/components/company/EditMemberDialog';
-import ContentVisibilitySettings from '@/components/company/ContentVisibilitySettings';
 
 const TeamSettingsPage: React.FC = () => {
-  const { currentCompany, members, userRole } = useCompany();
+  const { 
+    companyMembers, 
+    userCompanyRole, 
+    pendingInvitations,
+    refreshPendingInvitations, 
+    refreshCompanyMembers 
+  } = useCompany();
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<CompanyMember | null>(null);
+  const { toast } = useToast();
 
-  const canManageTeam = userRole === 'owner' || userRole === 'admin';
+  console.log('TeamSettingsPage - Company members:', companyMembers.length);
+  console.log('TeamSettingsPage - User role:', userCompanyRole);
+  console.log('TeamSettingsPage - Pending invitations:', pendingInvitations.length);
+  console.log('TeamSettingsPage - All pending invitations:', pendingInvitations);
 
-  if (!currentCompany) {
-    return (
-      <div className="container mx-auto py-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Team Settings</h1>
-          <p className="text-gray-600">Please select a company to manage team settings.</p>
-        </div>
-      </div>
-    );
-  }
+  const handleEditMember = (member: CompanyMember) => {
+    console.log('Editing member:', member.id);
+    setSelectedMember(member);
+    setShowEditDialog(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setShowEditDialog(false);
+    setSelectedMember(null);
+  };
+
+  const handleMemberUpdated = () => {
+    refreshCompanyMembers();
+    refreshPendingInvitations();
+  };
+
+  // Function to handle invitation sent and refresh pending invitations
+  const handleInvitationSent = () => {
+    console.log('Invitation sent, refreshing pending invitations...');
+    refreshPendingInvitations();
+    toast({
+      title: "Invitation sent!",
+      description: "The invitation has been sent and will appear in pending invitations below."
+    });
+  };
+
+  // Function to handle manual refresh
+  const handleManualRefresh = () => {
+    console.log('Manual refresh triggered');
+    refreshPendingInvitations();
+    refreshCompanyMembers();
+    toast({
+      title: "Refreshed",
+      description: "Team data has been refreshed"
+    });
+  };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 bg-blue-100 rounded-lg">
-          <Users className="h-8 w-8 text-blue-600" />
-        </div>
+    <div>
+      <div className="md:flex md:items-center md:justify-between space-y-4 md:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Team Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your team members and permissions for {currentCompany.name}</p>
+          <h1 className="text-2xl font-bold">Team Settings</h1>
+          <p className="text-muted-foreground">Manage your team members and their roles.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleManualRefresh}>
+            Refresh Data
+          </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="members" className="space-y-8">
-        <TabsList className="grid w-full grid-cols-3 h-12">
-          <TabsTrigger value="members" className="flex items-center gap-2 py-3">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Team Members</span>
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="flex items-center gap-2 py-3">
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Permissions</span>
-          </TabsTrigger>
-          <TabsTrigger value="content" className="flex items-center gap-2 py-3">
-            <Eye className="h-4 w-4" />
-            <span className="hidden sm:inline">Content Visibility</span>
-          </TabsTrigger>
-        </TabsList>
+      <div className="space-y-6 mt-8">
+        {/* Debug Info */}
+        <div className="bg-muted/50 p-4 rounded-lg text-sm">
+          <p><strong>Debug Info:</strong></p>
+          <p>Members: {companyMembers.length}</p>
+          <p>Pending Invitations: {pendingInvitations.length}</p>
+          <p>User Role: {userCompanyRole}</p>
+        </div>
 
-        <TabsContent value="members" className="mt-8">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Team Members</h2>
-              {canManageTeam && <InviteMemberDialog />}
+        {/* Invite New Member Section */}
+        <div className="flex justify-center">
+          <div className="w-full max-w-md">
+            <div className="text-center space-y-3">
+              <h3 className="text-lg font-medium">Invite New Member</h3>
+              <Button 
+                onClick={() => setShowInviteDialog(true)} 
+                disabled={userCompanyRole !== 'owner' && userCompanyRole !== 'admin'}
+                className="w-full"
+              >
+                Invite Team Member
+              </Button>
+              {(userCompanyRole !== 'owner' && userCompanyRole !== 'admin') && (
+                <p className="text-sm text-muted-foreground">
+                  Only owners and admins can invite members
+                </p>
+              )}
             </div>
-            {canManageTeam ? (
-              members.length === 0 ? (
-                <p className="text-muted-foreground">No members in this company yet.</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {members.map((member) => (
-                    <div key={member.id} className="p-4 border rounded-lg shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold">{member.user_id}</p>
-                          <p className="text-sm text-muted-foreground">Role: {member.role}</p>
-                        </div>
-                        <EditMemberDialog member={member} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : (
-              <p className="text-muted-foreground">You don't have permission to manage team members.</p>
-            )}
           </div>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="permissions" className="mt-8">
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">Pending Invitations</h2>
-            {canManageTeam ? (
-              <PendingInvitations />
-            ) : (
-              <p className="text-muted-foreground">You don't have permission to manage pending invitations.</p>
-            )}
-          </div>
-        </TabsContent>
+        {/* PendingInvitations with manual refresh and edit functionality */}
+        <PendingInvitations 
+          onInvitationResent={refreshPendingInvitations} 
+          onEditMember={handleEditMember}
+        />
+        
+        <InviteMemberDialog 
+          open={showInviteDialog} 
+          onClose={() => setShowInviteDialog(false)}
+          onInviteSent={handleInvitationSent}
+        />
 
-        <TabsContent value="content" className="mt-8">
-          {canManageTeam ? (
-            <ContentVisibilitySettings />
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">You don't have permission to manage content visibility settings.</p>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+        <EditMemberDialog
+          member={selectedMember}
+          open={showEditDialog}
+          onClose={handleCloseEditDialog}
+          onMemberUpdated={handleMemberUpdated}
+        />
+      </div>
     </div>
   );
 };

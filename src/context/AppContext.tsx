@@ -1,8 +1,9 @@
+
 import React, { createContext, useContext } from 'react';
 import { useAuth } from './AuthContext';
 import { useCompany } from './company/CompanyContext';
 import { useDepartments } from './hooks/useDepartments';
-import { useIdeasWithVisibility } from './hooks/useIdeasWithVisibility';
+import { useIdeas } from './hooks/useIdeas';
 import { useHypotheses } from './hooks/useHypotheses';
 import { useExperiments } from './hooks/useExperiments';
 import { usePectiWeights } from './hooks/usePectiWeights';
@@ -24,7 +25,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     useHypotheses(user, currentCompany, experiments);
   
   const { ideas, isLoading: ideasLoading, addIdea, editIdea, deleteIdea, getIdeaById } = 
-    useIdeasWithVisibility(user, currentCompany, hypotheses);
+    useIdeas(user, currentCompany, hypotheses);
   
   const { departments, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = 
     useDepartments(currentCompany);
