@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Users } from 'lucide-react';
+import { Plus, Trash2, Users, Calendar, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import SuperAdminTable from './SuperAdminTable';
 
 interface Company {
   id: string;
@@ -20,18 +20,45 @@ interface Company {
 
 const CompaniesManagement: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [newCompanyName, setNewCompanyName] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortKey, setSortKey] = useState<string>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const itemsPerPage = 10;
   const { toast } = useToast();
 
   useEffect(() => {
     fetchCompanies();
   }, []);
 
+  useEffect(() => {
+    // Filter and sort companies
+    let filtered = companies.filter(company =>
+      company.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Sort companies
+    filtered.sort((a, b) => {
+      const aValue = a[sortKey as keyof Company];
+      const bValue = b[sortKey as keyof Company];
+      
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    setFilteredCompanies(filtered);
+    setCurrentPage(1); // Reset to first page when filtering
+  }, [companies, searchTerm, sortKey, sortDirection]);
+
   const fetchCompanies = async () => {
     try {
-      // Fetch companies with member counts
       const { data: companiesData, error } = await supabase
         .from('companies')
         .select(`
@@ -122,78 +149,128 @@ const CompaniesManagement: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return <div className="flex justify-center py-8">Loading companies...</div>;
-  }
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
+
+  // Paginate filtered companies
+  const paginatedCompanies = filteredCompanies.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const columns = [
+    {
+      key: 'name',
+      header: 'Company Name',
+      sortable: true,
+      render: (company: Company) => (
+        <div className="font-medium">{company.name}</div>
+      )
+    },
+    {
+      key: 'member_count',
+      header: 'Members',
+      sortable: true,
+      render: (company: Company) => (
+        <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+          <Users className="h-3 w-3" />
+          {company.member_count}
+        </Badge>
+      )
+    },
+    {
+      key: 'created_at',
+      header: 'Created',
+      sortable: true,
+      render: (company: Company) => (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Calendar className="h-4 w-4" />
+          {new Date(company.created_at).toLocaleDateString()}
+        </div>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (company: Company) => (
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => deleteCompany(company.id)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )
+    }
+  ];
+
+  const actions = (
+    <>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search companies..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 w-64"
+        />
+      </div>
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Company
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Company</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="company-name">Company Name</Label>
+              <Input
+                id="company-name"
+                value={newCompanyName}
+                onChange={(e) => setNewCompanyName(e.target.value)}
+                placeholder="Enter company name"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={createCompany} disabled={!newCompanyName.trim()}>
+                Create Company
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">All Companies ({companies.length})</h3>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Company
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Company</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="company-name">Company Name</Label>
-                <Input
-                  id="company-name"
-                  value={newCompanyName}
-                  onChange={(e) => setNewCompanyName(e.target.value)}
-                  placeholder="Enter company name"
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={createCompany} disabled={!newCompanyName.trim()}>
-                  Create Company
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid gap-4">
-        {companies.map((company) => (
-          <Card key={company.id}>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{company.name}</CardTitle>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                    <span>Created: {new Date(company.created_at).toLocaleDateString()}</span>
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {company.member_count} members
-                    </Badge>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteCompany(company.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
-    </div>
+    <SuperAdminTable
+      title="Companies Management"
+      data={paginatedCompanies}
+      columns={columns}
+      totalItems={filteredCompanies.length}
+      currentPage={currentPage}
+      itemsPerPage={itemsPerPage}
+      onPageChange={setCurrentPage}
+      onSort={handleSort}
+      sortKey={sortKey}
+      sortDirection={sortDirection}
+      isLoading={loading}
+      actions={actions}
+    />
   );
 };
 

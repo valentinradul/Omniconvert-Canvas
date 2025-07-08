@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Building, Calendar, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import SuperAdminTable from './SuperAdminTable';
 
 interface Department {
   id: string;
@@ -29,8 +29,11 @@ interface Company {
 
 const DepartmentsManagement: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [filteredDepartments, setFilteredDepartments] = useState<Department[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCompany, setFilterCompany] = useState<string>('all');
   const [newDepartmentName, setNewDepartmentName] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
@@ -38,11 +41,47 @@ const DepartmentsManagement: React.FC = () => {
   const [editCompanyId, setEditCompanyId] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortKey, setSortKey] = useState<string>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const itemsPerPage = 10;
   const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    // Filter and sort departments
+    let filtered = departments.filter(department => {
+      const matchesSearch = department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           department.companies.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCompany = filterCompany === 'all' || department.company_id === filterCompany;
+      return matchesSearch && matchesCompany;
+    });
+
+    // Sort departments
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      if (sortKey === 'company_name') {
+        aValue = a.companies.name;
+        bValue = b.companies.name;
+      } else {
+        aValue = a[sortKey as keyof Department];
+        bValue = b[sortKey as keyof Department];
+      }
+      
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    setFilteredDepartments(filtered);
+    setCurrentPage(1);
+  }, [departments, searchTerm, filterCompany, sortKey, sortDirection]);
 
   const fetchData = async () => {
     try {
@@ -185,101 +224,169 @@ const DepartmentsManagement: React.FC = () => {
     setIsEditDialogOpen(true);
   };
 
-  if (loading) {
-    return <div className="flex justify-center py-8">Loading departments...</div>;
-  }
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
+
+  // Paginate filtered departments
+  const paginatedDepartments = filteredDepartments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const columns = [
+    {
+      key: 'name',
+      header: 'Department Name',
+      sortable: true,
+      render: (department: Department) => (
+        <div className="font-medium">{department.name}</div>
+      )
+    },
+    {
+      key: 'company_name',
+      header: 'Company',
+      sortable: true,
+      render: (department: Department) => (
+        <Badge variant="outline" className="flex items-center gap-1 w-fit">
+          <Building className="h-3 w-3" />
+          {department.companies.name}
+        </Badge>
+      )
+    },
+    {
+      key: 'created_at',
+      header: 'Created',
+      sortable: true,
+      render: (department: Department) => (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Calendar className="h-4 w-4" />
+          {new Date(department.created_at).toLocaleDateString()}
+        </div>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (department: Department) => (
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openEditDialog(department)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => deleteDepartment(department.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const actions = (
+    <>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search departments..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 w-64"
+        />
+      </div>
+      <Select value={filterCompany} onValueChange={setFilterCompany}>
+        <SelectTrigger className="w-48">
+          <SelectValue placeholder="Filter by company" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Companies</SelectItem>
+          {companies.map((company) => (
+            <SelectItem key={company.id} value={company.id}>
+              {company.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Department
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Department</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="department-name">Department Name</Label>
+              <Input
+                id="department-name"
+                value={newDepartmentName}
+                onChange={(e) => setNewDepartmentName(e.target.value)}
+                placeholder="Enter department name"
+              />
+            </div>
+            <div>
+              <Label>Select Company</Label>
+              <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a company" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={createDepartment} 
+                disabled={!newDepartmentName.trim() || !selectedCompanyId}
+              >
+                Create Department
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">All Departments ({departments.length})</h3>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Department
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Department</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="department-name">Department Name</Label>
-                <Input
-                  id="department-name"
-                  value={newDepartmentName}
-                  onChange={(e) => setNewDepartmentName(e.target.value)}
-                  placeholder="Enter department name"
-                />
-              </div>
-              <div>
-                <Label>Select Company</Label>
-                <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a company" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={createDepartment} 
-                  disabled={!newDepartmentName.trim() || !selectedCompanyId}
-                >
-                  Create Department
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid gap-4">
-        {departments.map((department) => (
-          <Card key={department.id}>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{department.name}</CardTitle>
-                  <div className="flex items-center gap-4 mt-2">
-                    <Badge variant="secondary">{department.companies.name}</Badge>
-                    <span className="text-sm text-gray-600">
-                      Created: {new Date(department.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditDialog(department)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteDepartment(department.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
+    <>
+      <SuperAdminTable
+        title="Departments Management"
+        data={paginatedDepartments}
+        columns={columns}
+        totalItems={filteredDepartments.length}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+        onSort={handleSort}
+        sortKey={sortKey}
+        sortDirection={sortDirection}
+        isLoading={loading}
+        actions={actions}
+      />
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
@@ -325,7 +432,7 @@ const DepartmentsManagement: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 

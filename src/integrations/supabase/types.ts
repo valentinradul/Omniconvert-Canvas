@@ -62,6 +62,38 @@ export type Database = {
         }
         Relationships: []
       }
+      company_content_settings: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          restrict_content_to_departments: boolean
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          restrict_content_to_departments?: boolean
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          restrict_content_to_departments?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_content_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_invitations: {
         Row: {
           accepted: boolean | null
