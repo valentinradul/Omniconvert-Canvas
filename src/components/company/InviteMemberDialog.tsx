@@ -72,6 +72,7 @@ const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({ open, onClose, 
           ? [] 
           : selectedDepartments;
 
+      // Fix: Call inviteMember with the correct parameters
       await inviteMember(email, role, departmentPermissions);
       
       toast({
