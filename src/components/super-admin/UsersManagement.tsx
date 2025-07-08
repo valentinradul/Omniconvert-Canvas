@@ -95,6 +95,75 @@ const UsersManagement: React.FC = () => {
     }
   };
 
+  const deleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      console.log('Starting user deletion process for user:', userId);
+
+      // First, delete all company memberships for this user
+      const { error: memberError } = await supabase
+        .from('company_members')
+        .delete()
+        .eq('user_id', userId);
+
+      if (memberError) {
+        console.error('Error deleting company memberships:', memberError);
+        throw memberError;
+      }
+
+      // Delete member department permissions
+      const { data: memberIds } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (memberIds && memberIds.length > 0) {
+        const { error: permError } = await supabase
+          .from('member_department_permissions')
+          .delete()
+          .in('member_id', memberIds.map(m => m.id));
+
+        if (permError) {
+          console.error('Error deleting member permissions:', permError);
+        }
+      }
+
+      // Delete user's ideas, hypotheses, and experiments
+      await supabase.from('experiments').delete().eq('userid', userId);
+      await supabase.from('hypotheses').delete().eq('userid', userId);
+      await supabase.from('ideas').delete().eq('userid', userId);
+
+      // Delete user profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (profileError) {
+        console.error('Error deleting user profile:', profileError);
+        throw profileError;
+      }
+
+      toast({
+        title: 'Success',
+        description: 'User deleted successfully'
+      });
+
+      // Refresh the data
+      await fetchData();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete user. Note: Only user data in public tables can be deleted.'
+      });
+    }
+  };
+
   const addMemberToCompany = async () => {
     if (!selectedUserId || !selectedCompanyId || !selectedRole) return;
 
@@ -229,6 +298,13 @@ const UsersManagement: React.FC = () => {
                     Joined: {new Date(user.created_at).toLocaleDateString()}
                   </div>
                 </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => deleteUser(user.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             ))}
           </CardContent>
