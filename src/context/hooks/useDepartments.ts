@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useCompany } from '@/context/company/CompanyContext';
 
 interface Department {
   id: string;
@@ -14,6 +15,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { userCompanyRole } = useCompany();
   
   useEffect(() => {
     if (currentCompany) {
@@ -22,21 +24,45 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
       setDepartments([]);
       setLoading(false);
     }
-  }, [currentCompany]);
+  }, [currentCompany, userCompanyRole]);
 
   const fetchDepartments = async () => {
     if (!currentCompany) return;
 
     try {
-      const { data, error } = await supabase
-        .from('departments')
-        .select('*')
-        .eq('company_id', currentCompany.id)
-        .order('name');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      if (error) throw error;
+      // If user is owner or admin, show all departments
+      if (userCompanyRole === 'owner' || userCompanyRole === 'admin') {
+        const { data, error } = await supabase
+          .from('departments')
+          .select('*')
+          .eq('company_id', currentCompany.id)
+          .order('name');
 
-      setDepartments(data || []);
+        if (error) throw error;
+        setDepartments(data || []);
+      } else {
+        // For regular members, only show departments they have access to
+        const { data, error } = await supabase
+          .from('departments')
+          .select(`
+            *,
+            member_department_permissions!inner (
+              member_id,
+              company_members!inner (
+                user_id
+              )
+            )
+          `)
+          .eq('company_id', currentCompany.id)
+          .eq('member_department_permissions.company_members.user_id', user.id)
+          .order('name');
+
+        if (error) throw error;
+        setDepartments(data || []);
+      }
     } catch (error: any) {
       console.error('Error fetching departments:', error);
       toast({

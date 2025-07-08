@@ -1,87 +1,84 @@
-
-import React, { createContext, useContext } from 'react';
-import { useAuth } from './AuthContext';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Company } from '@/types';
 import { useCompany } from './company/CompanyContext';
-import { useDepartments } from './hooks/useDepartments';
-import { useIdeas } from './hooks/useIdeas';
-import { useHypotheses } from './hooks/useHypotheses';
-import { useExperiments } from './hooks/useExperiments';
-import { usePectiWeights } from './hooks/usePectiWeights';
-import { useCategories } from './hooks/useCategories';
-import { getAllTags, getAllUserNames } from './utils/dataUtils';
-import { AppContextType } from './types/AppContextTypes';
+
+interface Department {
+  id: string;
+  name: string;
+  company_id: string;
+  created_at: string;
+}
+
+interface AppContextType {
+  departments: Department[];
+  fetchDepartments: () => Promise<void>;
+}
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const { currentCompany, userCompanyRole } = useCompany();
   const { user } = useAuth();
-  const { currentCompany } = useCompany();
-  
-  // Initialize our hooks
-  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId, addExperimentNote, deleteExperimentNote } = 
-    useExperiments(user, currentCompany);
-  
-  const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById } = 
-    useHypotheses(user, currentCompany, experiments);
-  
-  const { ideas, isLoading: ideasLoading, addIdea, editIdea, deleteIdea, getIdeaById } = 
-    useIdeas(user, currentCompany, hypotheses);
-  
-  const { departments, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = 
-    useDepartments(currentCompany);
-  
-  const { pectiWeights, updatePectiWeights } = usePectiWeights();
-  
-  const { categories } = useCategories(currentCompany);
-  
-  // Create wrapper functions that have access to all hooks
-  const allItems = [...ideas, ...hypotheses, ...experiments];
-  
-  const wrappedDeleteDepartment = (id: string) => {
-    deleteDepartment(id, ideas);
-  };
-  
-  const updateAllHypothesesWeights = () => {
-    updateAllHypothesesWeightsBase(pectiWeights);
-  };
 
-  const isLoading = ideasLoading || hypothesesLoading || experimentsLoading;
-  
-  const appContextValue: AppContextType = {
-    departments,
-    categories,
-    ideas,
-    hypotheses,
-    experiments,
-    pectiWeights,
-    isLoading,
-    addDepartment,
-    editDepartment,
-    deleteDepartment: wrappedDeleteDepartment,
-    addIdea,
-    editIdea,
-    deleteIdea,
-    addHypothesis,
-    editHypothesis,
-    deleteHypothesis,
-    addExperiment,
-    editExperiment,
-    deleteExperiment,
-    addExperimentNote,
-    deleteExperimentNote,
-    updatePectiWeights,
-    updateAllHypothesesWeights,
-    getIdeaById,
-    getHypothesisByIdeaId,
-    getHypothesisById,
-    getExperimentByHypothesisId,
-    getDepartmentById,
-    getAllTags: () => getAllTags(ideas),
-    getAllUserNames: () => getAllUserNames(allItems)
-  };
-  
+  const fetchDepartments = useCallback(async () => {
+    if (!currentCompany) {
+      setDepartments([]);
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // If user is owner or admin, show all departments
+      if (userCompanyRole === 'owner' || userCompanyRole === 'admin') {
+        const { data, error } = await supabase
+          .from('departments')
+          .select('*')
+          .eq('company_id', currentCompany.id)
+          .order('name');
+
+        if (error) throw error;
+        setDepartments(data || []);
+      } else {
+        // For regular members, only show departments they have access to
+        const { data, error } = await supabase
+          .from('departments')
+          .select(`
+            *,
+            member_department_permissions!inner (
+              member_id,
+              company_members!inner (
+                user_id
+              )
+            )
+          `)
+          .eq('company_id', currentCompany.id)
+          .eq('member_department_permissions.company_members.user_id', user.id)
+          .order('name');
+
+        if (error) throw error;
+        setDepartments(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    }
+  }, [currentCompany, userCompanyRole, user]);
+
+  useEffect(() => {
+    fetchDepartments();
+  }, [fetchDepartments, currentCompany]);
+
   return (
-    <AppContext.Provider value={appContextValue}>
+    <AppContext.Provider
+      value={{
+        departments,
+        fetchDepartments
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
@@ -90,7 +87,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 export const useApp = (): AppContextType => {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider');
+    throw new Error('useApp must be used within a AppProvider');
   }
   return context;
 };
