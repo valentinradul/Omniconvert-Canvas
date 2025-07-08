@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -203,7 +204,24 @@ export const useCompanyManagement = () => {
     setIsProcessing(true);
     
     try {
-      // First, remove any department permissions for this member
+      // First, get the member's email to clean up invitations
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', memberUserId)
+        .single();
+
+      // Get the member's email from auth if not in profile
+      let memberEmail = null;
+      if (!userProfile) {
+        // Try to get email from the member data we have
+        const member = companyMembers.find(m => m.userId === memberUserId);
+        if (member?.profile?.email) {
+          memberEmail = member.profile.email;
+        }
+      }
+
+      // Get the company member record
       const { data: memberData } = await supabase
         .from('company_members')
         .select('id')
@@ -219,7 +237,7 @@ export const useCompanyManagement = () => {
           .eq('member_id', memberData.id);
       }
 
-      // Then remove the company membership
+      // Remove the company membership
       const { error } = await supabase
         .from('company_members')
         .delete()
@@ -227,6 +245,29 @@ export const useCompanyManagement = () => {
         .eq('company_id', currentCompanyId);
         
       if (error) throw error;
+
+      // Clean up any pending invitations for this user's email
+      if (memberEmail) {
+        await supabase
+          .from('company_invitations')
+          .delete()
+          .eq('company_id', currentCompanyId)
+          .eq('email', memberEmail.toLowerCase().trim());
+      }
+
+      // Also try to clean up invitations using the user's current email from auth
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.id === memberUserId) {
+          await supabase
+            .from('company_invitations')
+            .delete()
+            .eq('company_id', currentCompanyId)
+            .eq('email', user.email?.toLowerCase().trim());
+        }
+      } catch (emailCleanupError) {
+        console.warn('Could not clean up invitations by auth email:', emailCleanupError);
+      }
       
       toast({
         title: 'Member removed',
