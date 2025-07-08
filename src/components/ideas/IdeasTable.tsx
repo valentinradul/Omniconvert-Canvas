@@ -7,9 +7,14 @@ import { Button } from '@/components/ui/button';
 interface IdeasTableProps {
   ideas: any[];
   getDepartmentById: (id: string) => any;
+  getCategoryDisplayName?: (categoryName: string) => string;
 }
 
-const IdeasTable: React.FC<IdeasTableProps> = ({ ideas, getDepartmentById }) => {
+const IdeasTable: React.FC<IdeasTableProps> = ({ 
+  ideas, 
+  getDepartmentById, 
+  getCategoryDisplayName 
+}) => {
   const navigate = useNavigate();
   
   const sortedIdeas = [...ideas].sort((a, b) => {
@@ -37,7 +42,9 @@ const IdeasTable: React.FC<IdeasTableProps> = ({ ideas, getDepartmentById }) => 
               onClick={() => navigate(`/idea-details/${idea.id}`)}
             >
               <TableCell className="font-medium">{idea.title}</TableCell>
-              <TableCell>{idea.category}</TableCell>
+              <TableCell>
+                {getCategoryDisplayName ? getCategoryDisplayName(idea.category) : idea.category}
+              </TableCell>
               <TableCell>{getDepartmentById(idea.departmentId)?.name}</TableCell>
               <TableCell>{idea.userName || "Unknown"}</TableCell>
               <TableCell>

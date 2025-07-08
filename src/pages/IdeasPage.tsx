@@ -40,6 +40,19 @@ const IdeasPage: React.FC = () => {
   const allUsers = getAllUserNames();
   const allTags = getAllTags();
 
+  // Helper function to get category with department info
+  const getCategoryDisplayName = (categoryName: string) => {
+    const category = categories.find(cat => cat.name === categoryName);
+    if (!category) return categoryName;
+    
+    if (category.department_id) {
+      const department = getDepartmentById(category.department_id);
+      return department ? `${categoryName} (${department.name})` : categoryName;
+    }
+    
+    return categoryName;
+  };
+
   // Filter ideas based on search and filter criteria
   const filteredIdeas = ideas.filter(idea => {
     // Search query filter
@@ -116,6 +129,7 @@ const IdeasPage: React.FC = () => {
         <IdeasTable 
           ideas={filteredIdeas}
           getDepartmentById={getDepartmentById}
+          getCategoryDisplayName={getCategoryDisplayName}
         />
       ) : (
         <EmptyIdeasState onAddIdeaClick={() => setIsDialogOpen(true)} />
