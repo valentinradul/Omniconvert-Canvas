@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -204,22 +203,22 @@ export const useCompanyManagement = () => {
     setIsProcessing(true);
     
     try {
-      // First, get the member's email to clean up invitations
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', memberUserId)
-        .single();
-
-      // Get the member's email from auth if not in profile
-      let memberEmail = null;
-      if (!userProfile) {
-        // Try to get email from the member data we have
-        const member = companyMembers.find(m => m.userId === memberUserId);
-        if (member?.profile?.email) {
-          memberEmail = member.profile.email;
-        }
-      }
+      // Get the user's email from auth.users table
+      const { data: userData, error: userError } = await supabase
+        .rpc('get_current_user_email')
+        .then(async () => {
+          // Get the user's profile to find their email
+          const { data: authData } = await supabase.auth.admin.getUserById(memberUserId);
+          return { data: authData.user?.email, error: null };
+        })
+        .catch(async () => {
+          // Fallback: try to get email from the member profile if available
+          const member = companyMembers.find(m => m.userId === memberUserId);
+          if (member?.profile?.email) {
+            return { data: member.profile.email, error: null };
+          }
+          return { data: null, error: 'Could not find user email' };
+        });
 
       // Get the company member record
       const { data: memberData } = await supabase
@@ -230,7 +229,7 @@ export const useCompanyManagement = () => {
         .single();
 
       if (memberData) {
-        // Remove department permissions
+        // Remove department permissions first
         await supabase
           .from('member_department_permissions')
           .delete()
@@ -246,29 +245,32 @@ export const useCompanyManagement = () => {
         
       if (error) throw error;
 
-      // Clean up any pending invitations for this user's email
-      if (memberEmail) {
-        await supabase
+      // Clean up ALL invitations for this company and user combination
+      // First, try to clean up by email if we have it
+      if (userData?.data) {
+        console.log('Cleaning up invitations for email:', userData.data);
+        const { error: emailCleanupError } = await supabase
           .from('company_invitations')
           .delete()
           .eq('company_id', currentCompanyId)
-          .eq('email', memberEmail.toLowerCase().trim());
+          .eq('email', userData.data.toLowerCase().trim());
+          
+        if (emailCleanupError) {
+          console.warn('Error cleaning up invitations by email:', emailCleanupError);
+        }
       }
 
-      // Also try to clean up invitations using the user's current email from auth
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && user.id === memberUserId) {
-          await supabase
-            .from('company_invitations')
-            .delete()
-            .eq('company_id', currentCompanyId)
-            .eq('email', user.email?.toLowerCase().trim());
-        }
-      } catch (emailCleanupError) {
-        console.warn('Could not clean up invitations by auth email:', emailCleanupError);
+      // Additional cleanup: remove any invitations that might have been created by this user
+      const { error: inviterCleanupError } = await supabase
+        .from('company_invitations')
+        .delete()
+        .eq('company_id', currentCompanyId)
+        .eq('invited_by', memberUserId);
+        
+      if (inviterCleanupError) {
+        console.warn('Error cleaning up invitations created by user:', inviterCleanupError);
       }
-      
+
       toast({
         title: 'Member removed',
         description: 'The member has been removed from the company.',
