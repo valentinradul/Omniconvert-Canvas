@@ -36,16 +36,27 @@ export const useCompanyManagement = () => {
     setIsProcessing(true);
     
     try {
-      // First, check if user is already a member of this company
-      const { data: existingMember } = await supabase
-        .from('company_members')
+      // First, check if this email is already a member of this company
+      // We need to get the user ID from the profiles table first
+      const { data: profileData } = await supabase
+        .from('profiles')
         .select('id')
-        .eq('company_id', currentCompanyId)
-        .eq('user_id', userId);
-        
-      if (existingMember && existingMember.length > 0) {
-        throw new Error('This user is already a member of your company');
-      }
+        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+      // Then check if there's already a user with this email who is a member
+      const { data: existingMemberByEmail } = await supabase
+        .rpc('get_current_user_email')
+        .then(async (emailResult) => {
+          if (emailResult.data === email.toLowerCase().trim()) {
+            // This is the current user trying to invite themselves
+            return await supabase
+              .from('company_members')
+              .select('id')
+              .eq('company_id', currentCompanyId)
+              .eq('user_id', userId);
+          }
+          return { data: null };
+        });
 
       // Check if there's already a pending invitation for this email
       const { data: existingInvites } = await supabase
@@ -88,7 +99,7 @@ export const useCompanyManagement = () => {
       if (companyError) throw companyError;
       
       // Get inviter's profile info
-      const { data: profileData } = await supabase
+      const { data: inviterProfile } = await supabase
         .from('profiles')
         .select('full_name')
         .eq('id', userId)
@@ -116,7 +127,7 @@ export const useCompanyManagement = () => {
           body: {
             email: email.toLowerCase().trim(),
             companyName: companyData.name,
-            inviterName: profileData?.full_name || null,
+            inviterName: inviterProfile?.full_name || null,
             role,
             invitationId: invitation.id,
             departmentPermissions
@@ -165,7 +176,7 @@ export const useCompanyManagement = () => {
   };
 
   const removeMember = async (
-    userId: string, 
+    memberUserId: string, 
     currentCompanyId: string | undefined, 
     userCompanyRole: CompanyRole | null,
     companyMembers: any[]
@@ -179,7 +190,7 @@ export const useCompanyManagement = () => {
       return;
     }
     
-    const memberToRemove = companyMembers.find(m => m.userId === userId);
+    const memberToRemove = companyMembers.find(m => m.userId === memberUserId);
     if (memberToRemove?.role === 'owner') {
       toast({
         variant: 'destructive',
@@ -192,10 +203,27 @@ export const useCompanyManagement = () => {
     setIsProcessing(true);
     
     try {
+      // First, remove any department permissions for this member
+      const { data: memberData } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('user_id', memberUserId)
+        .eq('company_id', currentCompanyId)
+        .single();
+
+      if (memberData) {
+        // Remove department permissions
+        await supabase
+          .from('member_department_permissions')
+          .delete()
+          .eq('member_id', memberData.id);
+      }
+
+      // Then remove the company membership
       const { error } = await supabase
         .from('company_members')
         .delete()
-        .eq('user_id', userId)
+        .eq('user_id', memberUserId)
         .eq('company_id', currentCompanyId);
         
       if (error) throw error;
@@ -205,7 +233,7 @@ export const useCompanyManagement = () => {
         description: 'The member has been removed from the company.',
       });
       
-      return userId;
+      return memberUserId;
     } catch (error: any) {
       console.error('Error removing member:', error.message);
       toast({
