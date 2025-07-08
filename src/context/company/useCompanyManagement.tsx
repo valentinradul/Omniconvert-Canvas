@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +12,8 @@ export const useCompanyManagement = () => {
     role: CompanyRole, 
     currentCompanyId: string | undefined, 
     userId: string | undefined, 
-    userCompanyRole: CompanyRole | null
+    userCompanyRole: CompanyRole | null,
+    departmentPermissions: string[] = []
   ) => {
     if (!userId || !currentCompanyId) {
       toast({
@@ -64,14 +64,15 @@ export const useCompanyManagement = () => {
         .eq('id', userId)
         .single();
       
-      // Create invitation record
+      // Create invitation record with department permissions
       const { data: invitation, error } = await supabase
         .from('company_invitations')
         .insert({
           company_id: currentCompanyId,
           email,
           role,
-          invited_by: userId
+          invited_by: userId,
+          department_permissions: departmentPermissions
         })
         .select()
         .single();
@@ -87,7 +88,8 @@ export const useCompanyManagement = () => {
             companyName: companyData.name,
             inviterName: profileData?.full_name || null,
             role,
-            invitationId: invitation.id
+            invitationId: invitation.id,
+            departmentPermissions
           }
         });
         
@@ -99,8 +101,6 @@ export const useCompanyManagement = () => {
         console.log('Invitation email sent successfully');
       } catch (emailError: any) {
         console.error('Error sending invitation email:', emailError);
-        // We'll still return success even if email fails, but with a different message
-        // Changed from 'warning' to 'destructive' as 'warning' is not an available variant
         toast({
           variant: 'destructive',
           title: 'Invitation created with warning',

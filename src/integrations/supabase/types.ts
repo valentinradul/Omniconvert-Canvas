@@ -67,6 +67,7 @@ export type Database = {
           accepted: boolean | null
           company_id: string
           created_at: string
+          department_permissions: Json | null
           email: string
           id: string
           invited_by: string
@@ -76,6 +77,7 @@ export type Database = {
           accepted?: boolean | null
           company_id: string
           created_at?: string
+          department_permissions?: Json | null
           email: string
           id?: string
           invited_by: string
@@ -85,6 +87,7 @@ export type Database = {
           accepted?: boolean | null
           company_id?: string
           created_at?: string
+          department_permissions?: Json | null
           email?: string
           id?: string
           invited_by?: string
@@ -375,6 +378,42 @@ export type Database = {
           },
         ]
       }
+      member_department_permissions: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          member_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          member_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_department_permissions_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_department_permissions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "company_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -583,6 +622,10 @@ export type Database = {
       }
       user_has_company_admin_role: {
         Args: { user_id: string; company_id: string }
+        Returns: boolean
+      }
+      user_has_department_access: {
+        Args: { user_id: string; department_id: string }
         Returns: boolean
       }
       user_is_company_member: {

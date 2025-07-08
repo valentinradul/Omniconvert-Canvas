@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +6,6 @@ export function useInvitations() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // Accept invitation function - ONLY called by explicit user action (button click)
   const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
     console.log('🚀 EXPLICIT USER CLICK: User clicked accept invitation button:', { invitationId, userId });
     
@@ -31,7 +29,6 @@ export function useInvitations() {
     try {
       console.log('🔍 Checking invitation status before accepting...');
       
-      // First, get the invitation and check if it's still valid
       const { data: invitation, error: invitationError } = await supabase
         .from('company_invitations')
         .select(`
@@ -64,7 +61,6 @@ export function useInvitations() {
         return null;
       }
 
-      // Check if invitation is already accepted
       if (invitation.accepted) {
         console.log('ℹ️ Invitation already accepted');
         toast({
@@ -77,7 +73,6 @@ export function useInvitations() {
       
       console.log('✅ Found valid pending invitation for MANUAL processing:', invitation);
       
-      // Check if user is already a member of this company
       const { data: existingMember, error: memberCheckError } = await supabase
         .from('company_members')
         .select('*')
@@ -98,12 +93,11 @@ export function useInvitations() {
       if (existingMember) {
         console.log('ℹ️ User is already a member of this company - marking invitation as accepted');
         
-        // Mark invitation as accepted since user is already a member
         const { error: updateError } = await supabase
           .from('company_invitations')
           .update({ accepted: true })
           .eq('id', invitationId)
-          .eq('email', invitation.email); // Only update the specific invitation for this email
+          .eq('email', invitation.email);
           
         if (updateError) {
           console.error('❌ Error updating invitation status:', updateError);
@@ -122,13 +116,15 @@ export function useInvitations() {
       console.log('➕ Adding user to company members via MANUAL acceptance:', { userId, companyId: invitation.company_id, role: invitation.role });
       
       // Add user to company members
-      const { error: memberError } = await supabase
+      const { data: newMember, error: memberError } = await supabase
         .from('company_members')
         .insert({
           company_id: invitation.company_id,
           user_id: userId,
           role: invitation.role
-        });
+        })
+        .select()
+        .single();
         
       if (memberError) {
         console.error('❌ Error adding company member:', memberError);
@@ -142,16 +138,36 @@ export function useInvitations() {
       
       console.log('✅ Successfully added user to company via MANUAL acceptance');
       
-      // Mark invitation as accepted - ONLY after successful member addition
+      // Handle department permissions for members
+      if (invitation.role === 'member' && invitation.department_permissions && invitation.department_permissions.length > 0) {
+        console.log('🏢 Setting up department permissions for member:', invitation.department_permissions);
+        
+        const departmentPermissions = invitation.department_permissions.map((deptId: string) => ({
+          member_id: newMember.id,
+          department_id: deptId
+        }));
+        
+        const { error: permissionError } = await supabase
+          .from('member_department_permissions')
+          .insert(departmentPermissions);
+          
+        if (permissionError) {
+          console.error('❌ Error setting department permissions:', permissionError);
+          // Don't fail the invitation for this, just log it
+        } else {
+          console.log('✅ Department permissions set successfully');
+        }
+      }
+      
+      // Mark invitation as accepted
       const { error: updateError } = await supabase
         .from('company_invitations')
         .update({ accepted: true })
         .eq('id', invitationId)
-        .eq('email', invitation.email); // Ensure we only update the correct invitation
+        .eq('email', invitation.email);
         
       if (updateError) {
         console.error('❌ Error updating invitation status:', updateError);
-        // Don't return null here as the user was successfully added to the company
         console.warn('⚠️ Failed to mark invitation as accepted, but user was added to company');
       } else {
         console.log('✅ Successfully marked invitation as accepted');
@@ -199,7 +215,6 @@ export function useInvitations() {
     }
   };
   
-  // Decline invitation function
   const declineInvitation = async (invitationId: string) => {
     console.log('❌ User clicked decline invitation:', invitationId);
     setIsProcessing(true);

@@ -1,4 +1,3 @@
-
 import { useToast } from '@/hooks/use-toast';
 import { useCompanyCreation } from '../useCompanyCreation';
 import { useCompanyManagement } from '../useCompanyManagement';
@@ -40,10 +39,10 @@ export const useCompanyActions = (
     }
   };
   
-  // Invite member
-  const inviteMember = async (email: string, role: CompanyRole) => {
+  // Invite member with department permissions
+  const inviteMember = async (email: string, role: CompanyRole, departmentPermissions: string[] = []) => {
     try {
-      await apiInviteMember(email, role, currentCompanyId, userId, userCompanyRole);
+      await apiInviteMember(email, role, currentCompanyId, userId, userCompanyRole, departmentPermissions);
     } catch (error) {
       console.error('Error in inviteMember:', error);
     }
