@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, UserPlus } from 'lucide-react';
+import { Plus, Edit, Trash2, UserPlus, UserX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -92,6 +93,47 @@ const UsersManagement: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to permanently delete user "${userName}"? This action cannot be undone and will remove all their data.`)) {
+      return;
+    }
+
+    try {
+      // First, remove all company memberships for this user
+      const { error: membersError } = await supabase
+        .from('company_members')
+        .delete()
+        .eq('user_id', userId);
+
+      if (membersError) throw membersError;
+
+      // Delete the user profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+
+      // Note: We cannot delete from auth.users table directly via the client
+      // The profile deletion will cascade due to the foreign key relationship
+      
+      toast({
+        title: 'Success',
+        description: `User "${userName}" has been deleted successfully`
+      });
+
+      fetchData();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete user. Please try again.'
+      });
     }
   };
 
@@ -229,6 +271,15 @@ const UsersManagement: React.FC = () => {
                     Joined: {new Date(user.created_at).toLocaleDateString()}
                   </div>
                 </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => deleteUser(user.id, user.full_name || 'Unnamed User')}
+                  className="flex items-center gap-2"
+                >
+                  <UserX className="h-4 w-4" />
+                  Delete
+                </Button>
               </div>
             ))}
           </CardContent>
