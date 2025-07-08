@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface User {
   id: string;
@@ -44,6 +45,7 @@ const UsersManagement: React.FC = () => {
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [selectedRole, setSelectedRole] = useState('member');
   const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -92,6 +94,88 @@ const UsersManagement: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteUser = async (userId: string) => {
+    setDeletingUserId(userId);
+    try {
+      // Delete user's data from all related tables
+      // Note: This only deletes data from public schema tables
+      // The actual auth.users record cannot be deleted via the client
+      
+      // Delete user's ideas
+      const { error: ideasError } = await supabase
+        .from('ideas')
+        .delete()
+        .eq('userid', userId);
+
+      if (ideasError) throw ideasError;
+
+      // Delete user's hypotheses
+      const { error: hypothesesError } = await supabase
+        .from('hypotheses')
+        .delete()
+        .eq('userid', userId);
+
+      if (hypothesesError) throw hypothesesError;
+
+      // Delete user's experiments
+      const { error: experimentsError } = await supabase
+        .from('experiments')
+        .delete()
+        .eq('userid', userId);
+
+      if (experimentsError) throw experimentsError;
+
+      // Delete user's company memberships and related department permissions
+      const { data: userMemberships } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (userMemberships) {
+        for (const membership of userMemberships) {
+          // Delete department permissions
+          await supabase
+            .from('member_department_permissions')
+            .delete()
+            .eq('member_id', membership.id);
+        }
+      }
+
+      // Delete company memberships
+      const { error: membersError } = await supabase
+        .from('company_members')
+        .delete()
+        .eq('user_id', userId);
+
+      if (membersError) throw membersError;
+
+      // Delete user profile (this will also handle the cascade deletion)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: 'Success',
+        description: 'User deleted successfully'
+      });
+
+      // Refresh data
+      fetchData();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete user'
+      });
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -229,6 +313,36 @@ const UsersManagement: React.FC = () => {
                     Joined: {new Date(user.created_at).toLocaleDateString()}
                   </div>
                 </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={deletingUserId === user.id}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the user
+                        "{user.full_name || 'Unnamed User'}" and remove all their data including
+                        ideas, hypotheses, experiments, and company memberships.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteUser(user.id)}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Delete User
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             ))}
           </CardContent>
