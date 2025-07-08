@@ -174,43 +174,6 @@ const UsersManagement: React.FC = () => {
     }
   };
 
-  const deleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to permanently delete user "${userName}"? This action cannot be undone and will remove all their data.`)) {
-      return;
-    }
-
-    try {
-      console.log('Attempting to delete user:', userId);
-      
-      // Call the delete-user edge function
-      const { data, error } = await supabase.functions.invoke('delete-user', {
-        body: { userId }
-      });
-
-      if (error) {
-        console.error('Error from delete-user function:', error);
-        throw error;
-      }
-
-      console.log('Delete user response:', data);
-
-      toast({
-        title: 'Success',
-        description: `User "${userName}" has been permanently deleted`
-      });
-
-      // Refresh the data to reflect the deletion
-      fetchData();
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: `Failed to delete user: ${error.message || 'Unknown error'}`
-      });
-    }
-  };
-
   const updateMemberRole = async (memberId: string, newRole: string) => {
     try {
       const { error } = await supabase
@@ -268,7 +231,7 @@ const UsersManagement: React.FC = () => {
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'owner': return 'default';
-      case 'admin': return 'secondary';
+   ;
       case 'member': return 'outline';
       default: return 'outline';
     }
@@ -355,13 +318,6 @@ const UsersManagement: React.FC = () => {
                       Joined: {new Date(user.created_at).toLocaleDateString()}
                     </div>
                   </div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteUser(user.id, user.full_name || 'Unnamed User')}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               ))}
               {users.length === 0 && (
@@ -433,7 +389,7 @@ const UsersManagement: React.FC = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="member">Member</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
+                         
                           <SelectItem value="owner">Owner</SelectItem>
                         </SelectContent>
                       </Select>
