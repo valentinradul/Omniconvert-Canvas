@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CompaniesManagement from '@/components/super-admin/CompaniesManagement';
 import UsersManagement from '@/components/super-admin/UsersManagement';
 import DepartmentsManagement from '@/components/super-admin/DepartmentsManagement';
-import { Shield, Building, Users, FolderTree } from 'lucide-react';
+import ContentSettingsManagement from '@/components/super-admin/ContentSettingsManagement';
+import { Shield, Building, Users, FolderTree, Eye } from 'lucide-react';
 
 const SuperAdminSettingsPage: React.FC = () => {
   return (
@@ -20,7 +20,7 @@ const SuperAdminSettingsPage: React.FC = () => {
       </div>
 
       <Tabs defaultValue="companies" className="space-y-8">
-        <TabsList className="grid w-full grid-cols-3 h-12">
+        <TabsList className="grid w-full grid-cols-4 h-12">
           <TabsTrigger value="companies" className="flex items-center gap-2 py-3">
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Companies</span>
@@ -32,6 +32,10 @@ const SuperAdminSettingsPage: React.FC = () => {
           <TabsTrigger value="departments" className="flex items-center gap-2 py-3">
             <FolderTree className="h-4 w-4" />
             <span className="hidden sm:inline">Departments</span>
+          </TabsTrigger>
+          <TabsTrigger value="content-settings" className="flex items-center gap-2 py-3">
+            <Eye className="h-4 w-4" />
+            <span className="hidden sm:inline">Content Settings</span>
           </TabsTrigger>
         </TabsList>
 
@@ -45,6 +49,10 @@ const SuperAdminSettingsPage: React.FC = () => {
 
         <TabsContent value="departments" className="mt-8">
           <DepartmentsManagement />
+        </TabsContent>
+
+        <TabsContent value="content-settings" className="mt-8">
+          <ContentSettingsManagement />
         </TabsContent>
       </Tabs>
     </div>
