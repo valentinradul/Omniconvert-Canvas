@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext } from 'react';
 import { useAuth } from './AuthContext';
 import { useCompany } from './company/CompanyContext';
@@ -10,6 +11,14 @@ import { usePectiWeights } from './hooks/usePectiWeights';
 import { AppContextType } from './types/AppContextTypes';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within an AppProvider');
+  }
+  return context;
+};
 
 export const useAppContext = () => {
   const context = useContext(AppContext);
@@ -55,7 +64,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const { departments, loading: departmentsLoading, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = useDepartments(currentCompany, viewPreference);
 
-  const { weights, isLoading: weightsLoading, editWeight } = usePectiWeights(currentCompany);
+  const { pectiWeights, updatePectiWeights } = usePectiWeights();
 
   const getAllTags = () => {
     const tags = new Set<string>();
@@ -84,12 +93,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     hypotheses,
     experiments,
     departments,
-    weights,
+    pectiWeights,
     ideasLoading,
     hypothesesLoading,
     experimentsLoading,
     departmentsLoading,
-    weightsLoading,
+    weightsLoading: false,
     addIdea,
     editIdea,
     deleteIdea,
@@ -108,7 +117,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     editDepartment,
     deleteDepartment,
     getDepartmentById,
-    editWeight,
+    updatePectiWeights,
     getAllTags,
     getAllUserNames
   };
