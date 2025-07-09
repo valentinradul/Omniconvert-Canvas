@@ -49,7 +49,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
           .from('departments')
           .select(`
             *,
-            ideas_count:ideas(count)
+            ideas!departmentid(count)
           `)
           .eq('company_id', currentCompany.id)
           .order('name');
@@ -60,7 +60,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
         // Transform the data to include ideas_count as a number
         const departmentsWithCount = data?.map(dept => ({
           ...dept,
-          ideas_count: Array.isArray(dept.ideas_count) ? dept.ideas_count.length : 0
+          ideas_count: Array.isArray(dept.ideas) ? dept.ideas.length : 0
         })) || [];
         
         setDepartments(departmentsWithCount);
@@ -75,7 +75,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
               name,
               company_id,
               created_at,
-              ideas_count:ideas(count)
+              ideas!departmentid(count)
             )
           `)
           .eq('member_id', memberData.id);
@@ -90,7 +90,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
           // Extract departments from the joined data and transform ideas count
           const allowedDepartments = permissionData.map(perm => ({
             ...perm.departments,
-            ideas_count: Array.isArray(perm.departments.ideas_count) ? perm.departments.ideas_count.length : 0
+            ideas_count: Array.isArray(perm.departments.ideas) ? perm.departments.ideas.length : 0
           })).filter(Boolean);
           console.log('Member - Specific departments:', allowedDepartments);
           setDepartments(allowedDepartments);
@@ -101,7 +101,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
             .from('departments')
             .select(`
               *,
-              ideas_count:ideas(count)
+              ideas!departmentid(count)
             `)
             .eq('company_id', currentCompany.id)
             .order('name');
@@ -112,7 +112,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
           // Transform the data to include ideas_count as a number
           const departmentsWithCount = allDepts?.map(dept => ({
             ...dept,
-            ideas_count: Array.isArray(dept.ideas_count) ? dept.ideas_count.length : 0
+            ideas_count: Array.isArray(dept.ideas) ? dept.ideas.length : 0
           })) || [];
           
           setDepartments(departmentsWithCount);
