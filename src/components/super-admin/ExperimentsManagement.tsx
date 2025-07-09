@@ -74,7 +74,27 @@ const ExperimentsManagement: React.FC = () => {
         .order('createdat', { ascending: false });
 
       if (error) throw error;
-      setExperiments(data || []);
+      
+      // Transform database response to match TypeScript interface
+      const transformedData = data?.map(item => ({
+        id: item.id,
+        hypothesisId: item.hypothesisid,
+        startDate: item.startdate ? new Date(item.startdate) : null,
+        endDate: item.enddate ? new Date(item.enddate) : null,
+        status: item.status as ExperimentStatus,
+        notes: item.notes || '',
+        notes_history: item.notes_history || [],
+        observationContent: item.observationcontent,
+        createdAt: new Date(item.createdat),
+        updatedAt: new Date(item.updatedat),
+        userId: item.userid,
+        userName: item.username,
+        companyId: item.company_id,
+        companies: item.companies,
+        hypotheses: item.hypotheses
+      })) || [];
+
+      setExperiments(transformedData);
     } catch (error) {
       console.error('Error fetching experiments:', error);
     } finally {
@@ -360,18 +380,18 @@ const ExperimentsManagement: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       {experiment.startDate 
-                        ? format(new Date(experiment.startDate), 'MMM dd, yyyy')
+                        ? format(experiment.startDate, 'MMM dd, yyyy')
                         : 'Not set'
                       }
                     </TableCell>
                     <TableCell>
                       {experiment.endDate 
-                        ? format(new Date(experiment.endDate), 'MMM dd, yyyy')
+                        ? format(experiment.endDate, 'MMM dd, yyyy')
                         : 'Not set'
                       }
                     </TableCell>
                     <TableCell>
-                      {format(new Date(experiment.createdAt), 'MMM dd, yyyy')}
+                      {format(experiment.createdAt, 'MMM dd, yyyy')}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
