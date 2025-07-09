@@ -4,9 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CompaniesManagement from '@/components/super-admin/CompaniesManagement';
 import UsersManagement from '@/components/super-admin/UsersManagement';
 import DepartmentsManagement from '@/components/super-admin/DepartmentsManagement';
-import IdeasManagement from '@/components/super-admin/IdeasManagement';
-import ExperimentsManagement from '@/components/super-admin/ExperimentsManagement';
-import { Shield, Building, Users, FolderTree, Lightbulb, FlaskConical } from 'lucide-react';
+import { Shield, Building, Users, FolderTree } from 'lucide-react';
 
 const SuperAdminSettingsPage: React.FC = () => {
   return (
@@ -17,12 +15,12 @@ const SuperAdminSettingsPage: React.FC = () => {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Super Admin Panel</h1>
-          <p className="text-gray-600 mt-1">Manage all companies, users, departments, ideas, and experiments across the platform</p>
+          <p className="text-gray-600 mt-1">Manage all companies, users, and departments across the platform</p>
         </div>
       </div>
 
       <Tabs defaultValue="companies" className="space-y-8">
-        <TabsList className="grid w-full grid-cols-5 h-12">
+        <TabsList className="grid w-full grid-cols-3 h-12">
           <TabsTrigger value="companies" className="flex items-center gap-2 py-3">
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Companies</span>
@@ -34,14 +32,6 @@ const SuperAdminSettingsPage: React.FC = () => {
           <TabsTrigger value="departments" className="flex items-center gap-2 py-3">
             <FolderTree className="h-4 w-4" />
             <span className="hidden sm:inline">Departments</span>
-          </TabsTrigger>
-          <TabsTrigger value="ideas" className="flex items-center gap-2 py-3">
-            <Lightbulb className="h-4 w-4" />
-            <span className="hidden sm:inline">Ideas</span>
-          </TabsTrigger>
-          <TabsTrigger value="experiments" className="flex items-center gap-2 py-3">
-            <FlaskConical className="h-4 w-4" />
-            <span className="hidden sm:inline">Experiments</span>
           </TabsTrigger>
         </TabsList>
 
@@ -55,14 +45,6 @@ const SuperAdminSettingsPage: React.FC = () => {
 
         <TabsContent value="departments" className="mt-8">
           <DepartmentsManagement />
-        </TabsContent>
-
-        <TabsContent value="ideas" className="mt-8">
-          <IdeasManagement />
-        </TabsContent>
-
-        <TabsContent value="experiments" className="mt-8">
-          <ExperimentsManagement />
         </TabsContent>
       </Tabs>
     </div>
