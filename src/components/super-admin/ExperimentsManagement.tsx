@@ -30,7 +30,6 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Experiment, ExperimentStatus, ALL_STATUSES, ExperimentNote } from '@/types/experiments';
-import { ObservationContent } from '@/types/common';
 
 interface ExtendedExperiment extends Experiment {
   companies?: { name: string };
@@ -83,8 +82,8 @@ const ExperimentsManagement: React.FC = () => {
         endDate: item.enddate ? new Date(item.enddate) : null,
         status: item.status as ExperimentStatus,
         notes: item.notes || '',
-        notes_history: (item.notes_history as unknown as ExperimentNote[]) || [],
-        observationContent: item.observationcontent as unknown as ObservationContent,
+        notes_history: (item.notes_history as ExperimentNote[]) || [],
+        observationContent: item.observationcontent,
         createdAt: new Date(item.createdat),
         updatedAt: new Date(item.updatedat),
         userId: item.userid,
