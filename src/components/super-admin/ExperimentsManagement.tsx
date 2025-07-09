@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -32,8 +31,9 @@ import {
 import { format } from 'date-fns';
 import { Experiment, ExperimentStatus, ALL_STATUSES } from '@/types/experiments';
 import { ObservationContent } from '@/types/common';
+import ExperimentDetailsDialog from './ExperimentDetailsDialog';
 
-interface ExtendedExperiment extends Experiment {
+export interface ExtendedExperiment extends Experiment {
   companies?: { name: string };
   hypotheses?: { 
     observation: string;
@@ -49,6 +49,8 @@ const ExperimentsManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [companyFilter, setCompanyFilter] = useState<string>('all');
   const [companies, setCompanies] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedExperiment, setSelectedExperiment] = useState<ExtendedExperiment | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchExperiments();
@@ -167,6 +169,11 @@ const ExperimentsManagement: React.FC = () => {
       case 'Inconclusive': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleViewExperiment = (experiment: ExtendedExperiment) => {
+    setSelectedExperiment(experiment);
+    setDetailsDialogOpen(true);
   };
 
   if (loading) {
@@ -369,7 +376,7 @@ const ExperimentsManagement: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`/experiment-details/${experiment.id}`, '_blank')}
+                          onClick={() => handleViewExperiment(experiment)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -396,6 +403,12 @@ const ExperimentsManagement: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <ExperimentDetailsDialog
+        experiment={selectedExperiment}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+      />
     </div>
   );
 };
