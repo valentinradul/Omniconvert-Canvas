@@ -208,7 +208,7 @@ const TeamSettingsPage: React.FC = () => {
                       </Avatar>
                       <div>
                         <p className="font-medium">{member.profile?.fullName || 'Unnamed User'}</p>
-                        <p className="text-sm text-muted-foreground">{member.profile?.email}</p>
+                        <p className="text-sm text-muted-foreground">Member ID: {member.userId}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
