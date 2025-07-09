@@ -25,8 +25,7 @@ import {
   Calendar,
   Trash2,
   Eye,
-  Filter,
-  Plus
+  Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Experiment, ExperimentStatus, ALL_STATUSES } from '@/types/experiments';
@@ -187,15 +186,9 @@ const ExperimentsManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Experiments Management</h1>
-          <p className="text-gray-600 mt-2">Manage and monitor experiments across all companies</p>
-        </div>
-        <Button onClick={() => window.open('/create-experiment', '_blank')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Experiment
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Experiments Management</h1>
+        <p className="text-gray-600 mt-2">Manage and monitor experiments across all companies</p>
       </div>
 
       {/* Stats Cards */}
