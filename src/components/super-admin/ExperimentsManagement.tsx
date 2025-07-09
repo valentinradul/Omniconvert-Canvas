@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -30,7 +29,7 @@ import {
   Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Experiment, ExperimentStatus, ALL_STATUSES } from '@/types/experiments';
+import { Experiment, ExperimentStatus, ALL_STATUSES, ExperimentNote } from '@/types/experiments';
 
 interface ExtendedExperiment extends Experiment {
   companies?: { name: string };
@@ -83,7 +82,7 @@ const ExperimentsManagement: React.FC = () => {
         endDate: item.enddate ? new Date(item.enddate) : null,
         status: item.status as ExperimentStatus,
         notes: item.notes || '',
-        notes_history: item.notes_history || [],
+        notes_history: (item.notes_history as ExperimentNote[]) || [],
         observationContent: item.observationcontent,
         createdAt: new Date(item.createdat),
         updatedAt: new Date(item.updatedat),
