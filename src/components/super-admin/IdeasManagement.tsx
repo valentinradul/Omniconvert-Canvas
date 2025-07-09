@@ -84,17 +84,28 @@ const IdeasManagement: React.FC = () => {
       if (companiesError) throw companiesError;
       setCompanies(companiesData || []);
 
-      // Fetch ideas with company and department information
+      // Fetch ideas with company information
       const { data: ideasData, error: ideasError } = await supabase
         .from('ideas')
         .select(`
           *,
-          companies!inner(name),
-          departments(name)
+          companies!inner(name)
         `)
         .order('createdat', { ascending: false });
 
       if (ideasError) throw ideasError;
+
+      // Fetch departments separately to get department names
+      const { data: departmentsData, error: departmentsError } = await supabase
+        .from('departments')
+        .select('id, name');
+
+      if (departmentsError) throw departmentsError;
+
+      // Create a map of department id to name
+      const departmentMap = new Map(
+        (departmentsData || []).map(dept => [dept.id, dept.name])
+      );
 
       // Transform the data
       const formattedIdeas: IdeasData[] = (ideasData || []).map((idea: any) => ({
@@ -110,7 +121,7 @@ const IdeasManagement: React.FC = () => {
         companyId: idea.company_id,
         isPublic: idea.is_public,
         company_name: idea.companies?.name,
-        department_name: idea.departments?.name
+        department_name: idea.departmentid ? departmentMap.get(idea.departmentid) || 'Unknown Department' : 'No Department'
       }));
 
       setIdeas(formattedIdeas);
@@ -405,7 +416,7 @@ const IdeasManagement: React.FC = () => {
             <AlertDialogAction onClick={handleDeleteIdea} className="bg-destructive text-destructive-foreground">
               Delete
             </AlertDialogAction>
-          </AlertDialogFooter>
+            </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
