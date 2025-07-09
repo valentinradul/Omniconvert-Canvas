@@ -16,9 +16,7 @@ import {
   Building, 
   Users, 
   FolderTree,
-  Shield,
-  Lightbulb,
-  TestTube
+  Shield
 } from 'lucide-react';
 
 // Add custom CSS to force white background for sidebar
@@ -89,40 +87,6 @@ const SuperAdminLayout: React.FC = () => {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-
-              <div className="mt-6 pt-6 border-t border-gray-200 bg-white">
-                <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                  Enhanced Management
-                </p>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    className={`flex items-center py-3 px-4 ${isActive('/super-admin/enhanced-ideas') 
-                      ? 'bg-green-50 text-green-600 border-l-4 border-green-500 font-medium' 
-                      : 'bg-white text-gray-800 hover:bg-green-50 hover:text-green-700'}`}
-                  >
-                    <Link to="/super-admin/enhanced-ideas" className="flex items-center">
-                      <Lightbulb className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                      <span className="text-base">Enhanced Ideas</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    className={`flex items-center py-3 px-4 ${isActive('/super-admin/enhanced-experiments') 
-                      ? 'bg-green-50 text-green-600 border-l-4 border-green-500 font-medium' 
-                      : 'bg-white text-gray-800 hover:bg-green-50 hover:text-green-700'}`}
-                  >
-                    <Link to="/super-admin/enhanced-experiments" className="flex items-center">
-                      <TestTube className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                      <span className="text-base">Enhanced Experiments</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </div>
 
               <div className="mt-6 pt-6 border-t border-gray-200 bg-white">
                 <SidebarMenuItem>
