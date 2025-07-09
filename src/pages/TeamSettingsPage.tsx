@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { CompanyRole, CompanyMember } from '@/types';
 import { Button } from '@/components/ui/button';
-
 import { useToast } from '@/hooks/use-toast';
 import InviteMemberDialog from '@/components/company/InviteMemberDialog';
 import PendingInvitations from '@/components/company/PendingInvitations';
 import EditMemberDialog from '@/components/company/EditMemberDialog';
+import ContentVisibilitySettings from '@/components/company/ContentVisibilitySettings';
 
 const TeamSettingsPage: React.FC = () => {
   const { 
@@ -79,6 +79,9 @@ const TeamSettingsPage: React.FC = () => {
       </div>
 
       <div className="space-y-6 mt-8">
+        {/* Content Visibility Settings - Only show to admins/owners */}
+        <ContentVisibilitySettings />
+
         {/* Debug Info */}
         <div className="bg-muted/50 p-4 rounded-lg text-sm">
           <p><strong>Debug Info:</strong></p>

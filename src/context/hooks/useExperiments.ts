@@ -23,11 +23,82 @@ export const useExperiments = (
       setIsLoading(true);
       
       try {
+        // Check content visibility settings
+        const { data: contentSettings } = await supabase
+          .from('company_content_settings')
+          .select('restrict_content_to_departments')
+          .eq('company_id', currentCompany?.id)
+          .single();
+
+        // Get user's role in the company
+        const { data: memberData } = await supabase
+          .from('company_members')
+          .select('role, id')
+          .eq('user_id', user.id)
+          .eq('company_id', currentCompany?.id)
+          .single();
+
+        const userRole = memberData?.role;
+        const restrictContent = contentSettings?.restrict_content_to_departments || false;
+
         let query = supabase.from('experiments').select('*');
         
         // Filter by company if applicable
         if (currentCompany?.id) {
           query = query.eq('company_id', currentCompany.id);
+        }
+
+        // If content is restricted and user is not admin/owner, filter by accessible departments
+        if (restrictContent && userRole !== 'owner' && userRole !== 'admin' && memberData) {
+          // Get user's accessible departments
+          const { data: permissions } = await supabase
+            .from('member_department_permissions')
+            .select('department_id')
+            .eq('member_id', memberData.id);
+
+          let departmentIds: string[] = [];
+          
+          if (permissions && permissions.length > 0) {
+            // User has specific department permissions
+            departmentIds = permissions.map(p => p.department_id);
+          } else {
+            // User has access to all departments (no restrictions)
+            const { data: allDepts } = await supabase
+              .from('departments')
+              .select('id')
+              .eq('company_id', currentCompany?.id);
+            
+            departmentIds = allDepts?.map(d => d.id) || [];
+          }
+
+          if (departmentIds.length > 0) {
+            // Get hypotheses from accessible departments first
+            const { data: accessibleHypotheses } = await supabase
+              .from('hypotheses')
+              .select('id')
+              .eq('company_id', currentCompany.id)
+              .in('ideaid', 
+                supabase
+                  .from('ideas')
+                  .select('id')
+                  .in('departmentid', departmentIds)
+              );
+
+            if (accessibleHypotheses && accessibleHypotheses.length > 0) {
+              const hypothesisIds = accessibleHypotheses.map(h => h.id);
+              query = query.in('hypothesisid', hypothesisIds);
+            } else {
+              // No accessible hypotheses, return empty array
+              setExperiments([]);
+              setIsLoading(false);
+              return;
+            }
+          } else {
+            // No accessible departments, return empty array
+            setExperiments([]);
+            setIsLoading(false);
+            return;
+          }
         }
         
         const { data, error } = await query;
