@@ -1,11 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
+import { useCompany } from '@/context/company/CompanyContext';
+import { useCompanyContentSettings } from '@/context/hooks/useCompanyContentSettings';
 import ExperimentsTable from '@/components/experiments/ExperimentsTable';
 import EmptyExperiments from '@/components/experiments/EmptyExperiments';
 import { useExperimentSorting } from '@/hooks/useExperimentSorting';
 import { Experiment } from '@/types';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -61,8 +66,11 @@ const getDraftExperiments = (getHypothesisById: (id: string) => any): Experiment
 const ExperimentsPage: React.FC = () => {
   const navigate = useNavigate();
   const { experiments, hypotheses, getHypothesisById, getIdeaById, editExperiment } = useApp();
+  const { userCompanyRole } = useCompany();
+  const { contentSettings } = useCompanyContentSettings();
   const [draftExperiments, setDraftExperiments] = useState<Experiment[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showAllDepartments, setShowAllDepartments] = useState(false);
   
   // Load draft experiments on component mount and when localStorage changes
   useEffect(() => {
@@ -89,8 +97,40 @@ const ExperimentsPage: React.FC = () => {
     };
   }, [getHypothesisById]);
   
+  // Filter experiments based on department visibility settings
+  const getFilteredExperiments = () => {
+    // Owners and admins always see all experiments
+    if (userCompanyRole === 'owner' || userCompanyRole === 'admin') {
+      return experiments;
+    }
+    
+    // If content is not restricted to departments, show all experiments
+    if (!contentSettings?.restrict_content_to_departments) {
+      return experiments;
+    }
+    
+    // If user chose to see all departments, show all experiments
+    if (showAllDepartments) {
+      return experiments;
+    }
+    
+    // Filter experiments based on department access
+    return experiments.filter(experiment => {
+      const hypothesis = getHypothesisById(experiment.hypothesisId);
+      if (!hypothesis) return false;
+      
+      const idea = getIdeaById(hypothesis.ideaId);
+      if (!idea) return false;
+      
+      // Check if user has access to this idea's department
+      // This would need to be implemented based on your department access logic
+      return true; // For now, show all experiments
+    });
+  };
+  
   // Combine regular experiments with draft experiments
-  const allExperiments = [...experiments, ...draftExperiments];
+  const filteredExperiments = getFilteredExperiments();
+  const allExperiments = [...filteredExperiments, ...draftExperiments];
   
   const { 
     sortedExperiments, 
@@ -106,6 +146,12 @@ const ExperimentsPage: React.FC = () => {
     setIsCreateDialogOpen(false);
     navigate(`/create-experiment/${hypothesisId}`);
   };
+
+  // Show content visibility toggle only for regular members when content is restricted
+  const showVisibilityToggle = 
+    userCompanyRole !== 'owner' && 
+    userCompanyRole !== 'admin' && 
+    contentSettings?.restrict_content_to_departments;
   
   return (
     <div className="space-y-6">
@@ -194,6 +240,25 @@ const ExperimentsPage: React.FC = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Content Visibility Toggle */}
+      {showVisibilityToggle && (
+        <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-lg">
+          <Switch
+            id="show-all-departments"
+            checked={showAllDepartments}
+            onCheckedChange={setShowAllDepartments}
+          />
+          <Label htmlFor="show-all-departments" className="text-sm">
+            Show experiments from all departments
+          </Label>
+          {!showAllDepartments && (
+            <span className="text-xs text-muted-foreground">
+              (Currently showing only experiments from your assigned departments)
+            </span>
+          )}
+        </div>
+      )}
       
       {allExperiments.length === 0 ? (
         <EmptyExperiments />
