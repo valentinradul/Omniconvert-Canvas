@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,8 +20,10 @@ const IdeasManagement: React.FC = () => {
   const [ideas, setIdeas] = useState<IdeaWithCompany[]>([]);
   const [filteredIdeas, setFilteredIdeas] = useState<IdeaWithCompany[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const itemsPerPage = 10;
 
   const fetchIdeas = async () => {
     try {
@@ -80,6 +81,7 @@ const IdeasManagement: React.FC = () => {
       idea.department_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredIdeas(filtered);
+    setCurrentPage(1);
   }, [searchTerm, ideas]);
 
   const togglePublicStatus = async (ideaId: string, currentStatus: boolean) => {
@@ -139,7 +141,7 @@ const IdeasManagement: React.FC = () => {
   const columns = [
     {
       key: 'title',
-      label: 'Title',
+      header: 'Title',
       render: (idea: IdeaWithCompany) => (
         <div>
           <div className="font-medium">{idea.title}</div>
@@ -151,41 +153,40 @@ const IdeasManagement: React.FC = () => {
     },
     {
       key: 'company',
-      label: 'Company',
+      header: 'Company',
       render: (idea: IdeaWithCompany) => idea.company_name || 'No Company'
     },
     {
       key: 'department',
-      label: 'Department',
+      header: 'Department',
       render: (idea: IdeaWithCompany) => idea.department_name || 'No Department'
     },
     {
       key: 'category',
-      label: 'Category',
+      header: 'Category',
       render: (idea: IdeaWithCompany) => (
         <Badge variant="secondary">{idea.category}</Badge>
       )
     },
     {
       key: 'author',
-      label: 'Author',
+      header: 'Author',
       render: (idea: IdeaWithCompany) => idea.userName || 'Unknown'
     },
     {
       key: 'created',
-      label: 'Created',
+      header: 'Created',
       render: (idea: IdeaWithCompany) => idea.createdAt.toLocaleDateString()
     },
     {
       key: 'visibility',
-      label: 'Visibility',
+      header: 'Visibility',
       render: (idea: IdeaWithCompany) => (
         <div className="flex items-center space-x-2">
           {idea.isPublic ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           <Switch
             checked={idea.isPublic}
             onCheckedChange={() => togglePublicStatus(idea.id, idea.isPublic || false)}
-            size="sm"
           />
           <Label className="text-xs">
             {idea.isPublic ? 'Public' : 'Private'}
@@ -195,7 +196,7 @@ const IdeasManagement: React.FC = () => {
     },
     {
       key: 'actions',
-      label: 'Actions',
+      header: 'Actions',
       render: (idea: IdeaWithCompany) => (
         <Button
           variant="destructive"
@@ -207,6 +208,11 @@ const IdeasManagement: React.FC = () => {
       )
     }
   ];
+
+  const paginatedData = filteredIdeas.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="space-y-6">
@@ -232,10 +238,14 @@ const IdeasManagement: React.FC = () => {
           </div>
 
           <SuperAdminTable
-            data={filteredIdeas}
+            title="Ideas"
+            data={paginatedData}
             columns={columns}
+            totalItems={filteredIdeas.length}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
             isLoading={isLoading}
-            emptyMessage="No ideas found"
           />
         </CardContent>
       </Card>

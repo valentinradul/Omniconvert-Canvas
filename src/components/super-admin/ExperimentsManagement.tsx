@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,8 +19,10 @@ const ExperimentsManagement: React.FC = () => {
   const [experiments, setExperiments] = useState<ExperimentWithDetails[]>([]);
   const [filteredExperiments, setFilteredExperiments] = useState<ExperimentWithDetails[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const itemsPerPage = 10;
 
   const fetchExperiments = async () => {
     try {
@@ -85,6 +86,7 @@ const ExperimentsManagement: React.FC = () => {
       exp.status.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredExperiments(filtered);
+    setCurrentPage(1);
   }, [searchTerm, experiments]);
 
   const deleteExperiment = async (experimentId: string) => {
@@ -131,7 +133,7 @@ const ExperimentsManagement: React.FC = () => {
   const columns = [
     {
       key: 'idea',
-      label: 'Idea',
+      header: 'Idea',
       render: (exp: ExperimentWithDetails) => (
         <div>
           <div className="font-medium">{exp.idea_title}</div>
@@ -143,12 +145,12 @@ const ExperimentsManagement: React.FC = () => {
     },
     {
       key: 'company',
-      label: 'Company',
+      header: 'Company',
       render: (exp: ExperimentWithDetails) => exp.company_name || 'No Company'
     },
     {
       key: 'status',
-      label: 'Status',
+      header: 'Status',
       render: (exp: ExperimentWithDetails) => (
         <Badge className={getStatusColor(exp.status)}>
           {exp.status}
@@ -157,7 +159,7 @@ const ExperimentsManagement: React.FC = () => {
     },
     {
       key: 'dates',
-      label: 'Duration',
+      header: 'Duration',
       render: (exp: ExperimentWithDetails) => (
         <div className="text-sm">
           {exp.startDate ? (
@@ -175,17 +177,17 @@ const ExperimentsManagement: React.FC = () => {
     },
     {
       key: 'author',
-      label: 'Author',
+      header: 'Author',
       render: (exp: ExperimentWithDetails) => exp.userName || 'Unknown'
     },
     {
       key: 'created',
-      label: 'Created',
+      header: 'Created',
       render: (exp: ExperimentWithDetails) => exp.createdAt.toLocaleDateString()
     },
     {
       key: 'actions',
-      label: 'Actions',
+      header: 'Actions',
       render: (exp: ExperimentWithDetails) => (
         <Button
           variant="destructive"
@@ -197,6 +199,11 @@ const ExperimentsManagement: React.FC = () => {
       )
     }
   ];
+
+  const paginatedData = filteredExperiments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="space-y-6">
@@ -222,10 +229,14 @@ const ExperimentsManagement: React.FC = () => {
           </div>
 
           <SuperAdminTable
-            data={filteredExperiments}
+            title="Experiments"
+            data={paginatedData}
             columns={columns}
+            totalItems={filteredExperiments.length}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
             isLoading={isLoading}
-            emptyMessage="No experiments found"
           />
         </CardContent>
       </Card>
