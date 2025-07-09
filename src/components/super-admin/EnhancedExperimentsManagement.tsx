@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, Edit, Trash2, Search, Building, Users, Flask, Calendar } from 'lucide-react';
+import { Eye, Edit, Trash2, Search, Building, Users, TestTube, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -278,7 +278,7 @@ const EnhancedExperimentsManagement: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Flask className="h-6 w-6 text-primary" />
+          <TestTube className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Enhanced Experiments Management</h1>
         </div>
       </div>

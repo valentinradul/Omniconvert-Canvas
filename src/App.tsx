@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   BrowserRouter,
@@ -9,12 +10,12 @@ import './App.css';
 import Dashboard from '@/pages/Dashboard';
 import NotFound from '@/pages/NotFound';
 import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import Profile from '@/pages/Profile';
-import Ideas from '@/pages/Ideas';
-import IdeaDetails from '@/pages/IdeaDetails';
-import Experiments from '@/pages/Experiments';
-import Hypothesis from '@/pages/Hypothesis';
+import Signup from '@/pages/Signup';
+import Profile from '@/pages/AccountSettingsPage';
+import Ideas from '@/pages/IdeasPage';
+import IdeaDetails from '@/pages/IdeaDetailsPage';
+import Experiments from '@/pages/ExperimentsPage';
+import Hypothesis from '@/pages/HypothesesPage';
 import { AuthProvider } from '@/context/AuthContext';
 import { AppProvider } from '@/context/AppContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -37,7 +38,7 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/register" element={<Signup />} />
 
               {/* Protected Routes */}
               <Route

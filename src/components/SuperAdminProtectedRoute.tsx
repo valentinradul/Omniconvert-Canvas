@@ -3,9 +3,13 @@ import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, Shield, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
-const SuperAdminProtectedRoute: React.FC = () => {
+interface SuperAdminProtectedRouteProps {
+  children?: React.ReactNode;
+}
+
+const SuperAdminProtectedRoute: React.FC<SuperAdminProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { isSuperAdmin, isLoading: superAdminLoading } = useSuperAdmin();
 
@@ -50,8 +54,8 @@ const SuperAdminProtectedRoute: React.FC = () => {
     );
   }
 
-  // Render super admin routes if user is super admin
-  return <Outlet />;
+  // Render children if provided, otherwise render outlet for nested routes
+  return children || <Outlet />;
 };
 
 export default SuperAdminProtectedRoute;
