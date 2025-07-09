@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { useCompany } from '@/context/company/CompanyContext';
-import { useCompanyContentSettings } from '@/context/hooks/useCompanyContentSettings';
 import ExperimentsTable from '@/components/experiments/ExperimentsTable';
 import EmptyExperiments from '@/components/experiments/EmptyExperiments';
 import { useExperimentSorting } from '@/hooks/useExperimentSorting';
@@ -66,8 +64,7 @@ const getDraftExperiments = (getHypothesisById: (id: string) => any): Experiment
 const ExperimentsPage: React.FC = () => {
   const navigate = useNavigate();
   const { experiments, hypotheses, getHypothesisById, getIdeaById, editExperiment } = useApp();
-  const { userCompanyRole } = useCompany();
-  const { contentSettings } = useCompanyContentSettings();
+  const { userCompanyRole, contentSettings } = useCompany();
   const [draftExperiments, setDraftExperiments] = useState<Experiment[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [showAllDepartments, setShowAllDepartments] = useState(false);
