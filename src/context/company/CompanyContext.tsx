@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
@@ -13,6 +12,7 @@ type CompanyContextType = {
   companyInvitations: CompanyInvitation[];
   userIncomingInvitations: CompanyInvitation[];
   pendingInvitations: CompanyInvitation[];
+  contentSettings: { restrict_content_to_departments: boolean } | null;
   isLoading: boolean;
   createCompany: (name: string) => Promise<void>;
   switchCompany: (companyId: string) => void;
@@ -59,6 +59,9 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchPendingInvitations,
     switchCompany
   } = companyData;
+  
+  // Add contentSettings - for now, default to not restricting content
+  const contentSettings = currentCompany ? { restrict_content_to_departments: false } : null;
   
   // Then use the company data
   const {
@@ -252,6 +255,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         companyInvitations,
         userIncomingInvitations,
         pendingInvitations,
+        contentSettings,
         isLoading,
         createCompany,
         switchCompany,
