@@ -36,6 +36,7 @@ import NotFound from "./pages/NotFound";
 import SuperAdminCompaniesPage from "./pages/super-admin/CompaniesPage";
 import SuperAdminMembersPage from "./pages/super-admin/MembersPage";
 import SuperAdminDepartmentsPage from "./pages/super-admin/DepartmentsPage";
+import SuperAdminIdeasPage from "./pages/super-admin/IdeasPage";
 import SuperAdminExperimentsPage from "./pages/super-admin/ExperimentsPage";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,7 @@ const App = () => (
                     <Route path="companies" element={<SuperAdminCompaniesPage />} />
                     <Route path="members" element={<SuperAdminMembersPage />} />
                     <Route path="departments" element={<SuperAdminDepartmentsPage />} />
+                    <Route path="ideas" element={<SuperAdminIdeasPage />} />
                     <Route path="experiments" element={<SuperAdminExperimentsPage />} />
                     
                     {/* Redirect /super-admin to companies by default */}
