@@ -36,6 +36,9 @@ import NotFound from "./pages/NotFound";
 import SuperAdminCompaniesPage from "./pages/super-admin/CompaniesPage";
 import SuperAdminMembersPage from "./pages/super-admin/MembersPage";
 import SuperAdminDepartmentsPage from "./pages/super-admin/DepartmentsPage";
+import AdminAccessPage from "./pages/super-admin/AdminAccessPage";
+import EnhancedIdeasPage from "./pages/super-admin/EnhancedIdeasPage";
+import EnhancedExperimentsPage from "./pages/super-admin/EnhancedExperimentsPage";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +88,9 @@ const App = () => (
                     <Route path="companies" element={<SuperAdminCompaniesPage />} />
                     <Route path="members" element={<SuperAdminMembersPage />} />
                     <Route path="departments" element={<SuperAdminDepartmentsPage />} />
+                    <Route path="admin-access" element={<AdminAccessPage />} />
+                    <Route path="enhanced-ideas" element={<EnhancedIdeasPage />} />
+                    <Route path="enhanced-experiments" element={<EnhancedExperimentsPage />} />
                     
                     {/* Redirect /super-admin to companies by default */}
                     <Route path="" element={<Navigate to="/super-admin/companies" replace />} />
