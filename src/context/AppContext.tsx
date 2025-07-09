@@ -1,96 +1,123 @@
-
 import React, { createContext, useContext } from 'react';
 import { useAuth } from './AuthContext';
 import { useCompany } from './company/CompanyContext';
-import { useDepartments } from './hooks/useDepartments';
+import { useViewPreference } from '@/hooks/useViewPreference';
 import { useIdeas } from './hooks/useIdeas';
 import { useHypotheses } from './hooks/useHypotheses';
 import { useExperiments } from './hooks/useExperiments';
+import { useDepartments } from './hooks/useDepartments';
 import { usePectiWeights } from './hooks/usePectiWeights';
-import { useCategories } from './hooks/useCategories';
-import { getAllTags, getAllUserNames } from './utils/dataUtils';
 import { AppContextType } from './types/AppContextTypes';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useAppContext must be used within an AppProvider');
+  }
+  return context;
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { currentCompany } = useCompany();
+  const { viewPreference } = useViewPreference();
   
-  // Initialize our hooks
-  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId, addExperimentNote, deleteExperimentNote } = 
-    useExperiments(user, currentCompany);
-  
-  const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById } = 
-    useHypotheses(user, currentCompany, experiments);
-  
-  const { ideas, isLoading: ideasLoading, addIdea, editIdea, deleteIdea, getIdeaById } = 
-    useIdeas(user, currentCompany, hypotheses);
-  
-  const { departments, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = 
-    useDepartments(currentCompany);
-  
-  const { pectiWeights, updatePectiWeights } = usePectiWeights();
-  
-  const { categories } = useCategories(currentCompany);
-  
-  // Create wrapper functions that have access to all hooks
-  const allItems = [...ideas, ...hypotheses, ...experiments];
-  
-  const wrappedDeleteDepartment = (id: string) => {
-    deleteDepartment(id, ideas);
-  };
-  
-  const updateAllHypothesesWeights = () => {
-    updateAllHypothesesWeightsBase(pectiWeights);
-  };
-
-  const isLoading = ideasLoading || hypothesesLoading || experimentsLoading;
-  
-  const appContextValue: AppContextType = {
-    departments,
-    categories,
+  const {
     ideas,
-    hypotheses,
-    experiments,
-    pectiWeights,
-    isLoading,
-    addDepartment,
-    editDepartment,
-    deleteDepartment: wrappedDeleteDepartment,
+    isLoading: ideasLoading,
     addIdea,
     editIdea,
     deleteIdea,
+    getIdeaById
+  } = useIdeas(user, currentCompany, []);
+  
+  const {
+    hypotheses,
+    isLoading: hypothesesLoading,
     addHypothesis,
     editHypothesis,
     deleteHypothesis,
+    getHypothesisById
+  } = useHypotheses(user, currentCompany);
+  
+  const {
+    experiments,
+    isLoading: experimentsLoading,
     addExperiment,
     editExperiment,
     deleteExperiment,
+    getExperimentByHypothesisId,
+    addExperimentNote,
+    deleteExperimentNote
+  } = useExperiments(user, currentCompany);
+  
+  const { departments, loading: departmentsLoading, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = useDepartments(currentCompany, viewPreference);
+
+  const { weights, isLoading: weightsLoading, editWeight } = usePectiWeights(currentCompany);
+
+  const getAllTags = () => {
+    const tags = new Set<string>();
+    ideas.forEach(idea => {
+      if (idea.tags) {
+        idea.tags.forEach(tag => tags.add(tag));
+      }
+    });
+    return Array.from(tags);
+  };
+
+  const getAllUserNames = () => {
+    const users = new Map<string, { id: string; name: string }>();
+  
+    ideas.forEach(idea => {
+      if (idea.userId && idea.userName) {
+        users.set(idea.userId, { id: idea.userId, name: idea.userName });
+      }
+    });
+  
+    return Array.from(users.values());
+  };
+
+  const value: AppContextType = {
+    ideas,
+    hypotheses,
+    experiments,
+    departments,
+    weights,
+    ideasLoading,
+    hypothesesLoading,
+    experimentsLoading,
+    departmentsLoading,
+    weightsLoading,
+    addIdea,
+    editIdea,
+    deleteIdea,
+    getIdeaById,
+    addHypothesis,
+    editHypothesis,
+    deleteHypothesis,
+    getHypothesisById,
+    addExperiment,
+    editExperiment,
+    deleteExperiment,
+    getExperimentByHypothesisId,
     addExperimentNote,
     deleteExperimentNote,
-    updatePectiWeights,
-    updateAllHypothesesWeights,
-    getIdeaById,
-    getHypothesisByIdeaId,
-    getHypothesisById,
-    getExperimentByHypothesisId,
+    addDepartment,
+    editDepartment,
+    deleteDepartment,
     getDepartmentById,
-    getAllTags: () => getAllTags(ideas),
-    getAllUserNames: () => getAllUserNames(allItems)
+    editWeight,
+    getAllTags,
+    getAllUserNames
   };
-  
+
   return (
-    <AppContext.Provider value={appContextValue}>
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );
 };
 
-export const useApp = (): AppContextType => {
-  const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
-  return context;
-};
+export default AppProvider;

@@ -4,6 +4,7 @@ import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/context/company/CompanyContext';
 import { useCategories } from '@/context/hooks/useCategories';
+import { useViewPreference } from '@/hooks/useViewPreference';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { DialogTrigger } from '@/components/ui/dialog';
@@ -11,12 +12,14 @@ import AddIdeaDialog from '@/components/ideas/AddIdeaDialog';
 import IdeasFilterBar from '@/components/ideas/IdeasFilterBar';
 import IdeasTable from '@/components/ideas/IdeasTable';
 import EmptyIdeasState from '@/components/ideas/EmptyIdeasState';
+import ViewPreferenceToggle from '@/components/ViewPreferenceToggle';
 
 const IdeasPage: React.FC = () => {
   const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
   const { user } = useAuth();
-  const { currentCompany } = useCompany();
+  const { currentCompany, userCompanyRole } = useCompany();
   const { categories, isLoading: categoriesLoading } = useCategories(currentCompany);
+  const { viewPreference, updateViewPreference } = useViewPreference();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
@@ -53,7 +56,7 @@ const IdeasPage: React.FC = () => {
     return categoryName;
   };
 
-  // Filter ideas based on search and filter criteria
+  // Filter ideas based on search and filter criteria and view preference
   const filteredIdeas = ideas.filter(idea => {
     // Search query filter
     if (searchQuery && !idea.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
@@ -78,6 +81,15 @@ const IdeasPage: React.FC = () => {
     if (responsibleFilter !== 'all' && idea.userId !== responsibleFilter) {
       return false;
     }
+
+    // View preference filter - only apply to non-admin users
+    if (userCompanyRole !== 'owner' && userCompanyRole !== 'admin' && viewPreference === 'assigned') {
+      // Only show ideas from departments the user has access to
+      const userDepartmentIds = departments.map(dept => dept.id);
+      if (!userDepartmentIds.includes(idea.departmentId)) {
+        return false;
+      }
+    }
     
     return true;
   });
@@ -94,6 +106,8 @@ const IdeasPage: React.FC = () => {
     departmentFilter !== 'all' || 
     responsibleFilter !== 'all';
 
+  const showViewPreferenceToggle = userCompanyRole !== 'owner' && userCompanyRole !== 'admin';
+
   return (
     <>
       <div className="flex justify-between items-center mb-6">
@@ -102,11 +116,20 @@ const IdeasPage: React.FC = () => {
           <p className="text-muted-foreground">Capture and manage growth ideas</p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsDialogOpen(true)}>Add New Idea</Button>
-          </DialogTrigger>
-        </Dialog>
+        <div className="flex items-center gap-4">
+          {showViewPreferenceToggle && (
+            <ViewPreferenceToggle
+              viewPreference={viewPreference}
+              onToggle={updateViewPreference}
+            />
+          )}
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setIsDialogOpen(true)}>Add New Idea</Button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
       </div>
 
       <IdeasFilterBar 
