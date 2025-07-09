@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Company, CompanyMember, CompanyRole, CompanyInvitation } from '@/types';
 import { useCompanyData } from './hooks/useCompanyData';
 import { useCompanyActions } from './hooks/useCompanyActions';
+import { supabase } from '@/integrations/supabase/client';
 
 type CompanyContextType = {
   companies: Company[];
@@ -32,6 +33,7 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const [contentSettings, setContentSettings] = useState<{ restrict_content_to_departments: boolean } | null>(null);
   
   // Define data state first before using it
   const companyData = useCompanyData(user?.id);
@@ -60,8 +62,42 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     switchCompany
   } = companyData;
   
-  // Add contentSettings - for now, default to not restricting content
-  const contentSettings = currentCompany ? { restrict_content_to_departments: false } : null;
+  // Fetch content settings when current company changes
+  useEffect(() => {
+    const fetchContentSettings = async () => {
+      if (!currentCompany?.id) {
+        setContentSettings(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('company_content_settings')
+          .select('restrict_content_to_departments')
+          .eq('company_id', currentCompany.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching content settings:', error);
+          // Default to not restricting content if there's an error or no settings
+          setContentSettings({ restrict_content_to_departments: false });
+          return;
+        }
+
+        // If no settings exist, default to not restricting content
+        if (!data) {
+          setContentSettings({ restrict_content_to_departments: false });
+        } else {
+          setContentSettings({ restrict_content_to_departments: data.restrict_content_to_departments });
+        }
+      } catch (error) {
+        console.error('Error fetching content settings:', error);
+        setContentSettings({ restrict_content_to_departments: false });
+      }
+    };
+
+    fetchContentSettings();
+  }, [currentCompany?.id]);
   
   // Then use the company data
   const {
@@ -202,6 +238,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setCompanyInvitations([]);
       setUserIncomingInvitations([]);
       setPendingInvitations([]);
+      setContentSettings(null);
       
       // Clear localStorage when user logs out
       localStorage.removeItem('currentCompanyId');

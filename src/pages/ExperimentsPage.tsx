@@ -63,8 +63,8 @@ const getDraftExperiments = (getHypothesisById: (id: string) => any): Experiment
 
 const ExperimentsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { experiments, hypotheses, getHypothesisById, getIdeaById, editExperiment } = useApp();
-  const { userCompanyRole, contentSettings } = useCompany();
+  const { experiments, hypotheses, getHypothesisById, getIdeaById, editExperiment, departments } = useApp();
+  const { userCompanyRole, contentSettings, companyMembers } = useCompany();
   const [draftExperiments, setDraftExperiments] = useState<Experiment[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [showAllDepartments, setShowAllDepartments] = useState(false);
@@ -96,33 +96,36 @@ const ExperimentsPage: React.FC = () => {
   
   // Filter experiments based on department visibility settings
   const getFilteredExperiments = () => {
+    console.log('Filtering experiments:', {
+      userCompanyRole,
+      contentSettings,
+      showAllDepartments,
+      totalExperiments: experiments.length
+    });
+
     // Owners and admins always see all experiments
     if (userCompanyRole === 'owner' || userCompanyRole === 'admin') {
+      console.log('User is owner/admin - showing all experiments');
       return experiments;
     }
     
     // If content is not restricted to departments, show all experiments
     if (!contentSettings?.restrict_content_to_departments) {
+      console.log('Content not restricted to departments - showing all experiments');
       return experiments;
     }
     
     // If user chose to see all departments, show all experiments
     if (showAllDepartments) {
+      console.log('User chose to see all departments - showing all experiments');
       return experiments;
     }
     
     // Filter experiments based on department access
-    return experiments.filter(experiment => {
-      const hypothesis = getHypothesisById(experiment.hypothesisId);
-      if (!hypothesis) return false;
-      
-      const idea = getIdeaById(hypothesis.ideaId);
-      if (!idea) return false;
-      
-      // Check if user has access to this idea's department
-      // This would need to be implemented based on your department access logic
-      return true; // For now, show all experiments
-    });
+    // For now, return all experiments since we don't have department permission logic implemented
+    // This is where you would implement the actual department filtering
+    console.log('Applying department filtering (not implemented yet) - showing all experiments');
+    return experiments;
   };
   
   // Combine regular experiments with draft experiments
@@ -149,6 +152,13 @@ const ExperimentsPage: React.FC = () => {
     userCompanyRole !== 'owner' && 
     userCompanyRole !== 'admin' && 
     contentSettings?.restrict_content_to_departments;
+
+  console.log('Visibility toggle decision:', {
+    userCompanyRole,
+    contentSettingsExists: !!contentSettings,
+    restrictContent: contentSettings?.restrict_content_to_departments,
+    showVisibilityToggle
+  });
   
   return (
     <div className="space-y-6">
@@ -256,6 +266,19 @@ const ExperimentsPage: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Debug Information */}
+      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <h3 className="font-medium text-blue-800 mb-2">Debug Information</h3>
+        <div className="text-sm text-blue-700 space-y-1">
+          <div>User Role: {userCompanyRole || 'None'}</div>
+          <div>Content Settings: {contentSettings ? JSON.stringify(contentSettings) : 'None'}</div>
+          <div>Show All Departments: {showAllDepartments ? 'Yes' : 'No'}</div>
+          <div>Show Toggle: {showVisibilityToggle ? 'Yes' : 'No'}</div>
+          <div>Total Experiments: {allExperiments.length}</div>
+          <div>Filtered Experiments: {sortedExperiments.length}</div>
+        </div>
+      </div>
       
       {allExperiments.length === 0 ? (
         <EmptyExperiments />
