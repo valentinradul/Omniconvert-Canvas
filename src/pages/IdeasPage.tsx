@@ -4,6 +4,7 @@ import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/context/company/CompanyContext';
 import { useCategories } from '@/context/hooks/useCategories';
+import { useViewPreference } from '@/hooks/useViewPreference';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { DialogTrigger } from '@/components/ui/dialog';
@@ -11,12 +12,14 @@ import AddIdeaDialog from '@/components/ideas/AddIdeaDialog';
 import IdeasFilterBar from '@/components/ideas/IdeasFilterBar';
 import IdeasTable from '@/components/ideas/IdeasTable';
 import EmptyIdeasState from '@/components/ideas/EmptyIdeasState';
+import ViewPreferenceToggle from '@/components/ViewPreferenceToggle';
 
 const IdeasPage: React.FC = () => {
   const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
   const { user } = useAuth();
   const { currentCompany } = useCompany();
   const { categories, isLoading: categoriesLoading } = useCategories(currentCompany);
+  const { viewAllDepartments } = useViewPreference();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
@@ -53,8 +56,17 @@ const IdeasPage: React.FC = () => {
     return categoryName;
   };
 
-  // Filter ideas based on search and filter criteria
+  // Filter ideas based on view preference and other filters
   const filteredIdeas = ideas.filter(idea => {
+    // First filter by department access if user is not admin/owner and not viewing all departments
+    if (!viewAllDepartments && idea.departmentId) {
+      // Check if the idea's department is in the user's accessible departments
+      const isDepartmentAccessible = departments.some(dept => dept.id === idea.departmentId);
+      if (!isDepartmentAccessible) {
+        return false;
+      }
+    }
+
     // Search query filter
     if (searchQuery && !idea.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
         !idea.description.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -102,11 +114,14 @@ const IdeasPage: React.FC = () => {
           <p className="text-muted-foreground">Capture and manage growth ideas</p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsDialogOpen(true)}>Add New Idea</Button>
-          </DialogTrigger>
-        </Dialog>
+        <div className="flex items-center gap-4">
+          <ViewPreferenceToggle />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setIsDialogOpen(true)}>Add New Idea</Button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
       </div>
 
       <IdeasFilterBar 
