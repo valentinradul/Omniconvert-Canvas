@@ -1,9 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { GrowthIdea, Hypothesis } from '@/types';
 import { fetchIdeas, createIdea, updateIdea, deleteIdeaById, NewIdea } from '@/services/ideasService';
 import { canDeleteIdea } from '@/validators/ideaValidators';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 export const useIdeas = (
   user: any,
@@ -26,80 +26,8 @@ export const useIdeas = (
       setIsLoading(true);
       
       try {
-        // Check content visibility settings
-        const { data: contentSettings } = await supabase
-          .from('company_content_settings')
-          .select('restrict_content_to_departments')
-          .eq('company_id', currentCompany?.id)
-          .single();
-
-        // Get user's role in the company
-        const { data: memberData } = await supabase
-          .from('company_members')
-          .select('role, id')
-          .eq('user_id', user.id)
-          .eq('company_id', currentCompany?.id)
-          .single();
-
-        const userRole = memberData?.role;
-        const restrictContent = contentSettings?.restrict_content_to_departments || false;
-
-        // If user is owner/admin or content is not restricted, fetch all ideas
-        if (!restrictContent || userRole === 'owner' || userRole === 'admin') {
-          const data = await fetchIdeas(currentCompany?.id);
-          setIdeas(data);
-        } else {
-          // For regular members with restricted content, fetch only ideas from accessible departments
-          const { data: permissions } = await supabase
-            .from('member_department_permissions')
-            .select('department_id')
-            .eq('member_id', memberData.id);
-
-          let departmentIds: string[] = [];
-          
-          if (permissions && permissions.length > 0) {
-            // User has specific department permissions
-            departmentIds = permissions.map(p => p.department_id);
-          } else {
-            // User has access to all departments (no restrictions)
-            const { data: allDepts } = await supabase
-              .from('departments')
-              .select('id')
-              .eq('company_id', currentCompany?.id);
-            
-            departmentIds = allDepts?.map(d => d.id) || [];
-          }
-
-          // Fetch ideas only from accessible departments
-          if (departmentIds.length > 0) {
-            const { data: restrictedIdeas, error } = await supabase
-              .from('ideas')
-              .select('*')
-              .eq('company_id', currentCompany?.id)
-              .in('departmentid', departmentIds);
-
-            if (error) throw error;
-
-            const formattedIdeas: GrowthIdea[] = (restrictedIdeas || []).map(idea => ({
-              id: idea.id,
-              title: idea.title,
-              description: idea.description || '',
-              category: idea.category || '',
-              departmentId: idea.departmentid || '',
-              createdAt: new Date(idea.createdat),
-              userId: idea.userid,
-              userName: idea.username,
-              tags: idea.tags || [],
-              companyId: idea.company_id,
-              isPublic: idea.is_public
-            }));
-
-            setIdeas(formattedIdeas);
-          } else {
-            setIdeas([]);
-          }
-        }
-        
+        const data = await fetchIdeas(currentCompany?.id);
+        setIdeas(data);
       } catch (error: any) {
         toast({
           variant: 'destructive',
