@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useViewPreference } from '@/hooks/useViewPreference';
 
 interface Department {
   id: string;
@@ -15,7 +14,6 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { viewAllDepartments } = useViewPreference();
   
   useEffect(() => {
     if (currentCompany) {
@@ -24,7 +22,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
       setDepartments([]);
       setLoading(false);
     }
-  }, [currentCompany, viewAllDepartments]);
+  }, [currentCompany]);
 
   const fetchDepartments = async () => {
     if (!currentCompany) return;
@@ -45,8 +43,8 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
 
       console.log('User role in company:', memberData.role, 'Member ID:', memberData.id);
 
-      // If user is owner or admin, or if they chose to view all departments, fetch all departments
-      if (memberData.role === 'owner' || memberData.role === 'admin' || viewAllDepartments) {
+      // If user is owner or admin, fetch all departments with ideas count
+      if (memberData.role === 'owner' || memberData.role === 'admin') {
         // First get departments
         const { data: departmentsData, error: deptError } = await supabase
           .from('departments')
@@ -71,10 +69,10 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
           })
         );
 
-        console.log('Admin/Owner or ViewAll - All departments:', departmentsWithCount);
+        console.log('Admin/Owner - All departments:', departmentsWithCount);
         setDepartments(departmentsWithCount);
       } else {
-        // For regular members who chose to view only their departments
+        // For regular members, check if they have specific department permissions
         const { data: permissionData, error: permissionError } = await supabase
           .from('member_department_permissions')
           .select(`
