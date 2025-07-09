@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useCompany } from '@/context/company/CompanyContext';
 import { useAuth } from '@/context/AuthContext';
@@ -14,8 +15,9 @@ import {
 } from "@/components/ui/card"
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ReloadIcon } from '@radix-ui/react-icons';
+import { Loader2 } from 'lucide-react';
 import MemberPermissionsManager from '@/components/admin/MemberPermissionsManager';
+import { CompanyRole } from '@/types';
 
 const TeamSettingsPage: React.FC = () => {
   const {
@@ -34,7 +36,7 @@ const TeamSettingsPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [invitedEmail, setInvitedEmail] = useState('');
-  const [invitedRole, setInvitedRole] = useState('member');
+  const [invitedRole, setInvitedRole] = useState<CompanyRole>('member');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleCompanySwitch = (companyId: string) => {
@@ -76,7 +78,7 @@ const TeamSettingsPage: React.FC = () => {
 
   const handleUpdateMemberRole = async (userId: string, role: string) => {
     try {
-      await updateMemberRole(userId, role);
+      await updateMemberRole(userId, role as CompanyRole);
       toast({
         title: 'Member role updated',
         description: 'Member role updated successfully',
@@ -131,7 +133,7 @@ const TeamSettingsPage: React.FC = () => {
         <CardContent>
           {isLoading ? (
             <Button variant="ghost" className="w-full" disabled>
-              <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Loading companies...
             </Button>
           ) : companies.length === 0 ? (
@@ -175,7 +177,7 @@ const TeamSettingsPage: React.FC = () => {
               </div>
               <div>
                 <Label htmlFor="role">Role</Label>
-                <Select value={invitedRole} onValueChange={setInvitedRole}>
+                <Select value={invitedRole} onValueChange={(value) => setInvitedRole(value as CompanyRole)}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
@@ -191,27 +193,27 @@ const TeamSettingsPage: React.FC = () => {
             <div className="divide-y divide-border rounded-md border">
               {isLoading ? (
                 <div className="grid place-items-center p-4">
-                  <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Loading members...
                 </div>
               ) : companyMembers.length === 0 ? (
                 <div className="p-4 text-muted-foreground">No members found.</div>
               ) : (
                 companyMembers.map((member) => (
-                  <div key={member.user_id} className="flex items-center justify-between p-4">
+                  <div key={member.userId} className="flex items-center justify-between p-4">
                     <div className="flex items-center space-x-4">
                       <Avatar>
-                        <AvatarImage src={member.profiles?.avatar_url || ''} />
-                        <AvatarFallback>{member.profiles?.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                        <AvatarImage src={member.profile?.avatarUrl || ''} />
+                        <AvatarFallback>{member.profile?.fullName?.charAt(0) || 'U'}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{member.profiles?.full_name || 'Unnamed User'}</p>
-                        <p className="text-sm text-muted-foreground">{member.profiles?.email}</p>
+                        <p className="font-medium">{member.profile?.fullName || 'Unnamed User'}</p>
+                        <p className="text-sm text-muted-foreground">{member.profile?.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {userCompanyRole === 'owner' && member.user_id !== user?.id ? (
-                        <Select value={member.role} onValueChange={(role) => handleUpdateMemberRole(member.user_id, role)}>
+                      {userCompanyRole === 'owner' && member.userId !== user?.id ? (
+                        <Select value={member.role} onValueChange={(role) => handleUpdateMemberRole(member.userId, role)}>
                           <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Select a role" />
                           </SelectTrigger>
@@ -223,8 +225,8 @@ const TeamSettingsPage: React.FC = () => {
                       ) : (
                         <Label className="font-medium capitalize">{member.role}</Label>
                       )}
-                      {userCompanyRole === 'owner' && member.user_id !== user?.id && (
-                        <Button variant="outline" size="sm" onClick={() => handleRemoveMember(member.user_id)}>
+                      {userCompanyRole === 'owner' && member.userId !== user?.id && (
+                        <Button variant="outline" size="sm" onClick={() => handleRemoveMember(member.userId)}>
                           Remove
                         </Button>
                       )}
@@ -245,7 +247,7 @@ const TeamSettingsPage: React.FC = () => {
       <Button variant="secondary" onClick={refreshData} disabled={isLoading || isRefreshing}>
         {isRefreshing ? (
           <>
-            <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Refreshing...
           </>
         ) : (

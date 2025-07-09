@@ -24,12 +24,12 @@ const MemberPermissionsManager: React.FC = () => {
       const permissions = companyMembers
         .filter(member => member.role === 'member') // Only show regular members
         .map(member => {
-          const storageKey = `adminGrantedViewAll_${member.user_id}_${currentCompany.id}`;
+          const storageKey = `adminGrantedViewAll_${member.userId}_${currentCompany.id}`;
           const hasPermission = localStorage.getItem(storageKey) === 'true';
           
           return {
-            userId: member.user_id,
-            userName: member.profiles?.full_name || 'Unknown User',
+            userId: member.userId,
+            userName: member.profile?.fullName || 'Unknown User',
             role: member.role,
             canViewAllDepartments: hasPermission
           };
