@@ -72,23 +72,34 @@ export const useExperiments = (
           }
 
           if (departmentIds.length > 0) {
-            // Get hypotheses from accessible departments first
-            const { data: accessibleHypotheses } = await supabase
-              .from('hypotheses')
+            // Get ideas from accessible departments first
+            const { data: accessibleIdeas } = await supabase
+              .from('ideas')
               .select('id')
               .eq('company_id', currentCompany.id)
-              .in('ideaid', 
-                supabase
-                  .from('ideas')
-                  .select('id')
-                  .in('departmentid', departmentIds)
-              );
+              .in('departmentid', departmentIds);
 
-            if (accessibleHypotheses && accessibleHypotheses.length > 0) {
-              const hypothesisIds = accessibleHypotheses.map(h => h.id);
-              query = query.in('hypothesisid', hypothesisIds);
+            if (accessibleIdeas && accessibleIdeas.length > 0) {
+              const ideaIds = accessibleIdeas.map(idea => idea.id);
+              
+              // Get hypotheses from accessible ideas
+              const { data: accessibleHypotheses } = await supabase
+                .from('hypotheses')
+                .select('id')
+                .eq('company_id', currentCompany.id)
+                .in('ideaid', ideaIds);
+
+              if (accessibleHypotheses && accessibleHypotheses.length > 0) {
+                const hypothesisIds = accessibleHypotheses.map(h => h.id);
+                query = query.in('hypothesisid', hypothesisIds);
+              } else {
+                // No accessible hypotheses, return empty array
+                setExperiments([]);
+                setIsLoading(false);
+                return;
+              }
             } else {
-              // No accessible hypotheses, return empty array
+              // No accessible ideas, return empty array
               setExperiments([]);
               setIsLoading(false);
               return;
