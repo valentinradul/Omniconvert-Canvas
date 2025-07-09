@@ -1,12 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { useCompany } from '@/context/company/CompanyContext';
-import { useViewPreference } from '@/hooks/useViewPreference';
 import ExperimentsTable from '@/components/experiments/ExperimentsTable';
 import EmptyExperiments from '@/components/experiments/EmptyExperiments';
-import ViewPreferenceToggle from '@/components/ViewPreferenceToggle';
 import { useExperimentSorting } from '@/hooks/useExperimentSorting';
 import { Experiment } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -64,9 +60,7 @@ const getDraftExperiments = (getHypothesisById: (id: string) => any): Experiment
 
 const ExperimentsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { experiments, hypotheses, getHypothesisById, getIdeaById, editExperiment, departments, getDepartmentById } = useApp();
-  const { userCompanyRole } = useCompany();
-  const { viewPreference, updateViewPreference } = useViewPreference();
+  const { experiments, hypotheses, getHypothesisById, getIdeaById, editExperiment } = useApp();
   const [draftExperiments, setDraftExperiments] = useState<Experiment[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
@@ -95,28 +89,8 @@ const ExperimentsPage: React.FC = () => {
     };
   }, [getHypothesisById]);
   
-  // Filter experiments based on view preference
-  const filteredExperiments = [...experiments, ...draftExperiments].filter(experiment => {
-    // For admins/owners, show all experiments
-    if (userCompanyRole === 'owner' || userCompanyRole === 'admin') {
-      return true;
-    }
-
-    // For regular members with 'assigned' preference, filter by department access
-    if (viewPreference === 'assigned') {
-      const hypothesis = getHypothesisById(experiment.hypothesisId);
-      if (hypothesis) {
-        const idea = getIdeaById(hypothesis.ideaId);
-        if (idea && idea.departmentId) {
-          const userDepartmentIds = departments.map(dept => dept.id);
-          return userDepartmentIds.includes(idea.departmentId);
-        }
-      }
-      return false; // If no idea/department found, don't show
-    }
-
-    return true; // Show all for 'all' preference
-  });
+  // Combine regular experiments with draft experiments
+  const allExperiments = [...experiments, ...draftExperiments];
   
   const { 
     sortedExperiments, 
@@ -124,7 +98,7 @@ const ExperimentsPage: React.FC = () => {
     sortDirection, 
     handleSort 
   } = useExperimentSorting({ 
-    experiments: filteredExperiments, 
+    experiments: allExperiments, 
     getHypothesisById 
   });
 
@@ -132,8 +106,6 @@ const ExperimentsPage: React.FC = () => {
     setIsCreateDialogOpen(false);
     navigate(`/create-experiment/${hypothesisId}`);
   };
-
-  const showViewPreferenceToggle = userCompanyRole !== 'owner' && userCompanyRole !== 'admin';
   
   return (
     <div className="space-y-6">
@@ -150,89 +122,80 @@ const ExperimentsPage: React.FC = () => {
           </p>
         </div>
         
-        <div className="flex items-center gap-4">
-          {showViewPreferenceToggle && (
-            <ViewPreferenceToggle
-              viewPreference={viewPreference}
-              onToggle={updateViewPreference}
-            />
-          )}
-          
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                Create Experiment
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Create New Experiment</DialogTitle>
-                <DialogDescription>
-                  Select a hypothesis to create an experiment for. You can create multiple experiments for the same hypothesis.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                {hypotheses.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      No hypotheses available. Create a hypothesis first to start experimenting.
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => {
-                        setIsCreateDialogOpen(false);
-                        navigate('/hypotheses');
-                      }}
-                    >
-                      Go to Hypotheses
-                    </Button>
-                  </div>
-                ) : (
-                  hypotheses.map(hypothesis => {
-                    const idea = getIdeaById(hypothesis.ideaId);
-                    const existingExperimentsCount = filteredExperiments.filter(exp => exp.hypothesisId === hypothesis.id).length;
-                    
-                    return (
-                      <Card key={hypothesis.id} className="cursor-pointer hover:bg-accent transition-colors" onClick={() => handleCreateExperiment(hypothesis.id)}>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-lg flex justify-between items-center">
-                            <span>{idea?.title || 'Untitled Idea'}</span>
-                            {existingExperimentsCount > 0 && (
-                              <span className="text-sm font-normal text-muted-foreground">
-                                {existingExperimentsCount} experiment{existingExperimentsCount !== 1 ? 's' : ''}
-                              </span>
-                            )}
-                          </CardTitle>
-                          <CardDescription className="text-sm">
-                            Created by {hypothesis.userName || 'Unknown'} • {hypothesis.createdAt.toLocaleDateString()}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <span className="font-medium">Observation:</span> {hypothesis.observation}
-                            </div>
-                            <div>
-                              <span className="font-medium">Initiative:</span> {hypothesis.initiative}
-                            </div>
-                            <div>
-                              <span className="font-medium">Metric:</span> {hypothesis.metric}
-                            </div>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              Create Experiment
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Experiment</DialogTitle>
+              <DialogDescription>
+                Select a hypothesis to create an experiment for. You can create multiple experiments for the same hypothesis.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {hypotheses.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    No hypotheses available. Create a hypothesis first to start experimenting.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => {
+                      setIsCreateDialogOpen(false);
+                      navigate('/hypotheses');
+                    }}
+                  >
+                    Go to Hypotheses
+                  </Button>
+                </div>
+              ) : (
+                hypotheses.map(hypothesis => {
+                  const idea = getIdeaById(hypothesis.ideaId);
+                  const existingExperimentsCount = allExperiments.filter(exp => exp.hypothesisId === hypothesis.id).length;
+                  
+                  return (
+                    <Card key={hypothesis.id} className="cursor-pointer hover:bg-accent transition-colors" onClick={() => handleCreateExperiment(hypothesis.id)}>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg flex justify-between items-center">
+                          <span>{idea?.title || 'Untitled Idea'}</span>
+                          {existingExperimentsCount > 0 && (
+                            <span className="text-sm font-normal text-muted-foreground">
+                              {existingExperimentsCount} experiment{existingExperimentsCount !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </CardTitle>
+                        <CardDescription className="text-sm">
+                          Created by {hypothesis.userName || 'Unknown'} • {hypothesis.createdAt.toLocaleDateString()}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="font-medium">Observation:</span> {hypothesis.observation}
                           </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+                          <div>
+                            <span className="font-medium">Initiative:</span> {hypothesis.initiative}
+                          </div>
+                          <div>
+                            <span className="font-medium">Metric:</span> {hypothesis.metric}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
       
-      {filteredExperiments.length === 0 ? (
+      {allExperiments.length === 0 ? (
         <EmptyExperiments />
       ) : (
         <ExperimentsTable

@@ -10,7 +10,7 @@ interface Department {
   ideas_count?: number;
 }
 
-export const useDepartments = (currentCompany?: { id: string } | null, viewPreference: 'all' | 'assigned' = 'all') => {
+export const useDepartments = (currentCompany?: { id: string } | null) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -72,113 +72,69 @@ export const useDepartments = (currentCompany?: { id: string } | null, viewPrefe
         console.log('Admin/Owner - All departments:', departmentsWithCount);
         setDepartments(departmentsWithCount);
       } else {
-        // For regular members, check view preference and department permissions
-        if (viewPreference === 'assigned') {
-          // Only show departments they have specific permissions for
-          const { data: permissionData, error: permissionError } = await supabase
-            .from('member_department_permissions')
-            .select(`
-              department_id,
-              departments!inner(
-                id,
-                name,
-                company_id,
-                created_at
-              )
-            `)
-            .eq('member_id', memberData.id);
+        // For regular members, check if they have specific department permissions
+        const { data: permissionData, error: permissionError } = await supabase
+          .from('member_department_permissions')
+          .select(`
+            department_id,
+            departments!inner(
+              id,
+              name,
+              company_id,
+              created_at
+            )
+          `)
+          .eq('member_id', memberData.id);
 
-          console.log('Member department permissions query result:', permissionData, permissionError);
+        console.log('Member department permissions query result:', permissionData, permissionError);
 
-          if (permissionError) {
-            console.error('Error fetching department permissions:', permissionError);
-            setDepartments([]);
-          } else if (permissionData && permissionData.length > 0) {
-            // Extract departments from the joined data and get ideas count
-            const allowedDepartments = await Promise.all(
-              permissionData.map(async (perm) => {
-                const { count } = await supabase
-                  .from('ideas')
-                  .select('*', { count: 'exact', head: true })
-                  .eq('departmentid', perm.departments.id);
-                
-                return {
-                  ...perm.departments,
-                  ideas_count: count || 0
-                };
-              }).filter(Boolean)
-            );
-            console.log('Member - Specific departments:', allowedDepartments);
-            setDepartments(allowedDepartments);
-          } else {
-            // No specific permissions found, show empty
-            setDepartments([]);
-          }
+        if (permissionError) {
+          console.error('Error fetching department permissions:', permissionError);
+          setDepartments([]);
+        } else if (permissionData && permissionData.length > 0) {
+          // Extract departments from the joined data and get ideas count
+          const allowedDepartments = await Promise.all(
+            permissionData.map(async (perm) => {
+              const { count } = await supabase
+                .from('ideas')
+                .select('*', { count: 'exact', head: true })
+                .eq('departmentid', perm.departments.id);
+              
+              return {
+                ...perm.departments,
+                ideas_count: count || 0
+              };
+            }).filter(Boolean)
+          );
+          console.log('Member - Specific departments:', allowedDepartments);
+          setDepartments(allowedDepartments);
         } else {
-          // Show all departments (default behavior)
-          const { data: permissionData, error: permissionError } = await supabase
-            .from('member_department_permissions')
-            .select(`
-              department_id,
-              departments!inner(
-                id,
-                name,
-                company_id,
-                created_at
-              )
-            `)
-            .eq('member_id', memberData.id);
+          // No specific permissions found - this means they have access to all departments
+          const { data: allDepts, error: allDeptsError } = await supabase
+            .from('departments')
+            .select('*')
+            .eq('company_id', currentCompany.id)
+            .order('name');
 
-          console.log('Member department permissions query result:', permissionData, permissionError);
+          if (allDeptsError) throw allDeptsError;
 
-          if (permissionError) {
-            console.error('Error fetching department permissions:', permissionError);
-            setDepartments([]);
-          } else if (permissionData && permissionData.length > 0) {
-            // Extract departments from the joined data and get ideas count
-            const allowedDepartments = await Promise.all(
-              permissionData.map(async (perm) => {
-                const { count } = await supabase
-                  .from('ideas')
-                  .select('*', { count: 'exact', head: true })
-                  .eq('departmentid', perm.departments.id);
-                
-                return {
-                  ...perm.departments,
-                  ideas_count: count || 0
-                };
-              }).filter(Boolean)
-            );
-            console.log('Member - Specific departments:', allowedDepartments);
-            setDepartments(allowedDepartments);
-          } else {
-            // No specific permissions found - this means they have access to all departments
-            const { data: allDepts, error: allDeptsError } = await supabase
-              .from('departments')
-              .select('*')
-              .eq('company_id', currentCompany.id)
-              .order('name');
+          // Get ideas count for each department
+          const departmentsWithCount = await Promise.all(
+            (allDepts || []).map(async (dept) => {
+              const { count } = await supabase
+                .from('ideas')
+                .select('*', { count: 'exact', head: true })
+                .eq('departmentid', dept.id);
+              
+              return {
+                ...dept,
+                ideas_count: count || 0
+              };
+            })
+          );
 
-            if (allDeptsError) throw allDeptsError;
-
-            // Get ideas count for each department
-            const departmentsWithCount = await Promise.all(
-              (allDepts || []).map(async (dept) => {
-                const { count } = await supabase
-                  .from('ideas')
-                  .select('*', { count: 'exact', head: true })
-                  .eq('departmentid', dept.id);
-                
-                return {
-                  ...dept,
-                  ideas_count: count || 0
-                };
-              })
-            );
-
-            console.log('Member - All departments (no restrictions):', departmentsWithCount);
-            setDepartments(departmentsWithCount);
-          }
+          console.log('Member - All departments (no restrictions):', departmentsWithCount);
+          setDepartments(departmentsWithCount);
         }
       }
     } catch (error: any) {
