@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,7 +21,6 @@ interface EnhancedIdea {
   createdat: string;
   is_public: boolean;
   company_name: string;
-  department_name: string;
   company_id: string;
   departmentid: string;
 }
@@ -57,8 +55,7 @@ const EnhancedIdeasManagement: React.FC = () => {
         .from('ideas')
         .select(`
           *,
-          companies:company_id(name),
-          departments:departmentid(name)
+          companies:company_id(name)
         `)
         .order('createdat', { ascending: false });
 
@@ -86,7 +83,6 @@ const EnhancedIdeasManagement: React.FC = () => {
         createdat: idea.createdat,
         is_public: idea.is_public || false,
         company_name: idea.companies?.name || 'No Company',
-        department_name: idea.departments?.name || 'No Department',
         company_id: idea.company_id || '',
         departmentid: idea.departmentid || ''
       }));
@@ -167,11 +163,6 @@ const EnhancedIdeasManagement: React.FC = () => {
           <span>{idea.company_name}</span>
         </div>
       )
-    },
-    {
-      key: 'department_name',
-      header: 'Department',
-      render: (idea: EnhancedIdea) => idea.department_name
     },
     {
       key: 'category',
