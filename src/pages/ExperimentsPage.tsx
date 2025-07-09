@@ -349,20 +349,6 @@ const ExperimentsPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
-
-      {/* Debug Information - Remove this in production */}
-      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <h3 className="font-medium text-gray-800 mb-2">Debug Information</h3>
-        <div className="text-sm text-gray-600 space-y-1">
-          <div>User Role: <span className="font-mono">{userCompanyRole || 'None'}</span></div>
-          <div>Content Restriction: <span className="font-mono">{contentSettings?.restrict_content_to_departments ? 'Enabled' : 'Disabled'}</span></div>
-          <div>Show All Departments: <span className="font-mono">{showAllDepartments ? 'Yes' : 'No'}</span></div>
-          <div>Show Admin Panel: <span className="font-mono">{isAdminOrOwner ? 'Yes' : 'No'}</span></div>
-          <div>Show Member Toggle: <span className="font-mono">{showVisibilityToggle ? 'Yes' : 'No'}</span></div>
-          <div>Total Experiments: <span className="font-mono">{allExperiments.length}</span></div>
-          <div>Filtered Experiments: <span className="font-mono">{getFilteredExperiments().length}</span></div>
-        </div>
-      </div>
       
       {allExperiments.length === 0 ? (
         <EmptyExperiments />
