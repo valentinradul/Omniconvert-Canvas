@@ -64,7 +64,7 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
     <TableRow className="group">
       <TableCell className="font-medium">
         <div className="space-y-2">
-          <div className="font-medium">{idea?.title || 'Unknown Idea'}</div>
+          <div className="font-medium">{idea?.title || 'No Access'}</div>
           <p className="text-xs text-muted-foreground line-clamp-2">{hypothesis.initiative}</p>
           {hypothesis.userName && (
             <div className="text-xs text-muted-foreground">
@@ -74,7 +74,7 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
         </div>
       </TableCell>
       <TableCell>
-        {idea && (
+        {idea ? (
           <>
             <div className="flex flex-wrap gap-1 mb-1">
               {idea.tags?.map(tag => (
@@ -84,9 +84,13 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
               ))}
             </div>
             <div className="text-xs text-muted-foreground">
-              Department: {department?.name || 'Unknown'}
+              Department: {department?.name || 'No Access'}
             </div>
           </>
+        ) : (
+          <div className="text-xs text-muted-foreground">
+            Department: No Access
+          </div>
         )}
       </TableCell>
       <TableCell>
