@@ -153,7 +153,7 @@ const DepartmentsPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Created: {new Date(department.created_at).toLocaleDateString()}
+                {department.ideas_count || 0} growth idea{department.ideas_count === 1 ? '' : 's'}
               </p>
             </CardContent>
           </Card>

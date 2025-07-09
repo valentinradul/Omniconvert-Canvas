@@ -7,6 +7,7 @@ interface Department {
   name: string;
   company_id: string;
   created_at: string;
+  ideas_count?: number;
 }
 
 export const useDepartments = (currentCompany?: { id: string } | null) => {
@@ -42,17 +43,27 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
 
       console.log('User role in company:', memberData.role, 'Member ID:', memberData.id);
 
-      // If user is owner or admin, fetch all departments
+      // If user is owner or admin, fetch all departments with ideas count
       if (memberData.role === 'owner' || memberData.role === 'admin') {
         const { data, error } = await supabase
           .from('departments')
-          .select('*')
+          .select(`
+            *,
+            ideas_count:ideas(count)
+          `)
           .eq('company_id', currentCompany.id)
           .order('name');
 
         if (error) throw error;
         console.log('Admin/Owner - All departments:', data);
-        setDepartments(data || []);
+        
+        // Transform the data to include ideas_count as a number
+        const departmentsWithCount = data?.map(dept => ({
+          ...dept,
+          ideas_count: Array.isArray(dept.ideas_count) ? dept.ideas_count.length : 0
+        })) || [];
+        
+        setDepartments(departmentsWithCount);
       } else {
         // For regular members, check if they have specific department permissions
         const { data: permissionData, error: permissionError } = await supabase
@@ -63,7 +74,8 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
               id,
               name,
               company_id,
-              created_at
+              created_at,
+              ideas_count:ideas(count)
             )
           `)
           .eq('member_id', memberData.id);
@@ -75,8 +87,11 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
           // If there's an error, set empty departments to be safe
           setDepartments([]);
         } else if (permissionData && permissionData.length > 0) {
-          // Extract departments from the joined data
-          const allowedDepartments = permissionData.map(perm => perm.departments).filter(Boolean);
+          // Extract departments from the joined data and transform ideas count
+          const allowedDepartments = permissionData.map(perm => ({
+            ...perm.departments,
+            ideas_count: Array.isArray(perm.departments.ideas_count) ? perm.departments.ideas_count.length : 0
+          })).filter(Boolean);
           console.log('Member - Specific departments:', allowedDepartments);
           setDepartments(allowedDepartments);
         } else {
@@ -84,13 +99,23 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
           // This is the default behavior when no restrictions are set
           const { data: allDepts, error: allDeptsError } = await supabase
             .from('departments')
-            .select('*')
+            .select(`
+              *,
+              ideas_count:ideas(count)
+            `)
             .eq('company_id', currentCompany.id)
             .order('name');
 
           if (allDeptsError) throw allDeptsError;
           console.log('Member - All departments (no restrictions):', allDepts);
-          setDepartments(allDepts || []);
+          
+          // Transform the data to include ideas_count as a number
+          const departmentsWithCount = allDepts?.map(dept => ({
+            ...dept,
+            ideas_count: Array.isArray(dept.ideas_count) ? dept.ideas_count.length : 0
+          })) || [];
+          
+          setDepartments(departmentsWithCount);
         }
       }
     } catch (error: any) {
