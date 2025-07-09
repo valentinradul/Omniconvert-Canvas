@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -23,13 +24,14 @@ import {
   Search, 
   Building, 
   Calendar,
-  Edit,
   Trash2,
   Eye,
-  Filter
+  Filter,
+  Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Experiment, ExperimentStatus, ALL_STATUSES, ExperimentNote } from '@/types/experiments';
+import { Experiment, ExperimentStatus, ALL_STATUSES } from '@/types/experiments';
+import { ObservationContent } from '@/types/common';
 
 interface ExtendedExperiment extends Experiment {
   companies?: { name: string };
@@ -82,8 +84,8 @@ const ExperimentsManagement: React.FC = () => {
         endDate: item.enddate ? new Date(item.enddate) : null,
         status: item.status as ExperimentStatus,
         notes: item.notes || '',
-        notes_history: (item.notes_history as ExperimentNote[]) || [],
-        observationContent: item.observationcontent,
+        notes_history: (item.notes_history as unknown as any[]) || [],
+        observationContent: item.observationcontent as unknown as ObservationContent,
         createdAt: new Date(item.createdat),
         updatedAt: new Date(item.updatedat),
         userId: item.userid,
@@ -138,30 +140,6 @@ const ExperimentsManagement: React.FC = () => {
     setFilteredExperiments(filtered);
   };
 
-  const updateExperimentStatus = async (experimentId: string, newStatus: ExperimentStatus) => {
-    try {
-      const { error } = await supabase
-        .from('experiments')
-        .update({ 
-          status: newStatus,
-          updatedat: new Date().toISOString()
-        })
-        .eq('id', experimentId);
-
-      if (error) throw error;
-      
-      setExperiments(prev => 
-        prev.map(exp => 
-          exp.id === experimentId 
-            ? { ...exp, status: newStatus, updatedAt: new Date() }
-            : exp
-        )
-      );
-    } catch (error) {
-      console.error('Error updating experiment status:', error);
-    }
-  };
-
   const deleteExperiment = async (experimentId: string) => {
     if (!confirm('Are you sure you want to delete this experiment?')) return;
 
@@ -202,9 +180,15 @@ const ExperimentsManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Experiments Management</h1>
-        <p className="text-gray-600 mt-2">Manage and monitor experiments across all companies</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Experiments Management</h1>
+          <p className="text-gray-600 mt-2">Manage and monitor experiments across all companies</p>
+        </div>
+        <Button onClick={() => window.open('/create-experiment', '_blank')}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Experiment
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -361,21 +345,9 @@ const ExperimentsManagement: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={experiment.status || 'Planned'}
-                        onValueChange={(value) => updateExperimentStatus(experiment.id, value as ExperimentStatus)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <Badge className={getStatusColor(experiment.status)}>
-                            {experiment.status || 'Planned'}
-                          </Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ALL_STATUSES.map(status => (
-                            <SelectItem key={status} value={status}>{status}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Badge className={getStatusColor(experiment.status)}>
+                        {experiment.status || 'Planned'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       {experiment.startDate 
