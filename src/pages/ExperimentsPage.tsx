@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -97,34 +98,18 @@ const ExperimentsPage: React.FC = () => {
   
   // Filter experiments based on department visibility settings
   const getFilteredExperiments = () => {
-    console.log('Filtering experiments:', {
-      userCompanyRole,
-      contentSettings,
-      showAllDepartments,
-      totalExperiments: experiments.length
-    });
-
     // Owners and admins always see all experiments
     if (userCompanyRole === 'owner' || userCompanyRole === 'admin') {
-      console.log('User is owner/admin - showing all experiments');
       return experiments;
     }
     
-    // If content is not restricted to departments, show all experiments
-    if (!contentSettings?.restrict_content_to_departments) {
-      console.log('Content not restricted to departments - showing all experiments');
-      return experiments;
-    }
-    
-    // If user chose to see all departments, show all experiments
+    // For regular members, always filter by department unless they specifically choose to see all
+    // This applies regardless of the content restriction setting
     if (showAllDepartments) {
-      console.log('User chose to see all departments - showing all experiments');
       return experiments;
     }
     
-    // Filter experiments based on department access
-    console.log('Applying department filtering based on user permissions');
-    
+    // Filter experiments based on department access for regular members
     // Get user's accessible departments
     const userAccessibleDepartments = departments.filter(dept => {
       // For now, we'll assume user has access to all departments since we don't have 
@@ -134,10 +119,8 @@ const ExperimentsPage: React.FC = () => {
     });
     
     const userDepartmentIds = userAccessibleDepartments.map(dept => dept.id);
-    console.log('User accessible department IDs:', userDepartmentIds);
     
-    // Filter experiments - for now return empty array to show the filtering is working
-    // In a real implementation, you would filter based on the department of the ideas/hypotheses
+    // Filter experiments based on the department of the ideas/hypotheses
     const filteredExperiments = experiments.filter(experiment => {
       const hypothesis = getHypothesisById(experiment.hypothesisId);
       if (!hypothesis) return false;
@@ -149,7 +132,6 @@ const ExperimentsPage: React.FC = () => {
       return userDepartmentIds.includes(idea.departmentId || '');
     });
     
-    console.log('Filtered experiments count:', filteredExperiments.length);
     return filteredExperiments;
   };
   
@@ -336,6 +318,32 @@ const ExperimentsPage: React.FC = () => {
               />
               <div>
                 <Label htmlFor="show-all-departments" className="text-sm font-medium">
+                  Show experiments from all departments
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {!showAllDepartments 
+                    ? "Currently showing only experiments from your assigned departments"
+                    : "Currently showing experiments from all departments"
+                  }
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Regular Members Department Toggle - Always Show */}
+      {!isAdminOrOwner && !showVisibilityToggle && (
+        <Card className="border-gray-200 bg-gray-50/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-3">
+              <Switch
+                id="show-all-departments-regular"
+                checked={showAllDepartments}
+                onCheckedChange={setShowAllDepartments}
+              />
+              <div>
+                <Label htmlFor="show-all-departments-regular" className="text-sm font-medium">
                   Show experiments from all departments
                 </Label>
                 <p className="text-xs text-muted-foreground">
