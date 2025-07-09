@@ -1,15 +1,11 @@
 
 import React, { useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/context/company/CompanyContext';
 import { Loader2 } from 'lucide-react';
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const { currentCompany, companies, isLoading: companyLoading } = useCompany();
   const location = useLocation();
@@ -54,8 +50,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   // Render children routes if authenticated (with or without company)
-  console.log('Authenticated, rendering children');
-  return <>{children}</>;
+  console.log('Authenticated, rendering outlet');
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

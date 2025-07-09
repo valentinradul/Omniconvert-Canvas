@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   BrowserRouter,
@@ -10,11 +9,12 @@ import './App.css';
 import Dashboard from '@/pages/Dashboard';
 import NotFound from '@/pages/NotFound';
 import Login from '@/pages/Login';
-import Signup from '@/pages/Signup';
-import IdeasPage from '@/pages/IdeasPage';
-import IdeaDetailsPage from '@/pages/IdeaDetailsPage';
-import ExperimentsPage from '@/pages/ExperimentsPage';
-import HypothesesPage from '@/pages/HypothesesPage';
+import Register from '@/pages/Register';
+import Profile from '@/pages/Profile';
+import Ideas from '@/pages/Ideas';
+import IdeaDetails from '@/pages/IdeaDetails';
+import Experiments from '@/pages/Experiments';
+import Hypothesis from '@/pages/Hypothesis';
 import { AuthProvider } from '@/context/AuthContext';
 import { AppProvider } from '@/context/AppContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -37,7 +37,7 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Signup />} />
+              <Route path="/register" element={<Register />} />
 
               {/* Protected Routes */}
               <Route
@@ -57,10 +57,18 @@ function App() {
                 }
               />
               <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/ideas"
                 element={
                   <ProtectedRoute>
-                    <IdeasPage />
+                    <Ideas />
                   </ProtectedRoute>
                 }
               />
@@ -68,7 +76,7 @@ function App() {
                 path="/idea-details/:id"
                 element={
                   <ProtectedRoute>
-                    <IdeaDetailsPage />
+                    <IdeaDetails />
                   </ProtectedRoute>
                 }
               />
@@ -76,15 +84,15 @@ function App() {
                 path="/experiments"
                 element={
                   <ProtectedRoute>
-                    <ExperimentsPage />
+                    <Experiments />
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/hypotheses"
+                path="/hypothesis"
                 element={
                   <ProtectedRoute>
-                    <HypothesesPage />
+                    <Hypothesis />
                   </ProtectedRoute>
                 }
               />

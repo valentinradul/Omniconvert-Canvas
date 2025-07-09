@@ -18,7 +18,7 @@ import {
   FolderTree,
   Shield,
   Lightbulb,
-  TestTube
+  Flask
 } from 'lucide-react';
 
 // Add custom CSS to force white background for sidebar
@@ -117,7 +117,7 @@ const SuperAdminLayout: React.FC = () => {
                       : 'bg-white text-gray-800 hover:bg-green-50 hover:text-green-700'}`}
                   >
                     <Link to="/super-admin/enhanced-experiments" className="flex items-center">
-                      <TestTube className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                      <Flask className="h-5 w-5 mr-3" strokeWidth={1.5} />
                       <span className="text-base">Enhanced Experiments</span>
                     </Link>
                   </SidebarMenuButton>

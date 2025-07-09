@@ -1,15 +1,11 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2, Shield, AlertCircle } from 'lucide-react';
 
-interface SuperAdminProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-const SuperAdminProtectedRoute: React.FC<SuperAdminProtectedRouteProps> = ({ children }) => {
+const SuperAdminProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { isSuperAdmin, isLoading: superAdminLoading } = useSuperAdmin();
 
@@ -55,7 +51,7 @@ const SuperAdminProtectedRoute: React.FC<SuperAdminProtectedRouteProps> = ({ chi
   }
 
   // Render super admin routes if user is super admin
-  return <>{children}</>;
+  return <Outlet />;
 };
 
 export default SuperAdminProtectedRoute;
