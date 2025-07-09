@@ -21,6 +21,12 @@ const IdeasTable: React.FC<IdeasTableProps> = ({
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
+  const getDepartmentName = (departmentId: string) => {
+    if (!departmentId) return "No department";
+    const department = getDepartmentById(departmentId);
+    return department?.name || "No access";
+  };
+
   return (
     <div className="rounded-md border overflow-hidden">
       <Table>
@@ -45,7 +51,7 @@ const IdeasTable: React.FC<IdeasTableProps> = ({
               <TableCell>
                 {getCategoryDisplayName ? getCategoryDisplayName(idea.category) : idea.category}
               </TableCell>
-              <TableCell>{getDepartmentById(idea.departmentId)?.name}</TableCell>
+              <TableCell>{getDepartmentName(idea.departmentId)}</TableCell>
               <TableCell>{idea.userName || "Unknown"}</TableCell>
               <TableCell>
                 {idea.tags && idea.tags.length > 0 ? (
