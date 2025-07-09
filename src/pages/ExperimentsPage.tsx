@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -19,6 +18,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Settings, Lock, Unlock } from 'lucide-react';
 
 // Helper function to get all draft experiments from localStorage
 const getDraftExperiments = (getHypothesisById: (id: string) => any): Experiment[] => {
@@ -154,14 +154,10 @@ const ExperimentsPage: React.FC = () => {
     userCompanyRole !== 'admin' && 
     contentSettings?.restrict_content_to_departments;
 
-  console.log('Visibility toggle decision:', {
-    userCompanyRole,
-    contentSettingsExists: !!contentSettings,
-    restrictContent: contentSettings?.restrict_content_to_departments,
-    showVisibilityToggle
-  });
+  // Check if user is admin or owner
+  const isAdminOrOwner = userCompanyRole === 'owner' || userCompanyRole === 'admin';
 
-  // Function to toggle content restriction (for testing)
+  // Function to toggle content restriction (for admins)
   const handleToggleContentRestriction = async () => {
     if (contentSettings && updateContentSettings) {
       await updateContentSettings({
@@ -186,17 +182,6 @@ const ExperimentsPage: React.FC = () => {
         </div>
         
         <div className="flex gap-2">
-          {/* Test button for content restriction toggle */}
-          {(userCompanyRole === 'owner' || userCompanyRole === 'admin') && (
-            <Button
-              variant="outline"
-              onClick={handleToggleContentRestriction}
-              className="text-sm"
-            >
-              {contentSettings?.restrict_content_to_departments ? 'Disable' : 'Enable'} Content Restriction
-            </Button>
-          )}
-          
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -271,35 +256,86 @@ const ExperimentsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Content Visibility Toggle */}
-      {showVisibilityToggle && (
-        <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-lg">
-          <Switch
-            id="show-all-departments"
-            checked={showAllDepartments}
-            onCheckedChange={setShowAllDepartments}
-          />
-          <Label htmlFor="show-all-departments" className="text-sm">
-            Show experiments from all departments
-          </Label>
-          {!showAllDepartments && (
-            <span className="text-xs text-muted-foreground">
-              (Currently showing only experiments from your assigned departments)
-            </span>
-          )}
-        </div>
+      {/* Admin Content Management Section */}
+      {isAdminOrOwner && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <Settings className="h-5 w-5" />
+              Content Management Settings
+            </CardTitle>
+            <CardDescription>
+              Control how team members view experiments and other content
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {contentSettings?.restrict_content_to_departments ? (
+                  <Lock className="h-4 w-4 text-orange-600" />
+                ) : (
+                  <Unlock className="h-4 w-4 text-green-600" />
+                )}
+                <div>
+                  <Label className="text-sm font-medium">
+                    Restrict content to departments
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {contentSettings?.restrict_content_to_departments 
+                      ? "Members can only see content from their assigned departments"
+                      : "All members can see content from all departments"
+                    }
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant={contentSettings?.restrict_content_to_departments ? "destructive" : "default"}
+                onClick={handleToggleContentRestriction}
+                className="ml-4"
+              >
+                {contentSettings?.restrict_content_to_departments ? 'Disable' : 'Enable'} Restriction
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Debug Information */}
-      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <h3 className="font-medium text-blue-800 mb-2">Debug Information</h3>
-        <div className="text-sm text-blue-700 space-y-1">
-          <div>User Role: {userCompanyRole || 'None'}</div>
-          <div>Content Settings: {contentSettings ? JSON.stringify(contentSettings) : 'None'}</div>
-          <div>Show All Departments: {showAllDepartments ? 'Yes' : 'No'}</div>
-          <div>Show Toggle: {showVisibilityToggle ? 'Yes' : 'No'}</div>
-          <div>Total Experiments: {allExperiments.length}</div>
-          <div>Filtered Experiments: {sortedExperiments.length}</div>
+      {/* Content Visibility Toggle for Regular Members */}
+      {showVisibilityToggle && (
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-3">
+              <Switch
+                id="show-all-departments"
+                checked={showAllDepartments}
+                onCheckedChange={setShowAllDepartments}
+              />
+              <div>
+                <Label htmlFor="show-all-departments" className="text-sm font-medium">
+                  Show experiments from all departments
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {!showAllDepartments 
+                    ? "Currently showing only experiments from your assigned departments"
+                    : "Currently showing experiments from all departments"
+                  }
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Debug Information - Remove this in production */}
+      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 className="font-medium text-gray-800 mb-2">Debug Information</h3>
+        <div className="text-sm text-gray-600 space-y-1">
+          <div>User Role: <span className="font-mono">{userCompanyRole || 'None'}</span></div>
+          <div>Content Restriction: <span className="font-mono">{contentSettings?.restrict_content_to_departments ? 'Enabled' : 'Disabled'}</span></div>
+          <div>Show All Departments: <span className="font-mono">{showAllDepartments ? 'Yes' : 'No'}</span></div>
+          <div>Show Admin Panel: <span className="font-mono">{isAdminOrOwner ? 'Yes' : 'No'}</span></div>
+          <div>Show Member Toggle: <span className="font-mono">{showVisibilityToggle ? 'Yes' : 'No'}</span></div>
+          <div>Total Experiments: <span className="font-mono">{allExperiments.length}</span></div>
         </div>
       </div>
       
