@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -64,7 +65,7 @@ const getDraftExperiments = (getHypothesisById: (id: string) => any): Experiment
 const ExperimentsPage: React.FC = () => {
   const navigate = useNavigate();
   const { experiments, hypotheses, getHypothesisById, getIdeaById, editExperiment, departments } = useApp();
-  const { userCompanyRole, contentSettings, companyMembers } = useCompany();
+  const { userCompanyRole, contentSettings, companyMembers, updateContentSettings } = useCompany();
   const [draftExperiments, setDraftExperiments] = useState<Experiment[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [showAllDepartments, setShowAllDepartments] = useState(false);
@@ -159,6 +160,15 @@ const ExperimentsPage: React.FC = () => {
     restrictContent: contentSettings?.restrict_content_to_departments,
     showVisibilityToggle
   });
+
+  // Function to toggle content restriction (for testing)
+  const handleToggleContentRestriction = async () => {
+    if (contentSettings && updateContentSettings) {
+      await updateContentSettings({
+        restrict_content_to_departments: !contentSettings.restrict_content_to_departments
+      });
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -175,77 +185,90 @@ const ExperimentsPage: React.FC = () => {
           </p>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              Create Experiment
+        <div className="flex gap-2">
+          {/* Test button for content restriction toggle */}
+          {(userCompanyRole === 'owner' || userCompanyRole === 'admin') && (
+            <Button
+              variant="outline"
+              onClick={handleToggleContentRestriction}
+              className="text-sm"
+            >
+              {contentSettings?.restrict_content_to_departments ? 'Disable' : 'Enable'} Content Restriction
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Experiment</DialogTitle>
-              <DialogDescription>
-                Select a hypothesis to create an experiment for. You can create multiple experiments for the same hypothesis.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              {hypotheses.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">
-                    No hypotheses available. Create a hypothesis first to start experimenting.
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => {
-                      setIsCreateDialogOpen(false);
-                      navigate('/hypotheses');
-                    }}
-                  >
-                    Go to Hypotheses
-                  </Button>
-                </div>
-              ) : (
-                hypotheses.map(hypothesis => {
-                  const idea = getIdeaById(hypothesis.ideaId);
-                  const existingExperimentsCount = allExperiments.filter(exp => exp.hypothesisId === hypothesis.id).length;
-                  
-                  return (
-                    <Card key={hypothesis.id} className="cursor-pointer hover:bg-accent transition-colors" onClick={() => handleCreateExperiment(hypothesis.id)}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-lg flex justify-between items-center">
-                          <span>{idea?.title || 'Untitled Idea'}</span>
-                          {existingExperimentsCount > 0 && (
-                            <span className="text-sm font-normal text-muted-foreground">
-                              {existingExperimentsCount} experiment{existingExperimentsCount !== 1 ? 's' : ''}
-                            </span>
-                          )}
-                        </CardTitle>
-                        <CardDescription className="text-sm">
-                          Created by {hypothesis.userName || 'Unknown'} • {hypothesis.createdAt.toLocaleDateString()}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-2 text-sm">
-                          <div>
-                            <span className="font-medium">Observation:</span> {hypothesis.observation}
+          )}
+          
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                Create Experiment
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Create New Experiment</DialogTitle>
+                <DialogDescription>
+                  Select a hypothesis to create an experiment for. You can create multiple experiments for the same hypothesis.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                {hypotheses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      No hypotheses available. Create a hypothesis first to start experimenting.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => {
+                        setIsCreateDialogOpen(false);
+                        navigate('/hypotheses');
+                      }}
+                    >
+                      Go to Hypotheses
+                    </Button>
+                  </div>
+                ) : (
+                  hypotheses.map(hypothesis => {
+                    const idea = getIdeaById(hypothesis.ideaId);
+                    const existingExperimentsCount = allExperiments.filter(exp => exp.hypothesisId === hypothesis.id).length;
+                    
+                    return (
+                      <Card key={hypothesis.id} className="cursor-pointer hover:bg-accent transition-colors" onClick={() => handleCreateExperiment(hypothesis.id)}>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg flex justify-between items-center">
+                            <span>{idea?.title || 'Untitled Idea'}</span>
+                            {existingExperimentsCount > 0 && (
+                              <span className="text-sm font-normal text-muted-foreground">
+                                {existingExperimentsCount} experiment{existingExperimentsCount !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </CardTitle>
+                          <CardDescription className="text-sm">
+                            Created by {hypothesis.userName || 'Unknown'} • {hypothesis.createdAt.toLocaleDateString()}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="font-medium">Observation:</span> {hypothesis.observation}
+                            </div>
+                            <div>
+                              <span className="font-medium">Initiative:</span> {hypothesis.initiative}
+                            </div>
+                            <div>
+                              <span className="font-medium">Metric:</span> {hypothesis.metric}
+                            </div>
                           </div>
-                          <div>
-                            <span className="font-medium">Initiative:</span> {hypothesis.initiative}
-                          </div>
-                          <div>
-                            <span className="font-medium">Metric:</span> {hypothesis.metric}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Content Visibility Toggle */}

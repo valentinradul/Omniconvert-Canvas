@@ -27,6 +27,7 @@ type CompanyContextType = {
   refreshCompanyMembers: () => Promise<void>;
   refreshUserCompanies: () => Promise<void>;
   refreshUserIncomingInvitations: () => Promise<void>;
+  updateContentSettings: (settings: { restrict_content_to_departments: boolean }) => Promise<void>;
 };
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -35,7 +36,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const { user } = useAuth();
   const [contentSettings, setContentSettings] = useState<{ restrict_content_to_departments: boolean } | null>(null);
   
-  // Define data state first before using it
   const companyData = useCompanyData(user?.id);
   const {
     companies,
@@ -62,7 +62,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     switchCompany
   } = companyData;
   
-  // Fetch content settings when current company changes
   useEffect(() => {
     const fetchContentSettings = async () => {
       if (!currentCompany?.id) {
@@ -71,6 +70,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
 
       try {
+        console.log('🔧 Fetching content settings for company:', currentCompany.id);
+        
         const { data, error } = await supabase
           .from('company_content_settings')
           .select('restrict_content_to_departments')
@@ -79,17 +80,37 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         if (error) {
           console.error('Error fetching content settings:', error);
-          // Default to not restricting content if there's an error or no settings
+          // Default to not restricting content if there's an error
           setContentSettings({ restrict_content_to_departments: false });
           return;
         }
 
-        // If no settings exist, default to not restricting content
+        console.log('📋 Content settings data:', data);
+
+        // If no settings exist, create default settings
         if (!data) {
-          setContentSettings({ restrict_content_to_departments: false });
+          console.log('⚙️ No content settings found, creating defaults');
+          
+          const { data: newSettings, error: insertError } = await supabase
+            .from('company_content_settings')
+            .insert({
+              company_id: currentCompany.id,
+              restrict_content_to_departments: false
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('Error creating default content settings:', insertError);
+            setContentSettings({ restrict_content_to_departments: false });
+          } else {
+            setContentSettings({ restrict_content_to_departments: newSettings.restrict_content_to_departments });
+          }
         } else {
           setContentSettings({ restrict_content_to_departments: data.restrict_content_to_departments });
         }
+        
+        console.log('✅ Final content settings:', contentSettings);
       } catch (error) {
         console.error('Error fetching content settings:', error);
         setContentSettings({ restrict_content_to_departments: false });
@@ -98,8 +119,27 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     fetchContentSettings();
   }, [currentCompany?.id]);
+
+  const updateContentSettings = async (settings: { restrict_content_to_departments: boolean }) => {
+    if (!currentCompany?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('company_content_settings')
+        .upsert({
+          company_id: currentCompany.id,
+          restrict_content_to_departments: settings.restrict_content_to_departments
+        });
+
+      if (error) throw error;
+
+      setContentSettings(settings);
+      console.log('✅ Content settings updated:', settings);
+    } catch (error) {
+      console.error('Error updating content settings:', error);
+    }
+  };
   
-  // Then use the company data
   const {
     createCompany,
     inviteMember,
@@ -122,7 +162,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchUserCompanies
   );
 
-  // FIXED: Only accept invitation when explicitly called - NO AUTOMATIC PROCESSING
   const acceptInvitation = async (invitationId: string) => {
     console.log('🚀 CompanyContext: MANUAL invitation acceptance triggered by user click');
     
@@ -180,7 +219,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Function to refresh pending invitations
   const refreshPendingInvitations = async () => {
     await fetchPendingInvitations();
     // Also refresh company members in case someone accepted an invitation
@@ -208,7 +246,6 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await refreshPendingInvitations();
   };
 
-  // Effects to handle auth and company state changes
   useEffect(() => {
     console.log('🔄 CompanyContext: User or auth state changed', { 
       userId: user?.id,
@@ -305,7 +342,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         refreshPendingInvitations,
         refreshCompanyMembers,
         refreshUserCompanies,
-        refreshUserIncomingInvitations
+        refreshUserIncomingInvitations,
+        updateContentSettings
       }}
     >
       {children}
