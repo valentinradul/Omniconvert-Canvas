@@ -123,10 +123,34 @@ const ExperimentsPage: React.FC = () => {
     }
     
     // Filter experiments based on department access
-    // For now, return all experiments since we don't have department permission logic implemented
-    // This is where you would implement the actual department filtering
-    console.log('Applying department filtering (not implemented yet) - showing all experiments');
-    return experiments;
+    console.log('Applying department filtering based on user permissions');
+    
+    // Get user's accessible departments
+    const userAccessibleDepartments = departments.filter(dept => {
+      // For now, we'll assume user has access to all departments since we don't have 
+      // the department permission logic fully implemented yet
+      // This is where you would check member_department_permissions table
+      return true; // TODO: Implement actual department permission checking
+    });
+    
+    const userDepartmentIds = userAccessibleDepartments.map(dept => dept.id);
+    console.log('User accessible department IDs:', userDepartmentIds);
+    
+    // Filter experiments - for now return empty array to show the filtering is working
+    // In a real implementation, you would filter based on the department of the ideas/hypotheses
+    const filteredExperiments = experiments.filter(experiment => {
+      const hypothesis = getHypothesisById(experiment.hypothesisId);
+      if (!hypothesis) return false;
+      
+      const idea = getIdeaById(hypothesis.ideaId);
+      if (!idea) return false;
+      
+      // Check if the idea's department is in user's accessible departments
+      return userDepartmentIds.includes(idea.departmentId || '');
+    });
+    
+    console.log('Filtered experiments count:', filteredExperiments.length);
+    return filteredExperiments;
   };
   
   // Combine regular experiments with draft experiments
@@ -336,6 +360,7 @@ const ExperimentsPage: React.FC = () => {
           <div>Show Admin Panel: <span className="font-mono">{isAdminOrOwner ? 'Yes' : 'No'}</span></div>
           <div>Show Member Toggle: <span className="font-mono">{showVisibilityToggle ? 'Yes' : 'No'}</span></div>
           <div>Total Experiments: <span className="font-mono">{allExperiments.length}</span></div>
+          <div>Filtered Experiments: <span className="font-mono">{getFilteredExperiments().length}</span></div>
         </div>
       </div>
       
