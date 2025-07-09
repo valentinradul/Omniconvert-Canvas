@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Building, Calendar, Search } from 'lucide-react';
+import { Plus, Trash2, Building, Calendar, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -36,11 +36,7 @@ const DepartmentsManagement: React.FC = () => {
   const [filterCompany, setFilterCompany] = useState<string>('all');
   const [newDepartmentName, setNewDepartmentName] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
-  const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
-  const [editDepartmentName, setEditDepartmentName] = useState('');
-  const [editCompanyId, setEditCompanyId] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortKey, setSortKey] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -154,40 +150,6 @@ const DepartmentsManagement: React.FC = () => {
     }
   };
 
-  const updateDepartment = async () => {
-    if (!editingDepartment || !editDepartmentName.trim() || !editCompanyId) return;
-
-    try {
-      const { error } = await supabase
-        .from('departments')
-        .update({ 
-          name: editDepartmentName.trim(),
-          company_id: editCompanyId
-        })
-        .eq('id', editingDepartment.id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'Department updated successfully'
-      });
-
-      setEditingDepartment(null);
-      setEditDepartmentName('');
-      setEditCompanyId('');
-      setIsEditDialogOpen(false);
-      fetchData();
-    } catch (error: any) {
-      console.error('Error updating department:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to update department'
-      });
-    }
-  };
-
   const deleteDepartment = async (departmentId: string) => {
     if (!confirm('Are you sure you want to delete this department? This action cannot be undone.')) {
       return;
@@ -215,13 +177,6 @@ const DepartmentsManagement: React.FC = () => {
         description: 'Failed to delete department'
       });
     }
-  };
-
-  const openEditDialog = (department: Department) => {
-    setEditingDepartment(department);
-    setEditDepartmentName(department.name);
-    setEditCompanyId(department.company_id);
-    setIsEditDialogOpen(true);
   };
 
   const handleSort = (key: string) => {
@@ -275,13 +230,6 @@ const DepartmentsManagement: React.FC = () => {
       header: 'Actions',
       render: (department: Department) => (
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => openEditDialog(department)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
           <Button
             variant="destructive"
             size="sm"
@@ -372,67 +320,20 @@ const DepartmentsManagement: React.FC = () => {
   );
 
   return (
-    <>
-      <SuperAdminTable
-        title="Departments Management"
-        data={paginatedDepartments}
-        columns={columns}
-        totalItems={filteredDepartments.length}
-        currentPage={currentPage}
-        itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
-        onSort={handleSort}
-        sortKey={sortKey}
-        sortDirection={sortDirection}
-        isLoading={loading}
-        actions={actions}
-      />
-
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Department</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-department-name">Department Name</Label>
-              <Input
-                id="edit-department-name"
-                value={editDepartmentName}
-                onChange={(e) => setEditDepartmentName(e.target.value)}
-                placeholder="Enter department name"
-              />
-            </div>
-            <div>
-              <Label>Select Company</Label>
-              <Select value={editCompanyId} onValueChange={setEditCompanyId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a company" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={updateDepartment} 
-                disabled={!editDepartmentName.trim() || !editCompanyId}
-              >
-                Update Department
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    <SuperAdminTable
+      title="Departments Management"
+      data={paginatedDepartments}
+      columns={columns}
+      totalItems={filteredDepartments.length}
+      currentPage={currentPage}
+      itemsPerPage={itemsPerPage}
+      onPageChange={setCurrentPage}
+      onSort={handleSort}
+      sortKey={sortKey}
+      sortDirection={sortDirection}
+      isLoading={loading}
+      actions={actions}
+    />
   );
 };
 
