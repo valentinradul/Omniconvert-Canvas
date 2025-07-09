@@ -124,19 +124,29 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!currentCompany?.id) return;
 
     try {
-      const { error } = await supabase
+      console.log('🔄 Updating content settings for company:', currentCompany.id, 'with:', settings);
+      
+      const { data, error } = await supabase
         .from('company_content_settings')
         .upsert({
           company_id: currentCompany.id,
           restrict_content_to_departments: settings.restrict_content_to_departments
-        });
+        }, {
+          onConflict: 'company_id'
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating content settings:', error);
+        throw error;
+      }
 
       setContentSettings(settings);
-      console.log('✅ Content settings updated:', settings);
+      console.log('✅ Content settings updated successfully:', settings);
     } catch (error) {
       console.error('Error updating content settings:', error);
+      throw error;
     }
   };
   
