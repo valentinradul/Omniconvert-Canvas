@@ -35,7 +35,7 @@ const Dashboard: React.FC = () => {
       console.log('Super admin detected on dashboard, redirecting to super admin panel');
       window.location.href = '/super-admin';
     }
-  }, [isSuperAdmin, superAdminLoading]);
+  }, [isSuperAdmin]);
 
   // Log dashboard data for debugging
   useEffect(() => {
