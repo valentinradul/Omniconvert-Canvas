@@ -21,8 +21,7 @@ import {
   LineChart, 
   Building, 
   Settings, 
-  Users,
-  FileText
+  Users 
 } from 'lucide-react';
 
 // Add custom CSS to force white background for sidebar
@@ -128,22 +127,6 @@ const AppLayout: React.FC = () => {
               </SidebarMenuItem>
 
               <div className="mt-6 pt-6 border-t border-gray-200 bg-white">
-                {userCompanyRole && (userCompanyRole === 'owner' || userCompanyRole === 'admin') && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      asChild 
-                      className={`flex items-center py-3 px-4 ${isActive('/content-management') 
-                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                        : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                    >
-                      <Link to="/content-management" className="flex items-center">
-                        <FileText className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                        <span className="text-base">Content Management</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
                 <SidebarMenuItem>
                   <SidebarMenuButton 
                     asChild 
