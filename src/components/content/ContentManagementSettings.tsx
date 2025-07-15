@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -103,8 +102,8 @@ const ContentManagementSettings: React.FC = () => {
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          These settings control how content (ideas, hypotheses, and experiments) is accessed across your organization. 
-          When department restrictions are enabled, users will only see content from their assigned departments.
+          Control whether growth ideas and experiments should be restricted to specific departments. 
+          When enabled, users will only see content from their assigned departments.
         </AlertDescription>
       </Alert>
 
@@ -115,7 +114,7 @@ const ContentManagementSettings: React.FC = () => {
             Department-Based Content Access
           </CardTitle>
           <CardDescription>
-            Control whether content should be restricted to specific departments
+            Control whether growth ideas and experiments should be restricted to specific departments
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -123,7 +122,7 @@ const ContentManagementSettings: React.FC = () => {
             <div className="space-y-1">
               <h4 className="font-medium">Restrict content to departments</h4>
               <p className="text-sm text-gray-600">
-                When enabled, users will only see content from their assigned departments
+                When enabled, users will only see growth ideas and experiments from their assigned departments
               </p>
             </div>
             <Switch
@@ -137,7 +136,7 @@ const ContentManagementSettings: React.FC = () => {
             <Alert>
               <Shield className="h-4 w-4" />
               <AlertDescription>
-                <strong>Department restrictions are active.</strong> Users will only see content from their assigned departments. 
+                <strong>Department restrictions are active.</strong> Users will only see growth ideas and experiments from their assigned departments. 
                 Owners and admins can see all content regardless of department assignments.
               </AlertDescription>
             </Alert>
@@ -147,7 +146,7 @@ const ContentManagementSettings: React.FC = () => {
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                <strong>Open access is active.</strong> All users can see all content within the company, 
+                <strong>Open access is active.</strong> All users can see all growth ideas and experiments within the company, 
                 regardless of department assignments.
               </AlertDescription>
             </Alert>
