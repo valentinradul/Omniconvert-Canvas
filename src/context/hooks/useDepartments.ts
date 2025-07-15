@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,29 +18,6 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
   useEffect(() => {
     if (currentCompany) {
       fetchDepartments();
-      
-      // Set up real-time subscription for departments
-      const channel = supabase
-        .channel('departments-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'departments',
-            filter: `company_id=eq.${currentCompany.id}`
-          },
-          (payload) => {
-            console.log('Department real-time update:', payload);
-            // Refetch departments when any change occurs
-            fetchDepartments();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
     } else {
       setDepartments([]);
       setLoading(false);
@@ -191,7 +167,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
 
       if (error) throw error;
 
-      // No need to manually refetch here - real-time subscription will handle it
+      await fetchDepartments();
     } catch (error: any) {
       console.error('Error creating department:', error);
       toast({
@@ -211,7 +187,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
 
       if (error) throw error;
 
-      // No need to manually refetch here - real-time subscription will handle it
+      await fetchDepartments();
     } catch (error: any) {
       console.error('Error updating department:', error);
       toast({
@@ -231,7 +207,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
 
       if (error) throw error;
 
-      // No need to manually refetch here - real-time subscription will handle it
+      await fetchDepartments();
     } catch (error: any) {
       console.error('Error deleting department:', error);
       toast({
