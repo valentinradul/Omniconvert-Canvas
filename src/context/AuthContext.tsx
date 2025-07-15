@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -72,8 +71,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                       .eq('user_id', session.user.id)
                       .limit(1);
                     
-                    if (membership && membership.length > 0 && window.location.pathname === '/') {
-                      // User has company access and is on home page, redirect to dashboard
+                    if (membership && membership.length > 0) {
+                      // User has company access, redirect to dashboard
                       window.location.href = '/dashboard';
                     }
                   }
@@ -81,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   console.error('Error checking user status:', error);
                 }
               }
-            }, 1000);
+            }, 500);
           }
         }
         
