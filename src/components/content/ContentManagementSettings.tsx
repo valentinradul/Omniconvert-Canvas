@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield, Users, FolderTree } from 'lucide-react';
+import { Loader2, Shield, Users, FolderTree, Settings } from 'lucide-react';
 
 interface ContentSettings {
   restrictContentToDepartments: boolean;
