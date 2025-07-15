@@ -12,11 +12,7 @@ import { DialogTrigger } from '@/components/ui/dialog';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
-import { Settings, Lock, Unlock } from 'lucide-react';
 import AddIdeaDialog from '@/components/ideas/AddIdeaDialog';
 import IdeasFilterBar from '@/components/ideas/IdeasFilterBar';
 import IdeasTable from '@/components/ideas/IdeasTable';
@@ -25,7 +21,7 @@ import EmptyIdeasState from '@/components/ideas/EmptyIdeasState';
 const IdeasPage: React.FC = () => {
   const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
   const { user } = useAuth();
-  const { currentCompany, userCompanyRole, contentSettings, updateContentSettings } = useCompany();
+  const { currentCompany, userCompanyRole, contentSettings } = useCompany();
   const { categories, isLoading: categoriesLoading } = useCategories(currentCompany);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -164,18 +160,6 @@ const IdeasPage: React.FC = () => {
     userCompanyRole !== 'admin' && 
     contentSettings?.restrict_content_to_departments;
 
-  // Check if user is admin or owner
-  const isAdminOrOwner = userCompanyRole === 'owner' || userCompanyRole === 'admin';
-
-  // Function to toggle content restriction (for admins)
-  const handleToggleContentRestriction = async () => {
-    if (contentSettings && updateContentSettings) {
-      await updateContentSettings({
-        restrict_content_to_departments: !contentSettings.restrict_content_to_departments
-      });
-    }
-  };
-
   return (
     <>
       <div className="flex justify-between items-center mb-6">
@@ -190,50 +174,6 @@ const IdeasPage: React.FC = () => {
           </DialogTrigger>
         </Dialog>
       </div>
-
-      {/* Admin Content Management Section */}
-      {isAdminOrOwner && (
-        <Card className="border-blue-200 bg-blue-50/50 mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <Settings className="h-5 w-5" />
-              Content Management Settings
-            </CardTitle>
-            <CardDescription>
-              Control how team members view ideas and other content
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {contentSettings?.restrict_content_to_departments ? (
-                  <Lock className="h-4 w-4 text-orange-600" />
-                ) : (
-                  <Unlock className="h-4 w-4 text-green-600" />
-                )}
-                <div>
-                  <Label className="text-sm font-medium">
-                    Restrict content to departments
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {contentSettings?.restrict_content_to_departments 
-                      ? "Members can only see content from their assigned departments"
-                      : "All members can see content from all departments"
-                    }
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant={contentSettings?.restrict_content_to_departments ? "destructive" : "default"}
-                onClick={handleToggleContentRestriction}
-                className="ml-4"
-              >
-                {contentSettings?.restrict_content_to_departments ? 'Disable' : 'Enable'} Restriction
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Content Visibility Toggle for Regular Members */}
       {showVisibilityToggle && (
