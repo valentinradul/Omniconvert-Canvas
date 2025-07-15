@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,6 +30,7 @@ import TeamSettingsPage from "./pages/TeamSettingsPage";
 import CategorySettingsPage from "./pages/CategorySettingsPage";
 import DataRecoveryPage from "./pages/DataRecoveryPage";
 import NotFound from "./pages/NotFound";
+import ContentManagementPage from "./pages/ContentManagementPage";
 
 // Super Admin Pages
 import SuperAdminCompaniesPage from "./pages/super-admin/CompaniesPage";
@@ -72,6 +72,7 @@ const App = () => (
                     <Route path="experiments" element={<ExperimentsPage />} />
                     <Route path="experiment-details/:experimentId" element={<ExperimentDetailsPage />} />
                     <Route path="departments" element={<DepartmentsPage />} />
+                    <Route path="content-management" element={<ContentManagementPage />} />
                     <Route path="account-settings" element={<AccountSettingsPage />} />
                     <Route path="team-settings" element={<TeamSettingsPage />} />
                     <Route path="category-settings" element={<CategorySettingsPage />} />
