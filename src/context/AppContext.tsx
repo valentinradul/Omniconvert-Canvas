@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { useCompany } from './company/CompanyContext';
@@ -16,12 +17,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { user } = useAuth();
   const { currentCompany } = useCompany();
   
-  const { ideas, isLoading: ideasLoading, addIdea, editIdea, deleteIdea, getIdeaById } = useIdeas(user, currentCompany, []);
-  const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, getHypothesisById } = useHypotheses(user, currentCompany);
-  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentById } = useExperiments(user, currentCompany);
+  const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, getHypothesisById, getHypothesisByIdeaId, updateAllHypothesesWeights } = useHypotheses(user, currentCompany, []);
+  const { ideas, isLoading: ideasLoading, addIdea, editIdea, deleteIdea, getIdeaById } = useIdeas(user, currentCompany, hypotheses);
+  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId, addExperimentNote, deleteExperimentNote } = useExperiments(user, currentCompany);
   const { departments, loading: departmentsLoading, getDepartmentById, refetch: refreshDepartments } = useDepartments(currentCompany);
   const { categories } = useCategories(currentCompany);
-  const { weights, updateWeights } = usePectiWeights(currentCompany);
+  const { pectiWeights, updatePectiWeights } = usePectiWeights();
 
   // Utility functions to get all tags and user names
   const getAllTags = (): Tag[] => {
@@ -30,7 +31,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       idea.tags?.forEach(tag => tags.add(tag));
     });
     hypotheses.forEach(hypothesis => {
-      hypothesis.tags?.forEach(tag => tags.add(tag));
+      // Note: Hypothesis type doesn't have tags property, so we skip this
     });
     return Array.from(tags);
   };
@@ -59,14 +60,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return Array.from(userNames.values());
   };
 
+  const getExperimentById = (id: string) => experiments.find(e => e.id === id);
+
+  const updateWeights = async (weights: any) => {
+    updatePectiWeights(weights);
+  };
+
   const contextValue: AppContextType = {
     // Data
     ideas,
     hypotheses, 
     experiments,
     departments,
-    categories,
-    weights,
+    categories: categories.map(cat => cat.name),
+    weights: pectiWeights,
     
     // Loading states
     isLoading: ideasLoading || hypothesesLoading || experimentsLoading || departmentsLoading,
@@ -75,19 +82,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addIdea,
     editIdea,
     deleteIdea,
-    addHypothesis,
+    addHypothesis: async (hypothesis) => {
+      await addHypothesis(hypothesis);
+      return null; // Adjust return type to match interface
+    },
     editHypothesis,
     deleteHypothesis,
-    addExperiment,
+    addExperiment: async (experiment) => {
+      await addExperiment(experiment);
+      return null; // Adjust return type to match interface
+    },
     editExperiment,
     deleteExperiment,
+    
+    // Experiment notes
+    addExperimentNote,
+    deleteExperimentNote,
+    
+    // PECTI weights
     updateWeights,
+    pectiWeights,
+    updatePectiWeights,
+    updateAllHypothesesWeights,
     
     // Getters
     getIdeaById,
     getHypothesisById,
     getExperimentById,
     getDepartmentById,
+    getHypothesisByIdeaId,
+    getExperimentByHypothesisId,
     
     // Utility functions
     getAllTags,

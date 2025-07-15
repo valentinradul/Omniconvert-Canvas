@@ -1,5 +1,5 @@
 
-import { GrowthIdea, Hypothesis, Experiment, Department, Category, Tag, PectiWeights } from '@/types';
+import { GrowthIdea, Hypothesis, Experiment, Department, Category, Tag, PECTIWeights } from '@/types';
 
 export interface AppContextType {
   // Data
@@ -8,7 +8,7 @@ export interface AppContextType {
   experiments: Experiment[];
   departments: Department[];
   categories: Category[];
-  weights: PectiWeights;
+  weights: PECTIWeights;
   
   // Loading state
   isLoading: boolean;
@@ -26,13 +26,23 @@ export interface AppContextType {
   editExperiment: (id: string, experiment: Partial<Experiment>) => Promise<void>;
   deleteExperiment: (id: string) => Promise<void>;
   
-  updateWeights: (weights: PectiWeights) => Promise<void>;
+  // Experiment notes
+  addExperimentNote: (experimentId: string, noteContent: string) => Promise<void>;
+  deleteExperimentNote: (experimentId: string, noteId: string) => Promise<void>;
+  
+  // PECTI weights
+  updateWeights: (weights: PECTIWeights) => Promise<void>;
+  pectiWeights: PECTIWeights;
+  updatePectiWeights: (weights: Partial<PECTIWeights>) => void;
+  updateAllHypothesesWeights: (pectiWeights: PECTIWeights) => void;
   
   // Getters
   getIdeaById: (id: string) => GrowthIdea | undefined;
   getHypothesisById: (id: string) => Hypothesis | undefined;
   getExperimentById: (id: string) => Experiment | undefined;
   getDepartmentById: (id: string) => Department | undefined;
+  getHypothesisByIdeaId: (ideaId: string) => Hypothesis | undefined;
+  getExperimentByHypothesisId: (hypothesisId: string) => Experiment | undefined;
   
   // Utility functions
   getAllTags: () => Tag[];
