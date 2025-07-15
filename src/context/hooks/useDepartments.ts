@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +19,29 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
   useEffect(() => {
     if (currentCompany) {
       fetchDepartments();
+      
+      // Set up real-time subscription for department changes
+      const channel = supabase
+        .channel('departments-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'departments',
+            filter: `company_id=eq.${currentCompany.id}`
+          },
+          (payload) => {
+            console.log('Real-time department change:', payload);
+            // Refetch departments when any change occurs
+            fetchDepartments();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     } else {
       setDepartments([]);
       setLoading(false);
@@ -167,7 +191,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
 
       if (error) throw error;
 
-      await fetchDepartments();
+      // No need to manually refetch - real-time subscription will handle it
     } catch (error: any) {
       console.error('Error creating department:', error);
       toast({
@@ -187,7 +211,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
 
       if (error) throw error;
 
-      await fetchDepartments();
+      // No need to manually refetch - real-time subscription will handle it
     } catch (error: any) {
       console.error('Error updating department:', error);
       toast({
@@ -207,7 +231,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
 
       if (error) throw error;
 
-      await fetchDepartments();
+      // No need to manually refetch - real-time subscription will handle it
     } catch (error: any) {
       console.error('Error deleting department:', error);
       toast({
