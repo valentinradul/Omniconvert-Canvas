@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { Category, fetchCategories, createCategory, updateCategory, deleteCategory } from '@/services/categoriesService';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useCategories = (currentCompany: any) => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -32,7 +34,35 @@ export const useCategories = (currentCompany: any) => {
       }
     };
     
-    loadCategories();
+    if (currentCompany?.id) {
+      loadCategories();
+      
+      // Set up real-time subscription for category changes
+      const channel = supabase
+        .channel('categories-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'categories',
+            filter: `company_id=eq.${currentCompany.id}`
+          },
+          (payload) => {
+            console.log('Real-time category change:', payload);
+            // Refetch categories when any change occurs
+            loadCategories();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } else {
+      setCategories([]);
+      setIsLoading(false);
+    }
   }, [currentCompany, toast]);
   
   const addCategory = async (name: string, departmentId?: string): Promise<Category | null> => {
@@ -47,7 +77,7 @@ export const useCategories = (currentCompany: any) => {
     
     try {
       const newCategory = await createCategory(name, currentCompany.id, departmentId);
-      setCategories([...categories, newCategory]);
+      // Real-time subscription will handle the update
       
       toast({
         title: 'Category created',
@@ -67,10 +97,8 @@ export const useCategories = (currentCompany: any) => {
   
   const editCategory = async (id: string, name: string, departmentId?: string): Promise<void> => {
     try {
-      const updatedCategory = await updateCategory(id, name, departmentId);
-      setCategories(categories.map(cat => 
-        cat.id === id ? updatedCategory : cat
-      ));
+      await updateCategory(id, name, departmentId);
+      // Real-time subscription will handle the update
       
       toast({
         title: 'Category updated',
@@ -88,7 +116,7 @@ export const useCategories = (currentCompany: any) => {
   const removeCategory = async (id: string): Promise<void> => {
     try {
       await deleteCategory(id);
-      setCategories(categories.filter(cat => cat.id !== id));
+      // Real-time subscription will handle the update
       
       toast({
         title: 'Category deleted',
