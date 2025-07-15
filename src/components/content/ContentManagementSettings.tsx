@@ -101,7 +101,7 @@ const ContentManagementSettings: React.FC = () => {
     <div className="space-y-6">
 
 
-      <Card>
+     
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
@@ -146,7 +146,7 @@ const ContentManagementSettings: React.FC = () => {
             </Alert>
           )}
         </CardContent>
-      </Card>
+    
     </div>
   );
 };
