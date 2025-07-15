@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
@@ -18,7 +19,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Lock, Unlock } from 'lucide-react';
 
 // Helper function to get all draft experiments from localStorage
 const getDraftExperiments = (getHypothesisById: (id: string) => any): Experiment[] => {
@@ -65,7 +65,7 @@ const getDraftExperiments = (getHypothesisById: (id: string) => any): Experiment
 const ExperimentsPage: React.FC = () => {
   const navigate = useNavigate();
   const { experiments, hypotheses, getHypothesisById, getIdeaById, editExperiment, departments } = useApp();
-  const { userCompanyRole, contentSettings, companyMembers, updateContentSettings } = useCompany();
+  const { userCompanyRole, contentSettings, companyMembers } = useCompany();
   const [draftExperiments, setDraftExperiments] = useState<Experiment[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [showAllDepartments, setShowAllDepartments] = useState(false);
@@ -177,18 +177,6 @@ const ExperimentsPage: React.FC = () => {
     userCompanyRole !== 'owner' && 
     userCompanyRole !== 'admin' && 
     contentSettings?.restrict_content_to_departments;
-
-  // Check if user is admin or owner
-  const isAdminOrOwner = userCompanyRole === 'owner' || userCompanyRole === 'admin';
-
-  // Function to toggle content restriction (for admins)
-  const handleToggleContentRestriction = async () => {
-    if (contentSettings && updateContentSettings) {
-      await updateContentSettings({
-        restrict_content_to_departments: !contentSettings.restrict_content_to_departments
-      });
-    }
-  };
   
   return (
     <div className="space-y-6">
@@ -279,50 +267,6 @@ const ExperimentsPage: React.FC = () => {
           </Dialog>
         </div>
       </div>
-
-      {/* Admin Content Management Section */}
-      {isAdminOrOwner && (
-        <Card className="border-blue-200 bg-blue-50/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <Settings className="h-5 w-5" />
-              Content Management Settings
-            </CardTitle>
-            <CardDescription>
-              Control how team members view experiments and other content
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {contentSettings?.restrict_content_to_departments ? (
-                  <Lock className="h-4 w-4 text-orange-600" />
-                ) : (
-                  <Unlock className="h-4 w-4 text-green-600" />
-                )}
-                <div>
-                  <Label className="text-sm font-medium">
-                    Restrict content to departments
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {contentSettings?.restrict_content_to_departments 
-                      ? "Members can only see content from their assigned departments"
-                      : "All members can see content from all departments"
-                    }
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant={contentSettings?.restrict_content_to_departments ? "destructive" : "default"}
-                onClick={handleToggleContentRestriction}
-                className="ml-4"
-              >
-                {contentSettings?.restrict_content_to_departments ? 'Disable' : 'Enable'} Restriction
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Content Visibility Toggle for Regular Members */}
       {showVisibilityToggle && (
