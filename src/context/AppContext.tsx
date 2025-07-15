@@ -1,15 +1,14 @@
-
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { useCompany } from './company/CompanyContext';
-import { useDepartments } from './hooks/useDepartments';
 import { useIdeas } from './hooks/useIdeas';
 import { useHypotheses } from './hooks/useHypotheses';
 import { useExperiments } from './hooks/useExperiments';
-import { usePectiWeights } from './hooks/usePectiWeights';
+import { useDepartments } from './hooks/useDepartments';
 import { useCategories } from './hooks/useCategories';
-import { getAllTags, getAllUserNames } from './utils/dataUtils';
+import { usePectiWeights } from './hooks/usePectiWeights';
 import { AppContextType } from './types/AppContextTypes';
+import { Tag } from '@/types';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -17,47 +16,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { user } = useAuth();
   const { currentCompany } = useCompany();
   
-  // Initialize our hooks
-  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId, addExperimentNote, deleteExperimentNote } = 
-    useExperiments(user, currentCompany);
-  
-  const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById } = 
-    useHypotheses(user, currentCompany, experiments);
-  
-  const { ideas, isLoading: ideasLoading, addIdea, editIdea, deleteIdea, getIdeaById } = 
-    useIdeas(user, currentCompany, hypotheses);
-  
-  const { departments, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = 
-    useDepartments(currentCompany);
-  
-  const { pectiWeights, updatePectiWeights } = usePectiWeights();
-  
+  const { ideas, isLoading: ideasLoading, addIdea, editIdea, deleteIdea, getIdeaById } = useIdeas(user, currentCompany, []);
+  const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, getHypothesisById } = useHypotheses(user, currentCompany);
+  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentById } = useExperiments(user, currentCompany);
+  const { departments, loading: departmentsLoading, getDepartmentById, refetch: refreshDepartments } = useDepartments(currentCompany);
   const { categories } = useCategories(currentCompany);
-  
-  // Create wrapper functions that have access to all hooks
-  const allItems = [...ideas, ...hypotheses, ...experiments];
-  
-  const wrappedDeleteDepartment = (id: string) => {
-    deleteDepartment(id, ideas);
-  };
-  
-  const updateAllHypothesesWeights = () => {
-    updateAllHypothesesWeightsBase(pectiWeights);
+  const { weights, updateWeights } = usePectiWeights(currentCompany);
+
+  // Utility functions to get all tags and user names
+  const getAllTags = (): Tag[] => {
+    const tags = new Set<Tag>();
+    ideas.forEach(idea => {
+      idea.tags?.forEach(tag => tags.add(tag));
+    });
+    hypotheses.forEach(hypothesis => {
+      hypothesis.tags?.forEach(tag => tags.add(tag));
+    });
+    return Array.from(tags);
   };
 
-  const isLoading = ideasLoading || hypothesesLoading || experimentsLoading;
-  
-  const appContextValue: AppContextType = {
+  const getAllUserNames = () => {
+    const userNames = new Map<string, { id: string, name: string }>();
+
+    ideas.forEach(idea => {
+      if (idea.userId && idea.userName) {
+        userNames.set(idea.userId, { id: idea.userId, name: idea.userName });
+      }
+    });
+
+    hypotheses.forEach(hypothesis => {
+      if (hypothesis.userId && hypothesis.userName) {
+        userNames.set(hypothesis.userId, { id: hypothesis.userId, name: hypothesis.userName });
+      }
+    });
+
+    experiments.forEach(experiment => {
+      if (experiment.userId && experiment.userName) {
+        userNames.set(experiment.userId, { id: experiment.userId, name: experiment.userName });
+      }
+    });
+
+    return Array.from(userNames.values());
+  };
+
+  const contextValue: AppContextType = {
+    // Data
+    ideas,
+    hypotheses, 
+    experiments,
     departments,
     categories,
-    ideas,
-    hypotheses,
-    experiments,
-    pectiWeights,
-    isLoading,
-    addDepartment,
-    editDepartment,
-    deleteDepartment: wrappedDeleteDepartment,
+    weights,
+    
+    // Loading states
+    isLoading: ideasLoading || hypothesesLoading || experimentsLoading || departmentsLoading,
+    
+    // CRUD operations
     addIdea,
     editIdea,
     deleteIdea,
@@ -67,30 +81,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addExperiment,
     editExperiment,
     deleteExperiment,
-    addExperimentNote,
-    deleteExperimentNote,
-    updatePectiWeights,
-    updateAllHypothesesWeights,
+    updateWeights,
+    
+    // Getters
     getIdeaById,
-    getHypothesisByIdeaId,
     getHypothesisById,
-    getExperimentByHypothesisId,
+    getExperimentById,
     getDepartmentById,
-    getAllTags: () => getAllTags(ideas),
-    getAllUserNames: () => getAllUserNames(allItems)
+    
+    // Utility functions
+    getAllTags,
+    getAllUserNames,
+    
+    // Refresh function
+    refreshDepartments
   };
-  
+
   return (
-    <AppContext.Provider value={appContextValue}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );
 };
 
-export const useApp = (): AppContextType => {
+export const useApp = () => {
   const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider');
+  if (!context) {
+    throw new Error('useAppContext must be used within an AppProvider');
   }
   return context;
 };
