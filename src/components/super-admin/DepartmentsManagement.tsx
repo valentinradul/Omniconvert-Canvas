@@ -45,6 +45,28 @@ const DepartmentsManagement: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    
+    // Set up real-time subscription for departments
+    const channel = supabase
+      .channel('super-admin-departments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'departments'
+        },
+        (payload) => {
+          console.log('Super admin department real-time update:', payload);
+          // Refetch departments when any change occurs
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -139,7 +161,7 @@ const DepartmentsManagement: React.FC = () => {
       setNewDepartmentName('');
       setSelectedCompanyId('');
       setIsCreateDialogOpen(false);
-      fetchData();
+      // No need to manually refetch - real-time subscription will handle it
     } catch (error: any) {
       console.error('Error creating department:', error);
       toast({
@@ -168,7 +190,7 @@ const DepartmentsManagement: React.FC = () => {
         description: 'Department deleted successfully'
       });
 
-      fetchData();
+      // No need to manually refetch - real-time subscription will handle it
     } catch (error: any) {
       console.error('Error deleting department:', error);
       toast({
