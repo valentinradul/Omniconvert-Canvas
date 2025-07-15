@@ -1,53 +1,36 @@
 
-import { GrowthIdea, Hypothesis, Experiment, Department, Category, Tag, PECTIWeights } from '@/types';
+import { Department, GrowthIdea, Hypothesis, Experiment, HypothesisStatus, Tag, PECTIWeights } from '@/types';
+import { Category } from '@/services/categoriesService';
 
-export interface AppContextType {
-  // Data
+export type AppContextType = {
+  departments: Department[];
+  categories: Category[];
   ideas: GrowthIdea[];
   hypotheses: Hypothesis[];
   experiments: Experiment[];
-  departments: Department[];
-  categories: Category[];
-  weights: PECTIWeights;
-  
-  // Loading state
-  isLoading: boolean;
-  
-  // CRUD operations
-  addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => Promise<GrowthIdea | null>;
-  editIdea: (id: string, idea: Partial<GrowthIdea>) => Promise<void>;
-  deleteIdea: (id: string) => Promise<void>;
-  
-  addHypothesis: (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => Promise<Hypothesis | null>;
-  editHypothesis: (id: string, hypothesis: Partial<Hypothesis>) => Promise<void>;
-  deleteHypothesis: (id: string) => Promise<void>;
-  
-  addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Experiment | null>;
-  editExperiment: (id: string, experiment: Partial<Experiment>) => Promise<void>;
-  deleteExperiment: (id: string) => Promise<void>;
-  
-  // Experiment notes
-  addExperimentNote: (experimentId: string, noteContent: string) => Promise<void>;
-  deleteExperimentNote: (experimentId: string, noteId: string) => Promise<void>;
-  
-  // PECTI weights
-  updateWeights: (weights: PECTIWeights) => Promise<void>;
   pectiWeights: PECTIWeights;
+  isLoading: boolean;
+  addDepartment: (name: string) => void;
+  editDepartment: (id: string, name: string) => void;
+  deleteDepartment: (id: string) => void;
+  addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => Promise<GrowthIdea | null>;
+  editIdea: (id: string, idea: Partial<GrowthIdea>) => void;
+  deleteIdea: (id: string) => void;
+  addHypothesis: (hypothesis: Omit<Hypothesis, 'id' | 'createdAt'>) => void;
+  editHypothesis: (id: string, hypothesis: Partial<Hypothesis>) => void;
+  deleteHypothesis: (id: string) => void;
+  addExperiment: (experiment: Omit<Experiment, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  editExperiment: (id: string, experiment: Partial<Experiment>) => void;
+  deleteExperiment: (id: string) => void;
+  addExperimentNote: (experimentId: string, noteContent: string) => void;
+  deleteExperimentNote: (experimentId: string, noteId: string) => void;
   updatePectiWeights: (weights: Partial<PECTIWeights>) => void;
-  updateAllHypothesesWeights: (pectiWeights: PECTIWeights) => void;
-  
-  // Getters
+  updateAllHypothesesWeights: () => void;
   getIdeaById: (id: string) => GrowthIdea | undefined;
-  getHypothesisById: (id: string) => Hypothesis | undefined;
-  getExperimentById: (id: string) => Experiment | undefined;
-  getDepartmentById: (id: string) => Department | undefined;
   getHypothesisByIdeaId: (ideaId: string) => Hypothesis | undefined;
+  getHypothesisById: (id: string) => Hypothesis | undefined;
   getExperimentByHypothesisId: (hypothesisId: string) => Experiment | undefined;
-  
-  // Utility functions
+  getDepartmentById: (id: string) => Department | undefined;
   getAllTags: () => Tag[];
-  getAllUserNames: () => { id: string; name: string }[];
-  
-  // Refresh function
-  refreshDepartments?: () => Promise<void>;
-}
+  getAllUserNames: () => {id: string; name: string}[];
+};

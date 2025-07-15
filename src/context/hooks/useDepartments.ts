@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useApp } from '@/context/AppContext';
 
 interface Department {
   id: string;
@@ -15,7 +14,6 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { refreshDepartments } = useApp();
   
   useEffect(() => {
     if (currentCompany) {
@@ -170,10 +168,6 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
       if (error) throw error;
 
       await fetchDepartments();
-      // Refresh departments in AppContext as well
-      if (refreshDepartments) {
-        await refreshDepartments();
-      }
     } catch (error: any) {
       console.error('Error creating department:', error);
       toast({
@@ -194,10 +188,6 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
       if (error) throw error;
 
       await fetchDepartments();
-      // Refresh departments in AppContext as well
-      if (refreshDepartments) {
-        await refreshDepartments();
-      }
     } catch (error: any) {
       console.error('Error updating department:', error);
       toast({
@@ -218,10 +208,6 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
       if (error) throw error;
 
       await fetchDepartments();
-      // Refresh departments in AppContext as well
-      if (refreshDepartments) {
-        await refreshDepartments();
-      }
     } catch (error: any) {
       console.error('Error deleting department:', error);
       toast({

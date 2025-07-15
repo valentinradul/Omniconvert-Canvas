@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { PECTIWeights, DEFAULT_PECTI_WEIGHTS } from '@/types';
 import { getInitialData } from '../utils/dataUtils';
 
-export const usePectiWeights = (currentCompany?: any) => {
+export const usePectiWeights = () => {
   const [pectiWeights, setPectiWeights] = useState<PECTIWeights>(() =>
     getInitialData('pectiWeights', DEFAULT_PECTI_WEIGHTS)
   );
