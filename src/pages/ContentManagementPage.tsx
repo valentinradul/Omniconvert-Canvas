@@ -16,15 +16,7 @@ const ContentManagementPage: React.FC = () => {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Department Access Control
-          </CardTitle>
-          <CardDescription>
-            Control how growth ideas and experiments are accessed across departments in your organization
-          </CardDescription>
-        </CardHeader>
+        
         <CardContent>
           <ContentManagementSettings />
         </CardContent>
