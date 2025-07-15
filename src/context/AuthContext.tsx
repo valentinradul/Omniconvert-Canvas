@@ -37,10 +37,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_IN') {
           console.log('User signed in:', session?.user.id);
           
-          // Check if user has pending invitations after sign in
+          // Check if user is super admin and redirect accordingly
           setTimeout(async () => {
-            if (session?.user?.email) {
+            if (session?.user?.id) {
               try {
+                const { data: isSuperAdmin } = await supabase.rpc('is_super_admin', {
+                  user_id: session.user.id
+                });
+                
+                if (isSuperAdmin) {
+                  console.log('Super admin detected, redirecting to super admin panel');
+                  window.location.href = '/super-admin';
+                  return;
+                }
+                
+                // Check for pending invitations for regular users
                 const { data: invitations } = await supabase
                   .from('company_invitations')
                   .select('*')
@@ -63,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   }
                 }
               } catch (error) {
-                console.error('Error checking user invitations:', error);
+                console.error('Error checking user status:', error);
               }
             }
           }, 1000);

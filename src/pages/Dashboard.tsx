@@ -1,19 +1,21 @@
-
 import React, { useEffect, useState } from "react";
 import { useCompany } from "@/context/company/CompanyContext";
 import { useAuth } from "@/context/AuthContext";
 import { useIdeas } from "@/context/hooks/useIdeas";
 import { useHypotheses } from "@/context/hooks/useHypotheses";
 import { useExperiments } from "@/context/hooks/useExperiments";
+import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import StatisticsPanel from "@/components/dashboard/StatisticsPanel";
 import FilterBar from "@/components/dashboard/FilterBar";
 import StatisticsChart from "@/components/dashboard/StatisticsChart";
 import CompanyInvitations from "@/components/company/CompanyInvitations";
 import { useInvitationHandler } from "@/hooks/useInvitationHandler";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { userIncomingInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
+  const { isSuperAdmin, isLoading: superAdminLoading } = useSuperAdmin();
   
   // Use the invitation handler to process any invitation in the URL
   const { invitationId, isProcessingInvitation } = useInvitationHandler();
@@ -27,6 +29,14 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
 
+  // Redirect super admin users to super admin panel
+  useEffect(() => {
+    if (!superAdminLoading && isSuperAdmin) {
+      console.log('Super admin detected on dashboard, redirecting to super admin panel');
+      window.location.href = '/super-admin';
+    }
+  }, [isSuperAdmin, superAdminLoading]);
+
   // Log dashboard data for debugging
   useEffect(() => {
     console.log('📊 Dashboard - Ideas count:', ideas.length);
@@ -39,7 +49,8 @@ const Dashboard: React.FC = () => {
     console.log('📊 Dashboard - User incoming invitations:', userIncomingInvitations);
     console.log('📊 Dashboard - Is processing invitation from URL:', isProcessingInvitation);
     console.log('📊 Dashboard - Should show invitations?', userIncomingInvitations.length > 0);
-  }, [ideas.length, hypotheses.length, experiments.length, userIncomingInvitations.length, user?.email, currentCompany, userIncomingInvitations, companies, isProcessingInvitation]);
+    console.log('📊 Dashboard - Is super admin:', isSuperAdmin);
+  }, [ideas.length, hypotheses.length, experiments.length, userIncomingInvitations.length, user?.email, currentCompany, userIncomingInvitations, companies, isProcessingInvitation, isSuperAdmin]);
 
   // Calculate hypothesis statistics by status
   const hypothesesByStatus = hypotheses.reduce((acc, hypothesis) => {
@@ -99,6 +110,17 @@ const Dashboard: React.FC = () => {
     setSearchQuery('');
     setHasActiveFilters(false);
   };
+
+  // Don't render dashboard if user is super admin (they should be redirected)
+  if (isSuperAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold">Redirecting to Super Admin Panel...</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
