@@ -29,6 +29,7 @@ import DepartmentsPage from "./pages/DepartmentsPage";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
 import TeamSettingsPage from "./pages/TeamSettingsPage";
 import CategorySettingsPage from "./pages/CategorySettingsPage";
+import ContentManagementPage from "./pages/ContentManagementPage";
 import DataRecoveryPage from "./pages/DataRecoveryPage";
 import NotFound from "./pages/NotFound";
 
@@ -75,6 +76,7 @@ const App = () => (
                     <Route path="account-settings" element={<AccountSettingsPage />} />
                     <Route path="team-settings" element={<TeamSettingsPage />} />
                     <Route path="category-settings" element={<CategorySettingsPage />} />
+                    <Route path="content-management" element={<ContentManagementPage />} />
 
                     {/* Redirect root path to dashboard when authenticated */}
                     <Route path="" element={<Navigate to="/dashboard" replace />} />
