@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,47 +38,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_IN') {
           console.log('User signed in:', session?.user.id);
           
-          // Check if user is super admin and redirect accordingly
-          setTimeout(async () => {
-            if (session?.user?.id) {
-              try {
-                const { data: isSuperAdmin } = await supabase.rpc('is_super_admin', {
-                  user_id: session.user.id
-                });
-                
-                if (isSuperAdmin) {
-                  console.log('Super admin detected, redirecting to super admin panel');
-                  window.location.href = '/super-admin';
-                  return;
-                }
-                
-                // Check for pending invitations for regular users
-                const { data: invitations } = await supabase
-                  .from('company_invitations')
-                  .select('*')
-                  .eq('email', session.user.email)
-                  .eq('accepted', false);
-                
-                if (invitations && invitations.length > 0) {
-                  console.log('User has pending invitations, staying on current page');
-                } else {
-                  // Check if user has company access
-                  const { data: membership } = await supabase
-                    .from('company_members')
-                    .select('company_id')
-                    .eq('user_id', session.user.id)
-                    .limit(1);
+          // Check if user is super admin and redirect accordingly - only on fresh sign in
+          // Only redirect if we're on the login page or root page
+          const currentPath = window.location.pathname;
+          if (currentPath === '/' || currentPath === '/login') {
+            setTimeout(async () => {
+              if (session?.user?.id) {
+                try {
+                  const { data: isSuperAdmin } = await supabase.rpc('is_super_admin', {
+                    user_id: session.user.id
+                  });
                   
-                  if (membership && membership.length > 0 && window.location.pathname === '/') {
-                    // User has company access and is on home page, redirect to dashboard
-                    window.location.href = '/dashboard';
+                  if (isSuperAdmin) {
+                    console.log('Super admin detected, redirecting to super admin panel');
+                    window.location.href = '/super-admin';
+                    return;
                   }
+                  
+                  // Check for pending invitations for regular users
+                  const { data: invitations } = await supabase
+                    .from('company_invitations')
+                    .select('*')
+                    .eq('email', session.user.email)
+                    .eq('accepted', false);
+                  
+                  if (invitations && invitations.length > 0) {
+                    console.log('User has pending invitations, staying on current page');
+                  } else {
+                    // Check if user has company access
+                    const { data: membership } = await supabase
+                      .from('company_members')
+                      .select('company_id')
+                      .eq('user_id', session.user.id)
+                      .limit(1);
+                    
+                    if (membership && membership.length > 0 && window.location.pathname === '/') {
+                      // User has company access and is on home page, redirect to dashboard
+                      window.location.href = '/dashboard';
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error checking user status:', error);
                 }
-              } catch (error) {
-                console.error('Error checking user status:', error);
               }
-            }
-          }, 1000);
+            }, 1000);
+          }
         }
         
         if (event === 'SIGNED_OUT') {
