@@ -98,7 +98,7 @@ const ContentManagementSettings: React.FC = () => {
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 mt-30">
 
 
       <Card>
