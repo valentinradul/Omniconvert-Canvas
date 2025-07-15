@@ -19,8 +19,8 @@ const HypothesisDetailsPage: React.FC = () => {
     getIdeaById, 
     deleteHypothesis,
     getExperimentByHypothesisId,
-    pectiWeights,
-    updatePectiWeights,
+    weights,
+    updateWeights,
     updateAllHypothesesWeights,
     editHypothesis
   } = useApp();
@@ -30,7 +30,7 @@ const HypothesisDetailsPage: React.FC = () => {
   const [experiment, setExperiment] = useState(hypothesis ? getExperimentByHypothesisId(hypothesis.id) : undefined);
   const [editingPecti, setEditingPecti] = useState(false);
   const [tempPecti, setTempPecti] = useState<PECTI>(hypothesis ? hypothesis.pectiScore : { potential: 3, ease: 3, cost: 3, time: 3, impact: 3 });
-  const [localWeights, setLocalWeights] = useState<PECTIWeights>(pectiWeights);
+  const [localWeights, setLocalWeights] = useState<PECTIWeights>(weights);
   const [isEditing, setIsEditing] = useState(false);
   
   useEffect(() => {
@@ -46,8 +46,8 @@ const HypothesisDetailsPage: React.FC = () => {
     }
   }, [hypothesisId, getHypothesisById, getIdeaById, getExperimentByHypothesisId, navigate]);
   
-  const handleWeightChange = (category: keyof typeof pectiWeights, value: number) => {
-    updatePectiWeights({ [category]: value });
+  const handleWeightChange = (category: keyof typeof weights, value: number) => {
+    updateWeights({ [category]: value });
   };
 
   const handleLocalWeightChange = (category: keyof PECTIWeights, value: number) => {
@@ -58,7 +58,7 @@ const HypothesisDetailsPage: React.FC = () => {
   };
   
   const handleResetWeights = () => {
-    updatePectiWeights({ 
+    updateWeights({ 
       potential: 2.5, 
       ease: 1.5, 
       cost: 1.5, 
@@ -76,7 +76,7 @@ const HypothesisDetailsPage: React.FC = () => {
   };
   
   const handleSaveWeights = () => {
-    updatePectiWeights(localWeights);
+    updateWeights(localWeights);
     toast.success("PECTI weights saved successfully");
   };
 
@@ -102,7 +102,7 @@ const HypothesisDetailsPage: React.FC = () => {
   };
   
   const handleUpdateAllHypotheses = () => {
-    updateAllHypothesesWeights();
+    updateAllHypothesesWeights(weights);
     toast.success("All hypotheses now use the default weights");
   };
 
@@ -151,7 +151,7 @@ const HypothesisDetailsPage: React.FC = () => {
           <TabsContent value="score" className="p-1">
             <PectiScoreTab
               pectiScore={hypothesis.pectiScore}
-              weights={pectiWeights}
+              weights={weights}
               editingPecti={editingPecti}
               tempPecti={tempPecti}
               localWeights={localWeights}
@@ -165,7 +165,7 @@ const HypothesisDetailsPage: React.FC = () => {
           
           <TabsContent value="weights" className="p-1">
             <WeightsTab
-              weights={pectiWeights}
+              weights={weights}
               onWeightChange={handleWeightChange}
               onSaveWeights={handleSaveWeights}
               onResetWeights={handleResetWeights}
