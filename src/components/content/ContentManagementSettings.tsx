@@ -99,13 +99,7 @@ const ContentManagementSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          Control whether growth ideas and experiments should be restricted to specific departments. 
-          When enabled, users will only see content from their assigned departments.
-        </AlertDescription>
-      </Alert>
+
 
       <Card>
         <CardHeader>
