@@ -168,11 +168,6 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
       if (error) throw error;
 
       await fetchDepartments();
-      
-      toast({
-        title: 'Success',
-        description: 'Department created successfully'
-      });
     } catch (error: any) {
       console.error('Error creating department:', error);
       toast({
@@ -193,11 +188,6 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
       if (error) throw error;
 
       await fetchDepartments();
-      
-      toast({
-        title: 'Success',
-        description: 'Department updated successfully'
-      });
     } catch (error: any) {
       console.error('Error updating department:', error);
       toast({
@@ -218,11 +208,6 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
       if (error) throw error;
 
       await fetchDepartments();
-      
-      toast({
-        title: 'Success',
-        description: 'Department deleted successfully'
-      });
     } catch (error: any) {
       console.error('Error deleting department:', error);
       toast({
