@@ -117,20 +117,6 @@ const SuperAdminLayout: React.FC = () => {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-
-              <div className="mt-6 pt-6 border-t border-gray-200 bg-white">
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    className="flex items-center py-3 px-4 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                  >
-                    <Link to="/dashboard" className="flex items-center">
-                      <Shield className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                      <span className="text-base">Back to App</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </div>
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>
