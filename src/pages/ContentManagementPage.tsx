@@ -15,12 +15,7 @@ const ContentManagementPage: React.FC = () => {
         </div>
       </div>
 
-      <Card>
-        
-        <CardContent>
-          <ContentManagementSettings />
-        </CardContent>
-      </Card>
+      <ContentManagementSettings />
     </div>
   );
 };
