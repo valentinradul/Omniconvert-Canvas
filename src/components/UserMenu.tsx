@@ -11,9 +11,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/context/AuthContext';
+import { useSuperAdmin } from '@/hooks/useSuperAdmin';
+import { Shield, Users } from 'lucide-react';
 
 const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
+  const { isSuperAdmin, operatingMode, switchOperatingMode } = useSuperAdmin();
 
   if (!user) {
     return null;
@@ -54,6 +57,22 @@ const UserMenu: React.FC = () => {
         <DropdownMenuItem asChild>
           <Link to="/team-settings">Team Settings</Link>
         </DropdownMenuItem>
+        {isSuperAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Super Admin</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => switchOperatingMode('superadmin')}>
+              <Shield className="h-4 w-4 mr-2" />
+              Super Admin Mode
+              {operatingMode === 'superadmin' && <span className="ml-auto text-xs">✓</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => switchOperatingMode('normal')}>
+              <Users className="h-4 w-4 mr-2" />
+              Normal User Mode
+              {operatingMode === 'normal' && <span className="ml-auto text-xs">✓</span>}
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => logout()}>
           Log out

@@ -7,6 +7,7 @@ export const useSuperAdmin = () => {
   const { user, isAuthenticated } = useAuth();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [operatingMode, setOperatingMode] = useState<'superadmin' | 'normal'>('normal');
 
   useEffect(() => {
     const checkSuperAdminStatus = async () => {
@@ -26,6 +27,9 @@ export const useSuperAdmin = () => {
           setIsSuperAdmin(false);
         } else {
           setIsSuperAdmin(data || false);
+          // Initialize operating mode from localStorage or default to normal
+          const savedMode = localStorage.getItem('superadmin-operating-mode') as 'superadmin' | 'normal';
+          setOperatingMode(savedMode || 'normal');
         }
       } catch (error) {
         console.error('Error checking super admin status:', error);
@@ -38,5 +42,20 @@ export const useSuperAdmin = () => {
     checkSuperAdminStatus();
   }, [user, isAuthenticated]);
 
-  return { isSuperAdmin, isLoading };
+  const switchOperatingMode = (mode: 'superadmin' | 'normal') => {
+    setOperatingMode(mode);
+    localStorage.setItem('superadmin-operating-mode', mode);
+    // Force page refresh to apply the new mode
+    window.location.reload();
+  };
+
+  const isOperatingAsSuperAdmin = isSuperAdmin && operatingMode === 'superadmin';
+
+  return { 
+    isSuperAdmin, 
+    isLoading, 
+    operatingMode,
+    isOperatingAsSuperAdmin,
+    switchOperatingMode 
+  };
 };

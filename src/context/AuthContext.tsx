@@ -49,9 +49,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   });
                   
                   if (isSuperAdmin) {
-                    console.log('Super admin detected, redirecting to super admin panel');
-                    window.location.href = '/super-admin';
-                    return;
+                    // Check operating mode preference
+                    const savedMode = localStorage.getItem('superadmin-operating-mode');
+                    if (savedMode === 'superadmin') {
+                      console.log('Super admin detected with superadmin mode, redirecting to super admin panel');
+                      window.location.href = '/super-admin';
+                      return;
+                    }
+                    console.log('Super admin detected but operating in normal mode, proceeding as normal user');
                   }
                   
                   // Check for pending invitations for regular users
@@ -245,6 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       localStorage.removeItem('currentCompanyId');
       localStorage.removeItem('userCompanies');
+      localStorage.removeItem('superadmin-operating-mode');
       
       // Clear all Supabase auth keys
       Object.keys(localStorage).forEach((key) => {

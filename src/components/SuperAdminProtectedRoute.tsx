@@ -7,7 +7,7 @@ import { Loader2, Shield, AlertCircle } from 'lucide-react';
 
 const SuperAdminProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { isSuperAdmin, isLoading: superAdminLoading } = useSuperAdmin();
+  const { isOperatingAsSuperAdmin, isLoading: superAdminLoading } = useSuperAdmin();
 
   // Show loading state while checking authentication or super admin status
   if (authLoading || superAdminLoading) {
@@ -24,8 +24,8 @@ const SuperAdminProtectedRoute: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
-  // Show access denied if not super admin
-  if (!isSuperAdmin) {
+  // Show access denied if not operating as super admin
+  if (!isOperatingAsSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-8">
         <div className="text-center space-y-4">
@@ -50,7 +50,7 @@ const SuperAdminProtectedRoute: React.FC = () => {
     );
   }
 
-  // Render super admin routes if user is super admin
+  // Render super admin routes if user is operating as super admin
   return <Outlet />;
 };
 
