@@ -49,8 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   });
                   
                   if (isSuperAdmin) {
-                    // Check operating mode preference
-                    const savedMode = localStorage.getItem('superadmin-operating-mode');
+                    // Check operating mode preference, default to superadmin for superadmins
+                    const savedMode = localStorage.getItem('superadmin-operating-mode') || 'superadmin';
                     if (savedMode === 'superadmin') {
                       console.log('Super admin detected with superadmin mode, redirecting to super admin panel');
                       window.location.href = '/super-admin';

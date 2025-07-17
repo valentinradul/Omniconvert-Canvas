@@ -27,9 +27,13 @@ export const useSuperAdmin = () => {
           setIsSuperAdmin(false);
         } else {
           setIsSuperAdmin(data || false);
-          // Initialize operating mode from localStorage or default to normal
-          const savedMode = localStorage.getItem('superadmin-operating-mode') as 'superadmin' | 'normal';
-          setOperatingMode(savedMode || 'normal');
+          if (data) {
+            // Initialize operating mode from localStorage or default to superadmin for superadmins
+            const savedMode = localStorage.getItem('superadmin-operating-mode') as 'superadmin' | 'normal';
+            setOperatingMode(savedMode || 'superadmin');
+          } else {
+            setOperatingMode('normal');
+          }
         }
       } catch (error) {
         console.error('Error checking super admin status:', error);
