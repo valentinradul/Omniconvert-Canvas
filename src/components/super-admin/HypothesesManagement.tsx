@@ -187,34 +187,25 @@ const HypothesesManagement: React.FC = () => {
 
   const columns = [
     {
-      key: 'initiative',
-      header: 'Initiative',
+      key: 'hypothesis',
+      header: 'Hypothesis',
       render: (hypothesis: HypothesesData) => (
-        <div className="max-w-xs">
-          <div className="font-medium text-gray-900 truncate">{hypothesis.initiative}</div>
-          <div className="text-sm text-gray-500 truncate">{hypothesis.idea_title}</div>
+        <div className="min-w-0 flex-1">
+          <div className="font-medium text-gray-900 mb-1">{hypothesis.initiative}</div>
+          <div className="text-sm text-gray-500 truncate">{hypothesis.observation}</div>
+          <div className="flex items-center gap-3 mt-2">
+            <div className="flex items-center gap-1">
+              <Building className="h-3 w-3 text-gray-400" />
+              <span className="text-xs text-gray-600">{hypothesis.company_name}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Users className="h-3 w-3 text-gray-400" />
+              <span className="text-xs text-gray-600">{hypothesis.userName || 'Unknown'}</span>
+            </div>
+          </div>
         </div>
       ),
       sortable: true,
-    },
-    {
-      key: 'observation',
-      header: 'Observation',
-      render: (hypothesis: HypothesesData) => (
-        <div className="max-w-sm text-sm text-gray-600 truncate">
-          {hypothesis.observation}
-        </div>
-      ),
-    },
-    {
-      key: 'metric',
-      header: 'Metric',
-      render: (hypothesis: HypothesesData) => (
-        <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-gray-400" />
-          <span className="text-sm text-gray-900">{hypothesis.metric || 'No metric'}</span>
-        </div>
-      ),
     },
     {
       key: 'status',
@@ -224,28 +215,6 @@ const HypothesesManagement: React.FC = () => {
           {hypothesis.status || 'Draft'}
         </Badge>
       ),
-    },
-    {
-      key: 'company_name',
-      header: 'Company',
-      render: (hypothesis: HypothesesData) => (
-        <div className="flex items-center gap-2">
-          <Building className="h-4 w-4 text-gray-400" />
-          <span className="text-sm text-gray-900">{hypothesis.company_name}</span>
-        </div>
-      ),
-      sortable: true,
-    },
-    {
-      key: 'userName',
-      header: 'Created By',
-      render: (hypothesis: HypothesesData) => (
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-gray-400" />
-          <span className="text-sm text-gray-900">{hypothesis.userName || 'Unknown'}</span>
-        </div>
-      ),
-      sortable: true,
     },
     {
       key: 'createdat',
