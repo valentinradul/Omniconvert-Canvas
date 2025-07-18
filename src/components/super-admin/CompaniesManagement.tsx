@@ -125,11 +125,41 @@ const CompaniesManagement: React.FC = () => {
   };
 
   const deleteCompany = async (companyId: string) => {
-    if (!confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
-      return;
-    }
-
+    // First check if company has related data
     try {
+      const { data: ideas } = await supabase
+        .from('ideas')
+        .select('id')
+        .eq('company_id', companyId);
+
+      const { data: hypotheses } = await supabase
+        .from('hypotheses')
+        .select('id')
+        .eq('company_id', companyId);
+
+      const { data: experiments } = await supabase
+        .from('experiments')
+        .select('id')
+        .eq('company_id', companyId);
+
+      const relatedDataCount = (ideas?.length || 0) + (hypotheses?.length || 0) + (experiments?.length || 0);
+
+      if (relatedDataCount > 0) {
+        const confirmMessage = `This company has ${relatedDataCount} related items (ideas, hypotheses, or experiments).\n\nDeleting the company will also delete ALL related data. This action cannot be undone.\n\nAre you sure you want to continue?`;
+        
+        if (!confirm(confirmMessage)) {
+          return;
+        }
+
+        // Delete related data first
+        await deleteCompanyData(companyId);
+      } else {
+        if (!confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
+          return;
+        }
+      }
+
+      // Finally delete the company
       const { error } = await supabase
         .from('companies')
         .delete()
@@ -145,12 +175,60 @@ const CompaniesManagement: React.FC = () => {
       fetchCompanies();
     } catch (error: any) {
       console.error('Error deleting company:', error);
+      
+      let errorMessage = 'Failed to delete company';
+      if (error.code === '23503') {
+        errorMessage = 'Cannot delete company - it still has related data (ideas, hypotheses, or experiments). Please contact support if this persists.';
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to delete company'
+        description: errorMessage
       });
     }
+  };
+
+  const deleteCompanyData = async (companyId: string) => {
+    // Delete experiments first (they reference hypotheses)
+    const { error: experimentsError } = await supabase
+      .from('experiments')
+      .delete()
+      .eq('company_id', companyId);
+
+    if (experimentsError) throw experimentsError;
+
+    // Delete hypotheses (they reference ideas)
+    const { error: hypothesesError } = await supabase
+      .from('hypotheses')
+      .delete()
+      .eq('company_id', companyId);
+
+    if (hypothesesError) throw hypothesesError;
+
+    // Delete ideas
+    const { error: ideasError } = await supabase
+      .from('ideas')
+      .delete()
+      .eq('company_id', companyId);
+
+    if (ideasError) throw ideasError;
+
+    // Delete company members
+    const { error: membersError } = await supabase
+      .from('company_members')
+      .delete()
+      .eq('company_id', companyId);
+
+    if (membersError) throw membersError;
+
+    // Delete company invitations
+    const { error: invitationsError } = await supabase
+      .from('company_invitations')
+      .delete()
+      .eq('company_id', companyId);
+
+    if (invitationsError) throw invitationsError;
   };
 
   const handleSort = (key: string) => {
