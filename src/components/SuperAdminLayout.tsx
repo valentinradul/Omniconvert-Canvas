@@ -18,7 +18,8 @@ import {
   FolderTree,
   Shield,
   FlaskConical,
-  Lightbulb
+  Lightbulb,
+  Brain
 } from 'lucide-react';
 
 // Add custom CSS to force white background for sidebar
@@ -100,6 +101,20 @@ const SuperAdminLayout: React.FC = () => {
                   <Link to="/super-admin/ideas" className="flex items-center">
                     <Lightbulb className="h-5 w-5 mr-3" strokeWidth={1.5} />
                     <span className="text-base">Ideas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  className={`flex items-center py-3 px-4 ${isActive('/super-admin/hypotheses') 
+                    ? 'bg-red-50 text-red-600 border-l-4 border-red-500 font-medium' 
+                    : 'bg-white text-gray-800 hover:bg-red-50 hover:text-red-700'}`}
+                >
+                  <Link to="/super-admin/hypotheses" className="flex items-center">
+                    <Brain className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                    <span className="text-base">Hypotheses</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

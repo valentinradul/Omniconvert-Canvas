@@ -642,6 +642,27 @@ export type Database = {
           idea_title: string
         }[]
       }
+      get_all_hypotheses_for_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          ideaid: string
+          initiative: string
+          metric: string
+          observation: string
+          observationcontent: Json
+          pectiscore: Json
+          responsibleuserid: string
+          status: string
+          userid: string
+          username: string
+          company_id: string
+          createdat: string
+          company_name: string
+          idea_title: string
+          idea_description: string
+        }[]
+      }
       get_all_ideas_for_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
