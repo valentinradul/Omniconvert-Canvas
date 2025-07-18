@@ -21,7 +21,7 @@ const [mode,setMode]=useState(false)
   useEffect(()=>{
 
     windows.location.reload()
-  },[switchOperatingMode])
+  },[mode])
 
   if (!user) {
     return null;
