@@ -28,6 +28,7 @@ const AccountSettingsPage = () => {
   // Force re-render when super admin mode changes
   React.useEffect(() => {
     setKey(prev => prev + 1);
+    console.log("page might reload")
   }, [isOperatingAsSuperAdmin]);
   
   const handleProfileUpdate = (e: React.FormEvent) => {
