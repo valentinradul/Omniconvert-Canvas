@@ -193,39 +193,66 @@ const CompaniesManagement: React.FC = () => {
     console.log('Starting company data deletion for:', companyId);
     
     try {
+      // Get all data that needs to be deleted first for verification
+      const { data: experiments } = await supabase
+        .from('experiments')
+        .select('id')
+        .eq('company_id', companyId);
+      
+      const { data: hypotheses } = await supabase
+        .from('hypotheses')
+        .select('id')
+        .eq('company_id', companyId);
+
+      const { data: ideas } = await supabase
+        .from('ideas')
+        .select('id')
+        .eq('company_id', companyId);
+
+      console.log(`Found ${experiments?.length || 0} experiments, ${hypotheses?.length || 0} hypotheses, ${ideas?.length || 0} ideas to delete`);
+
       // Delete in the correct order to avoid foreign key violations
       
       // 1. Delete experiments first (they reference hypotheses)
-      console.log('Deleting experiments...');
-      const { error: experimentsError } = await supabase
-        .from('experiments')
-        .delete()
-        .eq('company_id', companyId);
-      if (experimentsError) {
-        console.error('Error deleting experiments:', experimentsError);
-        throw experimentsError;
+      if (experiments && experiments.length > 0) {
+        console.log('Deleting experiments...');
+        const { error: experimentsError } = await supabase
+          .from('experiments')
+          .delete()
+          .eq('company_id', companyId);
+        if (experimentsError) {
+          console.error('Error deleting experiments:', experimentsError);
+          throw experimentsError;
+        }
+        console.log(`Deleted ${experiments.length} experiments`);
       }
 
       // 2. Delete hypotheses (they reference ideas)
-      console.log('Deleting hypotheses...');
-      const { error: hypothesesError } = await supabase
-        .from('hypotheses')
-        .delete()
-        .eq('company_id', companyId);
-      if (hypothesesError) {
-        console.error('Error deleting hypotheses:', hypothesesError);
-        throw hypothesesError;
+      if (hypotheses && hypotheses.length > 0) {
+        console.log('Deleting hypotheses...');
+        const { error: hypothesesError } = await supabase
+          .from('hypotheses')
+          .delete()
+          .eq('company_id', companyId);
+        if (hypothesesError) {
+          console.error('Error deleting hypotheses:', hypothesesError);
+          throw hypothesesError;
+        }
+        console.log(`Deleted ${hypotheses.length} hypotheses`);
       }
 
       // 3. Delete ideas
-      console.log('Deleting ideas...');
-      const { error: ideasError } = await supabase
-        .from('ideas')
-        .delete()
-        .eq('company_id', companyId);
-      if (ideasError) {
-        console.error('Error deleting ideas:', ideasError);
-        throw ideasError;
+      if (ideas && ideas.length > 0) {
+        console.log('Deleting ideas...');
+        const { error: ideasError } = await supabase
+          .from('ideas')
+          .delete()
+          .eq('company_id', companyId);
+        if (ideasError) {
+          console.error('Error deleting ideas:', ideasError);
+          throw ideasError;
+        }
+        console.log(`Deleted ${ideas.length} ideas`);
       }
 
       // 4. Delete categories
@@ -300,6 +327,26 @@ const CompaniesManagement: React.FC = () => {
       if (settingsError) {
         console.error('Error deleting company content settings:', settingsError);
         throw settingsError;
+      }
+
+      // 10. Final verification - check if any data still exists
+      const { data: remainingHypotheses } = await supabase
+        .from('hypotheses')
+        .select('id')
+        .eq('company_id', companyId);
+
+      const { data: remainingIdeas } = await supabase
+        .from('ideas')
+        .select('id')
+        .eq('company_id', companyId);
+
+      const { data: remainingExperiments } = await supabase
+        .from('experiments')
+        .select('id')
+        .eq('company_id', companyId);
+
+      if (remainingHypotheses?.length || remainingIdeas?.length || remainingExperiments?.length) {
+        throw new Error(`Still have remaining data: ${remainingHypotheses?.length || 0} hypotheses, ${remainingIdeas?.length || 0} ideas, ${remainingExperiments?.length || 0} experiments`);
       }
 
       console.log('Successfully deleted all company data');
