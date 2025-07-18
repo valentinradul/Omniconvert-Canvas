@@ -49,14 +49,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   });
                   
                   if (isSuperAdmin) {
-                    // Check operating mode preference, default to superadmin for superadmins
-                    const savedMode = localStorage.getItem('superadmin-operating-mode') || 'superadmin';
-                    if (savedMode === 'superadmin') {
-                      console.log('Super admin detected with superadmin mode, redirecting to super admin panel');
-                      window.location.href = '/super-admin';
-                      return;
-                    }
-                    console.log('Super admin detected but operating in normal mode, proceeding as normal user');
+                    // Super admins can now access normal areas and super admin features through account settings
+                    // No automatic redirect needed
+                    console.log('Super admin detected, allowing normal access with super admin features available');
                   }
                   
                   // Check for pending invitations for regular users

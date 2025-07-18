@@ -50,14 +50,8 @@ export const useSuperAdmin = () => {
     setOperatingMode(mode);
     localStorage.setItem('superadmin-operating-mode', mode);
     
-    // Redirect based on the new mode
-    if (mode === 'normal') {
-      // If switching to normal mode, redirect to main dashboard
-      window.location.href = '/dashboard';
-    } else {
-      // If switching to superadmin mode, redirect to super admin dashboard
-      window.location.href = '/super-admin';
-    }
+    // Note: No automatic redirects - super admins can access everything from account settings
+    // Users can manually navigate where they want to be
   };
 
   const isOperatingAsSuperAdmin = isSuperAdmin && operatingMode === 'superadmin';
