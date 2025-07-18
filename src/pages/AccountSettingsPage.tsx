@@ -19,16 +19,17 @@ import { Shield, Building, Users, FolderTree, Lightbulb, Brain, FlaskConical } f
 const AccountSettingsPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { isOperatingAsSuperAdmin } = useSuperAdmin();
+  const { isOperatingAsSuperAdmin, operatingMode } = useSuperAdmin();
   
   const [fullName, setFullName] = React.useState(user?.user_metadata?.full_name || "");
   const [email, setEmail] = React.useState(user?.email || "");
-  const [key, setKey] = React.useState(0);
+  const [renderKey, setRenderKey] = React.useState(0);
 
   // Force re-render when super admin mode changes
   React.useEffect(() => {
-    setKey(prev => prev + 1);
-  }, [isOperatingAsSuperAdmin]);
+    console.log('Mode changed to:', operatingMode, 'isOperatingAsSuperAdmin:', isOperatingAsSuperAdmin);
+    setRenderKey(prev => prev + 1);
+  }, [operatingMode, isOperatingAsSuperAdmin]);
   
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +43,7 @@ const AccountSettingsPage = () => {
   const isEmailPasswordUser = user?.app_metadata?.provider === 'email';
 
   return (
-    <div className="space-y-6">
+    <div key={renderKey} className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Account Settings</h1>
         <p className="text-muted-foreground">
