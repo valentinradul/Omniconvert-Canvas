@@ -207,10 +207,12 @@ const DepartmentsManagement: React.FC = () => {
       key: 'company_name',
       header: 'Company',
       sortable: true,
+      className: 'hidden md:table-cell',
       render: (department: Department) => (
         <Badge variant="outline" className="flex items-center gap-1 w-fit">
           <Building className="h-3 w-3" />
-          {department.companies.name}
+          <span className="hidden sm:inline">{department.companies.name}</span>
+          <span className="sm:hidden">{department.companies.name.substring(0, 10)}...</span>
         </Badge>
       )
     },
@@ -218,10 +220,12 @@ const DepartmentsManagement: React.FC = () => {
       key: 'created_at',
       header: 'Created',
       sortable: true,
+      className: 'hidden lg:table-cell',
       render: (department: Department) => (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />
-          {new Date(department.created_at).toLocaleDateString()}
+          <span className="hidden lg:inline">{new Date(department.created_at).toLocaleDateString()}</span>
+          <span className="lg:hidden">{new Date(department.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
         </div>
       )
     },
@@ -234,8 +238,10 @@ const DepartmentsManagement: React.FC = () => {
             variant="destructive"
             size="sm"
             onClick={() => deleteDepartment(department.id)}
+            className="h-8 w-8 p-0 md:h-9 md:w-auto md:px-3"
           >
             <Trash2 className="h-4 w-4" />
+            <span className="hidden md:inline ml-1">Delete</span>
           </Button>
         </div>
       )
@@ -243,37 +249,39 @@ const DepartmentsManagement: React.FC = () => {
   ];
 
   const actions = (
-    <>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search departments..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 w-64"
-        />
+    <div className="flex flex-col sm:flex-row gap-4 sm:gap-2 sm:items-center">
+      <div className="flex flex-col sm:flex-row gap-2 flex-1">
+        <div className="relative flex-1 sm:max-w-64">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search departments..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={filterCompany} onValueChange={setFilterCompany}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Filter by company" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Companies</SelectItem>
+            {companies.map((company) => (
+              <SelectItem key={company.id} value={company.id}>
+                {company.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-      <Select value={filterCompany} onValueChange={setFilterCompany}>
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Filter by company" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Companies</SelectItem>
-          {companies.map((company) => (
-            <SelectItem key={company.id} value={company.id}>
-              {company.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogTrigger asChild>
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
-            Add Department
+            <span className="sm:inline">Add Department</span>
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-md">
           <DialogHeader>
             <DialogTitle>Create New Department</DialogTitle>
           </DialogHeader>
@@ -302,13 +310,14 @@ const DepartmentsManagement: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="w-full sm:w-auto">
                 Cancel
               </Button>
               <Button 
                 onClick={createDepartment} 
                 disabled={!newDepartmentName.trim() || !selectedCompanyId}
+                className="w-full sm:w-auto"
               >
                 Create Department
               </Button>
@@ -316,7 +325,7 @@ const DepartmentsManagement: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 
   return (
