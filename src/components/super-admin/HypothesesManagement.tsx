@@ -214,9 +214,22 @@ const HypothesesManagement: React.FC = () => {
       key: 'status',
       header: 'Status',
       render: (hypothesis: HypothesesData) => (
-        <Badge variant={getStatusVariant(hypothesis.status)}>
-          {hypothesis.status || 'Draft'}
-        </Badge>
+        <div className="flex items-center justify-center sm:justify-start">
+          <Badge 
+            variant={getStatusVariant(hypothesis.status)}
+            className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5 whitespace-nowrap"
+          >
+            <span className="hidden sm:inline">{hypothesis.status || 'Draft'}</span>
+            <span className="sm:hidden">
+              {(hypothesis.status as string) === 'Active' && '●'}
+              {(hypothesis.status as string) === 'Testing' && '◐'}
+              {(hypothesis.status as string) === 'Validated' && '✓'}
+              {(hypothesis.status as string) === 'Invalidated' && '✗'}
+              {(hypothesis.status as string) === 'Paused' && '⏸'}
+              {((hypothesis.status as string) === 'Draft' || !hypothesis.status) && '○'}
+            </span>
+          </Badge>
+        </div>
       ),
     },
     {
