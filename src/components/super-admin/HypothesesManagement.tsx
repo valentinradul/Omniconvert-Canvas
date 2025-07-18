@@ -176,15 +176,15 @@ const HypothesesManagement: React.FC = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedHypotheses = filteredHypotheses.slice(startIndex, startIndex + itemsPerPage);
 
-  const getStatusColor = (status?: string) => {
+  const getStatusVariant = (status?: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-      case 'Draft': return 'bg-gray-100 text-gray-800';
-      case 'Active': return 'bg-green-100 text-green-800';
-      case 'Testing': return 'bg-blue-100 text-blue-800';
-      case 'Validated': return 'bg-emerald-100 text-emerald-800';
-      case 'Invalidated': return 'bg-red-100 text-red-800';
-      case 'Paused': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Active': return 'default';
+      case 'Testing': return 'secondary';
+      case 'Validated': return 'default';
+      case 'Invalidated': return 'destructive';
+      case 'Paused': return 'outline';
+      case 'Draft': return 'secondary';
+      default: return 'outline';
     }
   };
 
@@ -214,7 +214,7 @@ const HypothesesManagement: React.FC = () => {
       key: 'status',
       header: 'Status',
       render: (hypothesis: HypothesesData) => (
-        <Badge className={getStatusColor(hypothesis.status)}>
+        <Badge variant={getStatusVariant(hypothesis.status)}>
           {hypothesis.status || 'Draft'}
         </Badge>
       ),
