@@ -37,27 +37,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_IN') {
           console.log('User signed in:', session?.user.id);
           
-          // Check if user is super admin and redirect accordingly - only on fresh sign in
+          // Check for user company access and redirect accordingly
           // Only redirect if we're on the login page or root page
           const currentPath = window.location.pathname;
           if (currentPath === '/' || currentPath === '/login') {
             setTimeout(async () => {
               if (session?.user?.id) {
                 try {
-                  const { data: isSuperAdmin } = await supabase.rpc('is_super_admin', {
-                    user_id: session.user.id
-                  });
-                  
-                  if (isSuperAdmin) {
-                    // Check operating mode preference, default to superadmin for superadmins
-                    const savedMode = localStorage.getItem('superadmin-operating-mode') || 'superadmin';
-                    if (savedMode === 'superadmin') {
-                      console.log('Super admin detected with superadmin mode, redirecting to super admin panel');
-                      window.location.href = '/super-admin';
-                      return;
-                    }
-                    console.log('Super admin detected but operating in normal mode, proceeding as normal user');
-                  }
                   
                   // Check for pending invitations for regular users
                   const { data: invitations } = await supabase

@@ -29,13 +29,7 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
 
-  // Redirect super admin users to super admin panel
-  useEffect(() => {
-    if (!superAdminLoading && isSuperAdmin) {
-      console.log('Super admin detected on dashboard, redirecting to super admin panel');
-      window.location.href = '/super-admin';
-    }
-  }, [isSuperAdmin]);
+  // Super admins can now access the dashboard normally and use account settings for admin panel
 
   // Log dashboard data for debugging
   useEffect(() => {
@@ -111,16 +105,7 @@ const Dashboard: React.FC = () => {
     setHasActiveFilters(false);
   };
 
-  // Don't render dashboard if user is super admin (they should be redirected)
-  if (isSuperAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold">Redirecting to Super Admin Panel...</h2>
-        </div>
-      </div>
-    );
-  }
+  // Super admins can now access the dashboard normally
 
   return (
     <div className="space-y-6">

@@ -43,11 +43,7 @@ const ProtectedRoute: React.FC = () => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // If user is super admin and trying to access regular routes, redirect to super admin
-  if (isSuperAdmin && !location.pathname.startsWith('/super-admin')) {
-    console.log('Super admin accessing regular route, redirecting to super admin panel');
-    return <Navigate to="/super-admin" replace />;
-  }
+  // Super admins can now access regular routes - admin panel moved to account settings
 
   // If authenticated but company data is still loading for non-super-admin users
   if (!isSuperAdmin && companyLoading) {
