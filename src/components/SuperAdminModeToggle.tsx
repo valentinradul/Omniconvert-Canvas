@@ -9,9 +9,7 @@ const SuperAdminModeToggle: React.FC = () => {
 
   if (!isSuperAdmin) {
     return null;
-  
-
-   
+  }
 
   return (
     <Card className="w-full max-w-md">
