@@ -681,18 +681,6 @@ export type Database = {
           department_name: string
         }[]
       }
-      get_companies_with_owners_for_super_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: string
-          name: string
-          created_at: string
-          created_by: string
-          member_count: number
-          owner_name: string
-          owner_email: string
-        }[]
-      }
       get_current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string

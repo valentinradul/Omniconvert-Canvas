@@ -61,23 +61,57 @@ const CompaniesManagement: React.FC = () => {
 
   const fetchCompanies = async () => {
     try {
-      // Use the super admin function to get companies with owner details
+      // Get companies with member count and owner information
       const { data: companiesData, error } = await supabase
-        .rpc('get_companies_with_owners_for_super_admin');
+        .from('companies')
+        .select(`
+          *,
+          company_members!inner(
+            count,
+            role,
+            profiles!inner(full_name)
+          )
+        `);
 
       if (error) throw error;
 
-      const formattedCompanies = (companiesData || []).map(company => ({
-        id: company.id,
-        name: company.name,
-        created_at: company.created_at,
-        created_by: company.created_by,
-        member_count: Number(company.member_count),
-        owner_name: company.owner_name,
-        owner_email: company.owner_email
-      }));
+      // Process companies to get member count and owner info
+      const companiesWithDetails = await Promise.all(
+        (companiesData || []).map(async (company) => {
+          // Get total member count
+          const { count: memberCount } = await supabase
+            .from('company_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('company_id', company.id);
 
-      setCompanies(formattedCompanies);
+          // Get owner information
+          const { data: ownerData } = await supabase
+            .from('company_members')
+            .select(`
+              profiles!inner(full_name),
+              user_id
+            `)
+            .eq('company_id', company.id)
+            .eq('role', 'owner')
+            .single();
+
+          // Get owner email from auth.users
+          let ownerEmail = '';
+          if (ownerData?.user_id) {
+            const { data: userData } = await supabase.auth.admin.getUserById(ownerData.user_id);
+            ownerEmail = userData?.user?.email || '';
+          }
+
+          return {
+            ...company,
+            member_count: memberCount || 0,
+            owner_name: ownerData?.profiles?.full_name || 'Unknown',
+            owner_email: ownerEmail
+          };
+        })
+      );
+
+      setCompanies(companiesWithDetails);
     } catch (error: any) {
       console.error('Error fetching companies:', error);
       toast({
