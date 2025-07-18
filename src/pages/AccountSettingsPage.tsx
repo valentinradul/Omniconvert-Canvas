@@ -23,6 +23,13 @@ const AccountSettingsPage = () => {
   
   const [fullName, setFullName] = React.useState(user?.user_metadata?.full_name || "");
   const [email, setEmail] = React.useState(user?.email || "");
+  const [key, setKey] = React.useState(0);
+
+  // Force re-render when super admin mode changes
+  React.useEffect(() => {
+    setKey(prev => prev + 1);
+    console.log("page might reload")
+  }, [isOperatingAsSuperAdmin]);
   
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
