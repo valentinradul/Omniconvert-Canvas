@@ -19,7 +19,7 @@ import { Shield, Building, Users, FolderTree, Lightbulb, Brain, FlaskConical } f
 const AccountSettingsPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { isSuperAdmin } = useSuperAdmin();
+  const { isOperatingAsSuperAdmin } = useSuperAdmin();
   
   const [fullName, setFullName] = React.useState(user?.user_metadata?.full_name || "");
   const [email, setEmail] = React.useState(user?.email || "");
@@ -44,7 +44,7 @@ const AccountSettingsPage = () => {
         </p>
       </div>
 
-      {isSuperAdmin ? (
+      {isOperatingAsSuperAdmin ? (
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="profile">Profile Settings</TabsTrigger>
