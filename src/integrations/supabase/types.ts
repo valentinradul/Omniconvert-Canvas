@@ -621,6 +621,10 @@ export type Database = {
         Args: { user_id: string; company_id: string }
         Returns: boolean
       }
+      delete_company_cascade: {
+        Args: { company_id_param: string }
+        Returns: undefined
+      }
       get_all_experiments_for_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: {

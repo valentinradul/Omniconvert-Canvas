@@ -150,26 +150,22 @@ const CompaniesManagement: React.FC = () => {
         if (!confirm(confirmMessage)) {
           return;
         }
-
-        // Delete related data first
-        await deleteCompanyData(companyId);
       } else {
         if (!confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
           return;
         }
       }
 
-      // Finally delete the company
-      const { error } = await supabase
-        .from('companies')
-        .delete()
-        .eq('id', companyId);
+      // Use the database function to delete company and all related data
+      const { error } = await supabase.rpc('delete_company_cascade', {
+        company_id_param: companyId
+      });
 
       if (error) throw error;
 
       toast({
         title: 'Success',
-        description: 'Company deleted successfully'
+        description: 'Company and all related data deleted successfully'
       });
 
       fetchCompanies();
@@ -177,8 +173,8 @@ const CompaniesManagement: React.FC = () => {
       console.error('Error deleting company:', error);
       
       let errorMessage = 'Failed to delete company';
-      if (error.code === '23503') {
-        errorMessage = 'Cannot delete company - it still has related data (ideas, hypotheses, or experiments). Please contact support if this persists.';
+      if (error.message?.includes('Access denied')) {
+        errorMessage = 'Access denied: Super admin permissions required';
       }
       
       toast({
@@ -186,173 +182,6 @@ const CompaniesManagement: React.FC = () => {
         title: 'Error',
         description: errorMessage
       });
-    }
-  };
-
-  const deleteCompanyData = async (companyId: string) => {
-    console.log('Starting company data deletion for:', companyId);
-    
-    try {
-      // Get all data that needs to be deleted first for verification
-      const { data: experiments } = await supabase
-        .from('experiments')
-        .select('id')
-        .eq('company_id', companyId);
-      
-      const { data: hypotheses } = await supabase
-        .from('hypotheses')
-        .select('id')
-        .eq('company_id', companyId);
-
-      const { data: ideas } = await supabase
-        .from('ideas')
-        .select('id')
-        .eq('company_id', companyId);
-
-      console.log(`Found ${experiments?.length || 0} experiments, ${hypotheses?.length || 0} hypotheses, ${ideas?.length || 0} ideas to delete`);
-
-      // Delete in the correct order to avoid foreign key violations
-      
-      // 1. Delete experiments first (they reference hypotheses)
-      if (experiments && experiments.length > 0) {
-        console.log('Deleting experiments...');
-        const { error: experimentsError } = await supabase
-          .from('experiments')
-          .delete()
-          .eq('company_id', companyId);
-        if (experimentsError) {
-          console.error('Error deleting experiments:', experimentsError);
-          throw experimentsError;
-        }
-        console.log(`Deleted ${experiments.length} experiments`);
-      }
-
-      // 2. Delete hypotheses (they reference ideas)
-      if (hypotheses && hypotheses.length > 0) {
-        console.log('Deleting hypotheses...');
-        const { error: hypothesesError } = await supabase
-          .from('hypotheses')
-          .delete()
-          .eq('company_id', companyId);
-        if (hypothesesError) {
-          console.error('Error deleting hypotheses:', hypothesesError);
-          throw hypothesesError;
-        }
-        console.log(`Deleted ${hypotheses.length} hypotheses`);
-      }
-
-      // 3. Delete ideas
-      if (ideas && ideas.length > 0) {
-        console.log('Deleting ideas...');
-        const { error: ideasError } = await supabase
-          .from('ideas')
-          .delete()
-          .eq('company_id', companyId);
-        if (ideasError) {
-          console.error('Error deleting ideas:', ideasError);
-          throw ideasError;
-        }
-        console.log(`Deleted ${ideas.length} ideas`);
-      }
-
-      // 4. Delete categories
-      console.log('Deleting categories...');
-      const { error: categoriesError } = await supabase
-        .from('categories')
-        .delete()
-        .eq('company_id', companyId);
-      if (categoriesError) {
-        console.error('Error deleting categories:', categoriesError);
-        throw categoriesError;
-      }
-
-      // 5. Delete member department permissions first (since they reference departments and members)
-      console.log('Deleting member department permissions...');
-      const { data: companyMembers } = await supabase
-        .from('company_members')
-        .select('id')
-        .eq('company_id', companyId);
-      
-      if (companyMembers && companyMembers.length > 0) {
-        const memberIds = companyMembers.map(m => m.id);
-        const { error: permissionsError } = await supabase
-          .from('member_department_permissions')
-          .delete()
-          .in('member_id', memberIds);
-        if (permissionsError) {
-          console.error('Error deleting member permissions:', permissionsError);
-          // Don't throw here as this table might not have data
-        }
-      }
-
-      // 6. Delete departments (other tables might reference these)
-      console.log('Deleting departments...');
-      const { error: departmentsError } = await supabase
-        .from('departments')
-        .delete()
-        .eq('company_id', companyId);
-      if (departmentsError) {
-        console.error('Error deleting departments:', departmentsError);
-        throw departmentsError;
-      }
-
-      // 7. Delete company members
-      console.log('Deleting company members...');
-      const { error: membersError } = await supabase
-        .from('company_members')
-        .delete()
-        .eq('company_id', companyId);
-      if (membersError) {
-        console.error('Error deleting company members:', membersError);
-        throw membersError;
-      }
-
-      // 8. Delete company invitations
-      console.log('Deleting company invitations...');
-      const { error: invitationsError } = await supabase
-        .from('company_invitations')
-        .delete()
-        .eq('company_id', companyId);
-      if (invitationsError) {
-        console.error('Error deleting company invitations:', invitationsError);
-        throw invitationsError;
-      }
-
-      // 9. Delete company content settings
-      console.log('Deleting company content settings...');
-      const { error: settingsError } = await supabase
-        .from('company_content_settings')
-        .delete()
-        .eq('company_id', companyId);
-      if (settingsError) {
-        console.error('Error deleting company content settings:', settingsError);
-        throw settingsError;
-      }
-
-      // 10. Final verification - check if any data still exists
-      const { data: remainingHypotheses } = await supabase
-        .from('hypotheses')
-        .select('id')
-        .eq('company_id', companyId);
-
-      const { data: remainingIdeas } = await supabase
-        .from('ideas')
-        .select('id')
-        .eq('company_id', companyId);
-
-      const { data: remainingExperiments } = await supabase
-        .from('experiments')
-        .select('id')
-        .eq('company_id', companyId);
-
-      if (remainingHypotheses?.length || remainingIdeas?.length || remainingExperiments?.length) {
-        throw new Error(`Still have remaining data: ${remainingHypotheses?.length || 0} hypotheses, ${remainingIdeas?.length || 0} ideas, ${remainingExperiments?.length || 0} experiments`);
-      }
-
-      console.log('Successfully deleted all company data');
-    } catch (error) {
-      console.error('Error in deleteCompanyData:', error);
-      throw error;
     }
   };
 
