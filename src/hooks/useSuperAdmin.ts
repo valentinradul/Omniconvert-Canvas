@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -54,7 +54,11 @@ export const useSuperAdmin = () => {
     // No auto-redirect - users can access both modes from account settings
   };
 
-  const isOperatingAsSuperAdmin = isSuperAdmin && operatingMode === 'superadmin';
+  const isOperatingAsSuperAdmin = useMemo(() => {
+    const result = isSuperAdmin && operatingMode === 'superadmin';
+    console.log('isOperatingAsSuperAdmin computed:', { isSuperAdmin, operatingMode, result });
+    return result;
+  }, [isSuperAdmin, operatingMode]);
 
   return { 
     isSuperAdmin, 
