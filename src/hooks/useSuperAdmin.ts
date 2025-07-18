@@ -54,9 +54,11 @@ export const useSuperAdmin = () => {
     if (mode === 'normal') {
       // If switching to normal mode, redirect to main dashboard
       window.location.href = '/dashboard';
+      setIsSuperAdmin(false)
     } else {
       // If switching to superadmin mode, redirect to super admin dashboard
       window.location.href = '/super-admin';
+      setIsSuperAdmin(true)
     }
   };
 
