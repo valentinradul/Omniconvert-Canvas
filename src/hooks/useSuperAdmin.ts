@@ -47,17 +47,20 @@ export const useSuperAdmin = () => {
   }, [user, isAuthenticated]);
 
   const switchOperatingMode = (mode: 'superadmin' | 'normal') => {
+    // Update state and localStorage first
     setOperatingMode(mode);
     localStorage.setItem('superadmin-operating-mode', mode);
     
-    // Redirect based on the new mode
-    if (mode === 'normal') {
-      // If switching to normal mode, redirect to main dashboard
-      window.location.href = '/dashboard';
-    } else {
-      // If switching to superadmin mode, redirect to super admin dashboard
-      window.location.href = '/super-admin';
-    }
+    // Use setTimeout to ensure state updates are processed before redirect
+    setTimeout(() => {
+      if (mode === 'normal') {
+        // If switching to normal mode, redirect to main dashboard
+        window.location.href = '/dashboard';
+      } else {
+        // If switching to superadmin mode, redirect to super admin dashboard
+        window.location.href = '/super-admin';
+      }
+    }, 100);
   };
 
   const isOperatingAsSuperAdmin = isSuperAdmin && operatingMode === 'superadmin';
