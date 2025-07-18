@@ -190,45 +190,123 @@ const CompaniesManagement: React.FC = () => {
   };
 
   const deleteCompanyData = async (companyId: string) => {
-    // Delete experiments first (they reference hypotheses)
-    const { error: experimentsError } = await supabase
-      .from('experiments')
-      .delete()
-      .eq('company_id', companyId);
+    console.log('Starting company data deletion for:', companyId);
+    
+    try {
+      // Delete in the correct order to avoid foreign key violations
+      
+      // 1. Delete experiments first (they reference hypotheses)
+      console.log('Deleting experiments...');
+      const { error: experimentsError } = await supabase
+        .from('experiments')
+        .delete()
+        .eq('company_id', companyId);
+      if (experimentsError) {
+        console.error('Error deleting experiments:', experimentsError);
+        throw experimentsError;
+      }
 
-    if (experimentsError) throw experimentsError;
+      // 2. Delete hypotheses (they reference ideas)
+      console.log('Deleting hypotheses...');
+      const { error: hypothesesError } = await supabase
+        .from('hypotheses')
+        .delete()
+        .eq('company_id', companyId);
+      if (hypothesesError) {
+        console.error('Error deleting hypotheses:', hypothesesError);
+        throw hypothesesError;
+      }
 
-    // Delete hypotheses (they reference ideas)
-    const { error: hypothesesError } = await supabase
-      .from('hypotheses')
-      .delete()
-      .eq('company_id', companyId);
+      // 3. Delete ideas
+      console.log('Deleting ideas...');
+      const { error: ideasError } = await supabase
+        .from('ideas')
+        .delete()
+        .eq('company_id', companyId);
+      if (ideasError) {
+        console.error('Error deleting ideas:', ideasError);
+        throw ideasError;
+      }
 
-    if (hypothesesError) throw hypothesesError;
+      // 4. Delete categories
+      console.log('Deleting categories...');
+      const { error: categoriesError } = await supabase
+        .from('categories')
+        .delete()
+        .eq('company_id', companyId);
+      if (categoriesError) {
+        console.error('Error deleting categories:', categoriesError);
+        throw categoriesError;
+      }
 
-    // Delete ideas
-    const { error: ideasError } = await supabase
-      .from('ideas')
-      .delete()
-      .eq('company_id', companyId);
+      // 5. Delete member department permissions first (since they reference departments and members)
+      console.log('Deleting member department permissions...');
+      const { data: companyMembers } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('company_id', companyId);
+      
+      if (companyMembers && companyMembers.length > 0) {
+        const memberIds = companyMembers.map(m => m.id);
+        const { error: permissionsError } = await supabase
+          .from('member_department_permissions')
+          .delete()
+          .in('member_id', memberIds);
+        if (permissionsError) {
+          console.error('Error deleting member permissions:', permissionsError);
+          // Don't throw here as this table might not have data
+        }
+      }
 
-    if (ideasError) throw ideasError;
+      // 6. Delete departments (other tables might reference these)
+      console.log('Deleting departments...');
+      const { error: departmentsError } = await supabase
+        .from('departments')
+        .delete()
+        .eq('company_id', companyId);
+      if (departmentsError) {
+        console.error('Error deleting departments:', departmentsError);
+        throw departmentsError;
+      }
 
-    // Delete company members
-    const { error: membersError } = await supabase
-      .from('company_members')
-      .delete()
-      .eq('company_id', companyId);
+      // 7. Delete company members
+      console.log('Deleting company members...');
+      const { error: membersError } = await supabase
+        .from('company_members')
+        .delete()
+        .eq('company_id', companyId);
+      if (membersError) {
+        console.error('Error deleting company members:', membersError);
+        throw membersError;
+      }
 
-    if (membersError) throw membersError;
+      // 8. Delete company invitations
+      console.log('Deleting company invitations...');
+      const { error: invitationsError } = await supabase
+        .from('company_invitations')
+        .delete()
+        .eq('company_id', companyId);
+      if (invitationsError) {
+        console.error('Error deleting company invitations:', invitationsError);
+        throw invitationsError;
+      }
 
-    // Delete company invitations
-    const { error: invitationsError } = await supabase
-      .from('company_invitations')
-      .delete()
-      .eq('company_id', companyId);
+      // 9. Delete company content settings
+      console.log('Deleting company content settings...');
+      const { error: settingsError } = await supabase
+        .from('company_content_settings')
+        .delete()
+        .eq('company_id', companyId);
+      if (settingsError) {
+        console.error('Error deleting company content settings:', settingsError);
+        throw settingsError;
+      }
 
-    if (invitationsError) throw invitationsError;
+      console.log('Successfully deleted all company data');
+    } catch (error) {
+      console.error('Error in deleteCompanyData:', error);
+      throw error;
+    }
   };
 
   const handleSort = (key: string) => {
