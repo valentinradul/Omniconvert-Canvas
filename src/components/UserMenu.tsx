@@ -18,6 +18,11 @@ const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
   const { isSuperAdmin, operatingMode, switchOperatingMode } = useSuperAdmin();
 
+  useEffect(()=>{
+
+    
+  },[switchOperatingMode])
+
   if (!user) {
     return null;
   }
