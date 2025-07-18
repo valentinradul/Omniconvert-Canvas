@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2, Shield, AlertCircle } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Loader2, Shield, AlertCircle } from 'lucide-react';
 const SuperAdminProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { isOperatingAsSuperAdmin, isLoading: superAdminLoading } = useSuperAdmin();
+  const navigate = useNavigate();
 
   // Show loading state while checking authentication or super admin status
   if (authLoading || superAdminLoading) {
@@ -39,7 +40,7 @@ const SuperAdminProtectedRoute: React.FC = () => {
           </p>
           <div className="pt-4">
             <button 
-              onClick={() => window.history.back()}
+              onClick={() => navigate('/dashboard')}
               className="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               Go Back
