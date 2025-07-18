@@ -6,10 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const SuperAdminModeToggle: React.FC = () => {
   const { isSuperAdmin, operatingMode, switchOperatingMode } = useSuperAdmin();
-
+const [mode,setMode]=useState(false)
   if (!isSuperAdmin) {
     return null;
-  }
+  
+
+    useEffect(()=>{
+
+      
+    },[mode])
+    
 
   return (
     <Card className="w-full max-w-md">
@@ -23,7 +29,7 @@ const SuperAdminModeToggle: React.FC = () => {
         <div className="grid grid-cols-2 gap-3">
           <Button
             variant={operatingMode === 'superadmin' ? 'default' : 'outline'}
-            onClick={() => switchOperatingMode('superadmin')}
+            onClick={() => {switchOperatingMode('superadmin') setMode(true)}}
             className="flex flex-col items-center gap-2 h-auto py-4"
           >
             <Shield className="h-5 w-5" />
