@@ -40,9 +40,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Check if user is super admin and redirect accordingly - only on fresh sign in
           // Only redirect if we're on the login page or root page
           const currentPath = window.location.pathname;
-          
-          // Don't interfere with redirects if user is already on dashboard or super-admin pages
-          // This prevents interference when users manually switch operating modes
           if (currentPath === '/' || currentPath === '/login') {
             setTimeout(async () => {
               if (session?.user?.id) {
@@ -89,8 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             }, 500);
-          } else {
-            console.log('User signed in but not redirecting - already on page:', currentPath);
           }
         }
         
