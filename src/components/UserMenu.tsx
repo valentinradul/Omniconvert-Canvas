@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -17,11 +17,11 @@ import { Shield, Users } from 'lucide-react';
 const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
   const { isSuperAdmin, operatingMode, switchOperatingMode } = useSuperAdmin();
-
+const [mode,setMode]=useState(false)
   useEffect(()=>{
 
     
-  },[switchOperatingMode])
+  },[mode])
 
   if (!user) {
     return null;
@@ -66,12 +66,12 @@ const UserMenu: React.FC = () => {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Super Admin</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => switchOperatingMode('superadmin')}>
+            <DropdownMenuItem onClick={() => {switchOperatingMode('superadmin'); setMode(true);}}>
               <Shield className="h-4 w-4 mr-2" />
               Super Admin Mode
               {operatingMode === 'superadmin' && <span className="ml-auto text-xs">✓</span>}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => switchOperatingMode('normal')}>
+            <DropdownMenuItem onClick={() => { switchOperatingMode('normal'); setMode(false); }}>
               <Users className="h-4 w-4 mr-2" />
               Normal User Mode
               {operatingMode === 'normal' && <span className="ml-auto text-xs">✓</span>}
