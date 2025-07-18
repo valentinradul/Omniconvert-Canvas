@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import SuperAdminTable from './SuperAdminTable';
+import HypothesisDetailsDialog from './HypothesisDetailsDialog';
 import { useToast } from '@/hooks/use-toast';
 import {
   Select,
@@ -57,6 +58,8 @@ const HypothesesManagement: React.FC = () => {
   const [itemsPerPage] = useState(10);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hypothesisToDelete, setHypothesisToDelete] = useState<HypothesesData | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedHypothesis, setSelectedHypothesis] = useState<HypothesesData | null>(null);
   const { toast } = useToast();
 
   // Get unique statuses
@@ -359,6 +362,17 @@ const HypothesesManagement: React.FC = () => {
         itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
         isLoading={isLoading}
+        onRowClick={(hypothesis) => {
+          setSelectedHypothesis(hypothesis);
+          setDetailsDialogOpen(true);
+        }}
+      />
+
+      {/* Hypothesis Details Dialog */}
+      <HypothesisDetailsDialog
+        hypothesis={selectedHypothesis}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
       />
 
       {/* Delete Confirmation Dialog */}

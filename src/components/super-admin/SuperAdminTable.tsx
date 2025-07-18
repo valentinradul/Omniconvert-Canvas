@@ -41,6 +41,7 @@ interface SuperAdminTableProps<T> {
   sortDirection?: 'asc' | 'desc';
   isLoading?: boolean;
   actions?: React.ReactNode;
+  onRowClick?: (item: T) => void;
 }
 
 function SuperAdminTable<T extends Record<string, any>>({
@@ -55,7 +56,8 @@ function SuperAdminTable<T extends Record<string, any>>({
   sortKey,
   sortDirection,
   isLoading = false,
-  actions
+  actions,
+  onRowClick
 }: SuperAdminTableProps<T>) {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startItem = (currentPage - 1) * itemsPerPage + 1;
@@ -148,7 +150,11 @@ function SuperAdminTable<T extends Record<string, any>>({
                 </TableRow>
               ) : (
                 data.map((item, index) => (
-                  <TableRow key={item.id || index} className="hover:bg-muted/50">
+                  <TableRow 
+                    key={item.id || index} 
+                    className={`hover:bg-muted/50 ${onRowClick ? 'cursor-pointer' : ''}`}
+                    onClick={() => onRowClick?.(item)}
+                  >
                     {columns.map((column) => (
                       <TableCell key={String(column.key)}>
                         {column.render 
