@@ -621,6 +621,45 @@ export type Database = {
         Args: { user_id: string; company_id: string }
         Returns: boolean
       }
+      get_all_experiments_for_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          hypothesisid: string
+          startdate: string
+          enddate: string
+          status: string
+          notes: string
+          notes_history: Json
+          observationcontent: Json
+          createdat: string
+          updatedat: string
+          userid: string
+          username: string
+          company_id: string
+          company_name: string
+          hypothesis_observation: string
+          idea_title: string
+        }[]
+      }
+      get_all_ideas_for_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          title: string
+          description: string
+          category: string
+          departmentid: string
+          createdat: string
+          userid: string
+          username: string
+          tags: string[]
+          company_id: string
+          is_public: boolean
+          company_name: string
+          department_name: string
+        }[]
+      }
       get_current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string

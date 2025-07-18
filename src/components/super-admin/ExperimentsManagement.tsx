@@ -64,16 +64,7 @@ const ExperimentsManagement: React.FC = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('experiments')
-        .select(`
-          *,
-          companies:company_id (name),
-          hypotheses:hypothesisid (
-            observation,
-            ideas:ideaid (title)
-          )
-        `)
-        .order('createdat', { ascending: false });
+        .rpc('get_all_experiments_for_super_admin');
 
       if (error) throw error;
       
@@ -92,8 +83,11 @@ const ExperimentsManagement: React.FC = () => {
         userId: item.userid,
         userName: item.username,
         companyId: item.company_id,
-        companies: item.companies,
-        hypotheses: item.hypotheses
+        companies: { name: item.company_name },
+        hypotheses: { 
+          observation: item.hypothesis_observation,
+          ideas: { title: item.idea_title }
+        }
       })) || [];
 
       setExperiments(transformedData);
