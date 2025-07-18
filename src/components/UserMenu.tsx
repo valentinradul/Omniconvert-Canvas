@@ -21,6 +21,17 @@ const UserMenu: React.FC = () => {
   if (!user) {
     return null;
   }
+const hasInitialized = useRef(false);
+
+useEffect(() => {
+  if (!hasInitialized.current) {
+    hasInitialized.current = true;
+    return; // Skip reload on initial mount
+  }
+  
+  // Only reload when operatingMode actually changes
+  window.location.reload();
+}, [operatingMode]);
 
   // Use user metadata or fallback to email for display
   const fullName = user.user_metadata?.full_name || '';
