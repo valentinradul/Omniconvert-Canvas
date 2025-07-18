@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Users, Calendar, Search } from 'lucide-react';
+import { Plus, Trash2, Users, Calendar, Search, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -16,6 +16,8 @@ interface Company {
   created_at: string;
   created_by: string;
   member_count?: number;
+  owner_name?: string;
+  owner_email?: string;
 }
 
 const CompaniesManagement: React.FC = () => {
@@ -59,21 +61,57 @@ const CompaniesManagement: React.FC = () => {
 
   const fetchCompanies = async () => {
     try {
+      // Get companies with member count and owner information
       const { data: companiesData, error } = await supabase
         .from('companies')
         .select(`
           *,
-          company_members(count)
+          company_members!inner(
+            count,
+            role,
+            profiles!inner(full_name)
+          )
         `);
 
       if (error) throw error;
 
-      const companiesWithCounts = companiesData?.map(company => ({
-        ...company,
-        member_count: company.company_members?.[0]?.count || 0
-      })) || [];
+      // Process companies to get member count and owner info
+      const companiesWithDetails = await Promise.all(
+        (companiesData || []).map(async (company) => {
+          // Get total member count
+          const { count: memberCount } = await supabase
+            .from('company_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('company_id', company.id);
 
-      setCompanies(companiesWithCounts);
+          // Get owner information
+          const { data: ownerData } = await supabase
+            .from('company_members')
+            .select(`
+              profiles!inner(full_name),
+              user_id
+            `)
+            .eq('company_id', company.id)
+            .eq('role', 'owner')
+            .single();
+
+          // Get owner email from auth.users
+          let ownerEmail = '';
+          if (ownerData?.user_id) {
+            const { data: userData } = await supabase.auth.admin.getUserById(ownerData.user_id);
+            ownerEmail = userData?.user?.email || '';
+          }
+
+          return {
+            ...company,
+            member_count: memberCount || 0,
+            owner_name: ownerData?.profiles?.full_name || 'Unknown',
+            owner_email: ownerEmail
+          };
+        })
+      );
+
+      setCompanies(companiesWithDetails);
     } catch (error: any) {
       console.error('Error fetching companies:', error);
       toast({
@@ -171,6 +209,22 @@ const CompaniesManagement: React.FC = () => {
       sortable: true,
       render: (company: Company) => (
         <div className="font-medium">{company.name}</div>
+      )
+    },
+    {
+      key: 'owner_name',
+      header: 'Owner',
+      sortable: true,
+      render: (company: Company) => (
+        <div className="flex items-center gap-2">
+          <Crown className="h-4 w-4 text-yellow-500" />
+          <div>
+            <div className="font-medium text-sm">{company.owner_name}</div>
+            {company.owner_email && (
+              <div className="text-xs text-muted-foreground">{company.owner_email}</div>
+            )}
+          </div>
+        </div>
       )
     },
     {
