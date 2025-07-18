@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -20,7 +20,7 @@ const UserMenu: React.FC = () => {
 const [mode,setMode]=useState(false)
   useEffect(()=>{
 
-    windows.location.reload()
+    window.location.reload()
   },[mode])
 
   if (!user) {
@@ -66,12 +66,12 @@ const [mode,setMode]=useState(false)
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Super Admin</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => {switchOperatingMode('superadmin') setMode(true)} }>
+            <DropdownMenuItem onClick={() => {switchOperatingMode('superadmin'); setMode(true);}}>
               <Shield className="h-4 w-4 mr-2" />
               Super Admin Mode
               {operatingMode === 'superadmin' && <span className="ml-auto text-xs">✓</span>}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() =>{ switchOperatingMode('normal') setMode(false)}}>
+            <DropdownMenuItem onClick={() => { switchOperatingMode('normal'); setMode(false); }}>
               <Users className="h-4 w-4 mr-2" />
               Normal User Mode
               {operatingMode === 'normal' && <span className="ml-auto text-xs">✓</span>}
