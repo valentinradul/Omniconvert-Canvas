@@ -20,7 +20,7 @@ const UserMenu: React.FC = () => {
 
   useEffect(()=>{
 
-    
+    windows.location.reload()
   },[switchOperatingMode])
 
   if (!user) {
