@@ -47,17 +47,12 @@ export const useSuperAdmin = () => {
   }, [user, isAuthenticated]);
 
   const switchOperatingMode = (mode: 'superadmin' | 'normal') => {
-    console.log('Switching operating mode from', operatingMode, 'to', mode);
     setOperatingMode(mode);
     localStorage.setItem('superadmin-operating-mode', mode);
-    console.log('Operating mode switched to', mode);
-    // No auto-redirect - users can access both modes from account settings
   };
 
   const isOperatingAsSuperAdmin = useMemo(() => {
-    const result = isSuperAdmin && operatingMode === 'superadmin';
-    console.log('isOperatingAsSuperAdmin computed:', { isSuperAdmin, operatingMode, result });
-    return result;
+    return isSuperAdmin && operatingMode === 'superadmin';
   }, [isSuperAdmin, operatingMode]);
 
   return { 

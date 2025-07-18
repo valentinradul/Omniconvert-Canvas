@@ -9,8 +9,11 @@ import { Loader2 } from 'lucide-react';
 const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const { currentCompany, companies, isLoading: companyLoading } = useCompany();
-  const { isSuperAdmin, isLoading: superAdminLoading } = useSuperAdmin();
   const location = useLocation();
+  
+  // Call useSuperAdmin hook consistently - avoid conditional hook calls
+  const superAdminData = useSuperAdmin();
+  const { isSuperAdmin, isLoading: superAdminLoading } = superAdminData;
 
   // Debug authentication state
   useEffect(() => {

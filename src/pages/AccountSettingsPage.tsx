@@ -22,8 +22,6 @@ const AccountSettingsPage = () => {
   const { user } = useAuth();
   const { isOperatingAsSuperAdmin, isSuperAdmin } = useSuperAdmin();
   
-  console.log('AccountSettingsPage render:', { isOperatingAsSuperAdmin, isSuperAdmin });
-  
   const [fullName, setFullName] = React.useState(user?.user_metadata?.full_name || "");
   const [email, setEmail] = React.useState(user?.email || "");
   
