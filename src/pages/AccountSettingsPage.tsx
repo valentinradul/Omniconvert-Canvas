@@ -14,13 +14,12 @@ import DepartmentsManagement from '@/components/super-admin/DepartmentsManagemen
 import IdeasManagement from '@/components/super-admin/IdeasManagement';
 import HypothesesManagement from '@/components/super-admin/HypothesesManagement';
 import ExperimentsManagement from '@/components/super-admin/ExperimentsManagement';
-import SuperAdminModeToggle from '@/components/SuperAdminModeToggle';
 import { Shield, Building, Users, FolderTree, Lightbulb, Brain, FlaskConical } from 'lucide-react';
 
 const AccountSettingsPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { isOperatingAsSuperAdmin, isSuperAdmin } = useSuperAdmin();
+  const { isOperatingAsSuperAdmin } = useSuperAdmin();
   
   const [fullName, setFullName] = React.useState(user?.user_metadata?.full_name || "");
   const [email, setEmail] = React.useState(user?.email || "");
@@ -113,10 +112,6 @@ const AccountSettingsPage = () => {
                     </ChangePasswordDialog>
                   </CardContent>
                 </Card>
-              )}
-              
-              {isSuperAdmin && (
-                <SuperAdminModeToggle />
               )}
             </div>
           </TabsContent>
@@ -246,10 +241,6 @@ const AccountSettingsPage = () => {
                 </ChangePasswordDialog>
               </CardContent>
             </Card>
-          )}
-          
-          {isSuperAdmin && (
-            <SuperAdminModeToggle />
           )}
         </div>
       )}

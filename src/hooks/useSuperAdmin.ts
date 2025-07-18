@@ -1,35 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-
-// Create a simple event emitter for mode changes
-const modeChangeListeners = new Set<() => void>();
-
-const notifyModeChange = () => {
-  modeChangeListeners.forEach(listener => listener());
-};
-
-const addModeChangeListener = (listener: () => void) => {
-  modeChangeListeners.add(listener);
-  return () => {
-    modeChangeListeners.delete(listener);
-  };
-};
 
 export const useSuperAdmin = () => {
   const { user, isAuthenticated } = useAuth();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [operatingMode, setOperatingMode] = useState<'superadmin' | 'normal'>('normal');
-  const [, forceRender] = useState({});
-
-  // Add listener for mode changes from other components
-  useEffect(() => {
-    const unsubscribe = addModeChangeListener(() => {
-      forceRender({});
-    });
-    return unsubscribe;
-  }, []);
 
   useEffect(() => {
     const checkSuperAdminStatus = async () => {
@@ -71,13 +49,10 @@ export const useSuperAdmin = () => {
   const switchOperatingMode = (mode: 'superadmin' | 'normal') => {
     setOperatingMode(mode);
     localStorage.setItem('superadmin-operating-mode', mode);
-    // Notify all components using this hook that the mode has changed
-    notifyModeChange();
+    // No auto-redirect - users can access both modes from account settings
   };
 
-  const isOperatingAsSuperAdmin = useMemo(() => {
-    return isSuperAdmin && operatingMode === 'superadmin';
-  }, [isSuperAdmin, operatingMode]);
+  const isOperatingAsSuperAdmin = isSuperAdmin && operatingMode === 'superadmin';
 
   return { 
     isSuperAdmin, 
