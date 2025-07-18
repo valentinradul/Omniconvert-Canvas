@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -17,6 +17,16 @@ import { Shield, Users } from 'lucide-react';
 const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
   const { isSuperAdmin, operatingMode, switchOperatingMode } = useSuperAdmin();
+  const isInitialMount = useRef(true);
+
+  // Auto reload when operating mode changes
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    window.location.reload();
+  }, [operatingMode]);
 
   if (!user) {
     return null;
