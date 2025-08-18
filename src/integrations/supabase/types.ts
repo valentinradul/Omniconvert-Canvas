@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -618,7 +618,7 @@ export type Database = {
     }
     Functions: {
       can_add_company_member: {
-        Args: { user_id: string; company_id: string }
+        Args: { company_id: string; user_id: string }
         Returns: boolean
       }
       delete_company_cascade: {
@@ -628,28 +628,33 @@ export type Database = {
       get_all_experiments_for_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          hypothesisid: string
-          startdate: string
+          company_id: string
+          company_name: string
+          createdat: string
           enddate: string
-          status: string
+          hypothesis_observation: string
+          hypothesisid: string
+          id: string
+          idea_title: string
           notes: string
           notes_history: Json
           observationcontent: Json
-          createdat: string
+          startdate: string
+          status: string
           updatedat: string
           userid: string
           username: string
-          company_id: string
-          company_name: string
-          hypothesis_observation: string
-          idea_title: string
         }[]
       }
       get_all_hypotheses_for_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
+          company_id: string
+          company_name: string
+          createdat: string
           id: string
+          idea_description: string
+          idea_title: string
           ideaid: string
           initiative: string
           metric: string
@@ -660,41 +665,36 @@ export type Database = {
           status: string
           userid: string
           username: string
-          company_id: string
-          createdat: string
-          company_name: string
-          idea_title: string
-          idea_description: string
         }[]
       }
       get_all_ideas_for_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          title: string
-          description: string
           category: string
-          departmentid: string
+          company_id: string
+          company_name: string
           createdat: string
+          department_name: string
+          departmentid: string
+          description: string
+          id: string
+          is_public: boolean
+          tags: string[]
+          title: string
           userid: string
           username: string
-          tags: string[]
-          company_id: string
-          is_public: boolean
-          company_name: string
-          department_name: string
         }[]
       }
       get_companies_with_owners_for_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          name: string
           created_at: string
           created_by: string
+          id: string
           member_count: number
-          owner_name: string
+          name: string
           owner_email: string
+          owner_name: string
         }[]
       }
       get_current_user_email: {
@@ -702,17 +702,17 @@ export type Database = {
         Returns: string
       }
       get_user_company_role: {
-        Args: { user_id: string; company_id: string }
+        Args: { company_id: string; user_id: string }
         Returns: string
       }
       has_company_invitation: {
-        Args: { user_email: string; company_id: string }
+        Args: { company_id: string; user_email: string }
         Returns: boolean
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -725,19 +725,19 @@ export type Database = {
         Returns: boolean
       }
       user_has_company_access: {
-        Args: { user_id: string; company_id: string }
+        Args: { company_id: string; user_id: string }
         Returns: boolean
       }
       user_has_company_admin_role: {
-        Args: { user_id: string; company_id: string }
+        Args: { company_id: string; user_id: string }
         Returns: boolean
       }
       user_has_department_access: {
-        Args: { user_id: string; department_id: string }
+        Args: { department_id: string; user_id: string }
         Returns: boolean
       }
       user_is_company_member: {
-        Args: { user_id: string; company_id: string }
+        Args: { company_id: string; user_id: string }
         Returns: boolean
       }
     }
