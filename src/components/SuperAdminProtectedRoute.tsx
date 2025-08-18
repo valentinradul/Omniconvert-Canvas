@@ -7,7 +7,7 @@ import { Loader2, Shield, AlertCircle } from 'lucide-react';
 
 const SuperAdminProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { isOperatingAsSuperAdmin, isLoading: superAdminLoading } = useSuperAdmin();
+  const { isOperatingAsSuperAdmin, isSuperAdmin, operatingMode, switchOperatingMode, isLoading: superAdminLoading } = useSuperAdmin();
 
   // Show loading state while checking authentication or super admin status
   if (authLoading || superAdminLoading) {
@@ -37,7 +37,15 @@ const SuperAdminProtectedRoute: React.FC = () => {
             You don't have permission to access the Super Admin Dashboard. 
             Only authorized super administrators can access this area.
           </p>
-          <div className="pt-4">
+          <div className="pt-4 flex items-center justify-center gap-3">
+            {isSuperAdmin && operatingMode !== 'superadmin' && (
+              <button
+                onClick={() => switchOperatingMode('superadmin')}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Switch to Super Admin Mode
+              </button>
+            )}
             <button 
               onClick={() => window.history.back()}
               className="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
