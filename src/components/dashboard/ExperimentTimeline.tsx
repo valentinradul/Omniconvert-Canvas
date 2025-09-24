@@ -7,88 +7,20 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Experiment, ExperimentStatus } from '@/types/experiments';
-import { Calendar, DollarSign, Edit } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useExperiments } from '@/context/hooks/useExperiments';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/context/company/CompanyContext';
 import { toast } from 'sonner';
 import { TimePeriod, TimeInterval } from './PeriodSelector';
 import { getPeriodDateRange, getIntervalSteps } from '@/utils/dateUtils';
+import { useNavigate } from 'react-router-dom';
 
 interface ExperimentTimelineProps {
   experiments: Experiment[];
   selectedPeriod: TimePeriod;
   selectedInterval: TimeInterval;
 }
-
-interface CostRevenueModalProps {
-  experiment: Experiment;
-  onUpdate: (id: string, updates: Partial<Experiment>) => void;
-}
-
-const CostRevenueModal: React.FC<CostRevenueModalProps> = ({ experiment, onUpdate }) => {
-  const [cost, setCost] = useState(experiment.totalCost?.toString() || '');
-  const [revenue, setRevenue] = useState(experiment.totalReturn?.toString() || '');
-  const [isOpen, setIsOpen] = useState(false);
-
-  const handleSave = () => {
-    const updates: Partial<Experiment> = {
-      totalCost: cost ? parseFloat(cost) : null,
-      totalReturn: revenue ? parseFloat(revenue) : null,
-    };
-    
-    onUpdate(experiment.id, updates);
-    setIsOpen(false);
-    toast.success('Financial data updated successfully');
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-          <Edit className="h-3 w-3" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Financial Data</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="cost">Total Cost Incurred ($)</Label>
-            <Input
-              id="cost"
-              type="number"
-              step="0.01"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-              placeholder="0.00"
-            />
-          </div>
-          <div>
-            <Label htmlFor="revenue">Total Revenue Generated ($)</Label>
-            <Input
-              id="revenue"
-              type="number"
-              step="0.01"
-              value={revenue}
-              onChange={(e) => setRevenue(e.target.value)}
-              placeholder="0.00"
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>
-              Save
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ 
   experiments, 
@@ -99,6 +31,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
   const { user } = useAuth();
   const { currentCompany } = useCompany();
   const { editExperiment } = useExperiments(user, currentCompany);
+  const navigate = useNavigate();
 
   const statusOptions: { status: ExperimentStatus; label: string; color: string }[] = [
     { status: 'In Progress', label: 'Active Experiments', color: 'bg-green-500' },
@@ -126,14 +59,6 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
   }, [experiments, selectedStatuses, selectedPeriod]);
 
   const hasFinancialData = experiments.some(exp => exp.totalCost || exp.totalReturn);
-
-  const handleUpdateExperiment = async (id: string, updates: Partial<Experiment>) => {
-    try {
-      await editExperiment(id, updates);
-    } catch (error) {
-      toast.error('Failed to update experiment');
-    }
-  };
 
   const handleStatusToggle = (status: ExperimentStatus) => {
     setSelectedStatuses(prev => 
@@ -249,7 +174,8 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                     <div className="min-w-[300px] flex-shrink-0 p-3 border-r border-border">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-sm truncate text-primary">
+                          <h4 className="font-medium text-sm truncate text-primary cursor-pointer hover:underline"
+                              onClick={() => navigate(`/experiments/${experiment.id}`)}>
                             {experiment.title || `Experiment #${experiment.id.slice(0, 8)}`}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">
@@ -262,16 +188,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                               </span>
                             )}
                           </div>
-                          {hasFinancialData && (experiment.totalCost || experiment.totalReturn) && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              <div className="flex items-center gap-1">
-                                <DollarSign className="h-3 w-3" />
-                                C: ${experiment.totalCost || 0} | R: ${experiment.totalReturn || 0}
-                              </div>
-                            </div>
-                          )}
                         </div>
-                        <CostRevenueModal experiment={experiment} onUpdate={handleUpdateExperiment} />
                       </div>
                     </div>
                     

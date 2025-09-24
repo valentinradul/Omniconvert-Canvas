@@ -219,6 +219,48 @@ export type Database = {
           },
         ]
       }
+      experiment_financials: {
+        Row: {
+          added_by: string
+          amount: number
+          created_at: string
+          description: string | null
+          experiment_id: string
+          id: string
+          name: string
+          period_end: string
+          period_start: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          added_by: string
+          amount: number
+          created_at?: string
+          description?: string | null
+          experiment_id: string
+          id?: string
+          name: string
+          period_end: string
+          period_start: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string
+          amount?: number
+          created_at?: string
+          description?: string | null
+          experiment_id?: string
+          id?: string
+          name?: string
+          period_end?: string
+          period_start?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       experiments: {
         Row: {
           company_id: string | null

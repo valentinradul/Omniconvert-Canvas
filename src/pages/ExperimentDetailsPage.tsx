@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import ExperimentNotesSection from '@/components/experiments/ExperimentNotesSection';
+import ExperimentFinancials from '@/components/experiments/ExperimentFinancials';
 
 const ExperimentDetailsPage: React.FC = () => {
   const { experimentId } = useParams();
@@ -278,6 +279,8 @@ const ExperimentDetailsPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+      
+      <ExperimentFinancials experimentId={experiment.id} />
       
       <ExperimentNotesSection 
         notes_history={experiment.notes_history || []}

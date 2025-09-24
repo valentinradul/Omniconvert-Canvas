@@ -10,6 +10,7 @@ import FilterBar from "@/components/dashboard/FilterBar";
 import StatisticsChart from "@/components/dashboard/StatisticsChart";
 import ExperimentTimeline from "@/components/dashboard/ExperimentTimeline";
 import PeriodSelector, { TimePeriod, TimeInterval } from "@/components/dashboard/PeriodSelector";
+import FinancialSummary from "@/components/dashboard/FinancialSummary";
 import CompanyInvitations from "@/components/company/CompanyInvitations";
 import { useInvitationHandler } from "@/hooks/useInvitationHandler";
 import { supabase } from "@/integrations/supabase/client";
@@ -166,6 +167,8 @@ const Dashboard: React.FC = () => {
         onPeriodChange={setSelectedPeriod}
         onIntervalChange={setSelectedInterval}
       />
+      
+      <FinancialSummary selectedPeriod={selectedPeriod} />
       
       <ExperimentTimeline
         experiments={experiments}
