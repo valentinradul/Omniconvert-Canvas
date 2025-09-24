@@ -37,6 +37,20 @@ const CompanyManagement: React.FC = () => {
 
   const fetchCompanies = async () => {
     try {
+      // Get current user first
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error('No authenticated user:', userError);
+        toast({
+          variant: 'destructive',
+          title: 'Authentication Error',
+          description: 'Please log in to view companies'
+        });
+        setLoading(false);
+        return;
+      }
+
       // Get companies that the current user is an admin or owner of
       const { data: userCompanies, error } = await supabase
         .from('company_members')
@@ -50,7 +64,7 @@ const CompanyManagement: React.FC = () => {
             created_by
           )
         `)
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('user_id', user.id)
         .in('role', ['owner', 'admin']);
 
       if (error) throw error;
