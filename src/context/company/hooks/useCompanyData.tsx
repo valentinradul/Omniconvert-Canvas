@@ -124,8 +124,6 @@ export function useCompanyData(userId: string | undefined) {
   const fetchCompanyMembers = useCallback(async () => {
     if (!currentCompany) return;
     
-    console.log('🔄 Fetching company members for company:', currentCompany.id);
-    
     try {
       const { data: members, error } = await supabase
         .from('company_members')
@@ -137,8 +135,6 @@ export function useCompanyData(userId: string | undefined) {
           )
         `)
         .eq('company_id', currentCompany.id);
-
-      console.log('🔍 Company members query result:', { members, error });
 
       if (error) {
         console.error('❌ Error fetching company members:', error);
@@ -157,7 +153,6 @@ export function useCompanyData(userId: string | undefined) {
         }
       })) || [];
 
-      console.log('✅ Formatted company members:', formattedMembers);
       setCompanyMembers(formattedMembers);
     } catch (error) {
       console.error('❌ Error in fetchCompanyMembers:', error);
