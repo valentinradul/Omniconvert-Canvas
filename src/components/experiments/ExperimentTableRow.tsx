@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ExperimentTableRowProps {
   experiment: Experiment;
@@ -44,6 +45,11 @@ const ExperimentTableRow: React.FC<ExperimentTableRowProps> = ({
           <div className="text-xs text-muted-foreground line-clamp-2">
             {hypothesis?.initiative || 'No hypothesis description'}
           </div>
+          {experiment.createdAt && (
+            <div className="text-xs text-muted-foreground">
+              Created {formatDistanceToNow(new Date(experiment.createdAt), { addSuffix: true })}
+            </div>
+          )}
         </div>
       </TableCell>
       <TableCell>

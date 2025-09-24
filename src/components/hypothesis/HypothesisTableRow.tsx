@@ -9,6 +9,7 @@ import { User } from 'lucide-react';
 import PectiScoreDisplay from '@/components/PectiScoreDisplay';
 import HypothesisPectiEditor from './HypothesisPectiEditor';
 import HypothesisStatusEditor from './HypothesisStatusEditor';
+import { formatDistanceToNow } from 'date-fns';
 
 interface HypothesisTableRowProps {
   hypothesis: Hypothesis;
@@ -66,11 +67,18 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
         <div className="space-y-2">
           <div className="font-medium">{idea?.title || 'No Access'}</div>
           <p className="text-xs text-muted-foreground line-clamp-2">{hypothesis.initiative}</p>
-          {hypothesis.userName && (
-            <div className="text-xs text-muted-foreground">
-              <User className="inline h-3 w-3 mr-1" /> {hypothesis.userName}
-            </div>
-          )}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            {hypothesis.userName && (
+              <div className="flex items-center">
+                <User className="inline h-3 w-3 mr-1" /> {hypothesis.userName}
+              </div>
+            )}
+            {hypothesis.createdAt && (
+              <div className="text-xs text-muted-foreground">
+                Created {formatDistanceToNow(new Date(hypothesis.createdAt), { addSuffix: true })}
+              </div>
+            )}
+          </div>
         </div>
       </TableCell>
       <TableCell>
