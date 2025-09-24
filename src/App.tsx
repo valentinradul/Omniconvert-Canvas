@@ -73,6 +73,7 @@ const App = () => (
                     <Route path="create-experiment/:hypothesisId" element={<CreateExperimentPage />} />
                     <Route path="experiments" element={<ExperimentsPage />} />
                     <Route path="experiment-details/:experimentId" element={<ExperimentDetailsPage />} />
+                    <Route path="experiments/:experimentId" element={<ExperimentDetailsPage />} />
                     <Route path="departments" element={<DepartmentsPage />} />
                     <Route path="content-management" element={<ContentManagementPage />} />
                     <Route path="account-settings" element={<AccountSettingsPage />} />
