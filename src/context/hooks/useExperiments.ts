@@ -38,6 +38,7 @@ export const useExperiments = (
         const formattedExperiments: Experiment[] = (data || []).map(exp => ({
           id: exp.id,
           hypothesisId: exp.hypothesisid || "",
+          title: exp.title,
           startDate: exp.startdate ? new Date(exp.startdate) : null,
           endDate: exp.enddate ? new Date(exp.enddate) : null,
           status: exp.status as any || "Planned",
@@ -48,7 +49,9 @@ export const useExperiments = (
           updatedAt: new Date(exp.updatedat),
           userId: exp.userid,
           userName: exp.username,
-          companyId: exp.company_id
+          companyId: exp.company_id,
+          totalCost: exp.totalcost ? Number(exp.totalcost) : null,
+          totalReturn: exp.totalreturn ? Number(exp.totalreturn) : null
         }));
         
         setExperiments(formattedExperiments);
