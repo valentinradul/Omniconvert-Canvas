@@ -123,46 +123,58 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ experiments }) 
     );
   };
 
-  const getWeeksFromStart = (experiment: Experiment) => {
-    if (!experiment.startDate) return [];
+  // Get the earliest start date from filtered experiments to establish timeline baseline
+  const getTimelineStartDate = () => {
+    const experimentsWithDates = filteredExperiments.filter(exp => exp.startDate);
+    if (experimentsWithDates.length === 0) return new Date();
     
-    const startDate = new Date(experiment.startDate);
-    const currentDate = new Date();
-    const endDate = experiment.endDate ? new Date(experiment.endDate) : currentDate;
-    
+    return new Date(Math.min(...experimentsWithDates.map(exp => new Date(exp.startDate!).getTime())));
+  };
+
+  const timelineStartDate = getTimelineStartDate();
+  const maxWeeks = 12;
+
+  // Calculate which weeks to display starting from the earliest experiment
+  const getTimelineWeeks = () => {
     const weeks = [];
-    const weekStart = new Date(startDate);
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week
+    const weekStart = new Date(timelineStartDate);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
     
-    let currentWeek = new Date(weekStart);
-    let weekNumber = 1;
-    
-    while (currentWeek <= endDate && weekNumber <= 12) { // Limit to 12 weeks for display
+    for (let i = 0; i < maxWeeks; i++) {
+      const currentWeek = new Date(weekStart);
+      currentWeek.setDate(currentWeek.getDate() + (i * 7));
+      
       weeks.push({
-        number: weekNumber,
+        number: i + 1,
         start: new Date(currentWeek),
-        isActive: currentWeek <= currentDate && new Date(currentWeek.getTime() + 7 * 24 * 60 * 60 * 1000) > startDate
+        label: currentWeek.toLocaleDateString('en-US', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric' 
+        })
       });
-      currentWeek.setDate(currentWeek.getDate() + 7);
-      weekNumber++;
     }
     
     return weeks;
   };
 
+  const timelineWeeks = getTimelineWeeks();
+
   const getExperimentWeekSpan = (experiment: Experiment) => {
-    if (!experiment.startDate) return { start: 1, duration: 1 };
+    if (!experiment.startDate) return { start: 0, duration: 1 };
     
     const startDate = new Date(experiment.startDate);
-    const currentDate = new Date();
-    const endDate = experiment.endDate ? new Date(experiment.endDate) : currentDate;
+    const endDate = experiment.endDate ? new Date(experiment.endDate) : new Date();
     
+    // Calculate week offset from timeline start
+    const weekOffset = Math.floor((startDate.getTime() - timelineStartDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
     const weeksDuration = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
     
-    return { start: 1, duration: Math.min(weeksDuration, 12) };
+    return { 
+      start: Math.max(0, weekOffset), 
+      duration: Math.min(weeksDuration, maxWeeks - weekOffset) 
+    };
   };
-
-  const maxWeeks = 12;
 
   return (
     <Card className="w-full">
@@ -202,9 +214,10 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ experiments }) 
             <div className="flex mb-4">
               <div className="min-w-[300px] flex-shrink-0" /> {/* Space for experiment names */}
               <div className="flex border-l border-border">
-                {Array.from({ length: maxWeeks }, (_, i) => (
+                {timelineWeeks.map((week, i) => (
                   <div key={i} className="w-20 text-center py-2 border-r border-border bg-muted/30">
-                    <span className="text-xs font-medium text-primary">WEEK {i + 1}</span>
+                    <div className="text-xs font-medium text-primary">WEEK {week.number}</div>
+                    <div className="text-xs text-muted-foreground">{week.label}</div>
                   </div>
                 ))}
               </div>
@@ -250,17 +263,35 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ experiments }) 
                     
                     {/* Timeline Grid */}
                     <div className="flex">
-                      {Array.from({ length: maxWeeks }, (_, i) => (
-                        <div key={i} className="w-20 h-12 border-r border-border relative bg-background">
-                          {i < weekSpan.duration && (
-                            <div 
-                              className={`absolute inset-y-1 left-1 right-1 rounded ${
-                                isActive ? 'bg-primary' : 'bg-primary/70'
-                              }`}
-                            />
-                          )}
-                        </div>
-                      ))}
+                      {Array.from({ length: maxWeeks }, (_, i) => {
+                        const isInRange = i >= weekSpan.start && i < weekSpan.start + weekSpan.duration;
+                        const isFirstWeek = isInRange && i === weekSpan.start;
+                        const isLastWeek = isInRange && i === weekSpan.start + weekSpan.duration - 1;
+                        
+                        return (
+                          <div key={i} className="w-20 h-12 border-r border-border relative bg-background">
+                            {isInRange && (
+                              <div 
+                                className={`absolute inset-y-1 ${
+                                  isFirstWeek ? 'left-1' : 'left-0'
+                                } ${
+                                  isLastWeek ? 'right-1' : 'right-0'
+                                } ${
+                                  isFirstWeek && isLastWeek 
+                                    ? 'rounded' 
+                                    : isFirstWeek 
+                                      ? 'rounded-l' 
+                                      : isLastWeek 
+                                        ? 'rounded-r' 
+                                        : ''
+                                } ${
+                                  isActive ? 'bg-primary' : 'bg-primary/70'
+                                }`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );

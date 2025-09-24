@@ -29,6 +29,7 @@ export interface ExperimentNote {
 export type Experiment = {
   id: string;
   hypothesisId: string;
+  title?: string;
   startDate: Date | null;
   endDate: Date | null;
   status: ExperimentStatus;
