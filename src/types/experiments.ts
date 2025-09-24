@@ -40,4 +40,6 @@ export type Experiment = {
   userId?: string;
   userName?: string;
   companyId?: string;
+  totalCost?: number | null;
+  totalReturn?: number | null;
 };

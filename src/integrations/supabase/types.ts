@@ -233,6 +233,8 @@ export type Database = {
           startdate: string | null
           status: string | null
           statusupdatedat: string | null
+          total_cost: number | null
+          total_revenue: number | null
           totalcost: number | null
           totalreturn: number | null
           updatedat: string
@@ -252,6 +254,8 @@ export type Database = {
           startdate?: string | null
           status?: string | null
           statusupdatedat?: string | null
+          total_cost?: number | null
+          total_revenue?: number | null
           totalcost?: number | null
           totalreturn?: number | null
           updatedat?: string
@@ -271,6 +275,8 @@ export type Database = {
           startdate?: string | null
           status?: string | null
           statusupdatedat?: string | null
+          total_cost?: number | null
+          total_revenue?: number | null
           totalcost?: number | null
           totalreturn?: number | null
           updatedat?: string
