@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { formatDistanceToNow } from 'date-fns';
 
 interface IdeasTableProps {
   ideas: any[];
@@ -47,7 +48,16 @@ const IdeasTable: React.FC<IdeasTableProps> = ({
               className="cursor-pointer hover:bg-muted/50" 
               onClick={() => navigate(`/idea-details/${idea.id}`)}
             >
-              <TableCell className="font-medium">{idea.title}</TableCell>
+              <TableCell className="font-medium">
+                <div className="space-y-1">
+                  <div>{idea.title}</div>
+                  {idea.createdAt && (
+                    <div className="text-xs text-muted-foreground">
+                      Created {formatDistanceToNow(new Date(idea.createdAt), { addSuffix: true })}
+                    </div>
+                  )}
+                </div>
+              </TableCell>
               <TableCell>
                 {getCategoryDisplayName ? getCategoryDisplayName(idea.category) : idea.category}
               </TableCell>
