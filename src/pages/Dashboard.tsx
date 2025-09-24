@@ -8,6 +8,8 @@ import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import StatisticsPanel from "@/components/dashboard/StatisticsPanel";
 import FilterBar from "@/components/dashboard/FilterBar";
 import StatisticsChart from "@/components/dashboard/StatisticsChart";
+import ExperimentTimeline from "@/components/dashboard/ExperimentTimeline";
+import PeriodSelector, { TimePeriod, TimeInterval } from "@/components/dashboard/PeriodSelector";
 import CompanyInvitations from "@/components/company/CompanyInvitations";
 import { useInvitationHandler } from "@/hooks/useInvitationHandler";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +30,10 @@ const Dashboard: React.FC = () => {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
+  
+  // Period and interval state - default to monthly view
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('last-3-months');
+  const [selectedInterval, setSelectedInterval] = useState<TimeInterval>('monthly');
 
   // Super admins can now access the dashboard normally and use account settings for admin panel
 
@@ -152,6 +158,19 @@ const Dashboard: React.FC = () => {
         hypotheses={hypothesesByStatus}
         experiments={filteredExperiments}
         winRate={winRate}
+      />
+      
+      <PeriodSelector
+        selectedPeriod={selectedPeriod}
+        selectedInterval={selectedInterval}
+        onPeriodChange={setSelectedPeriod}
+        onIntervalChange={setSelectedInterval}
+      />
+      
+      <ExperimentTimeline
+        experiments={experiments}
+        selectedPeriod={selectedPeriod}
+        selectedInterval={selectedInterval}
       />
     </div>
   );

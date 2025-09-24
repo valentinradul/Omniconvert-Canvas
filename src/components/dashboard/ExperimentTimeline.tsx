@@ -12,9 +12,13 @@ import { useExperiments } from '@/context/hooks/useExperiments';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/context/company/CompanyContext';
 import { toast } from 'sonner';
+import { TimePeriod, TimeInterval } from './PeriodSelector';
+import { getPeriodDateRange, getIntervalSteps } from '@/utils/dateUtils';
 
 interface ExperimentTimelineProps {
   experiments: Experiment[];
+  selectedPeriod: TimePeriod;
+  selectedInterval: TimeInterval;
 }
 
 interface CostRevenueModalProps {
@@ -86,7 +90,11 @@ const CostRevenueModal: React.FC<CostRevenueModalProps> = ({ experiment, onUpdat
   );
 };
 
-const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ experiments }) => {
+const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ 
+  experiments, 
+  selectedPeriod, 
+  selectedInterval 
+}) => {
   const [selectedStatuses, setSelectedStatuses] = useState<ExperimentStatus[]>(['In Progress']);
   const { user } = useAuth();
   const { currentCompany } = useCompany();
@@ -102,8 +110,20 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ experiments }) 
   ];
 
   const filteredExperiments = useMemo(() => {
-    return experiments.filter(exp => selectedStatuses.includes(exp.status));
-  }, [experiments, selectedStatuses]);
+    const { start: periodStart, end: periodEnd } = getPeriodDateRange(selectedPeriod);
+    
+    return experiments.filter(exp => {
+      if (!selectedStatuses.includes(exp.status)) return false;
+      
+      // Filter by selected period
+      if (selectedPeriod !== 'all-time' && exp.startDate) {
+        const expStart = new Date(exp.startDate);
+        return expStart >= periodStart && expStart <= periodEnd;
+      }
+      
+      return true;
+    });
+  }, [experiments, selectedStatuses, selectedPeriod]);
 
   const hasFinancialData = experiments.some(exp => exp.totalCost || exp.totalReturn);
 
@@ -123,58 +143,53 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ experiments }) 
     );
   };
 
-  // Get the earliest start date from filtered experiments to establish timeline baseline
-  const getTimelineStartDate = () => {
-    const experimentsWithDates = filteredExperiments.filter(exp => exp.startDate);
-    if (experimentsWithDates.length === 0) return new Date();
+  // Calculate timeline based on selected period and interval
+  const timelineData = useMemo(() => {
+    const { start, end } = getPeriodDateRange(selectedPeriod);
+    const steps = getIntervalSteps(start, end, selectedInterval);
     
-    return new Date(Math.min(...experimentsWithDates.map(exp => new Date(exp.startDate!).getTime())));
-  };
+    return {
+      start,
+      end,
+      steps
+    };
+  }, [selectedPeriod, selectedInterval]);
 
-  const timelineStartDate = getTimelineStartDate();
-  const maxWeeks = 12;
-
-  // Calculate which weeks to display starting from the earliest experiment
-  const getTimelineWeeks = () => {
-    const weeks = [];
-    const weekStart = new Date(timelineStartDate);
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
-    
-    for (let i = 0; i < maxWeeks; i++) {
-      const currentWeek = new Date(weekStart);
-      currentWeek.setDate(currentWeek.getDate() + (i * 7));
-      
-      weeks.push({
-        number: i + 1,
-        start: new Date(currentWeek),
-        label: currentWeek.toLocaleDateString('en-US', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric' 
-        })
-      });
-    }
-    
-    return weeks;
-  };
-
-  const timelineWeeks = getTimelineWeeks();
-
-  const getExperimentWeekSpan = (experiment: Experiment) => {
+  const getExperimentStepSpan = (experiment: Experiment) => {
     if (!experiment.startDate) return { start: 0, duration: 1 };
     
     const startDate = new Date(experiment.startDate);
     const endDate = experiment.endDate ? new Date(experiment.endDate) : new Date();
     
-    // Calculate week offset from timeline start
-    const weekOffset = Math.floor((startDate.getTime() - timelineStartDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
-    const weeksDuration = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+    let startStepIndex = -1;
+    let endStepIndex = -1;
     
-    return { 
-      start: Math.max(0, weekOffset), 
-      duration: Math.min(weeksDuration, maxWeeks - weekOffset) 
+    // Find which steps the experiment spans
+    timelineData.steps.forEach((step, index) => {
+      if (startDate >= step.start && startDate <= step.end) {
+        startStepIndex = index;
+      }
+      if (endDate >= step.start && endDate <= step.end) {
+        endStepIndex = index;
+      }
+    });
+    
+    // If experiment starts before our timeline, start at 0
+    if (startStepIndex === -1 && startDate < timelineData.start) {
+      startStepIndex = 0;
+    }
+    
+    // If experiment ends after our timeline, end at last step
+    if (endStepIndex === -1 && endDate > timelineData.end) {
+      endStepIndex = timelineData.steps.length - 1;
+    }
+    
+    return {
+      start: Math.max(0, startStepIndex),
+      duration: Math.max(1, endStepIndex - startStepIndex + 1)
     };
   };
+
 
   return (
     <Card className="w-full">
@@ -210,14 +225,13 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ experiments }) 
           </div>
         ) : (
           <div className="overflow-x-auto">
-            {/* Week Headers */}
+            {/* Timeline Headers */}
             <div className="flex mb-4">
               <div className="min-w-[300px] flex-shrink-0" /> {/* Space for experiment names */}
               <div className="flex border-l border-border">
-                {timelineWeeks.map((week, i) => (
-                  <div key={i} className="w-20 text-center py-2 border-r border-border bg-muted/30">
-                    <div className="text-xs font-medium text-primary">WEEK {week.number}</div>
-                    <div className="text-xs text-muted-foreground">{week.label}</div>
+                {timelineData.steps.map((step, i) => (
+                  <div key={i} className="w-24 text-center py-2 border-r border-border bg-muted/30">
+                    <div className="text-xs font-medium text-primary">{step.label}</div>
                   </div>
                 ))}
               </div>
@@ -226,7 +240,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ experiments }) 
             {/* Experiment Rows */}
             <div className="space-y-2">
               {filteredExperiments.map((experiment) => {
-                const weekSpan = getExperimentWeekSpan(experiment);
+                const stepSpan = getExperimentStepSpan(experiment);
                 const isActive = experiment.status === 'In Progress';
                 
                 return (
@@ -236,7 +250,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ experiments }) 
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-sm truncate text-primary">
-                            Experiment #{experiment.id.slice(0, 8)}
+                            {experiment.title || `Experiment #${experiment.id.slice(0, 8)}`}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="text-xs">
@@ -263,28 +277,14 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({ experiments }) 
                     
                     {/* Timeline Grid */}
                     <div className="flex">
-                      {Array.from({ length: maxWeeks }, (_, i) => {
-                        const isInRange = i >= weekSpan.start && i < weekSpan.start + weekSpan.duration;
-                        const isFirstWeek = isInRange && i === weekSpan.start;
-                        const isLastWeek = isInRange && i === weekSpan.start + weekSpan.duration - 1;
+                      {timelineData.steps.map((_, i) => {
+                        const isInRange = i >= stepSpan.start && i < stepSpan.start + stepSpan.duration;
                         
                         return (
-                          <div key={i} className="w-20 h-12 border-r border-border relative bg-background">
+                          <div key={i} className="w-24 h-12 border-r border-border relative bg-background">
                             {isInRange && (
                               <div 
-                                className={`absolute inset-y-1 ${
-                                  isFirstWeek ? 'left-1' : 'left-0'
-                                } ${
-                                  isLastWeek ? 'right-1' : 'right-0'
-                                } ${
-                                  isFirstWeek && isLastWeek 
-                                    ? 'rounded' 
-                                    : isFirstWeek 
-                                      ? 'rounded-l' 
-                                      : isLastWeek 
-                                        ? 'rounded-r' 
-                                        : ''
-                                } ${
+                                className={`absolute inset-y-2 inset-x-1 rounded ${
                                   isActive ? 'bg-primary' : 'bg-primary/70'
                                 }`}
                               />
