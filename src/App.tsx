@@ -31,6 +31,7 @@ import CategorySettingsPage from "./pages/CategorySettingsPage";
 import DataRecoveryPage from "./pages/DataRecoveryPage";
 import NotFound from "./pages/NotFound";
 import ContentManagementPage from "./pages/ContentManagementPage";
+import CompanyManagementPage from "./pages/CompanyManagementPage";
 
 // Super Admin Pages
 import SuperAdminCompaniesPage from "./pages/super-admin/CompaniesPage";
@@ -77,6 +78,7 @@ const App = () => (
                     <Route path="account-settings" element={<AccountSettingsPage />} />
                     <Route path="team-settings" element={<TeamSettingsPage />} />
                     <Route path="category-settings" element={<CategorySettingsPage />} />
+                    <Route path="company-management" element={<CompanyManagementPage />} />
 
                     {/* Redirect root path to dashboard when authenticated */}
                     <Route path="" element={<Navigate to="/dashboard" replace />} />
