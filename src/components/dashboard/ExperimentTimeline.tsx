@@ -175,9 +175,9 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="cursor-pointer hover:underline" onClick={() => navigate(`/experiments/${experiment.id}`)}>
-                            <h4 className="font-medium text-sm truncate text-primary">
-                              {experiment.title || `Experiment #${experiment.id.slice(0, 8)}`}
-                            </h4>
+                             <h4 className="font-medium text-sm truncate text-primary">
+                               {experiment.title || `Untitled Experiment`}
+                             </h4>
                             {(experiment.totalReturn || experiment.totalCost) && (
                               <p className="text-xs text-muted-foreground mt-1">
                                 Net: ${((experiment.totalReturn || 0) - (experiment.totalCost || 0)).toLocaleString()}
