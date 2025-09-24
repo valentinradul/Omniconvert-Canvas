@@ -78,7 +78,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
         <CardTitle className="text-lg font-medium">Experiment Performance</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
+        <div className="h-[200px]">
           <ChartContainer config={config}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
