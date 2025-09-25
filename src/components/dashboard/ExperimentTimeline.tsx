@@ -207,13 +207,13 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
             {/* Container with sticky positioning */}
             <div className="relative overflow-auto max-h-[600px] border border-border rounded">
               {/* Timeline Headers - Sticky top */}
-              <div className="flex sticky top-0 z-20 bg-background border-b border-border">
+              <div className="flex sticky top-0 z-20 bg-background border-b border-border min-w-max">
                 <div className="w-[400px] flex-shrink-0 sticky left-0 z-30 bg-background border-r border-border">
                   <div className="py-4 px-3 font-medium text-sm text-muted-foreground bg-muted/30">
                     Experiment Details
                   </div>
                 </div>
-                <div className="flex">
+                <div className="flex min-w-max">
                   {timelineData.steps.map((step, i) => (
                     <div key={i} className="w-24 text-center py-4 px-2 border-r border-border bg-muted/30 flex-shrink-0">
                       <div className="text-xs font-medium text-primary">{step.label}</div>
@@ -230,7 +230,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                   const netRevenue = (experiment.totalReturn || 0) - (experiment.totalCost || 0);
                   
                   return (
-                    <div key={experiment.id} className="flex items-center border-b border-border hover:bg-muted/30">
+                    <div key={experiment.id} className="flex items-center border-b border-border hover:bg-muted/30 min-w-max">
                       {/* Experiment Info - Sticky left */}
                       <div className="w-[400px] flex-shrink-0 sticky left-0 z-10 bg-background border-r border-border">
                         <div className="p-3 space-y-2">
@@ -274,7 +274,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                       </div>
                       
                       {/* Timeline Grid */}
-                      <div className="flex relative">
+                      <div className="flex relative min-w-max">
                         {timelineData.steps.map((_, i) => {
                           const isInRange = i >= stepSpan.start && i < stepSpan.start + stepSpan.duration;
                           const isFirstInRange = isInRange && i === stepSpan.start;
