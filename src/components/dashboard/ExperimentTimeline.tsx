@@ -203,114 +203,121 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
             <p>No experiments match the selected filters</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            {/* Timeline Headers */}
-            <div className="flex mb-4">
-              <div className="w-[400px] flex-shrink-0" /> {/* Space for experiment names */}
-              <div className="flex border-l border-border">
-                {timelineData.steps.map((step, i) => (
-                  <div key={i} className="w-24 text-center py-2 border-r border-border bg-muted/30">
-                    <div className="text-xs font-medium text-primary">{step.label}</div>
+          <div className="relative">
+            {/* Container with sticky positioning */}
+            <div className="relative overflow-auto max-h-[600px] border border-border rounded">
+              {/* Timeline Headers - Sticky top */}
+              <div className="flex sticky top-0 z-20 bg-background border-b border-border">
+                <div className="w-[400px] flex-shrink-0 sticky left-0 z-30 bg-background border-r border-border">
+                  <div className="py-4 px-3 font-medium text-sm text-muted-foreground bg-muted/30">
+                    Experiment Details
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Experiment Rows */}
-            <div className="space-y-2">
-              {filteredExperiments.map((experiment) => {
-                const stepSpan = getExperimentStepSpan(experiment);
-                const isActive = experiment.status === 'In Progress';
-                const netRevenue = (experiment.totalReturn || 0) - (experiment.totalCost || 0);
-                
-                return (
-                  <div key={experiment.id} className="flex items-center border border-border rounded">
-                    {/* Experiment Info */}
-                    <div className="w-[400px] flex-shrink-0 p-3 border-r border-border">
-                      <div className="space-y-2">
-                        <div className="cursor-pointer hover:underline" onClick={() => navigate(`/experiments/${experiment.id}`)}>
-                          <h4 className="font-medium text-sm text-primary" style={{ 
-                            maxWidth: '320px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {getExperimentDisplayName(experiment)}
-                          </h4>
-                        </div>
-                        
-                        {/* Responsible and Category */}
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span>👤 {getResponsibleUserName(experiment)}</span>
-                          <span>📁 {getExperimentCategory(experiment)}</span>
-                        </div>
-
-                        {/* Status and Live indicator */}
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {experiment.status}
-                          </Badge>
-                          
-                          {/* Net Revenue - larger font, positioned near status */}
-                          <span className={`text-sm font-medium ${
-                            netRevenue === 0 ? 'text-black' : 
-                            netRevenue > 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            ${netRevenue.toLocaleString()}
-                          </span>
-                          {isActive && (
-                            <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full font-medium">
-                              LIVE
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                </div>
+                <div className="flex">
+                  {timelineData.steps.map((step, i) => (
+                    <div key={i} className="w-24 text-center py-4 px-2 border-r border-border bg-muted/30 flex-shrink-0">
+                      <div className="text-xs font-medium text-primary">{step.label}</div>
                     </div>
-                    
-                    {/* Timeline Grid */}
-                    <div className="flex relative">
-                      {timelineData.steps.map((_, i) => {
-                        const isInRange = i >= stepSpan.start && i < stepSpan.start + stepSpan.duration;
-                        const isFirstInRange = isInRange && i === stepSpan.start;
-                        const isLastInRange = isInRange && i === stepSpan.start + stepSpan.duration - 1;
-                        
-                        return (
-                          <div key={i} className="w-24 h-12 border-r border-border relative bg-background">
-                            {isInRange && (
-                              <>
-                                {/* Continuous progress bar */}
-                                <div 
-                                  className={`absolute inset-y-4 ${
-                                    isFirstInRange ? 'left-3' : 'left-0'
-                                  } ${
-                                    isLastInRange ? 'right-3' : 'right-0'
-                                  } ${
-                                    isActive ? 'bg-primary' : 'bg-primary/70'
-                                  } h-4`}
-                                />
-                                
-                                {/* Start indicator */}
-                                {isFirstInRange && experiment.startDate && (
-                                  <div className="absolute left-1 top-1/2 -translate-y-1/2 text-green-600 flex items-center justify-center">
-                                    <Play className="h-4 w-4" fill="currentColor" />
-                                  </div>
-                                )}
-                                
-                                {/* End indicator */}
-                                {isLastInRange && experiment.endDate && (
-                                  <div className="absolute right-1 top-1/2 -translate-y-1/2 text-red-600 flex items-center justify-center">
-                                    <Square className="h-4 w-4" fill="currentColor" />
-                                  </div>
-                                )}
-                              </>
+                  ))}
+                </div>
+              </div>
+
+              {/* Experiment Rows */}
+              <div className="space-y-0">
+                {filteredExperiments.map((experiment) => {
+                  const stepSpan = getExperimentStepSpan(experiment);
+                  const isActive = experiment.status === 'In Progress';
+                  const netRevenue = (experiment.totalReturn || 0) - (experiment.totalCost || 0);
+                  
+                  return (
+                    <div key={experiment.id} className="flex items-center border-b border-border hover:bg-muted/30">
+                      {/* Experiment Info - Sticky left */}
+                      <div className="w-[400px] flex-shrink-0 sticky left-0 z-10 bg-background border-r border-border">
+                        <div className="p-3 space-y-2">
+                          <div className="cursor-pointer hover:underline" onClick={() => navigate(`/experiments/${experiment.id}`)}>
+                            <h4 className="font-medium text-sm text-primary" style={{ 
+                              maxWidth: '320px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {getExperimentDisplayName(experiment)}
+                            </h4>
+                          </div>
+                          
+                          {/* Responsible and Category */}
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span>👤 {getResponsibleUserName(experiment)}</span>
+                            <span>📁 {getExperimentCategory(experiment)}</span>
+                          </div>
+
+                          {/* Status and Live indicator */}
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {experiment.status}
+                            </Badge>
+                            
+                            {/* Net Revenue - larger font, positioned near status */}
+                            <span className={`text-sm font-medium ${
+                              netRevenue === 0 ? 'text-black' : 
+                              netRevenue > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              ${netRevenue.toLocaleString()}
+                            </span>
+                            {isActive && (
+                              <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full font-medium">
+                                LIVE
+                              </span>
                             )}
                           </div>
-                        );
-                      })}
+                        </div>
+                      </div>
+                      
+                      {/* Timeline Grid */}
+                      <div className="flex relative">
+                        {timelineData.steps.map((_, i) => {
+                          const isInRange = i >= stepSpan.start && i < stepSpan.start + stepSpan.duration;
+                          const isFirstInRange = isInRange && i === stepSpan.start;
+                          const isLastInRange = isInRange && i === stepSpan.start + stepSpan.duration - 1;
+                          
+                          return (
+                            <div key={i} className="w-24 h-16 border-r border-border relative bg-background flex-shrink-0">
+                              {isInRange && (
+                                <>
+                                  {/* Continuous progress bar */}
+                                  <div 
+                                    className={`absolute inset-y-4 ${
+                                      isFirstInRange ? 'left-3' : 'left-0'
+                                    } ${
+                                      isLastInRange ? 'right-3' : 'right-0'
+                                    } ${
+                                      isActive ? 'bg-primary' : 'bg-primary/70'
+                                    } h-4`}
+                                  />
+                                  
+                                  {/* Start indicator */}
+                                  {isFirstInRange && experiment.startDate && (
+                                    <div className="absolute left-1 top-1/2 -translate-y-1/2 text-green-600 flex items-center justify-center">
+                                      <Play className="h-4 w-4" fill="currentColor" />
+                                    </div>
+                                  )}
+                                  
+                                  {/* End indicator */}
+                                  {isLastInRange && experiment.endDate && (
+                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 text-red-600 flex items-center justify-center">
+                                      <Square className="h-4 w-4" fill="currentColor" />
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

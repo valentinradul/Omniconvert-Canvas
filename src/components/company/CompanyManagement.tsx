@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCompany } from '@/context/company/CompanyContext';
+import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 
 interface Company {
   id: string;
@@ -30,6 +31,7 @@ const CompanyManagement: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const { userCompanyRole, currentCompany } = useCompany();
+  const { isSuperAdmin, isOperatingAsSuperAdmin } = useSuperAdmin();
 
   useEffect(() => {
     fetchCompanies();
@@ -142,10 +144,30 @@ const CompanyManagement: React.FC = () => {
     setIsEditDialogOpen(true);
   };
 
+  // Check if user can edit a company (owner/creator or super admin)
+  const canEditCompany = (company: Company) => {
+    return isOperatingAsSuperAdmin || company.created_by === currentCompany?.createdBy;
+  };
+
+  // Check if user can delete a company (owner or super admin)
+  const canDeleteCompany = (company: Company) => {
+    return isOperatingAsSuperAdmin || company.created_by === currentCompany?.createdBy;
+  };
+
   const updateCompany = async () => {
     if (!editingCompany || !editCompanyName.trim()) return;
 
     try {
+      // Check permissions before updating
+      if (!canEditCompany(editingCompany)) {
+        toast({
+          variant: 'destructive',
+          title: 'Access Denied',
+          description: 'You do not have permission to edit this company'
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('companies')
         .update({ name: editCompanyName.trim() })
@@ -174,6 +196,19 @@ const CompanyManagement: React.FC = () => {
 
   const deleteCompany = async (companyId: string) => {
     try {
+      const companyToDelete = companies.find(c => c.id === companyId);
+      if (!companyToDelete) return;
+
+      // Check permissions before deleting
+      if (!canDeleteCompany(companyToDelete)) {
+        toast({
+          variant: 'destructive',
+          title: 'Access Denied',
+          description: 'You do not have permission to delete this company'
+        });
+        return;
+      }
+
       // Check if company has related data
       const { data: ideas } = await supabase
         .from('ideas')
@@ -197,23 +232,6 @@ const CompanyManagement: React.FC = () => {
           variant: 'destructive',
           title: 'Cannot Delete Company',
           description: `This company has ${relatedDataCount} related items (ideas, hypotheses, or experiments). Please remove all related data first.`
-        });
-        return;
-      }
-
-      // Only allow owners to delete companies
-      const { data: membership } = await supabase
-        .from('company_members')
-        .select('role')
-        .eq('company_id', companyId)
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (membership?.role !== 'owner') {
-        toast({
-          variant: 'destructive',
-          title: 'Access Denied',
-          description: 'Only company owners can delete companies'
         });
         return;
       }
@@ -344,12 +362,17 @@ const CompanyManagement: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleEditCompany(company)}
+                          disabled={!canEditCompany(company)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              disabled={!canDeleteCompany(company)}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
