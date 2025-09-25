@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ALL_STATUSES, ExperimentStatus } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
@@ -43,6 +44,7 @@ const ExperimentDetailsPage: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [notes, setNotes] = useState('');
+  const [userName, setUserName] = useState('');
   
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   
@@ -52,6 +54,7 @@ const ExperimentDetailsPage: React.FC = () => {
       setStartDate(experiment.startDate);
       setEndDate(experiment.endDate);
       setNotes(experiment.notes);
+      setUserName(experiment.userName || '');
     } else {
       navigate('/experiments');
     }
@@ -80,7 +83,8 @@ const ExperimentDetailsPage: React.FC = () => {
         status: status as ExperimentStatus,
         startDate,
         endDate,
-        notes
+        notes,
+        userName
       });
       
       setEditDialogOpen(false);
@@ -196,6 +200,17 @@ const ExperimentDetailsPage: React.FC = () => {
                         </PopoverContent>
                       </Popover>
                     </div>
+                  </div>
+                  
+                  <div className="grid gap-3">
+                    <Label htmlFor="userName">Responsible Person</Label>
+                    <Input 
+                      id="userName" 
+                      type="text"
+                      value={userName} 
+                      onChange={(e) => setUserName(e.target.value)} 
+                      placeholder="Enter responsible person's name"
+                    />
                   </div>
                   
                   <div className="grid gap-3">

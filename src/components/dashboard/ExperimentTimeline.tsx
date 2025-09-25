@@ -223,18 +223,19 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                           <span>📁 {getExperimentCategory(experiment)}</span>
                         </div>
 
-                        {/* Net Revenue */}
-                        <div className="text-xs">
-                          <span className={`font-medium ${netRevenue >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            Net: ${netRevenue.toLocaleString()}
-                          </span>
-                        </div>
-
                         {/* Status and Live indicator */}
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-xs">
                             {experiment.status}
                           </Badge>
+                          
+                          {/* Net Revenue - larger font, positioned near status */}
+                          <span className={`text-sm font-medium ${
+                            netRevenue === 0 ? 'text-black' : 
+                            netRevenue > 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            ${netRevenue.toLocaleString()}
+                          </span>
                           {isActive && (
                             <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full font-medium">
                               LIVE
@@ -268,15 +269,15 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                                 
                                 {/* Start indicator */}
                                 {isFirstInRange && experiment.startDate && (
-                                  <div className="absolute left-1 top-3 text-green-600">
-                                    <Play className="h-3 w-3" fill="currentColor" />
+                                  <div className="absolute left-1 top-1/2 -translate-y-1/2 text-green-600 flex items-center justify-center">
+                                    <Play className="h-4 w-4" fill="currentColor" />
                                   </div>
                                 )}
                                 
                                 {/* End indicator */}
                                 {isLastInRange && experiment.endDate && (
-                                  <div className="absolute right-1 top-3 text-red-600">
-                                    <Square className="h-3 w-3" fill="currentColor" />
+                                  <div className="absolute right-1 top-1/2 -translate-y-1/2 text-red-600 flex items-center justify-center">
+                                    <Square className="h-4 w-4" fill="currentColor" />
                                   </div>
                                 )}
                               </>

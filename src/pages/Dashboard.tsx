@@ -155,11 +155,6 @@ const Dashboard: React.FC = () => {
         filteredExperiments={filteredExperiments}
       />
       
-      <StatisticsChart 
-        hypotheses={hypothesesByStatus}
-        experiments={filteredExperiments}
-        winRate={winRate}
-      />
       
       <PeriodSelector
         selectedPeriod={selectedPeriod}
