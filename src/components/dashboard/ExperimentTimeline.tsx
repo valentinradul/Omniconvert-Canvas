@@ -118,14 +118,26 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
     const startDate = new Date(experiment.startDate);
     const endDate = experiment.endDate ? new Date(experiment.endDate) : new Date();
     
+    // Debug logging to help diagnose the issue
+    console.log('Experiment:', getExperimentDisplayName(experiment));
+    console.log('Start Date:', startDate.toISOString());
+    console.log('Timeline Steps:', timelineData.steps.map(s => ({ 
+      start: s.start.toISOString(), 
+      end: s.end.toISOString(), 
+      label: s.label 
+    })));
+    
     let startStepIndex = -1;
     let endStepIndex = -1;
     
     // Find which steps the experiment spans
     timelineData.steps.forEach((step, index) => {
-      if (startDate >= step.start && startDate <= step.end) {
+      // Check if experiment start date falls within this step
+      if (startStepIndex === -1 && startDate >= step.start && startDate <= step.end) {
         startStepIndex = index;
       }
+      
+      // Check if experiment end date falls within this step
       if (endDate >= step.start && endDate <= step.end) {
         endStepIndex = index;
       }
@@ -139,6 +151,16 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
     // If experiment ends after our timeline, end at last step
     if (endStepIndex === -1 && endDate > timelineData.end) {
       endStepIndex = timelineData.steps.length - 1;
+    }
+    
+    // If we still haven't found the start step, it means the experiment starts after our timeline
+    if (startStepIndex === -1) {
+      return { start: 0, duration: 0 }; // Don't show this experiment
+    }
+    
+    // If we haven't found the end step, use the start step
+    if (endStepIndex === -1) {
+      endStepIndex = startStepIndex;
     }
     
     return {
