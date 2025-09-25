@@ -33,26 +33,60 @@ export const useExperiments = (
         const { data, error } = await query;
         
         if (error) throw error;
+
+        // Fetch financial data for all experiments
+        const experimentIds = (data || []).map(exp => exp.id);
+        let financialsData: any[] = [];
+        
+        if (experimentIds.length > 0) {
+          const { data: financials, error: financialsError } = await supabase
+            .from('experiment_financials')
+            .select('*')
+            .in('experiment_id', experimentIds);
+          
+          if (financialsError) {
+            console.error('Error fetching financials:', financialsError);
+          } else {
+            financialsData = financials || [];
+          }
+        }
+
+        // Calculate totals for each experiment
+        const calculateTotals = (experimentId: string) => {
+          const experimentFinancials = financialsData.filter(f => f.experiment_id === experimentId);
+          const totalCost = experimentFinancials
+            .filter(f => f.type === 'cost')
+            .reduce((sum, f) => sum + Number(f.amount || 0), 0);
+          const totalReturn = experimentFinancials
+            .filter(f => f.type === 'revenue')
+            .reduce((sum, f) => sum + Number(f.amount || 0), 0);
+          
+          return { totalCost, totalReturn };
+        };
         
         // Map from database column names to frontend property names
-        const formattedExperiments: Experiment[] = (data || []).map(exp => ({
-          id: exp.id,
-          hypothesisId: exp.hypothesisid || "",
-          title: exp.title,
-          startDate: exp.startdate ? new Date(exp.startdate) : null,
-          endDate: exp.enddate ? new Date(exp.enddate) : null,
-          status: exp.status as any || "Planned",
-          notes: exp.notes || "",
-          notes_history: exp.notes_history ? (exp.notes_history as unknown as ExperimentNote[]) : [],
-          observationContent: exp.observationcontent as any,
-          createdAt: new Date(exp.createdat),
-          updatedAt: new Date(exp.updatedat),
-          userId: exp.userid,
-          userName: exp.username,
-          companyId: exp.company_id,
-          totalCost: exp.totalcost ? Number(exp.totalcost) : null,
-          totalReturn: exp.totalreturn ? Number(exp.totalreturn) : null
-        }));
+        const formattedExperiments: Experiment[] = (data || []).map(exp => {
+          const { totalCost, totalReturn } = calculateTotals(exp.id);
+          
+          return {
+            id: exp.id,
+            hypothesisId: exp.hypothesisid || "",
+            title: exp.title,
+            startDate: exp.startdate ? new Date(exp.startdate) : null,
+            endDate: exp.enddate ? new Date(exp.enddate) : null,
+            status: exp.status as any || "Planned",
+            notes: exp.notes || "",
+            notes_history: exp.notes_history ? (exp.notes_history as unknown as ExperimentNote[]) : [],
+            observationContent: exp.observationcontent as any,
+            createdAt: new Date(exp.createdat),
+            updatedAt: new Date(exp.updatedat),
+            userId: exp.userid,
+            userName: exp.username,
+            companyId: exp.company_id,
+            totalCost: totalCost || null,
+            totalReturn: totalReturn || null
+          };
+        });
         
         setExperiments(formattedExperiments);
       } catch (error: any) {
