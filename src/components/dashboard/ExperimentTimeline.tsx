@@ -118,15 +118,6 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
     const startDate = new Date(experiment.startDate);
     const endDate = experiment.endDate ? new Date(experiment.endDate) : new Date();
     
-    // Debug logging to help diagnose the issue
-    console.log('Experiment:', getExperimentDisplayName(experiment));
-    console.log('Start Date:', startDate.toISOString());
-    console.log('Timeline Steps:', timelineData.steps.map(s => ({ 
-      start: s.start.toISOString(), 
-      end: s.end.toISOString(), 
-      label: s.label 
-    })));
-    
     let startStepIndex = -1;
     let endStepIndex = -1;
     
@@ -153,9 +144,18 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
       endStepIndex = timelineData.steps.length - 1;
     }
     
-    // If we still haven't found the start step, it means the experiment starts after our timeline
+    // If we still haven't found the start step, find the closest one
     if (startStepIndex === -1) {
-      return { start: 0, duration: 0 }; // Don't show this experiment
+      // Find the step that contains or is closest to the start date
+      let closestDistance = Infinity;
+      timelineData.steps.forEach((step, index) => {
+        const stepMiddle = new Date((step.start.getTime() + step.end.getTime()) / 2);
+        const distance = Math.abs(startDate.getTime() - stepMiddle.getTime());
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          startStepIndex = index;
+        }
+      });
     }
     
     // If we haven't found the end step, use the start step
