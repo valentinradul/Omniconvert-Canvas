@@ -78,10 +78,14 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
     const { start: periodStart, end: periodEnd } = getPeriodDateRange(selectedPeriod);
     
     return experiments.filter(exp => {
+      // First check: must match selected status
       if (!selectedStatuses.includes(exp.status)) return false;
       
-      // Filter by selected period - show experiments that were active during the period
-      if (selectedPeriod !== 'all-time' && exp.startDate) {
+      // Second check: date filtering for non-all-time periods
+      if (selectedPeriod !== 'all-time') {
+        // If experiment has no start date, show it for all periods (consider it always active)
+        if (!exp.startDate) return true;
+        
         const expStart = new Date(exp.startDate);
         const expEnd = exp.endDate ? new Date(exp.endDate) : new Date(); // If no end date, consider it ongoing
         
