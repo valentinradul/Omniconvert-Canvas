@@ -214,7 +214,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
         ) : (
           <div className="relative">
             {/* Container with sticky positioning */}
-            <div className="relative overflow-auto max-h-[600px] border border-border rounded">
+            <div className="relative overflow-auto max-h-[70vh] border border-border rounded">
               {/* Timeline Headers - Sticky top */}
               <div className="flex sticky top-0 z-20 bg-background border-b border-border min-w-max">
                 <div className="w-[400px] flex-shrink-0 sticky left-0 z-30 bg-background border-r border-border">
