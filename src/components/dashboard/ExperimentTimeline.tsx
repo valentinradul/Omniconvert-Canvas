@@ -80,10 +80,14 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
     return experiments.filter(exp => {
       if (!selectedStatuses.includes(exp.status)) return false;
       
-      // Filter by selected period
+      // Filter by selected period - show experiments that were active during the period
       if (selectedPeriod !== 'all-time' && exp.startDate) {
         const expStart = new Date(exp.startDate);
-        return expStart >= periodStart && expStart <= periodEnd;
+        const expEnd = exp.endDate ? new Date(exp.endDate) : new Date(); // If no end date, consider it ongoing
+        
+        // Experiment is active if it overlaps with the selected period
+        // (starts before period ends) AND (ends after period starts)
+        return expStart <= periodEnd && expEnd >= periodStart;
       }
       
       return true;
