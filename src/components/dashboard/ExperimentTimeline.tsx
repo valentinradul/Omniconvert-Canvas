@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Experiment, ExperimentStatus } from '@/types/experiments';
 import { Calendar } from 'lucide-react';
 import { useExperiments } from '@/context/hooks/useExperiments';
+import { useHypotheses } from '@/context/hooks/useHypotheses';
+import { useIdeas } from '@/context/hooks/useIdeas';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/context/company/CompanyContext';
 import { toast } from 'sonner';
@@ -31,7 +33,22 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
   const { user } = useAuth();
   const { currentCompany } = useCompany();
   const { editExperiment } = useExperiments(user, currentCompany);
+  const { hypotheses } = useHypotheses(user, currentCompany, experiments);
+  const { ideas } = useIdeas(user, currentCompany, hypotheses);
   const navigate = useNavigate();
+
+  // Helper function to get experiment display name
+  const getExperimentDisplayName = (experiment: Experiment) => {
+    if (experiment.title) return experiment.title;
+    
+    const hypothesis = hypotheses.find(h => h.id === experiment.hypothesisId);
+    if (hypothesis) {
+      const idea = ideas.find(i => i.id === hypothesis.ideaId);
+      if (idea) return idea.title;
+    }
+    
+    return 'Untitled Experiment';
+  };
 
   const statusOptions: { status: ExperimentStatus; label: string; color: string }[] = [
     { status: 'In Progress', label: 'Active Experiments', color: 'bg-green-500' },
@@ -176,7 +193,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                         <div>
                           <div className="cursor-pointer hover:underline" onClick={() => navigate(`/experiments/${experiment.id}`)}>
                              <h4 className="font-medium text-sm truncate text-primary">
-                               {experiment.title || `Untitled Experiment`}
+                               {getExperimentDisplayName(experiment)}
                              </h4>
                             {(experiment.totalReturn || experiment.totalCost) && (
                               <p className="text-xs text-muted-foreground mt-1">
