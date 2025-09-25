@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Experiment, ExperimentStatus } from '@/types/experiments';
-import { Calendar } from 'lucide-react';
+import { Calendar, Play, Square } from 'lucide-react';
 import { useExperiments } from '@/context/hooks/useExperiments';
 import { useHypotheses } from '@/context/hooks/useHypotheses';
 import { useIdeas } from '@/context/hooks/useIdeas';
@@ -48,6 +48,21 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
     }
     
     return 'Untitled Experiment';
+  };
+
+  // Helper function to get responsible user name
+  const getResponsibleUserName = (experiment: Experiment) => {
+    return experiment.userName || 'Unassigned';
+  };
+
+  // Helper function to get experiment category
+  const getExperimentCategory = (experiment: Experiment) => {
+    const hypothesis = hypotheses.find(h => h.id === experiment.hypothesisId);
+    if (hypothesis) {
+      const idea = ideas.find(i => i.id === hypothesis.ideaId);
+      if (idea) return idea.category || 'No Category';
+    }
+    return 'No Category';
   };
 
   const statusOptions: { status: ExperimentStatus; label: string; color: string }[] = [
@@ -169,7 +184,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
           <div className="overflow-x-auto">
             {/* Timeline Headers */}
             <div className="flex mb-4">
-              <div className="min-w-[300px] flex-shrink-0" /> {/* Space for experiment names */}
+              <div className="w-[400px] flex-shrink-0" /> {/* Space for experiment names */}
               <div className="flex border-l border-border">
                 {timelineData.steps.map((step, i) => (
                   <div key={i} className="w-24 text-center py-2 border-r border-border bg-muted/30">
@@ -184,50 +199,87 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
               {filteredExperiments.map((experiment) => {
                 const stepSpan = getExperimentStepSpan(experiment);
                 const isActive = experiment.status === 'In Progress';
+                const netRevenue = (experiment.totalReturn || 0) - (experiment.totalCost || 0);
                 
                 return (
                   <div key={experiment.id} className="flex items-center border border-border rounded">
                     {/* Experiment Info */}
-                    <div className="min-w-[300px] flex-shrink-0 p-3 border-r border-border">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="cursor-pointer hover:underline" onClick={() => navigate(`/experiments/${experiment.id}`)}>
-                             <h4 className="font-medium text-sm truncate text-primary">
-                               {getExperimentDisplayName(experiment)}
-                             </h4>
-                            {(experiment.totalReturn || experiment.totalCost) && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Net: ${((experiment.totalReturn || 0) - (experiment.totalCost || 0)).toLocaleString()}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              {experiment.status}
-                            </Badge>
-                            {isActive && (
-                              <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full font-medium">
-                                LIVE
-                              </span>
-                            )}
-                          </div>
+                    <div className="w-[400px] flex-shrink-0 p-3 border-r border-border">
+                      <div className="space-y-2">
+                        <div className="cursor-pointer hover:underline" onClick={() => navigate(`/experiments/${experiment.id}`)}>
+                          <h4 className="font-medium text-sm text-primary" style={{ 
+                            maxWidth: '320px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {getExperimentDisplayName(experiment)}
+                          </h4>
+                        </div>
+                        
+                        {/* Responsible and Category */}
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span>👤 {getResponsibleUserName(experiment)}</span>
+                          <span>📁 {getExperimentCategory(experiment)}</span>
+                        </div>
+
+                        {/* Net Revenue */}
+                        <div className="text-xs">
+                          <span className={`font-medium ${netRevenue >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            Net: ${netRevenue.toLocaleString()}
+                          </span>
+                        </div>
+
+                        {/* Status and Live indicator */}
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {experiment.status}
+                          </Badge>
+                          {isActive && (
+                            <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full font-medium">
+                              LIVE
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                     
                     {/* Timeline Grid */}
-                    <div className="flex">
+                    <div className="flex relative">
                       {timelineData.steps.map((_, i) => {
                         const isInRange = i >= stepSpan.start && i < stepSpan.start + stepSpan.duration;
+                        const isFirstInRange = isInRange && i === stepSpan.start;
+                        const isLastInRange = isInRange && i === stepSpan.start + stepSpan.duration - 1;
                         
                         return (
                           <div key={i} className="w-24 h-12 border-r border-border relative bg-background">
                             {isInRange && (
-                              <div 
-                                className={`absolute inset-y-2 inset-x-1 rounded ${
-                                  isActive ? 'bg-primary' : 'bg-primary/70'
-                                }`}
-                              />
+                              <>
+                                {/* Continuous progress bar */}
+                                <div 
+                                  className={`absolute inset-y-4 ${
+                                    isFirstInRange ? 'left-3' : 'left-0'
+                                  } ${
+                                    isLastInRange ? 'right-3' : 'right-0'
+                                  } ${
+                                    isActive ? 'bg-primary' : 'bg-primary/70'
+                                  } h-4`}
+                                />
+                                
+                                {/* Start indicator */}
+                                {isFirstInRange && experiment.startDate && (
+                                  <div className="absolute left-1 top-3 text-green-600">
+                                    <Play className="h-3 w-3" fill="currentColor" />
+                                  </div>
+                                )}
+                                
+                                {/* End indicator */}
+                                {isLastInRange && experiment.endDate && (
+                                  <div className="absolute right-1 top-3 text-red-600">
+                                    <Square className="h-3 w-3" fill="currentColor" />
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                         );

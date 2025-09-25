@@ -38,7 +38,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
           <CardTitle>Hypotheses by Status</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={150}>
             <BarChart data={hypothesesData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="status" />
@@ -55,7 +55,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
           <CardTitle>Experiments Distribution</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={150}>
             <PieChart>
               <Pie
                 data={experimentsData}
@@ -63,7 +63,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
                 cy="50%"
                 labelLine={false}
                 label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
+                outerRadius={40}
                 fill="#8884d8"
                 dataKey="count"
               >
