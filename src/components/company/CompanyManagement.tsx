@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCompany } from '@/context/company/CompanyContext';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
+import { useAuth } from '@/context/AuthContext';
 
 interface Company {
   id: string;
@@ -32,6 +33,7 @@ const CompanyManagement: React.FC = () => {
   const { toast } = useToast();
   const { userCompanyRole, currentCompany } = useCompany();
   const { isSuperAdmin, isOperatingAsSuperAdmin } = useSuperAdmin();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchCompanies();
@@ -53,26 +55,53 @@ const CompanyManagement: React.FC = () => {
         return;
       }
 
-      // Get companies that the current user is an admin or owner of
-      const { data: userCompanies, error } = await supabase
-        .from('company_members')
-        .select(`
-          company_id,
-          role,
-          companies!inner (
-            id,
-            name,
-            created_at,
-            created_by
-          )
-        `)
-        .eq('user_id', user.id)
-        .in('role', ['owner', 'admin']);
+      // Get companies that the current user is an admin/owner of OR created
+      const [userCompanies, createdCompanies] = await Promise.all([
+        // Companies where user is admin or owner
+        supabase
+          .from('company_members')
+          .select(`
+            company_id,
+            role,
+            companies!inner (
+              id,
+              name,
+              created_at,
+              created_by
+            )
+          `)
+          .eq('user_id', user.id)
+          .in('role', ['owner', 'admin']),
+        
+        // Companies created by the user (not necessarily member)
+        supabase
+          .from('companies')
+          .select('id, name, created_at, created_by')
+          .eq('created_by', user.id)
+      ]);
 
-      if (error) throw error;
+      if (userCompanies.error) throw userCompanies.error;
+      if (createdCompanies.error) throw createdCompanies.error;
+
+      // Combine and deduplicate companies
+      const allCompaniesMap = new Map();
+
+      // Add companies where user is admin/owner
+      userCompanies.data?.forEach(uc => {
+        allCompaniesMap.set(uc.companies.id, uc.companies);
+      });
+
+      // Add companies created by user
+      createdCompanies.data?.forEach(company => {
+        if (!allCompaniesMap.has(company.id)) {
+          allCompaniesMap.set(company.id, company);
+        }
+      });
+
+      const allCompanies = Array.from(allCompaniesMap.values());
 
       // Get member counts for each company
-      const companyIds = userCompanies?.map(uc => uc.company_id) || [];
+      const companyIds = allCompanies.map(c => c.id);
       
       if (companyIds.length === 0) {
         setCompanies([]);
@@ -115,15 +144,15 @@ const CompanyManagement: React.FC = () => {
         return acc;
       }, {} as Record<string, { name: string; email: string }>) || {};
 
-      const formattedCompanies = userCompanies?.map(uc => ({
-        id: uc.companies.id,
-        name: uc.companies.name,
-        created_at: uc.companies.created_at,
-        created_by: uc.companies.created_by,
-        member_count: memberCountMap[uc.company_id] || 0,
-        owner_name: ownerMap[uc.company_id]?.name || 'Unknown',
-        owner_email: ownerMap[uc.company_id]?.email || ''
-      })) || [];
+      const formattedCompanies = allCompanies.map(company => ({
+        id: company.id,
+        name: company.name,
+        created_at: company.created_at,
+        created_by: company.created_by,
+        member_count: memberCountMap[company.id] || 0,
+        owner_name: ownerMap[company.id]?.name || 'Unknown',
+        owner_email: ownerMap[company.id]?.email || ''
+      }));
 
       setCompanies(formattedCompanies);
     } catch (error: any) {
@@ -144,14 +173,14 @@ const CompanyManagement: React.FC = () => {
     setIsEditDialogOpen(true);
   };
 
-  // Check if user can edit a company (owner/creator or super admin)
+  // Check if user can edit a company (creator or super admin)
   const canEditCompany = (company: Company) => {
-    return isOperatingAsSuperAdmin || company.created_by === currentCompany?.createdBy;
+    return isOperatingAsSuperAdmin || (user && company.created_by === user.id);
   };
 
-  // Check if user can delete a company (owner or super admin)
+  // Check if user can delete a company (creator or super admin)
   const canDeleteCompany = (company: Company) => {
-    return isOperatingAsSuperAdmin || company.created_by === currentCompany?.createdBy;
+    return isOperatingAsSuperAdmin || (user && company.created_by === user.id);
   };
 
   const updateCompany = async () => {
@@ -307,13 +336,13 @@ const CompanyManagement: React.FC = () => {
           Company Management
         </CardTitle>
         <CardDescription>
-          Manage companies where you have admin or owner access
+          Manage companies where you have admin access or that you created
         </CardDescription>
       </CardHeader>
       <CardContent>
         {companies.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">No companies found where you have admin access.</p>
+            <p className="text-muted-foreground">No companies found where you have admin access or that you created.</p>
           </div>
         ) : (
           <div className="rounded-md border">
