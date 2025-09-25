@@ -33,6 +33,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { pectiWeights, updatePectiWeights } = usePectiWeights();
   
   const { categories } = useCategories(currentCompany);
+  const { companyMembers } = useCompany();
   
   // Create wrapper functions that have access to all hooks
   const allItems = [...ideas, ...hypotheses, ...experiments];
@@ -43,6 +44,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const updateAllHypothesesWeights = () => {
     updateAllHypothesesWeightsBase(pectiWeights);
+  };
+
+  // Get all user names from company members instead of just from created items
+  const getAllActiveUserNames = () => {
+    if (!companyMembers || companyMembers.length === 0) {
+      // Fallback to items if no company members are loaded
+      return getAllUserNames(allItems);
+    }
+    
+    return companyMembers.map(member => ({
+      id: member.userId,
+      name: member.profile?.fullName || member.userId
+    }));
   };
 
   const isLoading = ideasLoading || hypothesesLoading || experimentsLoading;
@@ -77,7 +91,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getExperimentByHypothesisId,
     getDepartmentById,
     getAllTags: () => getAllTags(ideas),
-    getAllUserNames: () => getAllUserNames(allItems)
+    getAllUserNames: getAllActiveUserNames
   };
   
   return (
