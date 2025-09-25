@@ -32,7 +32,8 @@ const ExperimentDetailsPage: React.FC = () => {
     editExperiment,
     deleteExperiment,
     addExperimentNote,
-    deleteExperimentNote
+    deleteExperimentNote,
+    getAllUserNames
   } = useApp();
   
   const experiment = experiments.find(e => e.id === experimentId);
@@ -204,13 +205,21 @@ const ExperimentDetailsPage: React.FC = () => {
                   
                   <div className="grid gap-3">
                     <Label htmlFor="userName">Responsible Person</Label>
-                    <Input 
-                      id="userName" 
-                      type="text"
+                    <Select 
                       value={userName} 
-                      onChange={(e) => setUserName(e.target.value)} 
-                      placeholder="Enter responsible person's name"
-                    />
+                      onValueChange={setUserName}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select responsible person" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {getAllUserNames().map(user => (
+                            <SelectItem key={user.id} value={user.name}>{user.name}</SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </div>
                   
                   <div className="grid gap-3">
