@@ -75,25 +75,26 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
   ];
 
   const filteredExperiments = useMemo(() => {
-    const { start: periodStart, end: periodEnd } = getPeriodDateRange(selectedPeriod);
-    
     return experiments.filter(exp => {
-      // First check: must match selected status
+      // Primary filter: must match selected status
       if (!selectedStatuses.includes(exp.status)) return false;
       
-      // Second check: date filtering for non-all-time periods
+      // Secondary filter: date filtering only for specific periods
       if (selectedPeriod !== 'all-time') {
-        // If experiment has no start date, show it for all periods (consider it always active)
+        const { start: periodStart, end: periodEnd } = getPeriodDateRange(selectedPeriod);
+        
+        // If experiment has no start date, include it (treat as always active)
         if (!exp.startDate) return true;
         
         const expStart = new Date(exp.startDate);
         const expEnd = exp.endDate ? new Date(exp.endDate) : new Date(); // If no end date, consider it ongoing
         
         // Experiment is active if it overlaps with the selected period
-        // (starts before period ends) AND (ends after period starts)
+        // (starts before or during period) AND (ends after or during period start)
         return expStart <= periodEnd && expEnd >= periodStart;
       }
       
+      // For 'all-time', show all experiments with matching status
       return true;
     });
   }, [experiments, selectedStatuses, selectedPeriod]);
