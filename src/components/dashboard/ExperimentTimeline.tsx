@@ -269,7 +269,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                             </Badge>
                             
                             {/* Net Revenue - larger font, positioned near status */}
-                            {contentSettings?.enable_financial_tracking && (
+                            {contentSettings?.enable_financial_tracking !== false && (
                               <span className={`text-sm font-medium ${
                                 netRevenue === 0 ? 'text-black' : 
                                 netRevenue > 0 ? 'text-green-600' : 'text-red-600'

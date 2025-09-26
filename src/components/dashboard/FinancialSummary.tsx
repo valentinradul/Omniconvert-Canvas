@@ -7,6 +7,7 @@ import { useCompany } from '@/context/company/CompanyContext';
 import { TimePeriod } from './PeriodSelector';
 import { getPeriodDateRange } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
+import { useContentSettings } from '@/hooks/useContentSettings';
 
 interface FinancialSummaryProps {
   selectedPeriod: TimePeriod;
@@ -22,6 +23,12 @@ interface FinancialSummary {
 const FinancialSummary: React.FC<FinancialSummaryProps> = ({ selectedPeriod }) => {
   const { user } = useAuth();
   const { currentCompany } = useCompany();
+  const { data: contentSettings } = useContentSettings();
+  
+  // Don't render if financial tracking is disabled
+  if (contentSettings?.enable_financial_tracking === false) {
+    return null;
+  }
   const [summary, setSummary] = useState<FinancialSummary>({
     totalCosts: 0,
     totalRevenues: 0,

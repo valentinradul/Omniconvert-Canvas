@@ -14,11 +14,13 @@ import FinancialSummary from "@/components/dashboard/FinancialSummary";
 import CompanyInvitations from "@/components/company/CompanyInvitations";
 import { useInvitationHandler } from "@/hooks/useInvitationHandler";
 import { supabase } from "@/integrations/supabase/client";
+import { useContentSettings } from "@/hooks/useContentSettings";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { userIncomingInvitations, refreshUserCompanies, refreshCompanyMembers, currentCompany, companies } = useCompany();
   const { isSuperAdmin, isLoading: superAdminLoading } = useSuperAdmin();
+  const { data: contentSettings } = useContentSettings();
   
   // Use the invitation handler to process any invitation in the URL
   const { invitationId, isProcessingInvitation } = useInvitationHandler();
@@ -163,7 +165,9 @@ const Dashboard: React.FC = () => {
         onIntervalChange={setSelectedInterval}
       />
       
-      <FinancialSummary selectedPeriod={selectedPeriod} />
+      {contentSettings?.enable_financial_tracking !== false && (
+        <FinancialSummary selectedPeriod={selectedPeriod} />
+      )}
       
       <ExperimentTimeline
         experiments={experiments}
