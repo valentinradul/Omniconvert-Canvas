@@ -66,6 +66,7 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string
+          enable_financial_tracking: boolean
           id: string
           restrict_content_to_departments: boolean
           updated_at: string
@@ -73,6 +74,7 @@ export type Database = {
         Insert: {
           company_id: string
           created_at?: string
+          enable_financial_tracking?: boolean
           id?: string
           restrict_content_to_departments?: boolean
           updated_at?: string
@@ -80,6 +82,7 @@ export type Database = {
         Update: {
           company_id?: string
           created_at?: string
+          enable_financial_tracking?: boolean
           id?: string
           restrict_content_to_departments?: boolean
           updated_at?: string

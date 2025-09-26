@@ -13,6 +13,7 @@ interface ContentSettings {
   id: string;
   company_id: string;
   restrict_content_to_departments: boolean;
+  enable_financial_tracking: boolean;
 }
 
 const ContentManagementSettings: React.FC = () => {
@@ -38,7 +39,8 @@ const ContentManagementSettings: React.FC = () => {
           .from('company_content_settings')
           .insert({
             company_id: currentCompany.id,
-            restrict_content_to_departments: false
+            restrict_content_to_departments: false,
+            enable_financial_tracking: true
           })
           .select()
           .single();
@@ -54,12 +56,12 @@ const ContentManagementSettings: React.FC = () => {
   });
 
   const updateSettingsMutation = useMutation({
-    mutationFn: async (restrictToDepartments: boolean) => {
+    mutationFn: async (updates: Partial<ContentSettings>) => {
       if (!currentCompany?.id || !settings?.id) return;
 
       const { error } = await supabase
         .from('company_content_settings')
-        .update({ restrict_content_to_departments: restrictToDepartments })
+        .update(updates)
         .eq('id', settings.id);
 
       if (error) throw error;
@@ -83,7 +85,16 @@ const ContentManagementSettings: React.FC = () => {
   const handleToggleRestriction = async (enabled: boolean) => {
     setIsUpdating(true);
     try {
-      await updateSettingsMutation.mutateAsync(enabled);
+      await updateSettingsMutation.mutateAsync({ restrict_content_to_departments: enabled });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleToggleFinancialTracking = async (enabled: boolean) => {
+    setIsUpdating(true);
+    try {
+      await updateSettingsMutation.mutateAsync({ enable_financial_tracking: enabled });
     } finally {
       setIsUpdating(false);
     }
@@ -140,6 +151,51 @@ const ContentManagementSettings: React.FC = () => {
               <AlertDescription>
                 <strong>Open access is active.</strong> All users can see all growth ideas and experiments within the company, 
                 regardless of department assignments.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Experiment Financial Tracking
+          </CardTitle>
+          <CardDescription>
+            Control whether experiments should include financial tracking capabilities
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h4 className="font-medium">Enable financial tracking</h4>
+              <p className="text-sm text-gray-600">
+                When enabled, experiments will include sections for tracking costs and revenues
+              </p>
+            </div>
+            <Switch
+              checked={settings?.enable_financial_tracking || false}
+              onCheckedChange={handleToggleFinancialTracking}
+              disabled={isUpdating}
+            />
+          </div>
+
+          {settings?.enable_financial_tracking && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Financial tracking is enabled.</strong> Experiments will include financial sections for tracking costs and revenues.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!settings?.enable_financial_tracking && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Financial tracking is disabled.</strong> Experiments will not include financial tracking sections.
               </AlertDescription>
             </Alert>
           )}

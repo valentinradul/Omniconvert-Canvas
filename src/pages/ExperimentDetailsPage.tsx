@@ -20,10 +20,12 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import ExperimentNotesSection from '@/components/experiments/ExperimentNotesSection';
 import ExperimentFinancials from '@/components/experiments/ExperimentFinancials';
+import { useContentSettings } from '@/hooks/useContentSettings';
 
 const ExperimentDetailsPage: React.FC = () => {
   const { experimentId } = useParams();
   const navigate = useNavigate();
+  const { data: contentSettings } = useContentSettings();
   
   const { 
     experiments, 
@@ -304,9 +306,11 @@ const ExperimentDetailsPage: React.FC = () => {
         </CardContent>
       </Card>
       
-      <ExperimentFinancials experimentId={experiment.id} />
+      {contentSettings?.enable_financial_tracking && (
+        <ExperimentFinancials experimentId={experiment.id} />
+      )}
       
-      <ExperimentNotesSection 
+      <ExperimentNotesSection
         notes_history={experiment.notes_history || []}
         onAddNote={handleAddNote}
         onDeleteNote={handleDeleteNote}

@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { TimePeriod, TimeInterval } from './PeriodSelector';
 import { getPeriodDateRange, getIntervalSteps } from '@/utils/dateUtils';
 import { useNavigate } from 'react-router-dom';
+import { useContentSettings } from '@/hooks/useContentSettings';
 
 interface ExperimentTimelineProps {
   experiments: Experiment[];
@@ -36,6 +37,7 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
   const { hypotheses } = useHypotheses(user, currentCompany, experiments);
   const { ideas } = useIdeas(user, currentCompany, hypotheses);
   const navigate = useNavigate();
+  const { data: contentSettings } = useContentSettings();
 
   // Helper function to get experiment display name
   const getExperimentDisplayName = (experiment: Experiment) => {
@@ -267,12 +269,14 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                             </Badge>
                             
                             {/* Net Revenue - larger font, positioned near status */}
-                            <span className={`text-sm font-medium ${
-                              netRevenue === 0 ? 'text-black' : 
-                              netRevenue > 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              ${netRevenue.toLocaleString()}
-                            </span>
+                            {contentSettings?.enable_financial_tracking && (
+                              <span className={`text-sm font-medium ${
+                                netRevenue === 0 ? 'text-black' : 
+                                netRevenue > 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                ${netRevenue.toLocaleString()}
+                              </span>
+                            )}
                             {isActive && (
                               <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full font-medium">
                                 LIVE
