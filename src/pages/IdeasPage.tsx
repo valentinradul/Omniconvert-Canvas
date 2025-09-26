@@ -19,10 +19,10 @@ import IdeasTable from '@/components/ideas/IdeasTable';
 import EmptyIdeasState from '@/components/ideas/EmptyIdeasState';
 
 const IdeasPage: React.FC = () => {
-  const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames } = useApp();
+  const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames, addDepartment } = useApp();
   const { user } = useAuth();
   const { currentCompany, userCompanyRole, contentSettings } = useCompany();
-  const { categories, isLoading: categoriesLoading } = useCategories(currentCompany);
+  const { categories, isLoading: categoriesLoading, addCategory } = useCategories(currentCompany);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showAllDepartments, setShowAllDepartments] = useState(false);
@@ -231,6 +231,8 @@ const IdeasPage: React.FC = () => {
         departments={departments}
         categories={categories}
         addIdea={addIdea}
+        addCategory={addCategory}
+        addDepartment={addDepartment}
         isOpen={isDialogOpen}
         setIsOpen={setIsDialogOpen}
       />

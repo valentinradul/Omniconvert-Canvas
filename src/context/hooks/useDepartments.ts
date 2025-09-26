@@ -174,24 +174,31 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
     }
   };
 
-  const addDepartment = async (name: string) => {
-    if (!currentCompany) return;
+  const addDepartment = async (name: string): Promise<{ id: string; name: string } | null> => {
+    if (!currentCompany) return null;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('departments')
         .insert({
           name: name.trim(),
           company_id: currentCompany.id,
           created_by: user.id
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      // No need to manually refetch - real-time subscription will handle it
+      toast({
+        title: 'Department created',
+        description: `Department "${data.name}" has been created successfully.`
+      });
+
+      return { id: data.id, name: data.name };
     } catch (error: any) {
       console.error('Error creating department:', error);
       toast({
@@ -199,6 +206,7 @@ export const useDepartments = (currentCompany?: { id: string } | null) => {
         title: 'Error',
         description: 'Failed to create department'
       });
+      return null;
     }
   };
   

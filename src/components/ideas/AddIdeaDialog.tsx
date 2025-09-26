@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -12,11 +12,14 @@ import DraftIndicator from '@/components/DraftIndicator';
 import { Category, GrowthIdea } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useDraftState } from '@/hooks/useDraftState';
+import { Plus } from 'lucide-react';
 
 interface AddIdeaDialogProps {
   departments: any[];
   categories: { id: string; name: string }[];
   addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => Promise<GrowthIdea | null>;
+  addCategory?: (name: string, departmentId?: string) => Promise<{ id: string; name: string } | null>;
+  addDepartment?: (name: string) => Promise<{ id: string; name: string } | null>;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }
@@ -25,10 +28,16 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
   departments,
   categories,
   addIdea,
+  addCategory,
+  addDepartment,
   isOpen,
   setIsOpen
 }) => {
   const { toast } = useToast();
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isCreatingDepartment, setIsCreatingDepartment] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newDepartmentName, setNewDepartmentName] = useState('');
   
   const defaultValues = {
     title: '',
@@ -68,6 +77,36 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
 
   console.log('AddIdeaDialog formData:', formData);
   console.log('Available departments:', departments.map(d => ({ id: d.id, name: d.name })));
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim() || !addCategory) return;
+    
+    const result = await addCategory(newCategoryName.trim(), formData.departmentId);
+    if (result) {
+      updateField('category', result.name);
+      setNewCategoryName('');
+      setIsCreatingCategory(false);
+      toast({
+        title: 'Category created',
+        description: `Category "${result.name}" has been created successfully.`
+      });
+    }
+  };
+
+  const handleCreateDepartment = async () => {
+    if (!newDepartmentName.trim() || !addDepartment) return;
+    
+    const result = await addDepartment(newDepartmentName.trim());
+    if (result) {
+      updateField('departmentId', result.id);
+      setNewDepartmentName('');
+      setIsCreatingDepartment(false);
+      toast({
+        title: 'Department created',
+        description: `Department "${result.name}" has been created successfully.`
+      });
+    }
+  };
 
   const handleAddIdea = async () => {
     if (formData.category && formData.title && formData.description) {
@@ -147,43 +186,143 @@ const AddIdeaDialog: React.FC<AddIdeaDialogProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="category">Category</Label>
-              <Select 
-                value={formData.category || ''} 
-                onValueChange={(value) => updateField('category', value as Category)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.name}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isCreatingCategory ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Enter category name"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleCreateCategory();
+                      } else if (e.key === 'Escape') {
+                        setIsCreatingCategory(false);
+                        setNewCategoryName('');
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCreateCategory}
+                    disabled={!newCategoryName.trim()}
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsCreatingCategory(false);
+                      setNewCategoryName('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Select 
+                  value={formData.category || ''} 
+                  onValueChange={(value) => {
+                    if (value === '__create_new__') {
+                      setIsCreatingCategory(true);
+                    } else {
+                      updateField('category', value as Category);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                    {addCategory && (
+                      <SelectItem value="__create_new__" className="text-primary">
+                        <div className="flex items-center gap-2">
+                          <Plus className="h-4 w-4" />
+                          Create new category
+                        </div>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             
             <div>
               <Label htmlFor="department">Department</Label>
-              <Select 
-                value={formData.departmentId || ''} 
-                onValueChange={(value) => {
-                  console.log('Department selected:', value);
-                  updateField('departmentId', value);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isCreatingDepartment ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={newDepartmentName}
+                    onChange={(e) => setNewDepartmentName(e.target.value)}
+                    placeholder="Enter department name"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleCreateDepartment();
+                      } else if (e.key === 'Escape') {
+                        setIsCreatingDepartment(false);
+                        setNewDepartmentName('');
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCreateDepartment}
+                    disabled={!newDepartmentName.trim()}
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsCreatingDepartment(false);
+                      setNewDepartmentName('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Select 
+                  value={formData.departmentId || ''} 
+                  onValueChange={(value) => {
+                    if (value === '__create_new__') {
+                      setIsCreatingDepartment(true);
+                    } else {
+                      console.log('Department selected:', value);
+                      updateField('departmentId', value);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                    {addDepartment && (
+                      <SelectItem value="__create_new__" className="text-primary">
+                        <div className="flex items-center gap-2">
+                          <Plus className="h-4 w-4" />
+                          Create new department
+                        </div>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
         </div>

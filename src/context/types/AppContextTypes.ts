@@ -10,7 +10,7 @@ export type AppContextType = {
   experiments: Experiment[];
   pectiWeights: PECTIWeights;
   isLoading: boolean;
-  addDepartment: (name: string) => void;
+  addDepartment: (name: string) => Promise<{ id: string; name: string } | null>;
   editDepartment: (id: string, name: string) => void;
   deleteDepartment: (id: string) => void;
   addIdea: (idea: Omit<GrowthIdea, 'id' | 'createdAt'>) => Promise<GrowthIdea | null>;
