@@ -218,16 +218,18 @@ const Index = () => {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 max-w-6xl mx-auto">
-            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:scale-y-110">
+            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 min-h-[180px] flex flex-col">
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg z-10"></div>
-              <div className="relative z-20">
-                <div className="h-20 flex items-center justify-center">
-                  <img src={exploreLogo} alt="Explore" className="max-h-11 max-w-full object-contain" />
+              <div className="relative z-20 flex-1 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="h-20 flex items-center justify-center">
+                    <img src={exploreLogo} alt="Explore" className="max-h-11 max-w-full object-contain" />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Explore runs experiments across websites, apps, and in-store for retailers.
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600">
-                  Explore runs experiments across websites, apps, and in-store for retailers.
-                </p>
-                <div className="relative">
+                <div className="relative mt-4">
                   <span className="text-omni-blue text-sm group-hover:opacity-0 transition-opacity duration-300">
                     Learn more
                   </span>
@@ -235,7 +237,7 @@ const Index = () => {
                     href="https://www.omniconvert.com/explore" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
                   >
                     <span className="bg-omni-blue text-white px-6 py-2 rounded-full text-sm font-medium">
                       Learn more
@@ -245,16 +247,18 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:scale-y-110">
+            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 min-h-[180px] flex flex-col">
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg z-10"></div>
-              <div className="relative z-20">
-                <div className="h-20 flex items-center justify-center">
-                  <img src={revealLogo} alt="Reveal" className="max-h-11 max-w-full object-contain" />
+              <div className="relative z-20 flex-1 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="h-20 flex items-center justify-center">
+                    <img src={revealLogo} alt="Reveal" className="max-h-11 max-w-full object-contain" />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Reveal turns retail data into retail impact by leveraging advanced customer segmentation.
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600">
-                  Reveal turns retail data into retail impact by leveraging advanced customer segmentation.
-                </p>
-                <div className="relative">
+                <div className="relative mt-4">
                   <span className="text-omni-blue text-sm group-hover:opacity-0 transition-opacity duration-300">
                     Learn more
                   </span>
@@ -262,7 +266,7 @@ const Index = () => {
                     href="https://www.omniconvert.com/reveal" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
                   >
                     <span className="bg-omni-blue text-white px-6 py-2 rounded-full text-sm font-medium">
                       Learn more
@@ -272,16 +276,18 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:scale-y-110">
+            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 min-h-[180px] flex flex-col">
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg z-10"></div>
-              <div className="relative z-20">
-                <div className="h-20 flex items-center justify-center">
-                  <img src={pulseLogo} alt="Pulse" className="max-h-11 max-w-full object-contain" />
+              <div className="relative z-20 flex-1 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="h-20 flex items-center justify-center">
+                    <img src={pulseLogo} alt="Pulse" className="max-h-11 max-w-full object-contain" />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Pulse decodes the customer feedback using NLP + data intelligence.
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600">
-                  Pulse decodes the customer feedback using NLP + data intelligence.
-                </p>
-                <div className="relative">
+                <div className="relative mt-4">
                   <span className="text-omni-blue text-sm group-hover:opacity-0 transition-opacity duration-300">
                     Learn more
                   </span>
@@ -289,7 +295,7 @@ const Index = () => {
                     href="https://www.omniconvert.com/pulse" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
                   >
                     <span className="bg-omni-blue text-white px-6 py-2 rounded-full text-sm font-medium">
                       Learn more
@@ -299,16 +305,18 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:scale-y-110">
+            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 min-h-[180px] flex flex-col">
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg z-10"></div>
-              <div className="relative z-20">
-                <div className="h-20 flex items-center justify-center">
-                  <img src={croBenchmarkLogo} alt="CRO Benchmark" className="max-h-11 max-w-full object-contain" />
+              <div className="relative z-20 flex-1 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="h-20 flex items-center justify-center">
+                    <img src={croBenchmarkLogo} alt="CRO Benchmark" className="max-h-11 max-w-full object-contain" />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    CRO benchmark uses 320 AI agents to diagnose UX & data hygiene issues on eCommerce websites
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600">
-                  CRO benchmark uses 320 AI agents to diagnose UX & data hygiene issues on eCommerce websites
-                </p>
-                <div className="relative">
+                <div className="relative mt-4">
                   <span className="text-omni-blue text-sm group-hover:opacity-0 transition-opacity duration-300">
                     Learn more
                   </span>
@@ -316,7 +324,7 @@ const Index = () => {
                     href="https://www.crobenchmark.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
                   >
                     <span className="bg-omni-blue text-white px-6 py-2 rounded-full text-sm font-medium">
                       Learn more
@@ -326,16 +334,18 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:scale-y-110">
+            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 min-h-[180px] flex flex-col">
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg z-10"></div>
-              <div className="relative z-20">
-                <div className="h-20 flex items-center justify-center">
-                  <img src={brandfeelLogo} alt="Brandfeel" className="max-h-11 max-w-full object-contain" />
+              <div className="relative z-20 flex-1 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="h-20 flex items-center justify-center">
+                    <img src={brandfeelLogo} alt="Brandfeel" className="max-h-11 max-w-full object-contain" />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Brandfeel.ai decodes retail customer feedback from public data and provide competitive intelligence
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600">
-                  Brandfeel.ai decodes retail customer feedback from public data and provide competitive intelligence
-                </p>
-                <div className="relative">
+                <div className="relative mt-4">
                   <span className="text-omni-blue text-sm group-hover:opacity-0 transition-opacity duration-300">
                     Learn more
                   </span>
@@ -343,7 +353,7 @@ const Index = () => {
                     href="https://www.brandfeel.ai" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
                   >
                     <span className="bg-omni-blue text-white px-6 py-2 rounded-full text-sm font-medium">
                       Learn more
