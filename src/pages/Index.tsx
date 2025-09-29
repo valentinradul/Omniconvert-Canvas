@@ -4,6 +4,11 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Logo from "@/components/Logo";
+import patagoniaLogo from '@/assets/logos/patagonia-logo.png';
+import avonLogo from '@/assets/logos/avon-logo.png';
+import tempurLogo from '@/assets/logos/tempur-logo.png';
+import orangeLogo from '@/assets/logos/orange-logo.png';
+import wonderskinLogo from '@/assets/logos/wonderskin-logo.png';
 
 const Index = () => {
   return (
@@ -104,30 +109,25 @@ const Index = () => {
       <section id="services" className="py-20 bg-gradient-omni">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-black mb-4">Trusted by Growth Teams Everywhere</h2>
-            <p className="text-xl text-gray-600">Join hundreds of teams that use our platform to drive growth</p>
+            <h2 className="text-3xl font-bold text-black mb-4">Our Products are trusted by companies everywhere:</h2>
+            <p className="text-xl text-gray-600">Join hundreds of teams that use OmniConvert products to drive growth</p>
           </div>
           
           <div className="flex flex-wrap justify-center items-center gap-12 opacity-70">
-            <div className="w-32">
-              <svg viewBox="0 0 124 24" className="h-8 w-full text-gray-700">
-                <path fill="currentColor" d="M24 9.523l-8.15-1.186L12 0.977l-3.85 7.36L0 9.523l5.9 5.77-1.392 8.134L12 19.318l7.492 4.108-1.392-8.133L24 9.523z"></path>
-              </svg>
+            <div className="w-32 h-12 flex items-center justify-center">
+              <img src={patagoniaLogo} alt="Patagonia" className="max-h-8 max-w-full object-contain grayscale opacity-70" />
             </div>
-            <div className="w-32">
-              <svg viewBox="0 0 124 24" className="h-8 w-full text-gray-700">
-                <circle fill="currentColor" cx="12" cy="12" r="12"></circle>
-              </svg>
+            <div className="w-32 h-12 flex items-center justify-center">
+              <img src={avonLogo} alt="Avon" className="max-h-8 max-w-full object-contain grayscale opacity-70" />
             </div>
-            <div className="w-32">
-              <svg viewBox="0 0 124 24" className="h-8 w-full text-gray-700">
-                <rect fill="currentColor" width="24" height="24" rx="4"></rect>
-              </svg>
+            <div className="w-32 h-12 flex items-center justify-center">
+              <img src={tempurLogo} alt="Tempur" className="max-h-8 max-w-full object-contain grayscale opacity-70" />
             </div>
-            <div className="w-32">
-              <svg viewBox="0 0 124 24" className="h-8 w-full text-gray-700">
-                <polygon fill="currentColor" points="12,0 24,18 0,18"></polygon>
-              </svg>
+            <div className="w-32 h-12 flex items-center justify-center">
+              <img src={orangeLogo} alt="Orange" className="max-h-8 max-w-full object-contain grayscale opacity-70" />
+            </div>
+            <div className="w-32 h-12 flex items-center justify-center">
+              <img src={wonderskinLogo} alt="Wonderskin" className="max-h-8 max-w-full object-contain grayscale opacity-70" />
             </div>
           </div>
         </div>
