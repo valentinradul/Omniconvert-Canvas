@@ -16,6 +16,7 @@ import revealLogo from '@/assets/logos/reveal-logo.png';
 import pulseLogo from '@/assets/logos/pulse-logo.png';
 import exploreLogo from '@/assets/logos/explore-logo.png';
 import productsBackground from '@/assets/products-background.png';
+import betaLabel from '@/assets/beta-label.png';
 
 const Index = () => {
   return (
@@ -23,7 +24,12 @@ const Index = () => {
       <header className="bg-gradient-omni text-black">
         <div className="container mx-auto px-6 py-6">
           <nav className="flex justify-between items-center mb-16">
-            <Logo className="flex items-center" />
+            <div className="flex flex-col items-start">
+              <Logo className="flex items-center" />
+              <div className="ml-[64px] mt-1">
+                <img src={betaLabel} alt="beta" className="h-6" />
+              </div>
+            </div>
             <div className="hidden md:flex items-center gap-8 text-sm font-medium">
               <a href="#features" className="hover:text-omni-blue">Our software</a>
               <a href="#services" className="hover:text-omni-blue">Services</a>
@@ -217,7 +223,8 @@ const Index = () => {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 max-w-6xl mx-auto">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 relative group cursor-pointer">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-300 rounded-lg z-10"></div>
               <div className="h-20 flex items-center justify-center">
                 <img src={exploreLogo} alt="Explore" className="max-h-11 max-w-full object-contain" />
               </div>
@@ -228,13 +235,24 @@ const Index = () => {
                 href="https://www.omniconvert.com/explore" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-omni-blue hover:underline text-sm"
+                className="text-omni-blue hover:underline text-sm group-hover:hidden"
               >
                 Learn more
               </a>
+              <a 
+                href="https://www.omniconvert.com/explore" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hidden group-hover:block absolute inset-0 z-20 flex items-center justify-center"
+              >
+                <span className="bg-omni-blue text-white px-6 py-2 rounded-full text-sm font-medium">
+                  Learn more
+                </span>
+              </a>
             </div>
             
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 relative group cursor-pointer">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-300 rounded-lg z-10"></div>
               <div className="h-20 flex items-center justify-center">
                 <img src={revealLogo} alt="Reveal" className="max-h-11 max-w-full object-contain" />
               </div>
@@ -245,13 +263,24 @@ const Index = () => {
                 href="https://www.omniconvert.com/reveal" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-omni-blue hover:underline text-sm"
+                className="text-omni-blue hover:underline text-sm group-hover:hidden"
               >
                 Learn more
               </a>
+              <a 
+                href="https://www.omniconvert.com/reveal" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hidden group-hover:block absolute inset-0 z-20 flex items-center justify-center"
+              >
+                <span className="bg-omni-blue text-white px-6 py-2 rounded-full text-sm font-medium">
+                  Learn more
+                </span>
+              </a>
             </div>
             
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 relative group cursor-pointer">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-300 rounded-lg z-10"></div>
               <div className="h-20 flex items-center justify-center">
                 <img src={pulseLogo} alt="Pulse" className="max-h-11 max-w-full object-contain" />
               </div>
@@ -262,13 +291,24 @@ const Index = () => {
                 href="https://www.omniconvert.com/pulse" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-omni-blue hover:underline text-sm"
+                className="text-omni-blue hover:underline text-sm group-hover:hidden"
               >
                 Learn more
               </a>
+              <a 
+                href="https://www.omniconvert.com/pulse" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hidden group-hover:block absolute inset-0 z-20 flex items-center justify-center"
+              >
+                <span className="bg-omni-blue text-white px-6 py-2 rounded-full text-sm font-medium">
+                  Learn more
+                </span>
+              </a>
             </div>
             
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 relative group cursor-pointer">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-300 rounded-lg z-10"></div>
               <div className="h-20 flex items-center justify-center">
                 <img src={croBenchmarkLogo} alt="CRO Benchmark" className="max-h-11 max-w-full object-contain" />
               </div>
@@ -279,13 +319,24 @@ const Index = () => {
                 href="https://www.crobenchmark.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-omni-blue hover:underline text-sm"
+                className="text-omni-blue hover:underline text-sm group-hover:hidden"
               >
                 Learn more
               </a>
+              <a 
+                href="https://www.crobenchmark.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hidden group-hover:block absolute inset-0 z-20 flex items-center justify-center"
+              >
+                <span className="bg-omni-blue text-white px-6 py-2 rounded-full text-sm font-medium">
+                  Learn more
+                </span>
+              </a>
             </div>
             
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 relative group cursor-pointer">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-300 rounded-lg z-10"></div>
               <div className="h-20 flex items-center justify-center">
                 <img src={brandfeelLogo} alt="Brandfeel" className="max-h-11 max-w-full object-contain" />
               </div>
@@ -296,9 +347,19 @@ const Index = () => {
                 href="https://www.brandfeel.ai" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-omni-blue hover:underline text-sm"
+                className="text-omni-blue hover:underline text-sm group-hover:hidden"
               >
                 Learn more
+              </a>
+              <a 
+                href="https://www.brandfeel.ai" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hidden group-hover:block absolute inset-0 z-20 flex items-center justify-center"
+              >
+                <span className="bg-omni-blue text-white px-6 py-2 rounded-full text-sm font-medium">
+                  Learn more
+                </span>
               </a>
             </div>
           </div>
