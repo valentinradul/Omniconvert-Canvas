@@ -370,23 +370,29 @@ const Index = () => {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-lg font-semibold mb-4">ExperimentFlow</h3>
+              <img 
+                src="/src/assets/omniconvert-canvas-logo.png" 
+                alt="Omniconvert Canvas" 
+                className="h-8 mb-4"
+              />
               <p className="text-gray-400">The complete growth experimentation platform</p>
             </div>
             <div>
-              <h4 className="font-medium mb-4">Product</h4>
+              <h4 className="font-medium mb-4">Our Products</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#features" className="hover:text-white">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white">Pricing</a></li>
-                <li><a href="#" className="hover:text-white">Case Studies</a></li>
+                <li><a href="https://www.omniconvert.com/what-we-do/explore/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Explore</a></li>
+                <li><a href="https://www.omniconvert.com/what-we-do/reveal/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Reveal</a></li>
+                <li><a href="https://www.omniconvert.com/what-we-do/pulse/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Pulse</a></li>
+                <li><a href="https://www.crobenchmark.com" target="_blank" rel="noopener noreferrer" className="hover:text-white">CROBenchmark</a></li>
+                <li><a href="https://www.brandfeel.ai" target="_blank" rel="noopener noreferrer" className="hover:text-white">Brandfeel</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-medium mb-4">Resources</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Blog</a></li>
-                <li><a href="#" className="hover:text-white">Documentation</a></li>
-                <li><a href="#" className="hover:text-white">Community</a></li>
+                <li><a href="https://www.omniconvert.com/blog/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Blog</a></li>
+                <li><a href="https://www.omniconvert.com/about/" target="_blank" rel="noopener noreferrer" className="hover:text-white">About us</a></li>
+                <li><a href="mailto:marketing@omniconvert.com" className="hover:text-white">Contact</a></li>
               </ul>
             </div>
             <div>
