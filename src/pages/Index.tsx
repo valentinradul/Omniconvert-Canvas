@@ -132,7 +132,7 @@ const Index = () => {
           style={{ backgroundImage: `url(${teamBackground})` }}
         ></div>
         <div className="relative z-10 container mx-auto px-6">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto text-center pt-32">
             <h2 className="text-3xl md:text-4xl font-bold text-black mb-8">Our Story</h2>
             <div className="text-center space-y-6 text-lg leading-relaxed text-gray-800">
               <h3 className="text-2xl font-bold text-black mb-6">
