@@ -2,6 +2,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import omniconvertCanvasLogo from '@/assets/omniconvert-canvas-logo.png';
 
 interface LogoProps {
   className?: string;
@@ -23,8 +24,8 @@ const Logo: React.FC<LogoProps> = ({ className = "" }) => {
   return (
     <div className={className}>
       <img 
-        src="/lovable-uploads/a4a5d09d-2657-46f8-8741-e7725966a66f.png" 
-        alt="Company Logo" 
+        src={omniconvertCanvasLogo} 
+        alt="Omniconvert Canvas Logo" 
         className={logoHeight} 
       />
     </div>

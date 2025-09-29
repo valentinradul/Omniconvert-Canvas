@@ -72,7 +72,7 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 max-w-md">
-                  As we're in early stage, we give this tool away for lifetime to the first 100 companies.
+                  You're here early. First 100 companies get it free for life.
                 </p>
               </div>
             </div>
