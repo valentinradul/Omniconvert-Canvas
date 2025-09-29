@@ -371,18 +371,18 @@ const Index = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <img 
-                src="/src/assets/omniconvert-canvas-logo.png" 
+                src="/src/assets/omniconvert-canvas-logo-white.png" 
                 alt="Omniconvert Canvas" 
-                className="h-8 mb-4"
+                className="h-10 mb-4"
               />
-              <p className="text-gray-400">The complete growth experimentation platform</p>
+              <p className="text-gray-400">Growth experimentation tracking</p>
             </div>
             <div>
               <h4 className="font-medium mb-4">Our Products</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="https://www.omniconvert.com/what-we-do/explore/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Explore</a></li>
-                <li><a href="https://www.omniconvert.com/what-we-do/reveal/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Reveal</a></li>
-                <li><a href="https://www.omniconvert.com/what-we-do/pulse/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Pulse</a></li>
+                <li><a href="https://www.omniconvert.com/explore/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Explore</a></li>
+                <li><a href="https://www.omniconvert.com/reveal/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Reveal</a></li>
+                <li><a href="https://www.omniconvert.com/pulse/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Pulse</a></li>
                 <li><a href="https://www.crobenchmark.com" target="_blank" rel="noopener noreferrer" className="hover:text-white">CROBenchmark</a></li>
                 <li><a href="https://www.brandfeel.ai" target="_blank" rel="noopener noreferrer" className="hover:text-white">Brandfeel</a></li>
               </ul>
