@@ -9,7 +9,7 @@ import catLogo from '@/assets/logos/cat-logo.png';
 import tempurLogo from '@/assets/logos/tempur-logo.webp';
 import orangeLogo from '@/assets/logos/orange-logo.svg';
 import kitchenaidLogo from '@/assets/logos/kitchenaid-logo.png';
-import teamBackground from '@/assets/team-background.png';
+import teamBackground from '@/assets/team-background-new.png';
 
 const Index = () => {
   return (
@@ -134,36 +134,25 @@ const Index = () => {
         <div className="relative z-10 container mx-auto px-6">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-black mb-8">Our Story</h2>
-            <div className="text-left space-y-6 text-lg leading-relaxed text-gray-800">
-              <h3 className="text-2xl font-bold text-black text-center mb-6">
+            <div className="text-center space-y-6 text-lg leading-relaxed text-gray-800">
+              <h3 className="text-2xl font-bold text-black mb-6">
                 Built by Experimenters, for Experimenters
               </h3>
               
               <p>
-                B2B growth is messy. We've lived that mess.<br />
-                Every experiment dragged through stakeholder purgatory.<br />
-                Weeks to launch. Months to learn. Then the learnings… lost.<br />
-                Docs went missing. Mistakes repeated. ROI? Impossible to prove.
+                B2B growth is messy. We've lived that mess. Every experiment dragged through stakeholder purgatory. Weeks to launch. Months to learn. Then the learnings… lost. Docs went missing. Mistakes repeated. ROI? Impossible to prove.
               </p>
               
               <p>
-                So we stopped guessing and built what we needed.<br />
-                One platform. The whole lifecycle.<br />
-                From hypothesis to outcome to revenue—tracked in one place.<br />
-                It cuts the noise, shows what worked, and what paid.<br />
-                Clarity replaced chaos. Momentum replaced meetings.
+                So we stopped guessing and built what we needed. One platform. The whole lifecycle. From hypothesis to outcome to revenue—tracked in one place. It cuts the noise, shows what worked, and what paid. Clarity replaced chaos. Momentum replaced meetings.
               </p>
               
               <p>
-                We made it for ourselves first. Then we saw the shift.<br />
-                We weren't the only ones stuck in the fog.<br />
-                So we opened it up—practitioners to practitioners.<br />
-                Not a boardroom fantasy. A tool forged in real work, under real pressure.
+                We made it for ourselves first. Then we saw the shift. We weren't the only ones stuck in the fog. So we opened it up—practitioners to practitioners. Not a boardroom fantasy. A tool forged in real work, under real pressure.
               </p>
               
-              <p className="text-center font-semibold text-xl">
-                Build with confidence. Prove the impact. Repeat what works.<br />
-                That's the story. And now it can be yours.
+              <p className="font-semibold text-xl">
+                Build with confidence. Prove the impact. Repeat what works. That's the story. And now it can be yours.
               </p>
             </div>
           </div>
