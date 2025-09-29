@@ -74,6 +74,35 @@ const Index = () => {
         </div>
       </header>
 
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-black mb-8">Our Story</h2>
+            <div className="text-left space-y-6 text-lg leading-relaxed text-gray-700">
+              <h3 className="text-2xl font-bold text-black text-center mb-6">
+                Built by Experimenters, for Experimenters
+              </h3>
+              
+              <p>
+                We are an experimentation team, and we know the chaos of B2B growth firsthand. We believe in fostering a culture of experimentation, but in the B2B world, every test is a monumental effort. Experiments get tangled in a web of endless stakeholders and take months to yield results, creating a fog of uncertainty around their true value.
+              </p>
+              
+              <p>
+                We lived in this chaos. We struggled with the black hole of undocumented tests, where valuable learnings vanished and mistakes were repeated. We battled to prove the financial impact of our work, a common challenge when there's no system to connect activity to revenue.
+              </p>
+              
+              <p>
+                Tired of flying blind, we built the platform we always needed. We created a single source of truth to manage the entire experimentation lifecycle, from hypothesis to financial impact. It brought order to our process, clarity to our results, and finally allowed us to track the actual ROI of our efforts.
+              </p>
+              
+              <p>
+                We built it for ourselves. But after seeing the transformation, we realized we weren't alone in this struggle. We decided to share our solution with the world, so every B2B growth team can escape the chaos and build with confidence. This platform wasn't born in a boardroom; it was forged in the trenches by practitioners, for practitioners.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="features" className="py-20 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
