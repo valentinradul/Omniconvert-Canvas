@@ -26,7 +26,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending contact email from:", email);
 
     const emailResponse = await resend.emails.send({
-      from: "Canvas <onboarding@resend.dev>",
+      from: "Canvas <noreply@omniconvert.com>",
       to: ["marketing@omniconvert.com"],
       subject: "contact from canvas.omniconvert.co",
       html: `
