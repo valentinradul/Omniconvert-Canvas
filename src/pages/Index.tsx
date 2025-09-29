@@ -44,12 +44,23 @@ const Index = () => {
               <p className="text-lg md:text-xl text-gray-600 max-w-lg">
                 Streamline your growth experiments from ideation to execution with our powerful tools.
               </p>
-              <div className="pt-4">
-                <Link to="/signup">
-                  <Button size="lg" className="bg-omni-blue text-white hover:bg-omni-blue/90 rounded-full">
-                    Start now for free
-                  </Button>
-                </Link>
+              <div className="pt-4 space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <Link to="/signup">
+                    <Button size="lg" className="bg-omni-blue text-white hover:bg-omni-blue/90 rounded-full">
+                      Start now for free
+                    </Button>
+                  </Link>
+                  <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full px-4 py-2 flex items-center gap-2 shadow-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-gray-800">
+                      <span className="text-omni-blue font-bold">73</span> spots left
+                    </span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 max-w-md">
+                  As we're in early stage, we give this tool away for lifetime to the first 100 companies.
+                </p>
               </div>
             </div>
             <div className="lg:w-1/2">
