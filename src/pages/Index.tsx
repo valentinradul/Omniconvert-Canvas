@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp } from "lucide-react";
 import Logo from "@/components/Logo";
+import { ContactModal } from "@/components/ContactModal";
 import patagoniaLogo from '@/assets/logos/patagonia-logo.png';
 import catLogo from '@/assets/logos/cat-logo.png';
 import tempurLogo from '@/assets/logos/tempur-logo.webp';
@@ -21,6 +22,7 @@ import omniconvertWhiteLogo from '@/assets/omniconvert-canvas-logo-white.png';
 
 const Index = () => {
   const [showPricingMessage, setShowPricingMessage] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   const scrollToAbout = () => {
     const aboutSection = document.querySelector('#about');
@@ -449,6 +451,11 @@ const Index = () => {
           </div>
         </div>
       </footer>
+      
+      <ContactModal 
+        isOpen={isContactModalOpen} 
+        onClose={() => setIsContactModalOpen(false)} 
+      />
     </div>
   );
 };

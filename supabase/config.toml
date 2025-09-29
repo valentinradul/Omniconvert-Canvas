@@ -3,3 +3,6 @@ project_id = "jdukmuskbpalfqmjelnl"
 
 [functions.send-invitation]
 verify_jwt = true
+
+[functions.send-contact-email]
+verify_jwt = false
