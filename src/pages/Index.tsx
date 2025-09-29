@@ -426,8 +426,8 @@ const Index = () => {
               <h4 className="font-medium mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#about" className="hover:text-white">About Us</a></li>
-                <li><a href="#" className="hover:text-white">Careers</a></li>
-                <li><a href="#" className="hover:text-white">Contact</a></li>
+                <li><a href="https://www.omniconvert.com/careers/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Careers</a></li>
+                <li><button onClick={() => setIsContactModalOpen(true)} className="hover:text-white text-left">Contact</button></li>
               </ul>
             </div>
           </div>
