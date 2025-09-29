@@ -125,12 +125,13 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
         )}
       </TableCell>
       <TableCell className="text-right">
-        <div className="space-x-2">
+        <div className="flex items-center justify-end gap-2">
           {!isEditing && (
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handleEditPecti}
+              className="min-w-[100px]"
             >
               Edit PECTI
             </Button>
@@ -139,6 +140,7 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
             variant="outline" 
             size="sm"
             onClick={() => navigate(`/hypothesis-details/${hypothesis.id}`)}
+            className="min-w-[100px]"
           >
             View Details
           </Button>
@@ -146,6 +148,7 @@ const HypothesisTableRow: React.FC<HypothesisTableRowProps> = ({
             <Button
               size="sm"
               onClick={() => navigate(`/create-experiment/${hypothesis.id}`)}
+              className="min-w-[140px]"
             >
               Create Experiment
             </Button>
