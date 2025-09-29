@@ -10,6 +10,11 @@ import tempurLogo from '@/assets/logos/tempur-logo.webp';
 import orangeLogo from '@/assets/logos/orange-logo.svg';
 import kitchenaidLogo from '@/assets/logos/kitchenaid-logo.png';
 import teamBackground from '@/assets/team-background-new.png';
+import brandfeelLogo from '@/assets/logos/brandfeel-logo.gif';
+import croBenchmarkLogo from '@/assets/logos/cro-benchmark-logo.png';
+import revealLogo from '@/assets/logos/reveal-logo.png';
+import pulseLogo from '@/assets/logos/pulse-logo.png';
+import exploreLogo from '@/assets/logos/explore-logo.png';
 
 const Index = () => {
   return (
@@ -152,10 +157,24 @@ const Index = () => {
               </p>
               
               <p className="font-semibold text-xl">
-                Build with confidence. Prove the impact. Repeat what works. That's the story. And now it can be yours.
+                Build with confidence. Prove the impact. Repeat what works.
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section id="pricing" className="bg-omni-blue py-20 text-white">
+        <div className="container mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to accelerate your growth?</h2>
+          <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
+            Start turning your growth ideas into experiments today. No credit card required.
+          </p>
+          <Link to="/signup">
+            <Button size="lg" className="bg-white text-omni-blue hover:bg-gray-100 rounded-full">
+              Start now for free
+            </Button>
+          </Link>
         </div>
       </section>
 
@@ -186,17 +205,98 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="pricing" className="bg-omni-blue py-20 text-white">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to accelerate your growth?</h2>
-          <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-            Start turning your growth ideas into experiments today. No credit card required.
-          </p>
-          <Link to="/signup">
-            <Button size="lg" className="bg-white text-omni-blue hover:bg-gray-100 rounded-full">
-              Start now for free
-            </Button>
-          </Link>
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-black mb-4">Other products from omniconvert</h2>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 max-w-6xl mx-auto">
+            <div className="text-center space-y-4">
+              <div className="h-20 flex items-center justify-center">
+                <img src={exploreLogo} alt="Explore" className="max-h-16 max-w-full object-contain" />
+              </div>
+              <p className="text-sm text-gray-600">
+                Explore runs experiments across websites, apps, and in-store for retailers.
+              </p>
+              <a 
+                href="https://www.omniconvert.com/explore" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-omni-blue hover:underline text-sm"
+              >
+                Learn more
+              </a>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <div className="h-20 flex items-center justify-center">
+                <img src={revealLogo} alt="Reveal" className="max-h-16 max-w-full object-contain" />
+              </div>
+              <p className="text-sm text-gray-600">
+                Reveal turns retail data into retail impact by leveraging advanced customer segmentation.
+              </p>
+              <a 
+                href="https://www.omniconvert.com/reveal" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-omni-blue hover:underline text-sm"
+              >
+                Learn more
+              </a>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <div className="h-20 flex items-center justify-center">
+                <img src={pulseLogo} alt="Pulse" className="max-h-16 max-w-full object-contain" />
+              </div>
+              <p className="text-sm text-gray-600">
+                Pulse decodes the customer feedback using NLP + data intelligence.
+              </p>
+              <a 
+                href="https://www.omniconvert.com/pulse" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-omni-blue hover:underline text-sm"
+              >
+                Learn more
+              </a>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <div className="h-20 flex items-center justify-center">
+                <img src={croBenchmarkLogo} alt="CRO Benchmark" className="max-h-16 max-w-full object-contain" />
+              </div>
+              <p className="text-sm text-gray-600">
+                CRO benchmark uses 320 AI agents to diagnose UX & data hygiene issues on eCommerce websites
+              </p>
+              <a 
+                href="https://www.crobenchmark.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-omni-blue hover:underline text-sm"
+              >
+                Learn more
+              </a>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <div className="h-20 flex items-center justify-center">
+                <img src={brandfeelLogo} alt="Brandfeel" className="max-h-16 max-w-full object-contain" />
+              </div>
+              <p className="text-sm text-gray-600">
+                Brandfeel.ai decodes retail customer feedback from public data and provide competitive intelligence
+              </p>
+              <a 
+                href="https://www.brandfeel.ai" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-omni-blue hover:underline text-sm"
+              >
+                Learn more
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
