@@ -308,7 +308,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [currentCompany]);
 
   useEffect(() => {
-    if (user && companies.length > 0) {
+    if (user && companies.length > 0 && !currentCompany) {
       const storedCompanyId = localStorage.getItem('currentCompanyId');
       console.log('🎯 CompanyContext: Setting current company', { 
         companiesCount: companies.length,
@@ -321,16 +321,14 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (company) {
           console.log('✅ CompanyContext: Setting stored company as current:', company.name);
           setCurrentCompany(company);
-        } else {
-          console.log('⚠️ CompanyContext: Stored company not found, setting first available');
-          setCurrentCompany(companies[0]);
+          return;
         }
-      } else {
-        console.log('📌 CompanyContext: No stored company, setting first available');
-        setCurrentCompany(companies[0]);
       }
+      
+      console.log('📌 CompanyContext: No valid stored company, setting first available');
+      setCurrentCompany(companies[0]);
     }
-  }, [companies, user]);
+  }, [companies, user, currentCompany]);
   
   return (
     <CompanyContext.Provider
