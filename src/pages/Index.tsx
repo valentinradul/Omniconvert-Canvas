@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, TrendingUp } from "lucide-react";
 import Logo from "@/components/Logo";
 import patagoniaLogo from '@/assets/logos/patagonia-logo.png';
 import catLogo from '@/assets/logos/cat-logo.png';
@@ -83,7 +83,7 @@ const Index = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
               <div className="bg-omni-light-blue text-omni-blue p-3 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -112,6 +112,14 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-bold text-black mb-2">Experiment Tracker</h3>
               <p className="text-gray-600">Track the progress and results of your experiments in real-time.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+              <div className="bg-omni-light-blue text-omni-blue p-3 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-black mb-2">Financial Performance</h3>
+              <p className="text-gray-600">See how much you've invested and how much you've got from each initiative.</p>
             </div>
           </div>
         </div>
