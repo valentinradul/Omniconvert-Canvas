@@ -15,6 +15,7 @@ import croBenchmarkLogo from '@/assets/logos/cro-benchmark-logo.png';
 import revealLogo from '@/assets/logos/reveal-logo.png';
 import pulseLogo from '@/assets/logos/pulse-logo.png';
 import exploreLogo from '@/assets/logos/explore-logo.png';
+import productsBackground from '@/assets/products-background.png';
 
 const Index = () => {
   return (
@@ -205,8 +206,12 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-6">
+      <section className="py-20 bg-white relative overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+          style={{ backgroundImage: `url(${productsBackground})` }}
+        ></div>
+        <div className="relative z-10 container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-black mb-4">Other products crafted at Omniconvert</h2>
           </div>
