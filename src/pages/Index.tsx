@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp } from "lucide-react";
@@ -17,8 +17,18 @@ import pulseLogo from '@/assets/logos/pulse-logo.png';
 import exploreLogo from '@/assets/logos/explore-logo.png';
 import productsBackground from '@/assets/products-background.png';
 import betaLabel from '@/assets/beta-label.png';
+import omniconvertWhiteLogo from '@/assets/omniconvert-canvas-logo-white.png';
 
 const Index = () => {
+  const [showPricingMessage, setShowPricingMessage] = useState(false);
+
+  const scrollToAbout = () => {
+    const aboutSection = document.querySelector('#about');
+    if (aboutSection) {
+      aboutSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="min-h-screen font-inter">
       <header className="bg-gradient-omni text-black">
@@ -26,10 +36,25 @@ const Index = () => {
           <nav className="flex justify-between items-center mb-16">
             <Logo className="flex items-center" />
             <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-              <a href="#features" className="hover:text-omni-blue">Our software</a>
-              <a href="#services" className="hover:text-omni-blue">Services</a>
-              <a href="#pricing" className="hover:text-omni-blue">Pricing</a>
-              <a href="#about" className="hover:text-omni-blue">About</a>
+              <a href="#features" className="hover:text-omni-blue">Features</a>
+              <div className="relative">
+                <a 
+                  href="#pricing" 
+                  className="hover:text-omni-blue cursor-pointer"
+                  onMouseEnter={() => setShowPricingMessage(true)}
+                  onMouseLeave={() => setShowPricingMessage(false)}
+                  onClick={() => setShowPricingMessage(!showPricingMessage)}
+                >
+                  Pricing
+                </a>
+                {showPricingMessage && (
+                  <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap z-50">
+                    You're here early. First 100 companies get it free for life.
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
+                  </div>
+                )}
+              </div>
+              <button onClick={scrollToAbout} className="hover:text-omni-blue">About</button>
             </div>
             <div className="space-x-4">
               <Link to="/login">
@@ -133,7 +158,7 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-gray-50 relative overflow-hidden">
+      <section id="about" className="py-20 bg-gray-50 relative overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
           style={{ backgroundImage: `url(${teamBackground})` }}
@@ -180,7 +205,7 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="services" className="py-20 bg-gradient-omni">
+      <section className="py-20 bg-gradient-omni">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-black mb-4">Our Products are trusted by companies everywhere:</h2>
@@ -366,12 +391,12 @@ const Index = () => {
         </div>
       </section>
 
-      <footer id="about" className="bg-gray-900 text-white py-12">
+      <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <img 
-                src="/src/assets/omniconvert-canvas-logo-white.png" 
+                src={omniconvertWhiteLogo} 
                 alt="Omniconvert Canvas" 
                 className="h-12 mb-4"
               />
@@ -406,7 +431,7 @@ const Index = () => {
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400">&copy; 2025 ExperimentFlow. All rights reserved.</p>
+            <p className="text-gray-400">&copy; 2025 Omniconvert All rights reserved. <a href="https://www.omniconvert.com/privacy-security/#terms-conditions" className="hover:text-white">Terms & Conditions</a></p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="text-gray-400 hover:text-white">
                 <span className="sr-only">Twitter</span>
