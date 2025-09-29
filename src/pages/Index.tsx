@@ -208,7 +208,7 @@ const Index = () => {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-black mb-4">Other products from omniconvert</h2>
+            <h2 className="text-3xl font-bold text-black mb-4">Other products crafted at Omniconvert</h2>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 max-w-6xl mx-auto">
