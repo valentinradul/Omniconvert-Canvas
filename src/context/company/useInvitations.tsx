@@ -114,7 +114,12 @@ export function useInvitations() {
         return null;
       }
       
-      console.log('➕ Adding user to company members via MANUAL acceptance:', { userId, companyId: invitation.company_id, role: invitation.role });
+      console.log('➕ Adding user to company members via MANUAL acceptance:', { 
+        userId, 
+        companyId: invitation.company_id, 
+        role: invitation.role,
+        invitationData: invitation 
+      });
       
       // Add user to company members
       const { data: newMember, error: memberError } = await supabase
@@ -129,10 +134,28 @@ export function useInvitations() {
         
       if (memberError) {
         console.error('❌ Error adding company member:', memberError);
+        console.error('❌ Full error details:', JSON.stringify(memberError, null, 2));
+        console.error('❌ Attempted to insert:', { 
+          company_id: invitation.company_id, 
+          user_id: userId, 
+          role: invitation.role 
+        });
+        
+        // More specific error messages based on error type
+        let errorMessage = "There was an error adding you to the company. Please try again.";
+        
+        if (memberError.code === '23514') {
+          if (memberError.message?.includes('company_members_role_check')) {
+            errorMessage = `The role "${invitation.role}" is not supported. Please contact your administrator.`;
+          }
+        } else if (memberError.code === '23505') {
+          errorMessage = "You are already a member of this company.";
+        }
+        
         toast({
           variant: "destructive",
           title: "Failed to join company",
-          description: "There was an error adding you to the company. Please try again.",
+          description: errorMessage,
         });
         return null;
       }
