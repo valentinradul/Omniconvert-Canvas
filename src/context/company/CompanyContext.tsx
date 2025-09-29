@@ -264,8 +264,11 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
     
     if (user) {
-      // Clear any cached company data when user changes
-      localStorage.removeItem('userCompanies');
+      // Only clear userCompanies cache, NOT currentCompanyId on refresh
+      const cachedCompanies = localStorage.getItem('userCompanies');
+      if (!cachedCompanies) {
+        localStorage.removeItem('userCompanies');
+      }
       
       console.log('📊 CompanyContext: Fetching companies for authenticated user');
       // Add delay to ensure auth state is fully settled
