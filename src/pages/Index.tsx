@@ -241,7 +241,7 @@ const Index = () => {
         ></div>
         <div className="relative z-10 container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-black mb-4">Other products crafted at Omniconvert</h2>
+            <h2 className="text-3xl font-bold text-black mb-4">We craft tech products since 2013</h2>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 max-w-6xl mx-auto">
@@ -250,7 +250,7 @@ const Index = () => {
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="h-20 flex items-center justify-center">
-                    <img src={exploreLogo} alt="Explore" className="max-h-11 max-w-full object-contain" />
+                    <img src={exploreLogo} alt="Explore" className="h-11 w-24 object-contain" />
                   </div>
                   <p className="text-sm text-gray-600">
                     Explore runs experiments across websites, apps, and in-store for retailers.
@@ -279,7 +279,7 @@ const Index = () => {
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="h-20 flex items-center justify-center">
-                    <img src={revealLogo} alt="Reveal" className="max-h-11 max-w-full object-contain" />
+                    <img src={revealLogo} alt="Reveal" className="h-11 w-24 object-contain" />
                   </div>
                   <p className="text-sm text-gray-600">
                     Reveal turns retail data into retail impact by leveraging advanced customer segmentation.
@@ -308,7 +308,7 @@ const Index = () => {
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="h-20 flex items-center justify-center">
-                    <img src={pulseLogo} alt="Pulse" className="max-h-11 max-w-full object-contain" />
+                    <img src={pulseLogo} alt="Pulse" className="h-11 w-24 object-contain" />
                   </div>
                   <p className="text-sm text-gray-600">
                     Pulse decodes the customer feedback using NLP + data intelligence.
@@ -337,7 +337,7 @@ const Index = () => {
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="h-20 flex items-center justify-center">
-                    <img src={croBenchmarkLogo} alt="CRO Benchmark" className="max-h-11 max-w-full object-contain" />
+                    <img src={croBenchmarkLogo} alt="CRO Benchmark" className="h-11 w-24 object-contain" />
                   </div>
                   <p className="text-sm text-gray-600">
                     CRO benchmark uses 320 AI agents to diagnose UX & data hygiene issues on eCommerce websites
@@ -366,7 +366,7 @@ const Index = () => {
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="h-20 flex items-center justify-center">
-                    <img src={brandfeelLogo} alt="Brandfeel" className="max-h-11 max-w-full object-contain" />
+                    <img src={brandfeelLogo} alt="Brandfeel" className="h-11 w-24 object-contain" />
                   </div>
                   <p className="text-sm text-gray-600">
                     Brandfeel.ai decodes retail customer feedback from public data and provide competitive intelligence
