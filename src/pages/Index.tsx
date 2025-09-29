@@ -113,21 +113,21 @@ const Index = () => {
             <p className="text-xl text-gray-600">Join hundreds of teams that use OmniConvert products to drive growth</p>
           </div>
           
-          <div className="flex flex-wrap justify-center items-center gap-12 opacity-70">
-            <div className="w-32 h-12 flex items-center justify-center">
-              <img src={patagoniaLogo} alt="Patagonia" className="max-h-8 max-w-full object-contain grayscale opacity-70" />
+          <div className="flex flex-wrap justify-center items-center gap-16">
+            <div className="w-48 h-20 flex items-center justify-center">
+              <img src={patagoniaLogo} alt="Patagonia" className="max-h-16 max-w-full object-contain" />
             </div>
-            <div className="w-32 h-12 flex items-center justify-center">
-              <img src={avonLogo} alt="Avon" className="max-h-8 max-w-full object-contain grayscale opacity-70" />
+            <div className="w-48 h-20 flex items-center justify-center">
+              <img src={avonLogo} alt="Avon" className="max-h-16 max-w-full object-contain" />
             </div>
-            <div className="w-32 h-12 flex items-center justify-center">
-              <img src={tempurLogo} alt="Tempur" className="max-h-8 max-w-full object-contain grayscale opacity-70" />
+            <div className="w-48 h-20 flex items-center justify-center">
+              <img src={tempurLogo} alt="Tempur" className="max-h-16 max-w-full object-contain" />
             </div>
-            <div className="w-32 h-12 flex items-center justify-center">
-              <img src={orangeLogo} alt="Orange" className="max-h-8 max-w-full object-contain grayscale opacity-70" />
+            <div className="w-48 h-20 flex items-center justify-center">
+              <img src={orangeLogo} alt="Orange" className="max-h-16 max-w-full object-contain" />
             </div>
-            <div className="w-32 h-12 flex items-center justify-center">
-              <img src={wonderskinLogo} alt="Wonderskin" className="max-h-8 max-w-full object-contain grayscale opacity-70" />
+            <div className="w-48 h-20 flex items-center justify-center">
+              <img src={wonderskinLogo} alt="Wonderskin" className="max-h-16 max-w-full object-contain" />
             </div>
           </div>
         </div>
