@@ -218,7 +218,7 @@ const Index = () => {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 max-w-6xl mx-auto">
-            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 min-h-[180px] flex flex-col">
+            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 hover:-mx-[5px] min-h-[180px] flex flex-col">
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg z-10"></div>
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
@@ -247,7 +247,7 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 min-h-[180px] flex flex-col">
+            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 hover:-mx-[5px] min-h-[180px] flex flex-col">
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg z-10"></div>
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
@@ -276,7 +276,7 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 min-h-[180px] flex flex-col">
+            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 hover:-mx-[5px] min-h-[180px] flex flex-col">
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg z-10"></div>
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
@@ -305,7 +305,7 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 min-h-[180px] flex flex-col">
+            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 hover:-mx-[5px] min-h-[180px] flex flex-col">
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg z-10"></div>
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
@@ -334,7 +334,7 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 min-h-[180px] flex flex-col">
+            <div className="text-center space-y-4 relative group cursor-pointer transition-all duration-300 hover:pb-4 hover:-mx-[5px] min-h-[180px] flex flex-col">
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg z-10"></div>
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
@@ -373,7 +373,7 @@ const Index = () => {
               <img 
                 src="/src/assets/omniconvert-canvas-logo-white.png" 
                 alt="Omniconvert Canvas" 
-                className="h-10 mb-4"
+                className="h-12 mb-4"
               />
               <p className="text-gray-400">Growth experimentation tracking</p>
             </div>
