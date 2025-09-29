@@ -308,27 +308,30 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [currentCompany]);
 
   useEffect(() => {
-    if (user && companies.length > 0 && !currentCompany) {
-      const storedCompanyId = localStorage.getItem('currentCompanyId');
-      console.log('🎯 CompanyContext: Setting current company', { 
-        companiesCount: companies.length,
-        storedCompanyId,
-        availableCompanies: companies.map(c => ({ id: c.id, name: c.name }))
-      });
-      
-      if (storedCompanyId) {
-        const company = companies.find(c => c.id === storedCompanyId);
-        if (company) {
-          console.log('✅ CompanyContext: Setting stored company as current:', company.name);
-          setCurrentCompany(company);
-          return;
+    if (user && companies.length > 0) {
+      // Only set initial company if we don't have one yet
+      if (!currentCompany) {
+        const storedCompanyId = localStorage.getItem('currentCompanyId');
+        console.log('🎯 CompanyContext: Setting current company', { 
+          companiesCount: companies.length,
+          storedCompanyId,
+          availableCompanies: companies.map(c => ({ id: c.id, name: c.name }))
+        });
+        
+        if (storedCompanyId) {
+          const company = companies.find(c => c.id === storedCompanyId);
+          if (company) {
+            console.log('✅ CompanyContext: Setting stored company as current:', company.name);
+            setCurrentCompany(company);
+            return;
+          }
         }
+        
+        console.log('📌 CompanyContext: No valid stored company, setting first available');
+        setCurrentCompany(companies[0]);
       }
-      
-      console.log('📌 CompanyContext: No valid stored company, setting first available');
-      setCurrentCompany(companies[0]);
     }
-  }, [companies, user, currentCompany]);
+  }, [companies, user]);
   
   return (
     <CompanyContext.Provider

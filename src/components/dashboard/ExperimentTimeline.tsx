@@ -310,15 +310,15 @@ const ExperimentTimeline: React.FC<ExperimentTimelineProps> = ({
                                   
                                    {/* Start indicator */}
                                    {isFirstInRange && experiment.startDate && (
-                                     <div className="absolute inset-0 flex items-center justify-start pl-2">
-                                       <Play className="text-green-600" fill="currentColor" style={{ height: '27px', width: '27px' }} />
+                                     <div className="absolute inset-y-4 left-2 flex items-center justify-start">
+                                       <Play className="text-green-600" fill="currentColor" style={{ height: '16px', width: '16px' }} />
                                      </div>
                                    )}
                                    
                                    {/* End indicator */}
                                    {isLastInRange && experiment.endDate && (
-                                     <div className="absolute inset-0 flex items-center justify-end pr-2">
-                                       <Square className="text-red-600" fill="currentColor" style={{ height: '27px', width: '27px' }} />
+                                     <div className="absolute inset-y-4 right-2 flex items-center justify-end">
+                                       <Square className="text-red-600" fill="currentColor" style={{ height: '16px', width: '16px' }} />
                                      </div>
                                    )}
                                 </>
