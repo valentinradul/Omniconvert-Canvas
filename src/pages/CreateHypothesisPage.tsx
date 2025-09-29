@@ -79,7 +79,7 @@ const CreateHypothesisPage: React.FC = () => {
     return <div>Loading...</div>;
   }
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.observation || !formData.initiative || !formData.metric) {
@@ -103,7 +103,7 @@ const CreateHypothesisPage: React.FC = () => {
         }
       };
       
-      addHypothesis(newHypothesis);
+      await addHypothesis(newHypothesis);
       
       // Clear the saved draft after successful submission
       clearDraftOnSubmit();

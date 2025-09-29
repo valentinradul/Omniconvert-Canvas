@@ -39,7 +39,7 @@ const CreateHypothesisModal: React.FC<CreateHypothesisModalProps> = ({
   const [time, setTime] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [impact, setImpact] = useState<1 | 2 | 3 | 4 | 5>(3);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate form
@@ -52,39 +52,48 @@ const CreateHypothesisModal: React.FC<CreateHypothesisModalProps> = ({
       return;
     }
     
-    addHypothesis({
-      ideaId: idea.id,
-      observation,
-      initiative,
-      metric,
-      pectiScore: {
-        potential,
-        ease,
-        cost,
-        time,
-        impact
-      },
-      status: "Backlog",
-      userId: user?.id,
-      userName: user?.user_metadata?.full_name || user?.email
-    });
-    
-    toast({
-      title: "Hypothesis Created",
-      description: "Your hypothesis has been created successfully."
-    });
-    
-    // Reset form and close modal
-    setObservation("");
-    setInitiative("");
-    setMetric("");
-    setPotential(3);
-    setEase(3);
-    setCost(3);
-    setTime(3);
-    setImpact(3);
-    
-    onComplete();
+    try {
+      await addHypothesis({
+        ideaId: idea.id,
+        observation,
+        initiative,
+        metric,
+        pectiScore: {
+          potential,
+          ease,
+          cost,
+          time,
+          impact
+        },
+        status: "Backlog",
+        userId: user?.id,
+        userName: user?.user_metadata?.full_name || user?.email
+      });
+      
+      toast({
+        title: "Hypothesis Created",
+        description: "Your hypothesis has been created successfully."
+      });
+      
+      // Reset form and close modal
+      setObservation("");
+      setInitiative("");
+      setMetric("");
+      setPotential(3);
+      setEase(3);
+      setCost(3);
+      setTime(3);
+      setImpact(3);
+      
+      onComplete();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create hypothesis. Please try again.",
+        variant: "destructive"
+      });
+      console.error('Error creating hypothesis:', error);
+    }
   };
   
   return (
