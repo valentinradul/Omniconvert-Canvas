@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Logo from "@/components/Logo";
 import patagoniaLogo from '@/assets/logos/patagonia-logo.png';
-import avonLogo from '@/assets/logos/avon-logo.png';
-import tempurLogo from '@/assets/logos/tempur-logo.png';
-import orangeLogo from '@/assets/logos/orange-logo.png';
-import wonderskinLogo from '@/assets/logos/wonderskin-logo.png';
+import catLogo from '@/assets/logos/cat-logo.png';
+import tempurLogo from '@/assets/logos/tempur-logo.webp';
+import orangeLogo from '@/assets/logos/orange-logo.svg';
+import kitchenaidLogo from '@/assets/logos/kitchenaid-logo.png';
 
 const Index = () => {
   return (
@@ -118,7 +118,7 @@ const Index = () => {
               <img src={patagoniaLogo} alt="Patagonia" className="max-h-16 max-w-full object-contain" />
             </div>
             <div className="w-48 h-20 flex items-center justify-center">
-              <img src={avonLogo} alt="Avon" className="max-h-16 max-w-full object-contain" />
+              <img src={catLogo} alt="CAT" className="max-h-16 max-w-full object-contain" />
             </div>
             <div className="w-48 h-20 flex items-center justify-center">
               <img src={tempurLogo} alt="Tempur" className="max-h-16 max-w-full object-contain" />
@@ -127,7 +127,7 @@ const Index = () => {
               <img src={orangeLogo} alt="Orange" className="max-h-16 max-w-full object-contain" />
             </div>
             <div className="w-48 h-20 flex items-center justify-center">
-              <img src={wonderskinLogo} alt="Wonderskin" className="max-h-16 max-w-full object-contain" />
+              <img src={kitchenaidLogo} alt="KitchenAid" className="max-h-16 max-w-full object-contain" />
             </div>
           </div>
         </div>
