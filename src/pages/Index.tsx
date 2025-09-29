@@ -366,7 +366,7 @@ const Index = () => {
               <div className="relative z-20 flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="h-20 flex items-center justify-center">
-                    <img src={brandfeelLogo} alt="Brandfeel" className="h-11 w-30 object-contain" />
+                    <img src={brandfeelLogo} alt="Brandfeel" className="h-16 w-42 object-contain" />
                   </div>
                   <p className="text-sm text-gray-600">
                     Brandfeel.ai decodes retail customer feedback from public data and provide competitive intelligence
