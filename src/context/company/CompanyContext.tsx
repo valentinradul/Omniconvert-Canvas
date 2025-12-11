@@ -309,26 +309,35 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     if (user && companies.length > 0) {
-      // Only set initial company if we don't have one yet
-      if (!currentCompany) {
-        const storedCompanyId = localStorage.getItem('currentCompanyId');
-        console.log('🎯 CompanyContext: Setting current company', { 
-          companiesCount: companies.length,
-          storedCompanyId,
-          availableCompanies: companies.map(c => ({ id: c.id, name: c.name }))
-        });
-        
+      const storedCompanyId = localStorage.getItem('currentCompanyId');
+      
+      // Check if current company is still valid (user might have been removed)
+      const currentCompanyStillValid = currentCompany && companies.some(c => c.id === currentCompany.id);
+      
+      console.log('🎯 CompanyContext: Checking company selection', { 
+        companiesCount: companies.length,
+        storedCompanyId,
+        currentCompanyId: currentCompany?.id,
+        currentCompanyStillValid,
+        availableCompanies: companies.map(c => ({ id: c.id, name: c.name }))
+      });
+      
+      // If no current company or current company is no longer valid
+      if (!currentCompany || !currentCompanyStillValid) {
+        // Try to use stored company
         if (storedCompanyId) {
-          const company = companies.find(c => c.id === storedCompanyId);
-          if (company) {
-            console.log('✅ CompanyContext: Setting stored company as current:', company.name);
-            setCurrentCompany(company);
+          const storedCompany = companies.find(c => c.id === storedCompanyId);
+          if (storedCompany) {
+            console.log('✅ CompanyContext: Setting stored company as current:', storedCompany.name);
+            setCurrentCompany(storedCompany);
             return;
           }
         }
         
-        console.log('📌 CompanyContext: No valid stored company, setting first available');
+        // Fallback to first available company
+        console.log('📌 CompanyContext: Setting first available company:', companies[0].name);
         setCurrentCompany(companies[0]);
+        localStorage.setItem('currentCompanyId', companies[0].id);
       }
     }
   }, [companies, user]);
