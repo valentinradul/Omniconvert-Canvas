@@ -66,6 +66,12 @@ const UserMenu: React.FC = () => {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Super Admin</DropdownMenuLabel>
+            <DropdownMenuItem asChild>
+              <Link to="/super-admin/companies">
+                <Shield className="h-4 w-4 mr-2" />
+                Super Admin Panel
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => switchOperatingMode('superadmin')}>
               <Shield className="h-4 w-4 mr-2" />
               Super Admin Mode
