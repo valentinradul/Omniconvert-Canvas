@@ -40,6 +40,7 @@ const ITEMS_PER_PAGE = 10;
 
 const UsersManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]); // For Add Member dialog
   const [members, setMembers] = useState<CompanyMember[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,12 +58,20 @@ const UsersManagement: React.FC = () => {
   // Search states
   const [usersSearch, setUsersSearch] = useState('');
   const [membersSearch, setMembersSearch] = useState('');
+  const [dialogUserSearch, setDialogUserSearch] = useState('');
   
   const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
   }, [usersPage, membersPage, usersSearch, membersSearch]);
+  
+  // Fetch all users for the dialog when it opens or search changes
+  useEffect(() => {
+    if (isAddMemberDialogOpen) {
+      fetchAllUsersForDialog();
+    }
+  }, [isAddMemberDialogOpen, dialogUserSearch]);
 
   const fetchData = async () => {
     try {
@@ -125,14 +134,41 @@ const UsersManagement: React.FC = () => {
     }
   };
 
+  const fetchAllUsersForDialog = async () => {
+    try {
+      let query = supabase
+        .from('profiles')
+        .select('*')
+        .order('full_name', { ascending: true })
+        .limit(50);
+
+      if (dialogUserSearch) {
+        query = query.ilike('full_name', `%${dialogUserSearch}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setAllUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users for dialog:', error);
+    }
+  };
+
   const addMemberToCompany = async () => {
     if (!selectedUserId || !selectedCompanyId || !selectedRole) return;
 
     try {
-      // Check if user is already a member of this company
-      const existingMember = members.find(
-        m => m.user_id === selectedUserId && m.company_id === selectedCompanyId
-      );
+      // Check if user is already a member of this company using a fresh query
+      const { data: existingMember, error: checkError } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('user_id', selectedUserId)
+        .eq('company_id', selectedCompanyId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing membership:', checkError);
+      }
 
       if (existingMember) {
         toast({
@@ -143,16 +179,24 @@ const UsersManagement: React.FC = () => {
         return;
       }
 
+      console.log('Super admin adding member:', { selectedUserId, selectedCompanyId, selectedRole });
+
       // Direct database insertion for super admin
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('company_members')
         .insert({
           user_id: selectedUserId,
           company_id: selectedCompanyId,
           role: selectedRole
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Insert error:', error);
+        throw error;
+      }
+
+      console.log('Member added successfully:', data);
 
       toast({
         title: 'Success',
@@ -162,6 +206,7 @@ const UsersManagement: React.FC = () => {
       setSelectedUserId('');
       setSelectedCompanyId('');
       setSelectedRole('member');
+      setDialogUserSearch('');
       setIsAddMemberDialogOpen(false);
       fetchData();
     } catch (error: any) {
@@ -169,7 +214,7 @@ const UsersManagement: React.FC = () => {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to add user to company'
+        description: error.message || 'Failed to add user to company'
       });
     }
   };
@@ -352,13 +397,19 @@ const UsersManagement: React.FC = () => {
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label>Select User</Label>
+                      <Label>Search User</Label>
+                      <Input
+                        placeholder="Search by name..."
+                        value={dialogUserSearch}
+                        onChange={(e) => setDialogUserSearch(e.target.value)}
+                        className="mb-2"
+                      />
                       <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                         <SelectTrigger>
                           <SelectValue placeholder="Choose a user" />
                         </SelectTrigger>
                         <SelectContent>
-                          {users.map((user) => (
+                          {allUsers.map((user) => (
                             <SelectItem key={user.id} value={user.id}>
                               {user.full_name || 'Unnamed User'}
                             </SelectItem>
