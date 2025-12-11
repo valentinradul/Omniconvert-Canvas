@@ -36,39 +36,42 @@ export const useCompanyManagement = () => {
     setIsProcessing(true);
     
     try {
-      // First, check if this email is already a member of this company
-      // We need to get the user ID from the profiles table first
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id);
-
-      // Then check if there's already a user with this email who is a member
-      const { data: existingMemberByEmail } = await supabase
-        .rpc('get_current_user_email')
-        .then(async (emailResult) => {
-          if (emailResult.data === email.toLowerCase().trim()) {
-            // This is the current user trying to invite themselves
-            return await supabase
-              .from('company_members')
-              .select('id')
-              .eq('company_id', currentCompanyId)
-              .eq('user_id', userId);
-          }
-          return { data: null };
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Check if the current user is trying to invite themselves
+      const { data: currentUserEmail } = await supabase.rpc('get_current_user_email');
+      if (currentUserEmail === normalizedEmail) {
+        toast({
+          variant: 'destructive',
+          title: 'Cannot invite yourself',
+          description: 'You cannot send an invitation to yourself.',
         });
+        return;
+      }
 
-      // Check if there's already a pending invitation for this email
+      // Check if there's already an invitation for this email (pending or accepted)
       const { data: existingInvites } = await supabase
         .from('company_invitations')
         .select('id, accepted')
         .eq('company_id', currentCompanyId)
-        .eq('email', email.toLowerCase().trim());
+        .eq('email', normalizedEmail);
         
       if (existingInvites && existingInvites.length > 0) {
+        const acceptedInvite = existingInvites.find(invite => invite.accepted);
         const pendingInvite = existingInvites.find(invite => !invite.accepted);
+        
+        // If there's an accepted invitation, the user should already be a member
+        if (acceptedInvite) {
+          toast({
+            variant: 'destructive',
+            title: 'Already a member',
+            description: `${normalizedEmail} has already accepted an invitation and is a member of this company.`,
+          });
+          return;
+        }
+        
+        // If there's a pending invitation, update it instead of creating a new one
         if (pendingInvite) {
-          // Update the existing invitation instead of creating a new one
           const { error: updateError } = await supabase
             .from('company_invitations')
             .update({
@@ -82,7 +85,7 @@ export const useCompanyManagement = () => {
           
           toast({
             title: 'Invitation updated',
-            description: `Updated the existing invitation for ${email} with new permissions.`,
+            description: `Updated the existing invitation for ${normalizedEmail} with new permissions.`,
           });
           
           return { id: pendingInvite.id };
@@ -110,7 +113,7 @@ export const useCompanyManagement = () => {
         .from('company_invitations')
         .insert({
           company_id: currentCompanyId,
-          email: email.toLowerCase().trim(),
+          email: normalizedEmail,
           role,
           invited_by: userId,
           department_permissions: departmentPermissions
@@ -120,12 +123,11 @@ export const useCompanyManagement = () => {
         
       if (error) throw error;
       
-      // Send invitation email
       try {
         console.log("Calling send-invitation edge function");
         const { error: fnError } = await supabase.functions.invoke('send-invitation', {
           body: {
-            email: email.toLowerCase().trim(),
+            email: normalizedEmail,
             companyName: companyData.name,
             inviterName: inviterProfile?.full_name || null,
             role,
