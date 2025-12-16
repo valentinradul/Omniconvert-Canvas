@@ -671,6 +671,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_company_invitation: {
+        Args: { accepting_user_id: string; invitation_id_param: string }
+        Returns: Json
+      }
       can_add_company_member: {
         Args: { company_id: string; user_id: string }
         Returns: boolean

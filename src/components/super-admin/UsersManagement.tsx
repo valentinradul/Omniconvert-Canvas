@@ -91,7 +91,8 @@ const UsersManagement: React.FC = () => {
       const { data: usersData, error: usersError, count: usersCount } = await usersQuery;
       if (usersError) throw usersError;
 
-      // Fetch company members with pagination and search
+      // Fetch company members with pagination
+      // Note: We fetch all and filter client-side because Supabase doesn't support .or() on joined tables
       let membersQuery = supabase
         .from('company_members')
         .select(`
@@ -99,15 +100,27 @@ const UsersManagement: React.FC = () => {
           profiles(id, full_name, avatar_url, created_at),
           companies(id, name)
         `, { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range((membersPage - 1) * ITEMS_PER_PAGE, membersPage * ITEMS_PER_PAGE - 1);
+        .order('created_at', { ascending: false });
 
-      if (membersSearch) {
-        membersQuery = membersQuery.or(`profiles.full_name.ilike.%${membersSearch}%,companies.name.ilike.%${membersSearch}%`);
-      }
-
-      const { data: membersData, error: membersError, count: membersCount } = await membersQuery;
+      const { data: allMembersData, error: membersError } = await membersQuery;
       if (membersError) throw membersError;
+
+      // Filter members client-side if search is provided
+      let filteredMembers = allMembersData || [];
+      if (membersSearch) {
+        const searchLower = membersSearch.toLowerCase();
+        filteredMembers = filteredMembers.filter(member => 
+          member.profiles?.full_name?.toLowerCase().includes(searchLower) ||
+          member.companies?.name?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      // Apply pagination to filtered results
+      const membersCount = filteredMembers.length;
+      const membersData = filteredMembers.slice(
+        (membersPage - 1) * ITEMS_PER_PAGE,
+        membersPage * ITEMS_PER_PAGE
+      );
 
       // Fetch all companies for the dropdown
       const { data: companiesData, error: companiesError } = await supabase
