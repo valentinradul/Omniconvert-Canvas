@@ -3,12 +3,18 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export function useInvitations() {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
 
-  const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[]) => {
-    console.log('🚀 EXPLICIT USER CLICK: User clicked accept invitation button:', { invitationId, userId });
+  const acceptInvitation = async (invitationId: string, userId: string | undefined, invitations: any[], attempt = 1): Promise<any> => {
+    console.log(`🚀 Accept invitation attempt ${attempt}/${MAX_RETRIES}:`, { invitationId, userId });
     
     if (!userId) {
       console.error('❌ No user ID provided for invitation acceptance');
@@ -20,12 +26,15 @@ export function useInvitations() {
       return null;
     }
     
-    if (isProcessing) {
+    if (isProcessing && attempt === 1) {
       console.log('⏳ Already processing an invitation, preventing duplicate...');
       return null;
     }
     
-    setIsProcessing(true);
+    if (attempt === 1) {
+      setIsProcessing(true);
+      setRetryCount(0);
+    }
     
     try {
       console.log('🔍 Checking invitation status before accepting...');
@@ -72,7 +81,7 @@ export function useInvitations() {
         return null;
       }
       
-      console.log('✅ Found valid pending invitation for MANUAL processing:', invitation);
+      console.log('✅ Found valid pending invitation:', invitation);
       
       const { data: existingMember, error: memberCheckError } = await supabase
         .from('company_members')
@@ -114,11 +123,10 @@ export function useInvitations() {
         return null;
       }
       
-      console.log('➕ Adding user to company members via MANUAL acceptance:', { 
+      console.log('➕ Adding user to company members:', { 
         userId, 
         companyId: invitation.company_id, 
-        role: invitation.role,
-        invitationData: invitation 
+        role: invitation.role
       });
       
       // Add user to company members
@@ -134,14 +142,33 @@ export function useInvitations() {
         
       if (memberError) {
         console.error('❌ Error adding company member:', memberError);
-        console.error('❌ Full error details:', JSON.stringify(memberError, null, 2));
-        console.error('❌ Attempted to insert:', { 
-          company_id: invitation.company_id, 
-          user_id: userId, 
-          role: invitation.role 
-        });
+        console.error('❌ Error code:', memberError.code);
         
-        // More specific error messages based on error type
+        // Check if it's an RLS error and retry
+        if (memberError.code === '42501' || memberError.message?.includes('row-level security')) {
+          if (attempt < MAX_RETRIES) {
+            console.log(`🔄 RLS error detected, retrying in ${RETRY_DELAY}ms... (attempt ${attempt + 1}/${MAX_RETRIES})`);
+            setRetryCount(attempt);
+            
+            toast({
+              title: "Retrying...",
+              description: `Attempt ${attempt + 1} of ${MAX_RETRIES}. Please wait...`,
+            });
+            
+            await sleep(RETRY_DELAY * attempt); // Exponential backoff
+            return acceptInvitation(invitationId, userId, invitations, attempt + 1);
+          } else {
+            console.error('❌ Max retries reached for RLS error');
+            toast({
+              variant: "destructive",
+              title: "Permission error",
+              description: "Unable to add you to the company due to a permissions issue. Please contact your administrator or try again later.",
+            });
+            return null;
+          }
+        }
+        
+        // Handle specific error types
         let errorMessage = "There was an error adding you to the company. Please try again.";
         
         if (memberError.code === '23514') {
@@ -150,6 +177,8 @@ export function useInvitations() {
           }
         } else if (memberError.code === '23505') {
           errorMessage = "You are already a member of this company.";
+        } else if (memberError.code === '42501') {
+          errorMessage = "Permission denied. Please ensure you are logged in and try again.";
         }
         
         toast({
@@ -160,11 +189,11 @@ export function useInvitations() {
         return null;
       }
       
-      console.log('✅ Successfully added user to company via MANUAL acceptance');
+      console.log('✅ Successfully added user to company');
       
       // Handle department permissions for members
       if (invitation.role === 'member' && invitation.department_permissions && Array.isArray(invitation.department_permissions) && invitation.department_permissions.length > 0) {
-        console.log('🏢 Setting up department permissions for member:', invitation.department_permissions);
+        console.log('🏢 Setting up department permissions:', invitation.department_permissions);
         
         const departmentPermissions = invitation.department_permissions.map((deptId: string) => ({
           member_id: newMember.id,
@@ -177,7 +206,6 @@ export function useInvitations() {
           
         if (permissionError) {
           console.error('❌ Error setting department permissions:', permissionError);
-          // Don't fail the invitation for this, just log it
         } else {
           console.log('✅ Department permissions set successfully');
         }
@@ -204,7 +232,7 @@ export function useInvitations() {
         createdBy: invitation.invited_by
       };
       
-      console.log('🎉 Successfully processed MANUAL invitation acceptance');
+      console.log('🎉 Successfully processed invitation acceptance');
       
       toast({
         title: "Welcome to the team!",
@@ -214,6 +242,20 @@ export function useInvitations() {
       return { company, invitationId, role: invitation.role };
     } catch (error: any) {
       console.error('❌ Error accepting invitation:', error);
+      
+      // Retry on network errors
+      if (attempt < MAX_RETRIES && (error.message?.includes('network') || error.message?.includes('fetch'))) {
+        console.log(`🔄 Network error, retrying in ${RETRY_DELAY}ms...`);
+        setRetryCount(attempt);
+        
+        toast({
+          title: "Connection issue",
+          description: `Retrying... (attempt ${attempt + 1} of ${MAX_RETRIES})`,
+        });
+        
+        await sleep(RETRY_DELAY * attempt);
+        return acceptInvitation(invitationId, userId, invitations, attempt + 1);
+      }
       
       let errorMessage = "There was an error accepting the invitation";
       
@@ -235,7 +277,10 @@ export function useInvitations() {
       
       return null;
     } finally {
-      setIsProcessing(false);
+      if (attempt >= MAX_RETRIES || attempt === 1) {
+        setIsProcessing(false);
+        setRetryCount(0);
+      }
     }
   };
   
@@ -280,6 +325,7 @@ export function useInvitations() {
   return {
     acceptInvitation,
     declineInvitation,
-    isProcessing
+    isProcessing,
+    retryCount
   };
 }

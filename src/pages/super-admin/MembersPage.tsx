@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import UsersManagement from '@/components/super-admin/UsersManagement';
+import OrphanedInvitationsManager from '@/components/super-admin/OrphanedInvitationsManager';
 import { Users } from 'lucide-react';
 
 const MembersPage: React.FC = () => {
@@ -14,6 +15,9 @@ const MembersPage: React.FC = () => {
           <p className="text-gray-600">Manage all users and their company memberships</p>
         </div>
       </div>
+
+      {/* Orphaned Invitations Section */}
+      <OrphanedInvitationsManager />
 
       <Card>
         <CardHeader>

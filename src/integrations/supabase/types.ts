@@ -679,6 +679,10 @@ export type Database = {
         Args: { company_id_param: string }
         Returns: undefined
       }
+      fix_orphaned_invitation: {
+        Args: { invitation_id_param: string }
+        Returns: Json
+      }
       get_all_experiments_for_super_admin: {
         Args: never
         Returns: {
@@ -752,6 +756,19 @@ export type Database = {
         }[]
       }
       get_current_user_email: { Args: never; Returns: string }
+      get_orphaned_invitations: {
+        Args: never
+        Returns: {
+          company_id: string
+          company_name: string
+          created_at: string
+          email: string
+          invitation_id: string
+          role: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_user_company_role: {
         Args: { company_id: string; user_id: string }
         Returns: string
