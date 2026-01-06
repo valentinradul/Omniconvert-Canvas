@@ -32,7 +32,7 @@ import DataRecoveryPage from "./pages/DataRecoveryPage";
 import NotFound from "./pages/NotFound";
 import ContentManagementPage from "./pages/ContentManagementPage";
 import CompanyManagementPage from "./pages/CompanyManagementPage";
-import { GTMDashboard } from "./gtm";
+import { GTMDashboard, GTMOutreach, GTMAdCampaigns, GTMCampaigns } from "./gtm";
 
 // Super Admin Pages
 import SuperAdminCompaniesPage from "./pages/super-admin/CompaniesPage";
@@ -82,6 +82,9 @@ const App = () => (
                     <Route path="category-settings" element={<CategorySettingsPage />} />
                     <Route path="company-management" element={<CompanyManagementPage />} />
                     <Route path="gtm" element={<GTMDashboard />} />
+                    <Route path="gtm/outreach" element={<GTMOutreach />} />
+                    <Route path="gtm/ads" element={<GTMAdCampaigns />} />
+                    <Route path="gtm/campaigns" element={<GTMCampaigns />} />
 
                     {/* Redirect root path to dashboard when authenticated */}
                     <Route path="" element={<Navigate to="/dashboard" replace />} />

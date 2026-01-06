@@ -13,3 +13,6 @@ export * from './components';
 
 // Pages
 export { default as GTMDashboard } from './pages/GTMDashboard';
+export { default as GTMOutreach } from './pages/Outreach';
+export { default as GTMAdCampaigns } from './pages/AdCampaigns';
+export { default as GTMCampaigns } from './pages/Campaigns';
