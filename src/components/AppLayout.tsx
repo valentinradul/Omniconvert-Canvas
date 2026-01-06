@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { 
   SidebarProvider, 
@@ -9,6 +9,7 @@ import {
   SidebarMenuItem, 
   SidebarMenuButton 
 } from '@/components/ui/sidebar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import UserMenu from '@/components/UserMenu';
 import CompanySwitcher from '@/components/company/CompanySwitcher';
 import { useAuth } from '@/context/AuthContext';
@@ -23,7 +24,11 @@ import {
   Settings, 
   Users,
   Shield,
-  Target
+  Target,
+  ChevronDown,
+  Mail,
+  Megaphone,
+  FolderKanban
 } from 'lucide-react';
 
 // Add custom CSS to force white background for sidebar
@@ -128,19 +133,66 @@ const AppLayout: React.FC = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`flex items-center py-3 px-4 ${isActive('/gtm') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                >
-                  <Link to="/gtm" className="flex items-center">
-                    <Target className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                    <span className="text-base">GTM Calculator</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <Collapsible defaultOpen={location.pathname.startsWith('/gtm')}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton 
+                      className={`flex items-center justify-between py-3 px-4 w-full cursor-pointer ${location.pathname.startsWith('/gtm') 
+                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                        : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                    >
+                      <div className="flex items-center">
+                        <Target className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                        <span className="text-base">GTM Calculator</span>
+                      </div>
+                      <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                </SidebarMenuItem>
+                <CollapsibleContent>
+                  <div className="ml-4 border-l border-gray-200">
+                    <SidebarMenuItem>
+                      <SidebarMenuButton 
+                        asChild 
+                        className={`flex items-center py-2 px-4 ${isActive('/gtm/ads') 
+                          ? 'bg-blue-50 text-blue-600 font-medium' 
+                          : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                      >
+                        <Link to="/gtm/ads" className="flex items-center">
+                          <Megaphone className="h-4 w-4 mr-3" strokeWidth={1.5} />
+                          <span className="text-sm">Ad Planning</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton 
+                        asChild 
+                        className={`flex items-center py-2 px-4 ${isActive('/gtm/outreach') 
+                          ? 'bg-blue-50 text-blue-600 font-medium' 
+                          : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                      >
+                        <Link to="/gtm/outreach" className="flex items-center">
+                          <Mail className="h-4 w-4 mr-3" strokeWidth={1.5} />
+                          <span className="text-sm">Outreach Calculator</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton 
+                        asChild 
+                        className={`flex items-center py-2 px-4 ${isActive('/gtm/campaigns') 
+                          ? 'bg-blue-50 text-blue-600 font-medium' 
+                          : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                      >
+                        <Link to="/gtm/campaigns" className="flex items-center">
+                          <FolderKanban className="h-4 w-4 mr-3" strokeWidth={1.5} />
+                          <span className="text-sm">Campaigns</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
 
               <div className="mt-6 pt-6 border-t border-gray-200 bg-white">
                 <SidebarMenuItem>
