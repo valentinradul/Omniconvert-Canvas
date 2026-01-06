@@ -348,6 +348,262 @@ export type Database = {
           },
         ]
       }
+      gtm_ad_campaigns: {
+        Row: {
+          actual_agency_cost: number | null
+          actual_clicks: number | null
+          actual_creative_cost: number | null
+          actual_media_cost: number | null
+          actual_paid_customers: number | null
+          actual_revenue: number | null
+          actual_signups: number | null
+          agency_cost: number | null
+          cac: number | null
+          captured_revenue: number | null
+          channel: string
+          clicks: number | null
+          company_id: string | null
+          conversion_rate: number | null
+          cost_per_signup: number | null
+          cpc: number | null
+          created_at: string | null
+          creative_cost: number | null
+          end_date: string | null
+          id: string
+          media_cost: number | null
+          name: string
+          notes: string | null
+          paid_customers: number | null
+          revenue_per_customer: number | null
+          roas: number | null
+          signup_to_customer_rate: number | null
+          signups: number | null
+          start_date: string | null
+          status: string | null
+          tags: string[] | null
+          target_cost_per_signup: number | null
+          total_cost: number | null
+          total_revenue: number | null
+          transactions_per_customer: number | null
+          user_id: string
+        }
+        Insert: {
+          actual_agency_cost?: number | null
+          actual_clicks?: number | null
+          actual_creative_cost?: number | null
+          actual_media_cost?: number | null
+          actual_paid_customers?: number | null
+          actual_revenue?: number | null
+          actual_signups?: number | null
+          agency_cost?: number | null
+          cac?: number | null
+          captured_revenue?: number | null
+          channel: string
+          clicks?: number | null
+          company_id?: string | null
+          conversion_rate?: number | null
+          cost_per_signup?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          creative_cost?: number | null
+          end_date?: string | null
+          id?: string
+          media_cost?: number | null
+          name: string
+          notes?: string | null
+          paid_customers?: number | null
+          revenue_per_customer?: number | null
+          roas?: number | null
+          signup_to_customer_rate?: number | null
+          signups?: number | null
+          start_date?: string | null
+          status?: string | null
+          tags?: string[] | null
+          target_cost_per_signup?: number | null
+          total_cost?: number | null
+          total_revenue?: number | null
+          transactions_per_customer?: number | null
+          user_id: string
+        }
+        Update: {
+          actual_agency_cost?: number | null
+          actual_clicks?: number | null
+          actual_creative_cost?: number | null
+          actual_media_cost?: number | null
+          actual_paid_customers?: number | null
+          actual_revenue?: number | null
+          actual_signups?: number | null
+          agency_cost?: number | null
+          cac?: number | null
+          captured_revenue?: number | null
+          channel?: string
+          clicks?: number | null
+          company_id?: string | null
+          conversion_rate?: number | null
+          cost_per_signup?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          creative_cost?: number | null
+          end_date?: string | null
+          id?: string
+          media_cost?: number | null
+          name?: string
+          notes?: string | null
+          paid_customers?: number | null
+          revenue_per_customer?: number | null
+          roas?: number | null
+          signup_to_customer_rate?: number | null
+          signups?: number | null
+          start_date?: string | null
+          status?: string | null
+          tags?: string[] | null
+          target_cost_per_signup?: number | null
+          total_cost?: number | null
+          total_revenue?: number | null
+          transactions_per_customer?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gtm_ad_campaigns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gtm_outreach_campaigns: {
+        Row: {
+          actual_cost: number | null
+          actual_deals: number | null
+          actual_emails_sent: number | null
+          actual_meetings_booked: number | null
+          actual_opportunities: number | null
+          actual_revenue: number | null
+          campaign_duration: number | null
+          closing_rate: number | null
+          company_id: string | null
+          contacts_per_company: number | null
+          created_at: string | null
+          customers: number | null
+          email_agency_cost: number | null
+          email_enabled: boolean | null
+          email_internal_cost: number | null
+          email_tech_cost: number | null
+          emails_per_contact: number | null
+          end_date: string | null
+          follow_up_interval: number | null
+          id: string
+          linkedin_agency_cost: number | null
+          linkedin_enabled: boolean | null
+          linkedin_internal_cost: number | null
+          linkedin_tech_cost: number | null
+          meeting_rate: number | null
+          name: string
+          notes: string | null
+          opportunity_conversion_rate: number | null
+          revenue: number | null
+          revenue_per_customer: number | null
+          roi: number | null
+          start_date: string | null
+          status: string | null
+          tags: string[] | null
+          targeted_companies: number | null
+          total_contacts: number | null
+          total_cost: number | null
+          user_id: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          actual_deals?: number | null
+          actual_emails_sent?: number | null
+          actual_meetings_booked?: number | null
+          actual_opportunities?: number | null
+          actual_revenue?: number | null
+          campaign_duration?: number | null
+          closing_rate?: number | null
+          company_id?: string | null
+          contacts_per_company?: number | null
+          created_at?: string | null
+          customers?: number | null
+          email_agency_cost?: number | null
+          email_enabled?: boolean | null
+          email_internal_cost?: number | null
+          email_tech_cost?: number | null
+          emails_per_contact?: number | null
+          end_date?: string | null
+          follow_up_interval?: number | null
+          id?: string
+          linkedin_agency_cost?: number | null
+          linkedin_enabled?: boolean | null
+          linkedin_internal_cost?: number | null
+          linkedin_tech_cost?: number | null
+          meeting_rate?: number | null
+          name: string
+          notes?: string | null
+          opportunity_conversion_rate?: number | null
+          revenue?: number | null
+          revenue_per_customer?: number | null
+          roi?: number | null
+          start_date?: string | null
+          status?: string | null
+          tags?: string[] | null
+          targeted_companies?: number | null
+          total_contacts?: number | null
+          total_cost?: number | null
+          user_id: string
+        }
+        Update: {
+          actual_cost?: number | null
+          actual_deals?: number | null
+          actual_emails_sent?: number | null
+          actual_meetings_booked?: number | null
+          actual_opportunities?: number | null
+          actual_revenue?: number | null
+          campaign_duration?: number | null
+          closing_rate?: number | null
+          company_id?: string | null
+          contacts_per_company?: number | null
+          created_at?: string | null
+          customers?: number | null
+          email_agency_cost?: number | null
+          email_enabled?: boolean | null
+          email_internal_cost?: number | null
+          email_tech_cost?: number | null
+          emails_per_contact?: number | null
+          end_date?: string | null
+          follow_up_interval?: number | null
+          id?: string
+          linkedin_agency_cost?: number | null
+          linkedin_enabled?: boolean | null
+          linkedin_internal_cost?: number | null
+          linkedin_tech_cost?: number | null
+          meeting_rate?: number | null
+          name?: string
+          notes?: string | null
+          opportunity_conversion_rate?: number | null
+          revenue?: number | null
+          revenue_per_customer?: number | null
+          roi?: number | null
+          start_date?: string | null
+          status?: string | null
+          tags?: string[] | null
+          targeted_companies?: number | null
+          total_contacts?: number | null
+          total_cost?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gtm_outreach_campaigns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hypotheses: {
         Row: {
           company_id: string | null
