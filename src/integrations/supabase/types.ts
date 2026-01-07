@@ -830,6 +830,71 @@ export type Database = {
           },
         ]
       }
+      marketing_campaign_metrics: {
+        Row: {
+          campaign_id: string
+          campaign_name: string
+          channel_source: string
+          clicks: number | null
+          company_id: string
+          conversions: number | null
+          cpc: number | null
+          cpm: number | null
+          created_at: string | null
+          ctr: number | null
+          date_reported: string
+          id: string
+          impressions: number | null
+          last_synced_at: string | null
+          spend: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          campaign_id: string
+          campaign_name: string
+          channel_source?: string
+          clicks?: number | null
+          company_id: string
+          conversions?: number | null
+          cpc?: number | null
+          cpm?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date_reported: string
+          id?: string
+          impressions?: number | null
+          last_synced_at?: string | null
+          spend?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          campaign_name?: string
+          channel_source?: string
+          clicks?: number | null
+          company_id?: string
+          conversions?: number | null
+          cpc?: number | null
+          cpm?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date_reported?: string
+          id?: string
+          impressions?: number | null
+          last_synced_at?: string | null
+          spend?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaign_metrics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_department_permissions: {
         Row: {
           created_at: string
