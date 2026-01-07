@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { HubSpotIntegration } from '@/components/settings/HubSpotIntegration';
 import { MetaAdsIntegration } from '@/components/settings/MetaAdsIntegration';
 import { GoogleAdsIntegration } from '@/components/settings/GoogleAdsIntegration';
+import { GoogleAnalyticsIntegration } from '@/components/settings/GoogleAnalyticsIntegration';
 import { Plug } from 'lucide-react';
 
 const IntegrationsSettingsPage: React.FC = () => {
@@ -71,6 +72,25 @@ const IntegrationsSettingsPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <GoogleAdsIntegration />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <img 
+                src="https://www.gstatic.com/analytics-suite/header/suite/v2/ic_analytics.svg" 
+                alt="Google Analytics" 
+                className="h-6 w-6"
+              />
+              Google Analytics
+            </CardTitle>
+            <CardDescription>
+              Sync website traffic and user behavior data
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GoogleAnalyticsIntegration />
           </CardContent>
         </Card>
       </div>
