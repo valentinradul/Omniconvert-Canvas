@@ -67,6 +67,7 @@ export type Database = {
           company_id: string
           created_at: string
           enable_financial_tracking: boolean
+          enable_gtm_calculator: boolean
           id: string
           restrict_content_to_departments: boolean
           updated_at: string
@@ -75,6 +76,7 @@ export type Database = {
           company_id: string
           created_at?: string
           enable_financial_tracking?: boolean
+          enable_gtm_calculator?: boolean
           id?: string
           restrict_content_to_departments?: boolean
           updated_at?: string
@@ -83,6 +85,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           enable_financial_tracking?: boolean
+          enable_gtm_calculator?: boolean
           id?: string
           restrict_content_to_departments?: boolean
           updated_at?: string

@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Users, Calendar, Search, Crown, Edit, Settings } from 'lucide-react';
+import { Trash2, Users, Calendar, Crown, Edit, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCompany } from '@/context/company/CompanyContext';
@@ -25,11 +23,9 @@ interface Company {
 }
 
 const CompanyManagement: React.FC = () => {
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
-  const [editCompanyName, setEditCompanyName] = useState('');
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const { userCompanyRole, currentCompany } = useCompany();
   const { isSuperAdmin, isOperatingAsSuperAdmin } = useSuperAdmin();
@@ -168,9 +164,7 @@ const CompanyManagement: React.FC = () => {
   };
 
   const handleEditCompany = (company: Company) => {
-    setEditingCompany(company);
-    setEditCompanyName(company.name);
-    setIsEditDialogOpen(true);
+    navigate(`/company/${company.id}/edit`);
   };
 
   // Check if user can edit a company (creator or super admin)
@@ -181,46 +175,6 @@ const CompanyManagement: React.FC = () => {
   // Check if user can delete a company (creator or super admin)
   const canDeleteCompany = (company: Company) => {
     return isOperatingAsSuperAdmin || (user && company.created_by === user.id);
-  };
-
-  const updateCompany = async () => {
-    if (!editingCompany || !editCompanyName.trim()) return;
-
-    try {
-      // Check permissions before updating
-      if (!canEditCompany(editingCompany)) {
-        toast({
-          variant: 'destructive',
-          title: 'Access Denied',
-          description: 'You do not have permission to edit this company'
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from('companies')
-        .update({ name: editCompanyName.trim() })
-        .eq('id', editingCompany.id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'Company updated successfully'
-      });
-
-      setIsEditDialogOpen(false);
-      setEditingCompany(null);
-      setEditCompanyName('');
-      fetchCompanies();
-    } catch (error: any) {
-      console.error('Error updating company:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to update company'
-      });
-    }
   };
 
   const deleteCompany = async (companyId: string) => {
@@ -431,33 +385,6 @@ const CompanyManagement: React.FC = () => {
         )}
       </CardContent>
 
-      {/* Edit Company Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Company</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-company-name">Company Name</Label>
-              <Input
-                id="edit-company-name"
-                value={editCompanyName}
-                onChange={(e) => setEditCompanyName(e.target.value)}
-                placeholder="Enter company name"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={updateCompany} disabled={!editCompanyName.trim()}>
-                Update Company
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 };
