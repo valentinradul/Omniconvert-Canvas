@@ -9,7 +9,10 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Activity, Calendar, Users, Mail, Megaphone, TrendingUp, DollarSign, Edit, Wallet, BarChart3, Filter, Tag, X } from 'lucide-react';
+import { Activity, Calendar, Users, Mail, Megaphone, TrendingUp, DollarSign, Edit, Wallet, BarChart3, Filter, Tag, X, Trash2 } from 'lucide-react';
+import { useOutreachCampaigns } from '../hooks/useOutreachCampaigns';
+import { useAdCampaigns } from '../hooks/useAdCampaigns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface OutreachCampaign {
   id: string;
@@ -76,11 +79,18 @@ interface AdCampaign {
 type Campaign = (OutreachCampaign & { campaignType: 'outreach' }) | (AdCampaign & { campaignType: 'ad' });
 
 const Campaigns: React.FC = () => {
+  const { campaigns: outreachCampaignsFromDb, deleteCampaign: deleteOutreachCampaign, updateCampaign: updateOutreachCampaign, refetch: refetchOutreach } = useOutreachCampaigns();
+  const { campaigns: adCampaignsFromDb, deleteCampaign: deleteAdCampaign, updateCampaign: updateAdCampaign, refetch: refetchAds } = useAdCampaigns();
+  
   const [outreachCampaigns, setOutreachCampaigns] = useState<OutreachCampaign[]>([]);
   const [adCampaigns, setAdCampaigns] = useState<AdCampaign[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'outreach' | 'ads'>('all');
+  
+  // Tag management for outreach campaigns
+  const [outreachTags, setOutreachTags] = useState<string[]>([]);
+  const [newOutreachTag, setNewOutreachTag] = useState('');
 
   // Filters
   const [channelFilter, setChannelFilter] = useState<string>('all');
@@ -115,17 +125,73 @@ const Campaigns: React.FC = () => {
     actualRevenue: 0
   });
 
+  // Sync database campaigns to local state
   useEffect(() => {
-    const savedOutreach = localStorage.getItem('savedCampaigns');
-    if (savedOutreach) {
-      setOutreachCampaigns(JSON.parse(savedOutreach));
-    }
+    const dbOutreach = outreachCampaignsFromDb.map(c => ({
+      id: c.id,
+      name: c.name,
+      createdAt: c.created_at,
+      startDate: c.start_date,
+      endDate: c.end_date,
+      status: c.status,
+      notes: c.notes,
+      tags: c.tags,
+      emailEnabled: c.email_enabled,
+      linkedinEnabled: c.linkedin_enabled,
+      targetedCompanies: c.targeted_companies,
+      contactsPerCompany: c.contacts_per_company,
+      emailsPerContact: c.emails_per_contact,
+      campaignDuration: c.campaign_duration,
+      followUpInterval: c.follow_up_interval,
+      meetingRate: c.meeting_rate,
+      totalContacts: c.total_contacts,
+      totalCost: c.total_cost,
+      revenue: c.revenue,
+      roi: c.roi,
+      customers: c.customers,
+      actualEmailsSent: c.actual_emails_sent,
+      actualMeetingsBooked: c.actual_meetings_booked,
+      actualOpportunities: c.actual_opportunities,
+      actualDeals: c.actual_deals,
+      actualRevenue: c.actual_revenue,
+      actualCost: c.actual_cost,
+    }));
+    setOutreachCampaigns(dbOutreach);
+  }, [outreachCampaignsFromDb]);
 
-    const savedAds = localStorage.getItem('savedAdCampaigns');
-    if (savedAds) {
-      setAdCampaigns(JSON.parse(savedAds));
-    }
-  }, []);
+  useEffect(() => {
+    const dbAds = adCampaignsFromDb.map(c => ({
+      id: c.id,
+      name: c.name,
+      createdAt: c.created_at,
+      type: 'ad' as const,
+      channel: c.channel,
+      tags: c.tags,
+      startDate: c.start_date,
+      endDate: c.end_date,
+      status: c.status,
+      notes: c.notes,
+      totalCost: c.total_cost,
+      costPerSignup: c.cost_per_signup,
+      paidCustomers: c.paid_customers,
+      cac: c.cac,
+      capturedRevenue: c.captured_revenue,
+      totalRevenue: c.total_revenue,
+      roas: c.roas,
+      signups: c.signups,
+      clicks: c.clicks,
+      cpc: c.cpc,
+      conversionRate: c.conversion_rate,
+      actualAgencyCost: c.actual_agency_cost,
+      actualCreativeCost: c.actual_creative_cost,
+      actualMediaCost: c.actual_media_cost,
+      actualClicks: c.actual_clicks,
+      actualSignups: c.actual_signups,
+      actualPaidCustomers: c.actual_paid_customers,
+      actualRevenue: c.actual_revenue,
+    }));
+    setAdCampaigns(dbAds);
+  }, [adCampaignsFromDb]);
 
   // Get all unique channels
   const allChannels = useMemo(() => {
@@ -303,53 +369,71 @@ const Campaigns: React.FC = () => {
         actualRevenue: campaign.actualRevenue || 0,
         actualCost: campaign.actualCost || 0
       });
+      setOutreachTags(campaign.tags || []);
     }
     setIsDialogOpen(true);
   };
 
-  const saveResults = () => {
+  const addOutreachTag = () => {
+    if (newOutreachTag.trim() && !outreachTags.includes(newOutreachTag.trim())) {
+      setOutreachTags([...outreachTags, newOutreachTag.trim()]);
+      setNewOutreachTag('');
+    }
+  };
+
+  const removeOutreachTag = (tag: string) => {
+    setOutreachTags(outreachTags.filter(t => t !== tag));
+  };
+
+  const handleDeleteCampaign = async (campaignId: string, isAd: boolean) => {
+    try {
+      if (isAd) {
+        await deleteAdCampaign(campaignId);
+      } else {
+        await deleteOutreachCampaign(campaignId);
+      }
+    } catch (err) {
+      console.error('Error deleting campaign:', err);
+    }
+  };
+
+  const saveResults = async () => {
     if (!selectedCampaign) return;
 
-    if (isAdCampaign(selectedCampaign)) {
-      const updatedCampaigns = adCampaigns.map(c =>
-        c.id === selectedCampaign.id ? {
-          ...c,
+    try {
+      if (isAdCampaign(selectedCampaign)) {
+        await updateAdCampaign(selectedCampaign.id, {
           status: adResults.status,
           notes: adResults.notes,
-          startDate: adResults.startDate || undefined,
-          endDate: adResults.endDate || undefined,
-          actualAgencyCost: adResults.actualAgencyCost,
-          actualCreativeCost: adResults.actualCreativeCost,
-          actualMediaCost: adResults.actualMediaCost,
-          actualClicks: adResults.actualClicks,
-          actualSignups: adResults.actualSignups,
-          actualPaidCustomers: adResults.actualPaidCustomers,
-          actualRevenue: adResults.actualRevenue,
-          actualTotalCost: adResults.actualAgencyCost + adResults.actualCreativeCost + adResults.actualMediaCost
-        } : c
-      );
-      setAdCampaigns(updatedCampaigns);
-      localStorage.setItem('savedAdCampaigns', JSON.stringify(updatedCampaigns));
-    } else {
-      const updatedCampaigns = outreachCampaigns.map(c =>
-        c.id === selectedCampaign.id ? {
-          ...c,
+          start_date: adResults.startDate || undefined,
+          end_date: adResults.endDate || undefined,
+          actual_agency_cost: adResults.actualAgencyCost,
+          actual_creative_cost: adResults.actualCreativeCost,
+          actual_media_cost: adResults.actualMediaCost,
+          actual_clicks: adResults.actualClicks,
+          actual_signups: adResults.actualSignups,
+          actual_paid_customers: adResults.actualPaidCustomers,
+          actual_revenue: adResults.actualRevenue,
+        });
+      } else {
+        await updateOutreachCampaign(selectedCampaign.id, {
           status: outreachResults.status,
           notes: outreachResults.notes,
-          startDate: outreachResults.startDate || undefined,
-          endDate: outreachResults.endDate || undefined,
-          actualEmailsSent: outreachResults.actualEmailsSent,
-          actualMeetingsBooked: outreachResults.actualMeetingsBooked,
-          actualOpportunities: outreachResults.actualOpportunities,
-          actualDeals: outreachResults.actualDeals,
-          actualRevenue: outreachResults.actualRevenue,
-          actualCost: outreachResults.actualCost
-        } : c
-      );
-      setOutreachCampaigns(updatedCampaigns);
-      localStorage.setItem('savedCampaigns', JSON.stringify(updatedCampaigns));
+          start_date: outreachResults.startDate || undefined,
+          end_date: outreachResults.endDate || undefined,
+          actual_emails_sent: outreachResults.actualEmailsSent,
+          actual_meetings_booked: outreachResults.actualMeetingsBooked,
+          actual_opportunities: outreachResults.actualOpportunities,
+          actual_deals: outreachResults.actualDeals,
+          actual_revenue: outreachResults.actualRevenue,
+          actual_cost: outreachResults.actualCost,
+          tags: outreachTags,
+        });
+      }
+      setIsDialogOpen(false);
+    } catch (err) {
+      console.error('Error saving results:', err);
     }
-    setIsDialogOpen(false);
   };
 
   const renderOutreachCampaign = (campaign: OutreachCampaign & { campaignType: 'outreach' }) => {
@@ -389,10 +473,33 @@ const Campaigns: React.FC = () => {
             )}
           </div>
 
-          <Button variant="outline" size="sm" onClick={() => openEditDialog(campaign)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Update Results
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={() => openEditDialog(campaign)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Update Results
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{campaign.name}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDeleteCampaign(campaign.id, false)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
 
         {campaign.startDate && (
@@ -494,10 +601,33 @@ const Campaigns: React.FC = () => {
             )}
           </div>
 
-          <Button variant="outline" size="sm" onClick={() => openEditDialog(campaign)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Update Results
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={() => openEditDialog(campaign)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Update Results
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{campaign.name}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDeleteCampaign(campaign.id, true)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
 
         {campaign.notes && (
@@ -974,6 +1104,31 @@ const Campaigns: React.FC = () => {
                   onChange={(e) => setOutreachResults({ ...outreachResults, notes: e.target.value })}
                   rows={2}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Tags</Label>
+                <div className="flex space-x-2">
+                  <Input
+                    value={newOutreachTag}
+                    onChange={(e) => setNewOutreachTag(e.target.value)}
+                    placeholder="Add a tag..."
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOutreachTag())}
+                  />
+                  <Button variant="outline" onClick={addOutreachTag} type="button">
+                    <Tag className="h-4 w-4" />
+                  </Button>
+                </div>
+                {outreachTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {outreachTags.map(tag => (
+                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                        {tag}
+                        <X className="h-3 w-3 cursor-pointer" onClick={() => removeOutreachTag(tag)} />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
