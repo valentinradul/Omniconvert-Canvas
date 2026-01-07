@@ -35,6 +35,7 @@ import CompanyManagementPage from "./pages/CompanyManagementPage";
 import CompanyEditPage from "./pages/CompanyEditPage";
 import { GTMDashboard, GTMOutreach, GTMAdCampaigns, GTMCampaigns } from "./gtm";
 import { MarketingPerformance, SalesPerformance } from "./reporting";
+import IntegrationsSettingsPage from "./pages/IntegrationsSettingsPage";
 
 // Super Admin Pages
 import SuperAdminCompaniesPage from "./pages/super-admin/CompaniesPage";
@@ -82,6 +83,7 @@ const App = () => (
                     <Route path="account-settings" element={<AccountSettingsPage />} />
                     <Route path="team-settings" element={<TeamSettingsPage />} />
                     <Route path="category-settings" element={<CategorySettingsPage />} />
+                    <Route path="integrations" element={<IntegrationsSettingsPage />} />
                     <Route path="company-management" element={<CompanyManagementPage />} />
                     <Route path="company/:companyId/edit" element={<CompanyEditPage />} />
                     <Route path="gtm" element={<GTMDashboard />} />
