@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.fetch-meta-ads]
 verify_jwt = true
+
+[functions.fetch-google-ads]
+verify_jwt = true
