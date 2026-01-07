@@ -15,11 +15,73 @@ import {
 import { Trash2, MoreVertical, Link, Edit2, Check, X, Eye, Calculator } from 'lucide-react';
 import { ReportingMetric, ReportingMetricValue, INTEGRATION_LABELS, IntegrationType } from '@/types/reporting';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+
+export type Granularity = 'day' | 'week' | 'month' | 'quarter' | 'year';
+
+interface DateRange {
+  from: Date;
+  to: Date;
+}
+
+// Aggregate values for grouped periods (sum monthly values for quarter/year)
+const aggregateValue = (
+  values: Record<string, ReportingMetricValue>,
+  periodStart: string,
+  granularity: Granularity,
+  dateRange: DateRange
+): number | null => {
+  // For month or smaller granularity, just return the period value
+  if (granularity === 'month' || granularity === 'week' || granularity === 'day') {
+    const periodValue = values[periodStart];
+    if (periodValue?.value !== null && periodValue?.value !== undefined) {
+      return periodValue.value;
+    }
+    return null;
+  }
+  
+  // For quarter and year, sum up all monthly values within the period
+  const startDate = new Date(periodStart);
+  let monthsToSum: string[] = [];
+  
+  if (granularity === 'quarter') {
+    // Sum 3 months
+    for (let i = 0; i < 3; i++) {
+      const monthDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+      if (monthDate <= dateRange.to) {
+        monthsToSum.push(format(monthDate, 'yyyy-MM-01'));
+      }
+    }
+  } else if (granularity === 'year') {
+    // Sum 12 months
+    for (let i = 0; i < 12; i++) {
+      const monthDate = new Date(startDate.getFullYear(), i, 1);
+      if (monthDate >= dateRange.from && monthDate <= dateRange.to) {
+        monthsToSum.push(format(monthDate, 'yyyy-MM-01'));
+      }
+    }
+  }
+  
+  let sum = 0;
+  let hasAnyValue = false;
+  
+  for (const monthKey of monthsToSum) {
+    const value = values[monthKey];
+    if (value?.value !== null && value?.value !== undefined) {
+      sum += value.value;
+      hasAnyValue = true;
+    }
+  }
+  
+  return hasAnyValue ? sum : null;
+};
 
 interface MetricRowProps {
   metric: ReportingMetric;
   values: Record<string, ReportingMetricValue>;
   periods: string[];
+  granularity: Granularity;
+  dateRange: DateRange;
   onValueChange: (metricId: string, periodDate: string, value: number | null) => void;
   onDelete: (metricId: string) => void;
   onEdit: (metric: ReportingMetric) => void;
@@ -33,6 +95,8 @@ export const MetricRow: React.FC<MetricRowProps> = ({
   metric,
   values,
   periods,
+  granularity,
+  dateRange,
   onValueChange,
   onDelete,
   onEdit,
@@ -162,8 +226,9 @@ export const MetricRow: React.FC<MetricRowProps> = ({
           : metric.source || 'Manual'}
       </td>
       {periods.map((period) => {
+        // Use aggregated value for quarter/year granularity
+        const aggregatedValue = aggregateValue(values, period, granularity, dateRange);
         const valueRecord = values[period];
-        const value = valueRecord?.value;
         const isEditing = editingCell === period;
         const isOverride = valueRecord?.is_manual_override;
 
@@ -172,11 +237,12 @@ export const MetricRow: React.FC<MetricRowProps> = ({
             key={period}
             className={cn(
               "px-2 py-1 text-sm text-right min-w-[100px] border-r border-border",
-              !metric.is_calculated && "cursor-pointer hover:bg-muted",
-              isOverride && "bg-blue-50 dark:bg-blue-950",
-              metric.is_calculated && "bg-primary/5"
+              !metric.is_calculated && granularity === 'month' && "cursor-pointer hover:bg-muted",
+              isOverride && granularity === 'month' && "bg-blue-50 dark:bg-blue-950",
+              metric.is_calculated && "bg-primary/5",
+              (granularity === 'quarter' || granularity === 'year') && "bg-muted/30"
             )}
-            onClick={() => !isEditing && !metric.is_calculated && handleCellClick(period, value)}
+            onClick={() => !isEditing && !metric.is_calculated && granularity === 'month' && handleCellClick(period, aggregatedValue)}
           >
             {isEditing ? (
               <div className="flex items-center gap-1">
@@ -208,13 +274,19 @@ export const MetricRow: React.FC<MetricRowProps> = ({
             ) : (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className={cn(isOverride && "text-blue-600 font-medium")}>
-                    {formatValue(value)}
+                  <span className={cn(isOverride && granularity === 'month' && "text-blue-600 font-medium")}>
+                    {formatValue(aggregatedValue)}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Click to edit</p>
-                  {isOverride && <p className="text-xs text-muted-foreground">Manually entered</p>}
+                  {granularity === 'month' ? (
+                    <>
+                      <p>Click to edit</p>
+                      {isOverride && <p className="text-xs text-muted-foreground">Manually entered</p>}
+                    </>
+                  ) : (
+                    <p>Sum of monthly values</p>
+                  )}
                 </TooltipContent>
               </Tooltip>
             )}
