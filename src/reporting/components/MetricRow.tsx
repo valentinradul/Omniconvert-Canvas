@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Trash2, MoreVertical, Link, Edit2, Check, X } from 'lucide-react';
+import { Trash2, MoreVertical, Link, Edit2, Check, X, Eye } from 'lucide-react';
 import { ReportingMetric, ReportingMetricValue, INTEGRATION_LABELS, IntegrationType } from '@/types/reporting';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +24,8 @@ interface MetricRowProps {
   onDelete: (metricId: string) => void;
   onEdit: (metric: ReportingMetric) => void;
   onConnectIntegration: (metric: ReportingMetric) => void;
+  onShowInViews?: (metric: ReportingMetric) => void;
+  isFromOtherCategory?: boolean;
 }
 
 export const MetricRow: React.FC<MetricRowProps> = ({
@@ -34,6 +36,8 @@ export const MetricRow: React.FC<MetricRowProps> = ({
   onDelete,
   onEdit,
   onConnectIntegration,
+  onShowInViews,
+  isFromOtherCategory = false,
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>('');
@@ -79,11 +83,24 @@ export const MetricRow: React.FC<MetricRowProps> = ({
   };
 
   return (
-    <tr className="border-b border-border hover:bg-muted/50">
+    <tr className={cn(
+      "border-b border-border hover:bg-muted/50",
+      isFromOtherCategory && "bg-muted/20"
+    )}>
       <td className="sticky left-0 bg-background z-10 px-3 py-2 font-medium text-sm border-r border-border min-w-[200px]">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
-            <span>{metric.name}</span>
+            <span className="flex items-center gap-1">
+              {metric.name}
+              {isFromOtherCategory && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Eye className="h-3 w-3 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>Shared from another view</TooltipContent>
+                </Tooltip>
+              )}
+            </span>
             {metric.source && (
               <span className="text-xs text-muted-foreground">{metric.source}</span>
             )}
@@ -103,13 +120,21 @@ export const MetricRow: React.FC<MetricRowProps> = ({
                 <Link className="h-4 w-4 mr-2" />
                 Connect Integration
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => onDelete(metric.id)}
-                className="text-destructive"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
+              {onShowInViews && (
+                <DropdownMenuItem onClick={() => onShowInViews(metric)}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Show in Other Views
+                </DropdownMenuItem>
+              )}
+              {!isFromOtherCategory && (
+                <DropdownMenuItem 
+                  onClick={() => onDelete(metric.id)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

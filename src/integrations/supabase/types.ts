@@ -931,6 +931,7 @@ export type Database = {
           sort_order: number
           source: string | null
           updated_at: string
+          visible_in_categories: string[] | null
         }
         Insert: {
           calculation_formula?: string | null
@@ -946,6 +947,7 @@ export type Database = {
           sort_order?: number
           source?: string | null
           updated_at?: string
+          visible_in_categories?: string[] | null
         }
         Update: {
           calculation_formula?: string | null
@@ -961,6 +963,7 @@ export type Database = {
           sort_order?: number
           source?: string | null
           updated_at?: string
+          visible_in_categories?: string[] | null
         }
         Relationships: [
           {
