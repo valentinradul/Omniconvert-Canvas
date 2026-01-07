@@ -214,21 +214,41 @@ export const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
         return;
       }
 
-      // Get headers from first row
+      // Get headers from first row - handle ExcelJS cell value types
       const headerRow = firstSheet.getRow(1);
       const headers: string[] = [];
       headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        headers[colNumber - 1] = String(cell.value || '');
+        // ExcelJS can return various types: string, number, Date, RichText, etc.
+        let headerValue = '';
+        if (cell.value === null || cell.value === undefined) {
+          headerValue = '';
+        } else if (typeof cell.value === 'string') {
+          headerValue = cell.value;
+        } else if (typeof cell.value === 'number') {
+          headerValue = String(cell.value);
+        } else if (cell.value instanceof Date) {
+          // Format date as "MMM yyyy"
+          headerValue = format(cell.value, 'MMM yyyy');
+        } else if (typeof cell.value === 'object' && 'richText' in cell.value) {
+          // Handle rich text
+          headerValue = (cell.value as { richText: { text: string }[] }).richText.map(r => r.text).join('');
+        } else {
+          headerValue = String(cell.value);
+        }
+        headers[colNumber - 1] = headerValue;
       });
+      
+      console.log('Parsed headers:', headers);
       
       // Find date columns (skip first column which is metric name)
       const detectedDates: { index: number; date: string; header: string }[] = [];
       for (let i = 1; i < headers.length; i++) {
         const header = headers[i];
-        // Skip "Total" columns
-        if (header.toLowerCase().includes('total')) continue;
+        // Skip "Total" columns or empty
+        if (!header || header.toLowerCase().includes('total')) continue;
         
         const parsedDate = parseColumnDate(header);
+        console.log(`Header "${header}" -> parsed date: ${parsedDate}`);
         if (parsedDate) {
           detectedDates.push({ index: i + 1, date: parsedDate, header }); // ExcelJS uses 1-based index
         }
