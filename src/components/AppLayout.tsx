@@ -76,61 +76,113 @@ const AppLayout: React.FC = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`flex items-center py-3 px-4 ${isActive('/ideas') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                >
-                  <Link to="/ideas" className="flex items-center">
-                    <Lightbulb className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                    <span className="text-base">Growth Ideas</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`flex items-center py-3 px-4 ${isActive('/hypotheses') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                >
-                  <Link to="/hypotheses" className="flex items-center">
-                    <FlaskConical className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                    <span className="text-base">Hypotheses</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`flex items-center py-3 px-4 ${isActive('/experiments') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                >
-                  <Link to="/experiments" className="flex items-center">
-                    <LineChart className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                    <span className="text-base">Experiments</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`flex items-center py-3 px-4 ${isActive('/departments') 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
-                    : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
-                >
-                  <Link to="/departments" className="flex items-center">
-                    <Building className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                    <span className="text-base">Departments</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {isGtmEnabled ? (
+                <Collapsible defaultOpen={isActive('/ideas') || isActive('/hypotheses') || isActive('/experiments')}>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton 
+                        className={`flex items-center justify-between py-3 px-4 w-full cursor-pointer ${
+                          isActive('/ideas') || isActive('/hypotheses') || isActive('/experiments')
+                            ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                            : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                      >
+                        <div className="flex items-center">
+                          <FlaskConical className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                          <span className="text-base">Experimentation</span>
+                        </div>
+                        <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                  </SidebarMenuItem>
+                  <CollapsibleContent>
+                    <div className="ml-4 border-l border-gray-200">
+                      <SidebarMenuItem>
+                        <SidebarMenuButton 
+                          asChild 
+                          className={`flex items-center py-2 px-4 ${isActive('/ideas') 
+                            ? 'bg-blue-50 text-blue-600 font-medium' 
+                            : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                        >
+                          <Link to="/ideas" className="flex items-center">
+                            <Lightbulb className="h-4 w-4 mr-3" strokeWidth={1.5} />
+                            <span className="text-sm">Growth Ideas</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton 
+                          asChild 
+                          className={`flex items-center py-2 px-4 ${isActive('/hypotheses') 
+                            ? 'bg-blue-50 text-blue-600 font-medium' 
+                            : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                        >
+                          <Link to="/hypotheses" className="flex items-center">
+                            <FlaskConical className="h-4 w-4 mr-3" strokeWidth={1.5} />
+                            <span className="text-sm">Hypotheses</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton 
+                          asChild 
+                          className={`flex items-center py-2 px-4 ${isActive('/experiments') 
+                            ? 'bg-blue-50 text-blue-600 font-medium' 
+                            : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                        >
+                          <Link to="/experiments" className="flex items-center">
+                            <LineChart className="h-4 w-4 mr-3" strokeWidth={1.5} />
+                            <span className="text-sm">Experiments</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ) : (
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`flex items-center py-3 px-4 ${isActive('/ideas') 
+                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                        : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                    >
+                      <Link to="/ideas" className="flex items-center">
+                        <Lightbulb className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                        <span className="text-base">Growth Ideas</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`flex items-center py-3 px-4 ${isActive('/hypotheses') 
+                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                        : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                    >
+                      <Link to="/hypotheses" className="flex items-center">
+                        <FlaskConical className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                        <span className="text-base">Hypotheses</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`flex items-center py-3 px-4 ${isActive('/experiments') 
+                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                        : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                    >
+                      <Link to="/experiments" className="flex items-center">
+                        <LineChart className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                        <span className="text-base">Experiments</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
+              )}
 
               {isGtmEnabled && (
                 <Collapsible defaultOpen={location.pathname.startsWith('/gtm')}>
