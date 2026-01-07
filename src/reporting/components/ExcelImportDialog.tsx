@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -204,17 +204,22 @@ export const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
 
     try {
       const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json<unknown[]>(firstSheet, { header: 1 });
-
-      if (jsonData.length < 2) {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const firstSheet = workbook.worksheets[0];
+      
+      if (!firstSheet || firstSheet.rowCount < 2) {
         toast.error('Excel file must have at least a header row and one data row');
         setIsParsing(false);
         return;
       }
 
-      const headers = jsonData[0].map(h => String(h || ''));
+      // Get headers from first row
+      const headerRow = firstSheet.getRow(1);
+      const headers: string[] = [];
+      headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        headers[colNumber - 1] = String(cell.value || '');
+      });
       
       // Find date columns (skip first column which is metric name)
       const detectedDates: { index: number; date: string; header: string }[] = [];
@@ -225,7 +230,7 @@ export const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
         
         const parsedDate = parseColumnDate(header);
         if (parsedDate) {
-          detectedDates.push({ index: i, date: parsedDate, header });
+          detectedDates.push({ index: i + 1, date: parsedDate, header }); // ExcelJS uses 1-based index
         }
       }
 
@@ -239,9 +244,9 @@ export const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
 
       // Parse data rows
       const rows: ParsedRow[] = [];
-      for (let rowIdx = 1; rowIdx < jsonData.length; rowIdx++) {
-        const row = jsonData[rowIdx];
-        const metricName = String(row[0] || '').trim();
+      for (let rowIdx = 2; rowIdx <= firstSheet.rowCount; rowIdx++) {
+        const row = firstSheet.getRow(rowIdx);
+        const metricName = String(row.getCell(1).value || '').trim();
         
         if (!metricName) continue;
 
@@ -252,7 +257,7 @@ export const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
 
         const values: { date: string; value: number | null }[] = [];
         for (const { index, date } of detectedDates) {
-          const cellValue = row[index];
+          const cellValue = row.getCell(index).value;
           const parsedValue = parseCellValue(cellValue);
           values.push({ date, value: parsedValue });
         }
