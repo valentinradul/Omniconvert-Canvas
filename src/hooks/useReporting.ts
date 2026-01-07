@@ -7,6 +7,7 @@ import {
   ReportingCategory, 
   ReportingMetric, 
   ReportingMetricValue,
+  CalculationFormula,
   DEFAULT_CATEGORIES 
 } from '@/types/reporting';
 
@@ -292,6 +293,116 @@ export function useUpsertMetricValue() {
     onError: (error) => {
       console.error('Error updating metric value:', error);
       toast.error('Failed to update value');
+    },
+  });
+}
+
+export function useCreateCalculatedMetric() {
+  const { currentCompany } = useCompany();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      category_id: string;
+      name: string;
+      formula: CalculationFormula;
+    }) => {
+      if (!currentCompany?.id) throw new Error('No company selected');
+
+      const { data: metric, error } = await supabase
+        .from('reporting_metrics')
+        .insert({
+          category_id: data.category_id,
+          name: data.name,
+          is_calculated: true,
+          calculation_formula: JSON.stringify(data.formula),
+          source: 'Calculated',
+          integration_type: null,
+          company_id: currentCompany.id,
+          created_by: user?.id,
+          sort_order: 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return metric;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reporting-metrics'] });
+      toast.success('Calculated metric created successfully');
+    },
+    onError: (error) => {
+      console.error('Error creating calculated metric:', error);
+      toast.error('Failed to create calculated metric');
+    },
+  });
+}
+
+export function useCalculatedMetricValues(
+  metricIds: string[],
+  startDate?: string,
+  endDate?: string
+) {
+  const { currentCompany } = useCompany();
+
+  return useQuery({
+    queryKey: ['calculated-metric-values', currentCompany?.id, metricIds, startDate, endDate],
+    queryFn: async () => {
+      if (!currentCompany?.id || metricIds.length === 0) return {};
+
+      const { data, error } = await supabase.functions.invoke('calculate-metrics', {
+        body: {
+          action: 'calculate',
+          companyId: currentCompany.id,
+          metricIds,
+          startDate,
+          endDate,
+          storeResults: false,
+        },
+      });
+
+      if (error) throw error;
+      return data.results as Record<string, Record<string, number | null>>;
+    },
+    enabled: !!currentCompany?.id && metricIds.length > 0,
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+export function useRecalculateMetrics() {
+  const { currentCompany } = useCompany();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      metricIds?: string[];
+      startDate?: string;
+      endDate?: string;
+      storeResults?: boolean;
+    }) => {
+      if (!currentCompany?.id) throw new Error('No company selected');
+
+      const { data: result, error } = await supabase.functions.invoke('calculate-metrics', {
+        body: {
+          action: 'calculate',
+          companyId: currentCompany.id,
+          ...data,
+        },
+      });
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calculated-metric-values'] });
+      queryClient.invalidateQueries({ queryKey: ['reporting-metric-values'] });
+      toast.success('Metrics recalculated successfully');
+    },
+    onError: (error) => {
+      console.error('Error recalculating metrics:', error);
+      toast.error('Failed to recalculate metrics');
     },
   });
 }

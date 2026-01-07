@@ -56,6 +56,50 @@ export interface MetricWithValues extends ReportingMetric {
   values: Record<string, ReportingMetricValue>;
 }
 
+// Calculation Formula Types
+export type CalculationFormulaType = 
+  | 'division' 
+  | 'multiplication' 
+  | 'sum' 
+  | 'difference' 
+  | 'cumulative' 
+  | 'rolling_average' 
+  | 'year_to_date' 
+  | 'percentage_change';
+
+export interface CalculationFormula {
+  type: CalculationFormulaType;
+  
+  // For basic operations (division, multiplication, sum, difference)
+  operands?: {
+    numerator?: string;    // metric_id
+    denominator?: string;  // metric_id
+    metricIds?: string[];  // for sum operations
+  };
+  
+  // For time-based calculations
+  sourceMetricId?: string;
+  
+  // For rolling averages
+  rollingPeriods?: number;  // e.g., 3 for 3-month rolling average
+  
+  // Output formatting
+  format?: 'number' | 'percentage' | 'currency';
+  decimalPlaces?: number;
+  multiplyBy100?: boolean;  // For showing 0.15 as 15%
+}
+
+export const CALCULATION_TYPE_LABELS: Record<CalculationFormulaType, string> = {
+  division: 'Division (A ÷ B)',
+  multiplication: 'Multiplication (A × B)',
+  sum: 'Sum (A + B + ...)',
+  difference: 'Difference (A - B)',
+  cumulative: 'Cumulative Total',
+  rolling_average: 'Rolling Average',
+  year_to_date: 'Year-to-Date Total',
+  percentage_change: 'Percentage Change',
+};
+
 export type IntegrationType = 
   | 'google_analytics'
   | 'google_search_console'
