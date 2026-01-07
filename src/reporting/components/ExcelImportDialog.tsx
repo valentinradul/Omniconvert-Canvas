@@ -36,6 +36,7 @@ interface ExcelImportDialogProps {
 // Parse various date formats from Excel column headers
 const parseColumnDate = (header: string): string | null => {
   const headerClean = header.trim();
+  if (!headerClean) return null;
   
   // Month name mappings (both short and full)
   const monthMap: Record<string, number> = {
@@ -53,7 +54,62 @@ const parseColumnDate = (header: string): string | null => {
     dec: 11, december: 11
   };
 
-  // Try date-fns formats first
+  const lowerHeader = headerClean.toLowerCase();
+  
+  // First try manual regex patterns (more reliable than date-fns for varied formats)
+  
+  // Pattern: "October 2022", "September 2022", "June 2022" (full/short month name with 4-digit year)
+  const monthYear4Match = lowerHeader.match(/^([a-z]+)\s+(\d{4})$/);
+  if (monthYear4Match) {
+    const [, monthStr, yearStr] = monthYear4Match;
+    const monthNum = monthMap[monthStr];
+    if (monthNum !== undefined) {
+      const year = parseInt(yearStr, 10);
+      return format(new Date(year, monthNum, 1), 'yyyy-MM-01');
+    }
+  }
+
+  // Pattern: "January 25", "February 25", "June 22" (month name with 2-digit year, space separated)
+  const monthYear2Match = lowerHeader.match(/^([a-z]+)\s+(\d{1,2})$/);
+  if (monthYear2Match) {
+    const [, monthStr, yearStr] = monthYear2Match;
+    const monthNum = monthMap[monthStr];
+    if (monthNum !== undefined) {
+      let year = parseInt(yearStr, 10);
+      year = year > 50 ? 1900 + year : 2000 + year;
+      return format(new Date(year, monthNum, 1), 'yyyy-MM-01');
+    }
+  }
+  
+  // Pattern: "Oct-21", "Nov-2021", "Jan-24" (month with hyphen and year)
+  const monthHyphenYearMatch = lowerHeader.match(/^([a-z]+)-(\d{2,4})$/);
+  if (monthHyphenYearMatch) {
+    const [, monthStr, yearStr] = monthHyphenYearMatch;
+    const monthNum = monthMap[monthStr];
+    if (monthNum !== undefined) {
+      let year = parseInt(yearStr, 10);
+      if (year < 100) {
+        year = year > 50 ? 1900 + year : 2000 + year;
+      }
+      return format(new Date(year, monthNum, 1), 'yyyy-MM-01');
+    }
+  }
+
+  // Pattern: "Oct21", "Nov2021" (month directly followed by year, no separator)
+  const monthNoSepYearMatch = lowerHeader.match(/^([a-z]+)(\d{2,4})$/);
+  if (monthNoSepYearMatch) {
+    const [, monthStr, yearStr] = monthNoSepYearMatch;
+    const monthNum = monthMap[monthStr];
+    if (monthNum !== undefined) {
+      let year = parseInt(yearStr, 10);
+      if (year < 100) {
+        year = year > 50 ? 1900 + year : 2000 + year;
+      }
+      return format(new Date(year, monthNum, 1), 'yyyy-MM-01');
+    }
+  }
+
+  // Try date-fns formats as fallback
   const formats = [
     'MMM-yy',      // Jan-24
     'MMM yy',      // Jan 24
@@ -75,46 +131,6 @@ const parseColumnDate = (header: string): string | null => {
       }
     } catch {
       continue;
-    }
-  }
-
-  // Manual regex patterns for edge cases
-  const lowerHeader = headerClean.toLowerCase();
-  
-  // Pattern: "October 2022", "September 2022", "January 2024" (full month name with 4-digit year)
-  const fullMonthYearMatch = lowerHeader.match(/^([a-z]+)\s+(\d{4})$/);
-  if (fullMonthYearMatch) {
-    const [, monthStr, yearStr] = fullMonthYearMatch;
-    const monthNum = monthMap[monthStr];
-    if (monthNum !== undefined) {
-      const year = parseInt(yearStr, 10);
-      return format(new Date(year, monthNum, 1), 'yyyy-MM-01');
-    }
-  }
-
-  // Pattern: "January 25", "February 25" (month name with 2-digit year, space separated)
-  const monthYearSpaceMatch = lowerHeader.match(/^([a-z]+)\s+(\d{2})$/);
-  if (monthYearSpaceMatch) {
-    const [, monthStr, yearStr] = monthYearSpaceMatch;
-    const monthNum = monthMap[monthStr];
-    if (monthNum !== undefined) {
-      let year = parseInt(yearStr, 10);
-      year = year > 50 ? 1900 + year : 2000 + year;
-      return format(new Date(year, monthNum, 1), 'yyyy-MM-01');
-    }
-  }
-  
-  // Pattern: "Oct-21", "Nov 21", "Oct21" (3-letter month with 2-4 digit year)
-  const shortMonthMatch = lowerHeader.match(/^([a-z]{3,})[- ]?(\d{2,4})$/);
-  if (shortMonthMatch) {
-    const [, monthStr, yearStr] = shortMonthMatch;
-    const monthNum = monthMap[monthStr];
-    if (monthNum !== undefined) {
-      let year = parseInt(yearStr, 10);
-      if (year < 100) {
-        year = year > 50 ? 1900 + year : 2000 + year;
-      }
-      return format(new Date(year, monthNum, 1), 'yyyy-MM-01');
     }
   }
 
