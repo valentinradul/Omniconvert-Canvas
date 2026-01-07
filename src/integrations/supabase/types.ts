@@ -103,6 +103,50 @@ export type Database = {
           },
         ]
       }
+      company_integrations: {
+        Row: {
+          company_id: string
+          config: Json | null
+          created_at: string
+          encrypted_credentials: string | null
+          id: string
+          integration_type: string
+          is_active: boolean
+          last_sync_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          config?: Json | null
+          created_at?: string
+          encrypted_credentials?: string | null
+          id?: string
+          integration_type: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          config?: Json | null
+          created_at?: string
+          encrypted_credentials?: string | null
+          id?: string
+          integration_type?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_integrations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_invitations: {
         Row: {
           accepted: boolean | null
@@ -722,6 +766,66 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_sync_log: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          details: Json | null
+          error_message: string | null
+          id: string
+          integration_id: string
+          records_created: number | null
+          records_processed: number | null
+          records_updated: number | null
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          details?: Json | null
+          error_message?: string | null
+          id?: string
+          integration_id: string
+          records_created?: number | null
+          records_processed?: number | null
+          records_updated?: number | null
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          details?: Json | null
+          error_message?: string | null
+          id?: string
+          integration_id?: string
+          records_created?: number | null
+          records_processed?: number | null
+          records_updated?: number | null
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_sync_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_sync_log_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "company_integrations"
             referencedColumns: ["id"]
           },
         ]
