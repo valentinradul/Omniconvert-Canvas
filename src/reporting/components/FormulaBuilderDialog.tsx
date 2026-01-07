@@ -36,10 +36,12 @@ interface FormulaBuilderDialogProps {
   onSubmit: (data: {
     name: string;
     formula: CalculationFormula;
+    metricId?: string; // For edit mode
   }) => void;
   metrics: ReportingMetric[];
   isLoading?: boolean;
   categoryId: string;
+  editingMetric?: ReportingMetric | null; // The metric being edited
 }
 
 const FORMULA_TYPE_ICONS: Record<CalculationFormulaType, React.ReactNode> = {
@@ -60,6 +62,7 @@ export const FormulaBuilderDialog: React.FC<FormulaBuilderDialogProps> = ({
   metrics,
   isLoading,
   categoryId,
+  editingMetric,
 }) => {
   const { currentCompany } = useCompany();
   const [name, setName] = useState('');
@@ -74,6 +77,39 @@ export const FormulaBuilderDialog: React.FC<FormulaBuilderDialogProps> = ({
   const [multiplyBy100, setMultiplyBy100] = useState(false);
   const [previewValues, setPreviewValues] = useState<Record<string, number | null>>({});
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+
+  const isEditMode = !!editingMetric;
+
+  // Populate form when editing an existing metric
+  useEffect(() => {
+    if (editingMetric && open) {
+      setName(editingMetric.name);
+      
+      if (editingMetric.calculation_formula) {
+        try {
+          const formula = typeof editingMetric.calculation_formula === 'string'
+            ? JSON.parse(editingMetric.calculation_formula) as CalculationFormula
+            : editingMetric.calculation_formula as CalculationFormula;
+          
+          setFormulaType(formula.type);
+          setOutputFormat(formula.format || 'number');
+          setDecimalPlaces(formula.decimalPlaces ?? 2);
+          setMultiplyBy100(formula.multiplyBy100 || false);
+          
+          if (formula.operands) {
+            if (formula.operands.numerator) setNumeratorId(formula.operands.numerator);
+            if (formula.operands.denominator) setDenominatorId(formula.operands.denominator);
+            if (formula.operands.metricIds) setSumMetricIds(formula.operands.metricIds);
+          }
+          
+          if (formula.sourceMetricId) setSourceMetricId(formula.sourceMetricId);
+          if (formula.rollingPeriods) setRollingPeriods(formula.rollingPeriods);
+        } catch (e) {
+          console.error('Failed to parse formula:', e);
+        }
+      }
+    }
+  }, [editingMetric, open]);
 
   // Non-calculated metrics only
   const availableMetrics = useMemo(() => 
@@ -180,7 +216,11 @@ export const FormulaBuilderDialog: React.FC<FormulaBuilderDialogProps> = ({
     e.preventDefault();
     if (!currentFormula || !name.trim()) return;
 
-    onSubmit({ name: name.trim(), formula: currentFormula });
+    onSubmit({ 
+      name: name.trim(), 
+      formula: currentFormula,
+      metricId: editingMetric?.id, 
+    });
     resetForm();
   };
 
@@ -377,10 +417,12 @@ export const FormulaBuilderDialog: React.FC<FormulaBuilderDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            Create Calculated Metric
+            {isEditMode ? 'Edit Calculated Metric' : 'Create Calculated Metric'}
           </DialogTitle>
           <DialogDescription>
-            Build a formula to automatically calculate values from other metrics.
+            {isEditMode 
+              ? 'Update the formula for this calculated metric.'
+              : 'Build a formula to automatically calculate values from other metrics.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -495,7 +537,7 @@ export const FormulaBuilderDialog: React.FC<FormulaBuilderDialogProps> = ({
               type="submit" 
               disabled={!name.trim() || !currentFormula || isLoading}
             >
-              {isLoading ? 'Creating...' : 'Create Calculated Metric'}
+              {isLoading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Metric' : 'Create Calculated Metric')}
             </Button>
           </DialogFooter>
         </form>
