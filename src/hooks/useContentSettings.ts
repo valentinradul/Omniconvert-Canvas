@@ -7,6 +7,7 @@ interface ContentSettings {
   company_id: string;
   restrict_content_to_departments: boolean;
   enable_financial_tracking: boolean;
+  enable_gtm_calculator: boolean;
 }
 
 export const useContentSettings = () => {
@@ -30,7 +31,8 @@ export const useContentSettings = () => {
           .insert({
             company_id: currentCompany.id,
             restrict_content_to_departments: false,
-            enable_financial_tracking: true
+            enable_financial_tracking: true,
+            enable_gtm_calculator: false
           })
           .select()
           .single();
