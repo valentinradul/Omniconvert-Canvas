@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Plus, RefreshCw, BarChart3, LineChart, Calculator } from 'lucide-react';
+import { Plus, RefreshCw, BarChart3, LineChart, Calculator, Upload } from 'lucide-react';
 import { format, startOfWeek, startOfMonth, startOfQuarter, startOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachQuarterOfInterval, eachYearOfInterval } from 'date-fns';
 import { MetricRow } from './MetricRow';
 import { AddMetricDialog } from './AddMetricDialog';
 import { FormulaBuilderDialog } from './FormulaBuilderDialog';
 import { IntegrationDialog } from './IntegrationDialog';
 import { MetricVisibilityDialog } from './MetricVisibilityDialog';
+import { ExcelImportDialog } from './ExcelImportDialog';
 import { DateRangePicker } from './DateRangePicker';
 import { GranularitySelector, Granularity } from './GranularitySelector';
 import { KPIChart } from './KPIChart';
@@ -16,6 +17,7 @@ import { SaveChartDialog } from './SaveChartDialog';
 import { SavedChartsPanel } from './SavedChartsPanel';
 import { ReportingMetric, ReportingMetricValue, ReportingCategory, SavedChart, CalculationFormula } from '@/types/reporting';
 import { useSavedCharts, useCreateSavedChart, useDeleteSavedChart } from '@/hooks/useSavedCharts';
+import { useExcelImport } from '@/hooks/useExcelImport';
 import {
   useCreateMetric,
   useUpdateMetric,
@@ -168,6 +170,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const [editingCalculatedMetric, setEditingCalculatedMetric] = useState<ReportingMetric | null>(null);
   const [integrationDialogOpen, setIntegrationDialogOpen] = useState(false);
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<ReportingMetric | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [metricToDelete, setMetricToDelete] = useState<string | null>(null);
@@ -191,6 +194,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const upsertValue = useUpsertMetricValue();
   const createCalculatedMetric = useCreateCalculatedMetric();
   const updateCalculatedMetric = useUpdateCalculatedMetric();
+  const excelImport = useExcelImport();
   
   // Get calculated metric IDs and fetch their values
   const calculatedMetricIds = useMemo(() => 
@@ -405,6 +409,10 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
           <Button size="sm" variant="secondary" onClick={() => setFormulaDialogOpen(true)}>
             <Calculator className="h-4 w-4 mr-2" />
             Add Calculated
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import Excel
           </Button>
         </div>
       </div>
@@ -635,6 +643,16 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
         onOpenChange={setSaveChartDialogOpen}
         onSave={handleSaveChart}
         isLoading={createSavedChart.isPending}
+      />
+
+      <ExcelImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        category={category}
+        existingMetrics={metrics}
+        onImport={async (data) => {
+          await excelImport.mutateAsync(data);
+        }}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
