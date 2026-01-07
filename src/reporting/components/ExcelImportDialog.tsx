@@ -35,13 +35,32 @@ interface ExcelImportDialogProps {
 
 // Parse various date formats from Excel column headers
 const parseColumnDate = (header: string): string | null => {
-  // Try common formats
+  const headerClean = header.trim();
+  
+  // Month name mappings (both short and full)
+  const monthMap: Record<string, number> = {
+    jan: 0, january: 0,
+    feb: 1, february: 1,
+    mar: 2, march: 2,
+    apr: 3, april: 3,
+    may: 4,
+    jun: 5, june: 5,
+    jul: 6, july: 6,
+    aug: 7, august: 7,
+    sep: 8, sept: 8, september: 8,
+    oct: 9, october: 9,
+    nov: 10, november: 10,
+    dec: 11, december: 11
+  };
+
+  // Try date-fns formats first
   const formats = [
     'MMM-yy',      // Jan-24
     'MMM yy',      // Jan 24
     'MMM-yyyy',    // Jan-2024
     'MMM yyyy',    // Jan 2024
     'MMMM yyyy',   // January 2024
+    'MMMM yy',     // January 24
     'MM/yyyy',     // 01/2024
     'yyyy-MM',     // 2024-01
     'M/yy',        // 1/24
@@ -50,9 +69,8 @@ const parseColumnDate = (header: string): string | null => {
 
   for (const fmt of formats) {
     try {
-      const parsed = parse(header.trim(), fmt, new Date());
+      const parsed = parse(headerClean, fmt, new Date());
       if (isValid(parsed)) {
-        // Return first day of month
         return format(parsed, 'yyyy-MM-01');
       }
     } catch {
@@ -60,16 +78,37 @@ const parseColumnDate = (header: string): string | null => {
     }
   }
 
-  // Try to match patterns like \"Oct-21\", \"Nov-21\" manually
-  const monthMap: Record<string, number> = {
-    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
-    jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
-  };
+  // Manual regex patterns for edge cases
+  const lowerHeader = headerClean.toLowerCase();
   
-  const match = header.trim().toLowerCase().match(/^([a-z]{3})[- ]?(\d{2,4})$/);
-  if (match) {
-    const [, month, yearStr] = match;
-    const monthNum = monthMap[month];
+  // Pattern: "October 2022", "September 2022", "January 2024" (full month name with 4-digit year)
+  const fullMonthYearMatch = lowerHeader.match(/^([a-z]+)\s+(\d{4})$/);
+  if (fullMonthYearMatch) {
+    const [, monthStr, yearStr] = fullMonthYearMatch;
+    const monthNum = monthMap[monthStr];
+    if (monthNum !== undefined) {
+      const year = parseInt(yearStr, 10);
+      return format(new Date(year, monthNum, 1), 'yyyy-MM-01');
+    }
+  }
+
+  // Pattern: "January 25", "February 25" (month name with 2-digit year, space separated)
+  const monthYearSpaceMatch = lowerHeader.match(/^([a-z]+)\s+(\d{2})$/);
+  if (monthYearSpaceMatch) {
+    const [, monthStr, yearStr] = monthYearSpaceMatch;
+    const monthNum = monthMap[monthStr];
+    if (monthNum !== undefined) {
+      let year = parseInt(yearStr, 10);
+      year = year > 50 ? 1900 + year : 2000 + year;
+      return format(new Date(year, monthNum, 1), 'yyyy-MM-01');
+    }
+  }
+  
+  // Pattern: "Oct-21", "Nov 21", "Oct21" (3-letter month with 2-4 digit year)
+  const shortMonthMatch = lowerHeader.match(/^([a-z]{3,})[- ]?(\d{2,4})$/);
+  if (shortMonthMatch) {
+    const [, monthStr, yearStr] = shortMonthMatch;
+    const monthNum = monthMap[monthStr];
     if (monthNum !== undefined) {
       let year = parseInt(yearStr, 10);
       if (year < 100) {
