@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Plus, RefreshCw, BarChart3, LineChart } from 'lucide-react';
+import { Plus, RefreshCw, BarChart3, LineChart, Calculator } from 'lucide-react';
 import { format, startOfWeek, startOfMonth, startOfQuarter, startOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachQuarterOfInterval, eachYearOfInterval } from 'date-fns';
 import { MetricRow } from './MetricRow';
 import { AddMetricDialog } from './AddMetricDialog';
+import { FormulaBuilderDialog } from './FormulaBuilderDialog';
 import { IntegrationDialog } from './IntegrationDialog';
 import { MetricVisibilityDialog } from './MetricVisibilityDialog';
 import { DateRangePicker } from './DateRangePicker';
@@ -13,13 +14,15 @@ import { KPIChart } from './KPIChart';
 import { KPISelector } from './KPISelector';
 import { SaveChartDialog } from './SaveChartDialog';
 import { SavedChartsPanel } from './SavedChartsPanel';
-import { ReportingMetric, ReportingMetricValue, ReportingCategory, SavedChart } from '@/types/reporting';
+import { ReportingMetric, ReportingMetricValue, ReportingCategory, SavedChart, CalculationFormula } from '@/types/reporting';
 import { useSavedCharts, useCreateSavedChart, useDeleteSavedChart } from '@/hooks/useSavedCharts';
 import {
   useCreateMetric,
   useUpdateMetric,
   useDeleteMetric,
   useUpsertMetricValue,
+  useCreateCalculatedMetric,
+  useCalculatedMetricValues,
 } from '@/hooks/useReporting';
 import {
   AlertDialog,
@@ -160,6 +163,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   showCategoryGroups = false,
 }) => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [formulaDialogOpen, setFormulaDialogOpen] = useState(false);
   const [integrationDialogOpen, setIntegrationDialogOpen] = useState(false);
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<ReportingMetric | null>(null);
@@ -183,6 +187,19 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const updateMetric = useUpdateMetric();
   const deleteMetric = useDeleteMetric();
   const upsertValue = useUpsertMetricValue();
+  const createCalculatedMetric = useCreateCalculatedMetric();
+  
+  // Get calculated metric IDs and fetch their values
+  const calculatedMetricIds = useMemo(() => 
+    metrics.filter(m => m.is_calculated).map(m => m.id),
+    [metrics]
+  );
+  
+  const { data: calculatedValues } = useCalculatedMetricValues(
+    calculatedMetricIds,
+    format(dateRange.from, 'yyyy-MM-dd'),
+    format(dateRange.to, 'yyyy-MM-dd')
+  );
   
   // Saved charts
   const { data: savedCharts = [] } = useSavedCharts();
@@ -215,17 +232,44 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
     return groups;
   }, [showCategoryGroups, childCategories, metrics]);
 
-  // Group values by metric and period
+  // Group values by metric and period (includes calculated values)
   const valuesByMetric = useMemo(() => {
     const grouped: Record<string, Record<string, ReportingMetricValue>> = {};
+    
+    // Add regular values
     values.forEach((v) => {
       if (!grouped[v.metric_id]) {
         grouped[v.metric_id] = {};
       }
       grouped[v.metric_id][v.period_date] = v;
     });
+    
+    // Add calculated values
+    if (calculatedValues) {
+      for (const [metricId, periodValues] of Object.entries(calculatedValues)) {
+        if (!grouped[metricId]) {
+          grouped[metricId] = {};
+        }
+        for (const [periodDate, value] of Object.entries(periodValues)) {
+          // Only add if not already present (allow manual override)
+          if (!grouped[metricId][periodDate]) {
+            grouped[metricId][periodDate] = {
+              id: `calculated-${metricId}-${periodDate}`,
+              metric_id: metricId,
+              period_date: periodDate,
+              value,
+              is_manual_override: false,
+              created_at: '',
+              updated_at: '',
+              updated_by: null,
+            };
+          }
+        }
+      }
+    }
+    
     return grouped;
-  }, [values]);
+  }, [values, calculatedValues]);
 
   const handleAddMetric = (data: { name: string; source: string; integration_type: string | null }) => {
     createMetric.mutate({
@@ -342,6 +386,10 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
           <Button size="sm" onClick={() => setAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Metric
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => setFormulaDialogOpen(true)}>
+            <Calculator className="h-4 w-4 mr-2" />
+            Add Calculated
           </Button>
         </div>
       </div>
@@ -513,6 +561,23 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
         onOpenChange={setAddDialogOpen}
         onSubmit={handleAddMetric}
         isLoading={createMetric.isPending}
+      />
+
+      <FormulaBuilderDialog
+        open={formulaDialogOpen}
+        onOpenChange={setFormulaDialogOpen}
+        onSubmit={(data) => {
+          createCalculatedMetric.mutate({
+            category_id: category.id,
+            name: data.name,
+            formula: data.formula,
+          }, {
+            onSuccess: () => setFormulaDialogOpen(false),
+          });
+        }}
+        metrics={metrics}
+        isLoading={createCalculatedMetric.isPending}
+        categoryId={category.id}
       />
 
       <IntegrationDialog

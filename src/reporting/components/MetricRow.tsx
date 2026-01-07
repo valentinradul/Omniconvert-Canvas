@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Trash2, MoreVertical, Link, Edit2, Check, X, Eye } from 'lucide-react';
+import { Trash2, MoreVertical, Link, Edit2, Check, X, Eye, Calculator } from 'lucide-react';
 import { ReportingMetric, ReportingMetricValue, INTEGRATION_LABELS, IntegrationType } from '@/types/reporting';
 import { cn } from '@/lib/utils';
 
@@ -91,6 +91,14 @@ export const MetricRow: React.FC<MetricRowProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <span className="flex items-center gap-1">
+              {metric.is_calculated && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Calculator className="h-3 w-3 text-primary" />
+                  </TooltipTrigger>
+                  <TooltipContent>Calculated metric</TooltipContent>
+                </Tooltip>
+              )}
               {metric.name}
               {isFromOtherCategory && (
                 <Tooltip>
@@ -154,10 +162,12 @@ export const MetricRow: React.FC<MetricRowProps> = ({
           <td 
             key={period}
             className={cn(
-              "px-2 py-1 text-sm text-right min-w-[100px] border-r border-border cursor-pointer hover:bg-muted",
-              isOverride && "bg-blue-50 dark:bg-blue-950"
+              "px-2 py-1 text-sm text-right min-w-[100px] border-r border-border",
+              !metric.is_calculated && "cursor-pointer hover:bg-muted",
+              isOverride && "bg-blue-50 dark:bg-blue-950",
+              metric.is_calculated && "bg-primary/5"
             )}
-            onClick={() => !isEditing && handleCellClick(period, value)}
+            onClick={() => !isEditing && !metric.is_calculated && handleCellClick(period, value)}
           >
             {isEditing ? (
               <div className="flex items-center gap-1">
