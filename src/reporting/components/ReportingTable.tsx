@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Plus, RefreshCw, BarChart3, LineChart, Calculator, Upload } from 'lucide-react';
+import { Plus, RefreshCw, BarChart3, LineChart, Calculator, Upload, Trash2 } from 'lucide-react';
 import { format, startOfWeek, startOfMonth, startOfQuarter, startOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachQuarterOfInterval, eachYearOfInterval } from 'date-fns';
 import { MetricRow } from './MetricRow';
 import { AddMetricDialog } from './AddMetricDialog';
@@ -26,6 +26,7 @@ import {
   useCreateCalculatedMetric,
   useUpdateCalculatedMetric,
   useCalculatedMetricValues,
+  useClearMetricValues,
 } from '@/hooks/useReporting';
 import {
   AlertDialog,
@@ -132,6 +133,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const [selectedMetric, setSelectedMetric] = useState<ReportingMetric | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [metricToDelete, setMetricToDelete] = useState<string | null>(null);
+  const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
   
   // Chart state
   const [selectedMetricIds, setSelectedMetricIds] = useState<string[]>([]);
@@ -153,6 +155,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const createCalculatedMetric = useCreateCalculatedMetric();
   const updateCalculatedMetric = useUpdateCalculatedMetric();
   const excelImport = useExcelImport();
+  const clearMetricValues = useClearMetricValues();
   
   // Get calculated metric IDs and fetch their values
   const calculatedMetricIds = useMemo(() => 
@@ -270,6 +273,18 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
     }
   };
 
+  const handleClearData = () => {
+    const metricIdsToClear = metrics.map(m => m.id);
+    if (metricIdsToClear.length > 0) {
+      clearMetricValues.mutate(metricIdsToClear, {
+        onSuccess: () => {
+          setClearDataDialogOpen(false);
+          onRefresh?.();
+        },
+      });
+    }
+  };
+
   const handleEdit = (metric: ReportingMetric) => {
     setSelectedMetric(metric);
     setIntegrationDialogOpen(true);
@@ -371,6 +386,16 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
           <Button size="sm" variant="outline" onClick={() => setImportDialogOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             Import Excel
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => setClearDataDialogOpen(true)}
+            disabled={metrics.length === 0}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear Data
           </Button>
         </div>
       </div>
@@ -632,6 +657,29 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={clearDataDialogOpen} onOpenChange={setClearDataDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All Data</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear all values for {metrics.length} metrics in this category?
+              This will remove all data points but keep the metric definitions.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleClearData} 
+              className="bg-destructive text-destructive-foreground"
+              disabled={clearMetricValues.isPending}
+            >
+              {clearMetricValues.isPending ? 'Clearing...' : 'Clear All Data'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
