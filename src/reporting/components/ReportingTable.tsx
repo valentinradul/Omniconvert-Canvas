@@ -22,6 +22,7 @@ import {
   useDeleteMetric,
   useUpsertMetricValue,
   useCreateCalculatedMetric,
+  useUpdateCalculatedMetric,
   useCalculatedMetricValues,
 } from '@/hooks/useReporting';
 import {
@@ -164,6 +165,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
 }) => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [formulaDialogOpen, setFormulaDialogOpen] = useState(false);
+  const [editingCalculatedMetric, setEditingCalculatedMetric] = useState<ReportingMetric | null>(null);
   const [integrationDialogOpen, setIntegrationDialogOpen] = useState(false);
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<ReportingMetric | null>(null);
@@ -188,6 +190,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const deleteMetric = useDeleteMetric();
   const upsertValue = useUpsertMetricValue();
   const createCalculatedMetric = useCreateCalculatedMetric();
+  const updateCalculatedMetric = useUpdateCalculatedMetric();
   
   // Get calculated metric IDs and fetch their values
   const calculatedMetricIds = useMemo(() => 
@@ -318,6 +321,18 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const handleShowInViews = (metric: ReportingMetric) => {
     setSelectedMetric(metric);
     setVisibilityDialogOpen(true);
+  };
+
+  const handleEditFormula = (metric: ReportingMetric) => {
+    setEditingCalculatedMetric(metric);
+    setFormulaDialogOpen(true);
+  };
+
+  const handleFormulaDialogClose = (open: boolean) => {
+    setFormulaDialogOpen(open);
+    if (!open) {
+      setEditingCalculatedMetric(null);
+    }
   };
 
   const handleIntegrationConnect = (metricId: string, integrationType: string | null) => {
@@ -498,6 +513,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                             onValueChange={handleValueChange}
                             onDelete={handleDelete}
                             onEdit={handleEdit}
+                            onEditFormula={handleEditFormula}
                             onConnectIntegration={handleConnectIntegration}
                             onShowInViews={handleShowInViews}
                             isFromOtherCategory={false}
@@ -528,6 +544,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                           onValueChange={handleValueChange}
                           onDelete={handleDelete}
                           onEdit={handleEdit}
+                          onEditFormula={handleEditFormula}
                           onConnectIntegration={handleConnectIntegration}
                           onShowInViews={handleShowInViews}
                           isFromOtherCategory={false}
@@ -542,6 +559,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                           onValueChange={handleValueChange}
                           onDelete={handleDelete}
                           onEdit={handleEdit}
+                          onEditFormula={handleEditFormula}
                           onConnectIntegration={handleConnectIntegration}
                           isFromOtherCategory={true}
                         />
@@ -565,19 +583,32 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
 
       <FormulaBuilderDialog
         open={formulaDialogOpen}
-        onOpenChange={setFormulaDialogOpen}
+        onOpenChange={handleFormulaDialogClose}
         onSubmit={(data) => {
-          createCalculatedMetric.mutate({
-            category_id: category.id,
-            name: data.name,
-            formula: data.formula,
-          }, {
-            onSuccess: () => setFormulaDialogOpen(false),
-          });
+          if (data.metricId) {
+            // Edit mode
+            updateCalculatedMetric.mutate({
+              id: data.metricId,
+              name: data.name,
+              formula: data.formula,
+            }, {
+              onSuccess: () => handleFormulaDialogClose(false),
+            });
+          } else {
+            // Create mode
+            createCalculatedMetric.mutate({
+              category_id: category.id,
+              name: data.name,
+              formula: data.formula,
+            }, {
+              onSuccess: () => handleFormulaDialogClose(false),
+            });
+          }
         }}
         metrics={metrics}
-        isLoading={createCalculatedMetric.isPending}
+        isLoading={createCalculatedMetric.isPending || updateCalculatedMetric.isPending}
         categoryId={category.id}
+        editingMetric={editingCalculatedMetric}
       />
 
       <IntegrationDialog

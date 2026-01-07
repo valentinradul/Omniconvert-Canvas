@@ -340,6 +340,40 @@ export function useCreateCalculatedMetric() {
   });
 }
 
+export function useUpdateCalculatedMetric() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      id: string;
+      name: string;
+      formula: CalculationFormula;
+    }) => {
+      const { data: metric, error } = await supabase
+        .from('reporting_metrics')
+        .update({
+          name: data.name,
+          calculation_formula: JSON.stringify(data.formula),
+        })
+        .eq('id', data.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return metric;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reporting-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['calculated-metric-values'] });
+      toast.success('Calculated metric updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating calculated metric:', error);
+      toast.error('Failed to update calculated metric');
+    },
+  });
+}
+
 export function useCalculatedMetricValues(
   metricIds: string[],
   startDate?: string,

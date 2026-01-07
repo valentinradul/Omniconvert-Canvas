@@ -23,6 +23,7 @@ interface MetricRowProps {
   onValueChange: (metricId: string, periodDate: string, value: number | null) => void;
   onDelete: (metricId: string) => void;
   onEdit: (metric: ReportingMetric) => void;
+  onEditFormula?: (metric: ReportingMetric) => void;
   onConnectIntegration: (metric: ReportingMetric) => void;
   onShowInViews?: (metric: ReportingMetric) => void;
   isFromOtherCategory?: boolean;
@@ -35,6 +36,7 @@ export const MetricRow: React.FC<MetricRowProps> = ({
   onValueChange,
   onDelete,
   onEdit,
+  onEditFormula,
   onConnectIntegration,
   onShowInViews,
   isFromOtherCategory = false,
@@ -120,10 +122,17 @@ export const MetricRow: React.FC<MetricRowProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(metric)}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit Metric
-              </DropdownMenuItem>
+              {metric.is_calculated && onEditFormula ? (
+                <DropdownMenuItem onClick={() => onEditFormula(metric)}>
+                  <Calculator className="h-4 w-4 mr-2" />
+                  Edit Formula
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => onEdit(metric)}>
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Edit Metric
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => onConnectIntegration(metric)}>
                 <Link className="h-4 w-4 mr-2" />
                 Connect Integration
