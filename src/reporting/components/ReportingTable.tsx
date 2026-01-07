@@ -33,8 +33,10 @@ interface ReportingTableProps {
   allMetrics?: ReportingMetric[]; // For cross-category visibility
   values: ReportingMetricValue[];
   categories?: ReportingCategory[];
+  childCategories?: ReportingCategory[]; // For grouping in Overview
   isLoading?: boolean;
   onRefresh?: () => void;
+  showCategoryGroups?: boolean; // Whether to group metrics by category
 }
 
 interface DateRange {
@@ -143,8 +145,10 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   allMetrics = [],
   values,
   categories = [],
+  childCategories = [],
   isLoading,
   onRefresh,
+  showCategoryGroups = false,
 }) => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [integrationDialogOpen, setIntegrationDialogOpen] = useState(false);
@@ -176,6 +180,20 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
     );
     return { native: nativeMetrics, shared: sharedMetrics };
   }, [metrics, allMetrics, category.id]);
+
+  // Group metrics by category for Overview display
+  const groupedMetrics = useMemo(() => {
+    if (!showCategoryGroups || childCategories.length === 0) return null;
+    
+    const groups: { category: ReportingCategory; metrics: ReportingMetric[] }[] = [];
+    childCategories.forEach(cat => {
+      const categoryMetrics = metrics.filter(m => m.category_id === cat.id);
+      if (categoryMetrics.length > 0) {
+        groups.push({ category: cat, metrics: categoryMetrics });
+      }
+    });
+    return groups;
+  }, [showCategoryGroups, childCategories, metrics]);
 
   // Group values by metric and period
   const valuesByMetric = useMemo(() => {
@@ -299,45 +317,88 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {visibleMetrics.native.length === 0 && visibleMetrics.shared.length === 0 ? (
-                  <tr>
-                    <td 
-                      colSpan={periods.length + 2} 
-                      className="px-4 py-8 text-center text-muted-foreground"
-                    >
-                      No metrics defined yet. Click "Add Metric" to get started.
-                    </td>
-                  </tr>
+                {showCategoryGroups && groupedMetrics ? (
+                  // Grouped display for Overview
+                  groupedMetrics.length === 0 ? (
+                    <tr>
+                      <td 
+                        colSpan={periods.length + 2} 
+                        className="px-4 py-8 text-center text-muted-foreground"
+                      >
+                        No metrics defined yet. Add metrics in the subcategory tabs.
+                      </td>
+                    </tr>
+                  ) : (
+                    groupedMetrics.map(({ category: groupCategory, metrics: groupMetrics }) => (
+                      <React.Fragment key={groupCategory.id}>
+                        {/* Category group header */}
+                        <tr className="bg-muted/30">
+                          <td 
+                            colSpan={periods.length + 2} 
+                            className="px-3 py-2 text-sm font-semibold text-muted-foreground border-t border-border"
+                          >
+                            {groupCategory.name}
+                          </td>
+                        </tr>
+                        {groupMetrics.map((metric) => (
+                          <MetricRow
+                            key={metric.id}
+                            metric={metric}
+                            values={valuesByMetric[metric.id] || {}}
+                            periods={periods}
+                            onValueChange={handleValueChange}
+                            onDelete={handleDelete}
+                            onEdit={handleEdit}
+                            onConnectIntegration={handleConnectIntegration}
+                            onShowInViews={handleShowInViews}
+                            isFromOtherCategory={false}
+                          />
+                        ))}
+                      </React.Fragment>
+                    ))
+                  )
                 ) : (
-                  <>
-                    {visibleMetrics.native.map((metric) => (
-                      <MetricRow
-                        key={metric.id}
-                        metric={metric}
-                        values={valuesByMetric[metric.id] || {}}
-                        periods={periods}
-                        onValueChange={handleValueChange}
-                        onDelete={handleDelete}
-                        onEdit={handleEdit}
-                        onConnectIntegration={handleConnectIntegration}
-                        onShowInViews={handleShowInViews}
-                        isFromOtherCategory={false}
-                      />
-                    ))}
-                    {visibleMetrics.shared.map((metric) => (
-                      <MetricRow
-                        key={metric.id}
-                        metric={metric}
-                        values={valuesByMetric[metric.id] || {}}
-                        periods={periods}
-                        onValueChange={handleValueChange}
-                        onDelete={handleDelete}
-                        onEdit={handleEdit}
-                        onConnectIntegration={handleConnectIntegration}
-                        isFromOtherCategory={true}
-                      />
-                    ))}
-                  </>
+                  // Standard display
+                  visibleMetrics.native.length === 0 && visibleMetrics.shared.length === 0 ? (
+                    <tr>
+                      <td 
+                        colSpan={periods.length + 2} 
+                        className="px-4 py-8 text-center text-muted-foreground"
+                      >
+                        No metrics defined yet. Click "Add Metric" to get started.
+                      </td>
+                    </tr>
+                  ) : (
+                    <>
+                      {visibleMetrics.native.map((metric) => (
+                        <MetricRow
+                          key={metric.id}
+                          metric={metric}
+                          values={valuesByMetric[metric.id] || {}}
+                          periods={periods}
+                          onValueChange={handleValueChange}
+                          onDelete={handleDelete}
+                          onEdit={handleEdit}
+                          onConnectIntegration={handleConnectIntegration}
+                          onShowInViews={handleShowInViews}
+                          isFromOtherCategory={false}
+                        />
+                      ))}
+                      {visibleMetrics.shared.map((metric) => (
+                        <MetricRow
+                          key={metric.id}
+                          metric={metric}
+                          values={valuesByMetric[metric.id] || {}}
+                          periods={periods}
+                          onValueChange={handleValueChange}
+                          onDelete={handleDelete}
+                          onEdit={handleEdit}
+                          onConnectIntegration={handleConnectIntegration}
+                          isFromOtherCategory={true}
+                        />
+                      ))}
+                    </>
+                  )
                 )}
               </tbody>
             </table>
