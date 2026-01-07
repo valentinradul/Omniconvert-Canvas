@@ -172,10 +172,10 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [saveChartDialogOpen, setSaveChartDialogOpen] = useState(false);
   
-  // Date range defaults to all 2024 data
+  // Date range defaults to all time (Oct 2021 - Dec 2025)
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(2024, 0, 1),
-    to: new Date(2024, 11, 31),
+    from: new Date(2021, 9, 1),
+    to: new Date(2025, 11, 31),
   });
   const [granularity, setGranularity] = useState<Granularity>('month');
 

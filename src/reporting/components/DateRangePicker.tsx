@@ -55,9 +55,9 @@ const presets: { key: DatePreset; label: string }[] = [
   { key: 'last-calendar-year', label: 'Last calendar year' },
 ];
 
-// Data range for "All Time" - based on actual data in the system (2024)
-const ALL_TIME_START = new Date(2024, 0, 1);
-const ALL_TIME_END = new Date(2024, 11, 31);
+// Data range for "All Time" - based on actual data in the system (Oct 2021 - Dec 2025)
+const ALL_TIME_START = new Date(2021, 9, 1); // October 2021
+const ALL_TIME_END = new Date(2025, 11, 31); // December 2025
 
 const getPresetRange = (preset: DatePreset): DateRange => {
   const today = new Date();
@@ -197,8 +197,10 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChang
                   }
                 }}
                 numberOfMonths={2}
-                defaultMonth={new Date(2024, 0)}
-                className="rounded-md border-0 pointer-events-auto"
+                defaultMonth={tempFrom || new Date(2021, 9)}
+                fromYear={2021}
+                toYear={2025}
+                className={cn("rounded-md border-0 p-3 pointer-events-auto")}
               />
             </div>
 
