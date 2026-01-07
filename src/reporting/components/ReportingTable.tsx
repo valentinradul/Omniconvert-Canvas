@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, BarChart3, LineChart } from 'lucide-react';
 import { format, startOfWeek, startOfMonth, startOfQuarter, startOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachQuarterOfInterval, eachYearOfInterval } from 'date-fns';
 import { MetricRow } from './MetricRow';
 import { AddMetricDialog } from './AddMetricDialog';
@@ -9,7 +9,12 @@ import { IntegrationDialog } from './IntegrationDialog';
 import { MetricVisibilityDialog } from './MetricVisibilityDialog';
 import { DateRangePicker } from './DateRangePicker';
 import { GranularitySelector, Granularity } from './GranularitySelector';
-import { ReportingMetric, ReportingMetricValue, ReportingCategory } from '@/types/reporting';
+import { KPIChart } from './KPIChart';
+import { KPISelector } from './KPISelector';
+import { SaveChartDialog } from './SaveChartDialog';
+import { SavedChartsPanel } from './SavedChartsPanel';
+import { ReportingMetric, ReportingMetricValue, ReportingCategory, SavedChart } from '@/types/reporting';
+import { useSavedCharts, useCreateSavedChart, useDeleteSavedChart } from '@/hooks/useSavedCharts';
 import {
   useCreateMetric,
   useUpdateMetric,
@@ -26,6 +31,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from '@/components/ui/toggle-group';
 
 interface ReportingTableProps {
   category: ReportingCategory;
@@ -157,7 +166,13 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [metricToDelete, setMetricToDelete] = useState<string | null>(null);
   
-  // Date range defaults to 2024
+  // Chart state
+  const [selectedMetricIds, setSelectedMetricIds] = useState<string[]>([]);
+  const [chartType, setChartType] = useState<'line' | 'bar'>('line');
+  const [showChart, setShowChart] = useState(false);
+  const [saveChartDialogOpen, setSaveChartDialogOpen] = useState(false);
+  
+  // Date range defaults to all 2024 data
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(2024, 0, 1),
     to: new Date(2024, 11, 31),
@@ -168,6 +183,11 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const updateMetric = useUpdateMetric();
   const deleteMetric = useDeleteMetric();
   const upsertValue = useUpsertMetricValue();
+  
+  // Saved charts
+  const { data: savedCharts = [] } = useSavedCharts();
+  const createSavedChart = useCreateSavedChart();
+  const deleteSavedChart = useDeleteSavedChart();
 
   const periods = useMemo(() => generatePeriods(dateRange, granularity), [dateRange, granularity]);
 
@@ -274,6 +294,38 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
     });
   };
 
+  const handleSaveChart = (name: string) => {
+    createSavedChart.mutate({
+      name,
+      metric_ids: selectedMetricIds,
+      chart_type: chartType,
+      date_range_preset: 'all-time',
+      custom_start_date: format(dateRange.from, 'yyyy-MM-dd'),
+      custom_end_date: format(dateRange.to, 'yyyy-MM-dd'),
+      granularity,
+    }, {
+      onSuccess: () => setSaveChartDialogOpen(false),
+    });
+  };
+
+  const handleLoadSavedChart = (chart: SavedChart) => {
+    setSelectedMetricIds(chart.metric_ids);
+    setChartType(chart.chart_type);
+    setGranularity(chart.granularity as Granularity);
+    if (chart.custom_start_date && chart.custom_end_date) {
+      setDateRange({
+        from: new Date(chart.custom_start_date),
+        to: new Date(chart.custom_end_date),
+      });
+    }
+    setShowChart(true);
+  };
+
+  // Get all metrics for chart selection (includes child category metrics for Overview)
+  const allAvailableMetrics = showCategoryGroups ? metrics : [...visibleMetrics.native, ...visibleMetrics.shared];
+  const selectedChartMetrics = allAvailableMetrics.filter(m => selectedMetricIds.includes(m.id));
+  const chartValues = values.filter(v => selectedMetricIds.includes(v.metric_id));
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -293,6 +345,55 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Chart Controls */}
+      <div className="flex items-center gap-3 flex-wrap p-3 bg-muted/30 rounded-lg">
+        <KPISelector
+          metrics={allAvailableMetrics}
+          categories={childCategories.length > 0 ? childCategories : [category]}
+          selectedMetricIds={selectedMetricIds}
+          onSelectionChange={(ids) => {
+            setSelectedMetricIds(ids);
+            if (ids.length > 0) setShowChart(true);
+          }}
+          maxSelection={4}
+        />
+        <ToggleGroup type="single" value={chartType} onValueChange={(v) => v && setChartType(v as 'line' | 'bar')}>
+          <ToggleGroupItem value="line" aria-label="Line chart">
+            <LineChart className="h-4 w-4" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="bar" aria-label="Bar chart">
+            <BarChart3 className="h-4 w-4" />
+          </ToggleGroupItem>
+        </ToggleGroup>
+        {selectedMetricIds.length > 0 && (
+          <Button variant="outline" size="sm" onClick={() => setShowChart(!showChart)}>
+            {showChart ? 'Hide Chart' : 'Show Chart'}
+          </Button>
+        )}
+      </div>
+
+      {/* Chart Display */}
+      {showChart && selectedMetricIds.length > 0 && (
+        <KPIChart
+          metrics={selectedChartMetrics}
+          values={chartValues}
+          periods={periods}
+          granularity={granularity}
+          chartType={chartType}
+          onClose={() => setShowChart(false)}
+          onSave={() => setSaveChartDialogOpen(true)}
+          title={`${category.name} - KPI Comparison`}
+        />
+      )}
+
+      {/* Saved Charts */}
+      <SavedChartsPanel
+        charts={savedCharts}
+        onSelect={handleLoadSavedChart}
+        onDelete={(id) => deleteSavedChart.mutate(id)}
+        isLoading={deleteSavedChart.isPending}
+      />
 
       <div className="border rounded-lg overflow-hidden">
         <ScrollArea className="w-full">
@@ -431,6 +532,13 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
         onSubmit={handleVisibilitySubmit}
         isLoading={updateMetric.isPending}
         existingVisibility={selectedMetric?.visible_in_categories || []}
+      />
+
+      <SaveChartDialog
+        open={saveChartDialogOpen}
+        onOpenChange={setSaveChartDialogOpen}
+        onSave={handleSaveChart}
+        isLoading={createSavedChart.isPending}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

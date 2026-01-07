@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 
 export type DatePreset = 
   | 'custom'
+  | 'all-time'
   | 'today'
   | 'yesterday'
   | 'this-week'
@@ -37,6 +38,7 @@ interface DateRangePickerProps {
 }
 
 const presets: { key: DatePreset; label: string }[] = [
+  { key: 'all-time', label: 'All Time' },
   { key: 'custom', label: 'Custom' },
   { key: 'today', label: 'Today' },
   { key: 'yesterday', label: 'Yesterday' },
@@ -53,11 +55,17 @@ const presets: { key: DatePreset; label: string }[] = [
   { key: 'last-calendar-year', label: 'Last calendar year' },
 ];
 
+// Data range for "All Time" - based on actual data in the system (2024)
+const ALL_TIME_START = new Date(2024, 0, 1);
+const ALL_TIME_END = new Date(2024, 11, 31);
+
 const getPresetRange = (preset: DatePreset): DateRange => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
   switch (preset) {
+    case 'all-time':
+      return { from: ALL_TIME_START, to: ALL_TIME_END };
     case 'today':
       return { from: today, to: today };
     case 'yesterday':
@@ -96,7 +104,7 @@ const getPresetRange = (preset: DatePreset): DateRange => {
 
 export const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChange }) => {
   const [open, setOpen] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState<DatePreset>('last-calendar-year');
+  const [selectedPreset, setSelectedPreset] = useState<DatePreset>('all-time');
   const [tempFrom, setTempFrom] = useState<Date | undefined>(value.from);
   const [tempTo, setTempTo] = useState<Date | undefined>(value.to);
 
