@@ -197,7 +197,8 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChang
                   }
                 }}
                 numberOfMonths={2}
-                className="rounded-md border-0"
+                defaultMonth={new Date(2024, 0)}
+                className="rounded-md border-0 pointer-events-auto"
               />
             </div>
 
