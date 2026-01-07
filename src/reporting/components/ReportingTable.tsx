@@ -111,57 +111,6 @@ const formatPeriodHeader = (period: string, granularity: Granularity): string =>
   }
 };
 
-// Aggregate values for grouped periods (sum monthly values for quarter/year)
-const aggregateValue = (
-  values: Record<string, ReportingMetricValue>,
-  periodStart: string,
-  granularity: Granularity,
-  dateRange: DateRange
-): number | null => {
-  // For month or smaller granularity, just return the period value
-  if (granularity === 'month' || granularity === 'week' || granularity === 'day') {
-    const periodValue = values[periodStart];
-    if (periodValue?.value !== null && periodValue?.value !== undefined) {
-      return periodValue.value;
-    }
-    return null;
-  }
-  
-  // For quarter and year, sum up all monthly values within the period
-  const startDate = new Date(periodStart);
-  let monthsToSum: string[] = [];
-  
-  if (granularity === 'quarter') {
-    // Sum 3 months
-    for (let i = 0; i < 3; i++) {
-      const monthDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-      if (monthDate <= dateRange.to) {
-        monthsToSum.push(format(monthDate, 'yyyy-MM-01'));
-      }
-    }
-  } else if (granularity === 'year') {
-    // Sum 12 months
-    for (let i = 0; i < 12; i++) {
-      const monthDate = new Date(startDate.getFullYear(), i, 1);
-      if (monthDate >= dateRange.from && monthDate <= dateRange.to) {
-        monthsToSum.push(format(monthDate, 'yyyy-MM-01'));
-      }
-    }
-  }
-  
-  let sum = 0;
-  let hasAnyValue = false;
-  
-  for (const monthKey of monthsToSum) {
-    const value = values[monthKey];
-    if (value?.value !== null && value?.value !== undefined) {
-      sum += value.value;
-      hasAnyValue = true;
-    }
-  }
-  
-  return hasAnyValue ? sum : null;
-};
 
 export const ReportingTable: React.FC<ReportingTableProps> = ({
   category,
@@ -527,6 +476,8 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                             metric={metric}
                             values={valuesByMetric[metric.id] || {}}
                             periods={periods}
+                            granularity={granularity}
+                            dateRange={dateRange}
                             onValueChange={handleValueChange}
                             onDelete={handleDelete}
                             onEdit={handleEdit}
@@ -558,6 +509,8 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                           metric={metric}
                           values={valuesByMetric[metric.id] || {}}
                           periods={periods}
+                          granularity={granularity}
+                          dateRange={dateRange}
                           onValueChange={handleValueChange}
                           onDelete={handleDelete}
                           onEdit={handleEdit}
@@ -573,6 +526,8 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                           metric={metric}
                           values={valuesByMetric[metric.id] || {}}
                           periods={periods}
+                          granularity={granularity}
+                          dateRange={dateRange}
                           onValueChange={handleValueChange}
                           onDelete={handleDelete}
                           onEdit={handleEdit}
