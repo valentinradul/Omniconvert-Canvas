@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Megaphone, DollarSign, Users, TrendingUp, Target, Calculator, Save, PlusCircle, X, SlidersHorizontal, Tag } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAdCampaigns } from '../hooks/useAdCampaigns';
 
 interface AdChannel {
   id: string;
@@ -75,6 +76,9 @@ const AdCampaigns: React.FC = () => {
   const [campaignTags, setCampaignTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const { createCampaign } = useAdCampaigns();
 
   const updateChannel = (id: string, updates: Partial<AdChannel>) => {
     setChannels(channels.map(ch => ch.id === id ? { ...ch, ...updates } : ch));
@@ -180,7 +184,7 @@ const AdCampaigns: React.FC = () => {
     }).format(value);
   };
 
-  const saveCampaign = (channel: AdChannel) => {
+  const saveCampaign = async (channel: AdChannel) => {
     if (!campaignName.trim()) {
       toast.error('Please enter a campaign name');
       return;
@@ -188,42 +192,42 @@ const AdCampaigns: React.FC = () => {
 
     const calc = getChannelCalculations(channel);
 
-    const campaign: AdCampaignData = {
-      id: Date.now().toString(),
-      name: campaignName,
-      createdAt: new Date().toISOString(),
-      type: 'ad',
-      channel: channel.name,
-      tags: [...campaignTags],
-      agencyCost: channel.agencyCost,
-      creativeCost: channel.creativeCost,
-      mediaCost: channel.mediaCost,
-      cpc: channel.cpc,
-      conversionRate: calc.conversionRate,
-      signupToCustomerRate: channel.signupToCustomerRate,
-      revenuePerCustomer: channel.revenuePerCustomer,
-      transactionsPerCustomer: channel.transactionsPerCustomer,
-      clicks: calc.clicks,
-      signups: calc.signups,
-      totalCost: calc.totalCost,
-      costPerSignup: calc.costPerSignup,
-      paidCustomers: calc.paidCustomers,
-      cac: calc.cac,
-      capturedRevenue: calc.capturedRevenue,
-      totalRevenue: calc.totalRevenue,
-      roas: calc.roas
-    };
+    setIsSaving(true);
+    try {
+      await createCampaign({
+        name: campaignName,
+        channel: channel.name,
+        tags: [...campaignTags],
+        agency_cost: channel.agencyCost,
+        creative_cost: channel.creativeCost,
+        media_cost: channel.mediaCost,
+        cpc: channel.cpc,
+        target_cost_per_signup: channel.targetCostPerSignup,
+        signup_to_customer_rate: channel.signupToCustomerRate,
+        revenue_per_customer: channel.revenuePerCustomer,
+        transactions_per_customer: channel.transactionsPerCustomer,
+        clicks: Math.round(calc.clicks),
+        signups: calc.signups,
+        total_cost: calc.totalCost,
+        cost_per_signup: calc.costPerSignup,
+        conversion_rate: calc.conversionRate,
+        paid_customers: calc.paidCustomers,
+        cac: calc.cac,
+        captured_revenue: calc.capturedRevenue,
+        total_revenue: calc.totalRevenue,
+        roas: calc.roas,
+      });
 
-    const existing = localStorage.getItem('savedAdCampaigns');
-    const campaigns = existing ? JSON.parse(existing) : [];
-    campaigns.push(campaign);
-    localStorage.setItem('savedAdCampaigns', JSON.stringify(campaigns));
-
-    toast.success(`Campaign "${campaignName}" for ${channel.name} saved successfully!`);
-    setCampaignName('');
-    setCampaignTags([]);
-    setSelectedChannelId(null);
-    setIsSaveDialogOpen(false);
+      toast.success(`Campaign "${campaignName}" for ${channel.name} saved successfully!`);
+      setCampaignName('');
+      setCampaignTags([]);
+      setSelectedChannelId(null);
+      setIsSaveDialogOpen(false);
+    } catch (err) {
+      toast.error('Failed to save campaign');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -436,8 +440,8 @@ const AdCampaigns: React.FC = () => {
                                   </span>
                                 </div>
                               </div>
-                              <Button onClick={() => saveCampaign(channel)} className="w-full">
-                                Save Campaign
+                              <Button onClick={() => saveCampaign(channel)} className="w-full" disabled={isSaving}>
+                                {isSaving ? 'Saving...' : 'Save Campaign'}
                               </Button>
                             </div>
                           </DialogContent>
