@@ -28,7 +28,9 @@ import {
   ChevronDown,
   Mail,
   Megaphone,
-  FolderKanban
+  FolderKanban,
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 
 // Add custom CSS to force white background for sidebar
@@ -47,6 +49,7 @@ const AppLayout: React.FC = () => {
   const { data: contentSettings } = useContentSettings();
   
   const isGtmEnabled = contentSettings?.enable_gtm_calculator ?? false;
+  const isReportingEnabled = contentSettings?.enable_reporting ?? false;
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -195,7 +198,7 @@ const AppLayout: React.FC = () => {
                       >
                         <div className="flex items-center">
                           <Target className="h-5 w-5 mr-3" strokeWidth={1.5} />
-                          <span className="text-base">GTM Calculator</span>
+                          <span className="text-base">GTM Campaigns</span>
                         </div>
                         <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                       </SidebarMenuButton>
@@ -239,6 +242,56 @@ const AppLayout: React.FC = () => {
                           <Link to="/gtm/campaigns" className="flex items-center">
                             <FolderKanban className="h-4 w-4 mr-3" strokeWidth={1.5} />
                             <span className="text-sm">Campaigns</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+
+              {isReportingEnabled && (
+                <Collapsible defaultOpen={location.pathname.startsWith('/reporting')}>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton 
+                        className={`flex items-center justify-between py-3 px-4 w-full cursor-pointer ${location.pathname.startsWith('/reporting') 
+                          ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500 font-medium' 
+                          : 'bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900'}`}
+                      >
+                        <div className="flex items-center">
+                          <BarChart3 className="h-5 w-5 mr-3" strokeWidth={1.5} />
+                          <span className="text-base">Reporting</span>
+                        </div>
+                        <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                  </SidebarMenuItem>
+                  <CollapsibleContent>
+                    <div className="ml-4 border-l border-gray-200">
+                      <SidebarMenuItem>
+                        <SidebarMenuButton 
+                          asChild 
+                          className={`flex items-center py-2 px-4 ${location.pathname === '/reporting/marketing' 
+                            ? 'bg-blue-50 text-blue-600 font-medium' 
+                            : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                        >
+                          <Link to="/reporting/marketing" className="flex items-center">
+                            <TrendingUp className="h-4 w-4 mr-3" strokeWidth={1.5} />
+                            <span className="text-sm">Marketing Performance</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton 
+                          asChild 
+                          className={`flex items-center py-2 px-4 ${location.pathname === '/reporting/sales' 
+                            ? 'bg-blue-50 text-blue-600 font-medium' 
+                            : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                        >
+                          <Link to="/reporting/sales" className="flex items-center">
+                            <Users className="h-4 w-4 mr-3" strokeWidth={1.5} />
+                            <span className="text-sm">Sales Performance</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
