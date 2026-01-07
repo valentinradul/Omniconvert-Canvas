@@ -54,7 +54,8 @@ const parseColumnDate = (header: string): string | null => {
     dec: 11, december: 11
   };
 
-  const lowerHeader = headerClean.toLowerCase();
+  // Normalize: remove extra spaces and convert to lowercase
+  const lowerHeader = headerClean.toLowerCase().replace(/\s+/g, ' ').trim();
   
   // First try manual regex patterns (more reliable than date-fns for varied formats)
   
@@ -70,13 +71,16 @@ const parseColumnDate = (header: string): string | null => {
   }
 
   // Pattern: "January 25", "February 25", "June 22" (month name with 2-digit year, space separated)
+  // Also handles single digit: "January 5" would be interpreted as 2005
   const monthYear2Match = lowerHeader.match(/^([a-z]+)\s+(\d{1,2})$/);
   if (monthYear2Match) {
     const [, monthStr, yearStr] = monthYear2Match;
     const monthNum = monthMap[monthStr];
     if (monthNum !== undefined) {
       let year = parseInt(yearStr, 10);
+      // Assume 00-50 is 2000-2050, 51-99 is 1951-1999
       year = year > 50 ? 1900 + year : 2000 + year;
+      console.log(`Matched monthYear2: ${monthStr} ${yearStr} -> ${year}-${monthNum + 1}-01`);
       return format(new Date(year, monthNum, 1), 'yyyy-MM-01');
     }
   }

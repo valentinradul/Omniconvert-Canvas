@@ -440,3 +440,29 @@ export function useRecalculateMetrics() {
     },
   });
 }
+
+export function useClearMetricValues() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (metricIds: string[]) => {
+      if (metricIds.length === 0) throw new Error('No metrics to clear');
+
+      const { error } = await supabase
+        .from('reporting_metric_values')
+        .delete()
+        .in('metric_id', metricIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reporting-metric-values'] });
+      queryClient.invalidateQueries({ queryKey: ['calculated-metric-values'] });
+      toast.success('All data cleared successfully');
+    },
+    onError: (error) => {
+      console.error('Error clearing metric values:', error);
+      toast.error('Failed to clear data');
+    },
+  });
+}
