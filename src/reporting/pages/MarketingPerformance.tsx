@@ -62,10 +62,15 @@ const MarketingPerformance: React.FC = () => {
   const getMetricsForCategory = (categoryId: string) => 
     metrics?.filter(m => m.category_id === categoryId) || [];
 
-  // For Overview tab: get all metrics from child categories
+  // For Overview tab: get metrics from parent category OR child categories
   const getOverviewMetrics = () => {
-    const childCategoryIds = [organicCategory?.id, paidCategory?.id, socialCategory?.id].filter(Boolean) as string[];
-    return metrics?.filter(m => childCategoryIds.includes(m.category_id)) || [];
+    const relevantCategoryIds = [
+      marketingParent?.id,
+      organicCategory?.id, 
+      paidCategory?.id, 
+      socialCategory?.id
+    ].filter(Boolean) as string[];
+    return metrics?.filter(m => relevantCategoryIds.includes(m.category_id)) || [];
   };
 
   const isLoading = categoriesLoading || metricsLoading || valuesLoading;
@@ -118,7 +123,7 @@ const MarketingPerformance: React.FC = () => {
                   allMetrics={metrics || []}
                   values={values || []}
                   categories={marketingCategories}
-                  childCategories={[organicCategory, paidCategory, socialCategory].filter(Boolean) as ReportingCategory[]}
+                  childCategories={[marketingParent, organicCategory, paidCategory, socialCategory].filter(Boolean) as ReportingCategory[]}
                   isLoading={isLoading}
                   onRefresh={handleRefresh}
                   showCategoryGroups={true}
