@@ -37,6 +37,21 @@ export interface ReportingMetricValue {
   updated_by: string | null;
 }
 
+export interface SavedChart {
+  id: string;
+  company_id: string;
+  name: string;
+  metric_ids: string[];
+  chart_type: 'line' | 'bar';
+  date_range_preset: string | null;
+  custom_start_date: string | null;
+  custom_end_date: string | null;
+  granularity: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface MetricWithValues extends ReportingMetric {
   values: Record<string, ReportingMetricValue>;
 }

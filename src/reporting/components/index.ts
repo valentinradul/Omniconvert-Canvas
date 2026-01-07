@@ -5,3 +5,7 @@ export { IntegrationDialog } from './IntegrationDialog';
 export { DateRangePicker } from './DateRangePicker';
 export { GranularitySelector } from './GranularitySelector';
 export { MetricVisibilityDialog } from './MetricVisibilityDialog';
+export { KPIChart } from './KPIChart';
+export { KPISelector } from './KPISelector';
+export { SaveChartDialog } from './SaveChartDialog';
+export { SavedChartsPanel } from './SavedChartsPanel';

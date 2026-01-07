@@ -982,6 +982,59 @@ export type Database = {
           },
         ]
       }
+      saved_charts: {
+        Row: {
+          chart_type: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          custom_end_date: string | null
+          custom_start_date: string | null
+          date_range_preset: string | null
+          granularity: string
+          id: string
+          metric_ids: string[]
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          chart_type?: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          custom_end_date?: string | null
+          custom_start_date?: string | null
+          date_range_preset?: string | null
+          granularity?: string
+          id?: string
+          metric_ids: string[]
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          chart_type?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          custom_end_date?: string | null
+          custom_start_date?: string | null
+          date_range_preset?: string | null
+          granularity?: string
+          id?: string
+          metric_ids?: string[]
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_charts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       super_admin_users: {
         Row: {
           granted_at: string
