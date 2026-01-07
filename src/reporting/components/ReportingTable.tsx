@@ -111,47 +111,56 @@ const formatPeriodHeader = (period: string, granularity: Granularity): string =>
   }
 };
 
-// Aggregate values for grouped periods
+// Aggregate values for grouped periods (sum monthly values for quarter/year)
 const aggregateValue = (
   values: Record<string, ReportingMetricValue>,
   periodStart: string,
   granularity: Granularity,
   dateRange: DateRange
 ): number | null => {
-  const startDate = new Date(periodStart);
-  let endDate: Date;
-  
-  switch (granularity) {
-    case 'week':
-      endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 6);
-      break;
-    case 'month':
-      endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
-      break;
-    case 'quarter':
-      endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 3, 0);
-      break;
-    case 'year':
-      endDate = new Date(startDate.getFullYear(), 11, 31);
-      break;
-    default:
-      endDate = startDate;
+  // For month or smaller granularity, just return the period value
+  if (granularity === 'month' || granularity === 'week' || granularity === 'day') {
+    const periodValue = values[periodStart];
+    if (periodValue?.value !== null && periodValue?.value !== undefined) {
+      return periodValue.value;
+    }
+    return null;
   }
   
-  // Clamp to date range
-  if (endDate > dateRange.to) endDate = dateRange.to;
+  // For quarter and year, sum up all monthly values within the period
+  const startDate = new Date(periodStart);
+  let monthsToSum: string[] = [];
+  
+  if (granularity === 'quarter') {
+    // Sum 3 months
+    for (let i = 0; i < 3; i++) {
+      const monthDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+      if (monthDate <= dateRange.to) {
+        monthsToSum.push(format(monthDate, 'yyyy-MM-01'));
+      }
+    }
+  } else if (granularity === 'year') {
+    // Sum 12 months
+    for (let i = 0; i < 12; i++) {
+      const monthDate = new Date(startDate.getFullYear(), i, 1);
+      if (monthDate >= dateRange.from && monthDate <= dateRange.to) {
+        monthsToSum.push(format(monthDate, 'yyyy-MM-01'));
+      }
+    }
+  }
   
   let sum = 0;
-  let count = 0;
+  let hasAnyValue = false;
   
-  // For monthly data, just get the value for the period date
-  const periodValue = values[periodStart];
-  if (periodValue?.value !== null && periodValue?.value !== undefined) {
-    return periodValue.value;
+  for (const monthKey of monthsToSum) {
+    const value = values[monthKey];
+    if (value?.value !== null && value?.value !== undefined) {
+      sum += value.value;
+      hasAnyValue = true;
+    }
   }
   
-  return null;
+  return hasAnyValue ? sum : null;
 };
 
 export const ReportingTable: React.FC<ReportingTableProps> = ({
