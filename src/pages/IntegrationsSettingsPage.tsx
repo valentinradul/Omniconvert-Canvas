@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HubSpotIntegration } from '@/components/settings/HubSpotIntegration';
+import { MetaAdsIntegration } from '@/components/settings/MetaAdsIntegration';
 import { Plug } from 'lucide-react';
 
 const IntegrationsSettingsPage: React.FC = () => {
@@ -31,6 +32,25 @@ const IntegrationsSettingsPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <HubSpotIntegration />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/1024px-Facebook_Logo_%282019%29.png" 
+                alt="Meta" 
+                className="h-6 w-6"
+              />
+              Meta Ads
+            </CardTitle>
+            <CardDescription>
+              Sync campaign performance data from Facebook and Instagram Ads
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MetaAdsIntegration />
           </CardContent>
         </Card>
       </div>
