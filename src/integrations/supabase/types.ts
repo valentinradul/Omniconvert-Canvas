@@ -68,6 +68,7 @@ export type Database = {
           created_at: string
           enable_financial_tracking: boolean
           enable_gtm_calculator: boolean
+          enable_reporting: boolean
           id: string
           restrict_content_to_departments: boolean
           updated_at: string
@@ -77,6 +78,7 @@ export type Database = {
           created_at?: string
           enable_financial_tracking?: boolean
           enable_gtm_calculator?: boolean
+          enable_reporting?: boolean
           id?: string
           restrict_content_to_departments?: boolean
           updated_at?: string
@@ -86,6 +88,7 @@ export type Database = {
           created_at?: string
           enable_financial_tracking?: boolean
           enable_gtm_calculator?: boolean
+          enable_reporting?: boolean
           id?: string
           restrict_content_to_departments?: boolean
           updated_at?: string
@@ -820,6 +823,158 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reporting_categories: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+          parent_id: string | null
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reporting_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reporting_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reporting_metric_values: {
+        Row: {
+          created_at: string
+          id: string
+          is_manual_override: boolean
+          metric_id: string
+          period_date: string
+          updated_at: string
+          updated_by: string | null
+          value: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_manual_override?: boolean
+          metric_id: string
+          period_date: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_manual_override?: boolean
+          metric_id?: string
+          period_date?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reporting_metric_values_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_metrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reporting_metrics: {
+        Row: {
+          calculation_formula: string | null
+          category_id: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          integration_field: string | null
+          integration_type: string | null
+          is_calculated: boolean
+          name: string
+          sort_order: number
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          calculation_formula?: string | null
+          category_id: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          integration_field?: string | null
+          integration_type?: string | null
+          is_calculated?: boolean
+          name: string
+          sort_order?: number
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          calculation_formula?: string | null
+          category_id?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          integration_field?: string | null
+          integration_type?: string | null
+          is_calculated?: boolean
+          name?: string
+          sort_order?: number
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reporting_metrics_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reporting_metrics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]

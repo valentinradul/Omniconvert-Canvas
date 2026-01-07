@@ -34,6 +34,7 @@ import ContentManagementPage from "./pages/ContentManagementPage";
 import CompanyManagementPage from "./pages/CompanyManagementPage";
 import CompanyEditPage from "./pages/CompanyEditPage";
 import { GTMDashboard, GTMOutreach, GTMAdCampaigns, GTMCampaigns } from "./gtm";
+import { MarketingPerformance, SalesPerformance } from "./reporting";
 
 // Super Admin Pages
 import SuperAdminCompaniesPage from "./pages/super-admin/CompaniesPage";
@@ -87,6 +88,10 @@ const App = () => (
                     <Route path="gtm/outreach" element={<GTMOutreach />} />
                     <Route path="gtm/ads" element={<GTMAdCampaigns />} />
                     <Route path="gtm/campaigns" element={<GTMCampaigns />} />
+                    
+                    {/* Reporting routes */}
+                    <Route path="reporting/marketing" element={<MarketingPerformance />} />
+                    <Route path="reporting/sales" element={<SalesPerformance />} />
 
                     {/* Redirect root path to dashboard when authenticated */}
                     <Route path="" element={<Navigate to="/dashboard" replace />} />

@@ -8,6 +8,7 @@ interface ContentSettings {
   restrict_content_to_departments: boolean;
   enable_financial_tracking: boolean;
   enable_gtm_calculator: boolean;
+  enable_reporting: boolean;
 }
 
 export const useContentSettings = () => {
