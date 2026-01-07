@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HubSpotIntegration } from '@/components/settings/HubSpotIntegration';
 import { MetaAdsIntegration } from '@/components/settings/MetaAdsIntegration';
+import { GoogleAdsIntegration } from '@/components/settings/GoogleAdsIntegration';
 import { Plug } from 'lucide-react';
 
 const IntegrationsSettingsPage: React.FC = () => {
@@ -51,6 +52,25 @@ const IntegrationsSettingsPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <MetaAdsIntegration />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <img 
+                src="https://www.gstatic.com/images/branding/product/1x/ads_48dp.png" 
+                alt="Google Ads" 
+                className="h-6 w-6"
+              />
+              Google Ads
+            </CardTitle>
+            <CardDescription>
+              Sync campaign performance data from Google Ads
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GoogleAdsIntegration />
           </CardContent>
         </Card>
       </div>
