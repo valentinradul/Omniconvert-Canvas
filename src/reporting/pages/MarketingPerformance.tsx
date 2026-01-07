@@ -44,11 +44,19 @@ const MarketingPerformance: React.FC = () => {
     );
   }
 
-  // Find the marketing performance parent category
+  // Find marketing-related categories
   const marketingParent = categories?.find(c => c.slug === 'marketing-performance');
   const organicCategory = categories?.find(c => c.slug === 'organic-performance');
   const paidCategory = categories?.find(c => c.slug === 'paid-performance');
   const socialCategory = categories?.find(c => c.slug === 'social-performance');
+
+  // All marketing categories for visibility selector
+  const marketingCategories = categories?.filter(c => 
+    c.slug === 'marketing-performance' ||
+    c.slug === 'organic-performance' ||
+    c.slug === 'paid-performance' ||
+    c.slug === 'social-performance'
+  ) || [];
 
   const getMetricsForCategory = (categoryId: string) => 
     metrics?.filter(m => m.category_id === categoryId) || [];
@@ -100,7 +108,9 @@ const MarketingPerformance: React.FC = () => {
                 <ReportingTable
                   category={marketingParent}
                   metrics={getMetricsForCategory(marketingParent.id)}
+                  allMetrics={metrics || []}
                   values={values || []}
+                  categories={marketingCategories}
                   isLoading={isLoading}
                   onRefresh={handleRefresh}
                 />
@@ -124,7 +134,9 @@ const MarketingPerformance: React.FC = () => {
                 <ReportingTable
                   category={organicCategory}
                   metrics={getMetricsForCategory(organicCategory.id)}
+                  allMetrics={metrics || []}
                   values={values || []}
+                  categories={marketingCategories}
                   isLoading={isLoading}
                   onRefresh={handleRefresh}
                 />
@@ -148,7 +160,9 @@ const MarketingPerformance: React.FC = () => {
                 <ReportingTable
                   category={paidCategory}
                   metrics={getMetricsForCategory(paidCategory.id)}
+                  allMetrics={metrics || []}
                   values={values || []}
+                  categories={marketingCategories}
                   isLoading={isLoading}
                   onRefresh={handleRefresh}
                 />
@@ -172,7 +186,9 @@ const MarketingPerformance: React.FC = () => {
                 <ReportingTable
                   category={socialCategory}
                   metrics={getMetricsForCategory(socialCategory.id)}
+                  allMetrics={metrics || []}
                   values={values || []}
+                  categories={marketingCategories}
                   isLoading={isLoading}
                   onRefresh={handleRefresh}
                 />

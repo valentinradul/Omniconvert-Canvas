@@ -23,6 +23,7 @@ export interface ReportingMetric {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  visible_in_categories: string[];
 }
 
 export interface ReportingMetricValue {

@@ -205,9 +205,12 @@ export function useUpdateMetric() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ReportingMetric> & { id: string }) => {
+      // Handle visible_in_categories separately as it needs proper typing
+      const updateData: Record<string, unknown> = { ...updates };
+      
       const { data, error } = await supabase
         .from('reporting_metrics')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
