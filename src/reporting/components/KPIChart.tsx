@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { format } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X, Save } from 'lucide-react';
@@ -55,7 +55,7 @@ export const KPIChart: React.FC<KPIChartProps> = ({
   title = 'KPI Chart',
   showSaveButton = true,
 }) => {
-  // Group values by metric
+  // Group values by metric (store all monthly values for aggregation)
   const valuesByMetric = useMemo(() => {
     const grouped: Record<string, Record<string, number | null>> = {};
     values.forEach((v) => {
@@ -67,7 +67,49 @@ export const KPIChart: React.FC<KPIChartProps> = ({
     return grouped;
   }, [values]);
 
-  // Build chart data
+  // Aggregate values for quarter/year granularity
+  const aggregateValue = (
+    metricValues: Record<string, number | null> | undefined,
+    periodStart: string,
+    gran: Granularity
+  ): number | null => {
+    if (!metricValues) return null;
+    
+    // For month or smaller, just return the period value
+    if (gran === 'month' || gran === 'week' || gran === 'day') {
+      return metricValues[periodStart] ?? null;
+    }
+    
+    const startDate = new Date(periodStart);
+    let monthsToSum: string[] = [];
+    
+    if (gran === 'quarter') {
+      for (let i = 0; i < 3; i++) {
+        const monthDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+        monthsToSum.push(format(startOfMonth(monthDate), 'yyyy-MM-dd'));
+      }
+    } else if (gran === 'year') {
+      for (let i = 0; i < 12; i++) {
+        const monthDate = new Date(startDate.getFullYear(), i, 1);
+        monthsToSum.push(format(startOfMonth(monthDate), 'yyyy-MM-dd'));
+      }
+    }
+    
+    let sum = 0;
+    let hasAnyValue = false;
+    
+    for (const monthKey of monthsToSum) {
+      const value = metricValues[monthKey];
+      if (value !== null && value !== undefined) {
+        sum += value;
+        hasAnyValue = true;
+      }
+    }
+    
+    return hasAnyValue ? sum : null;
+  };
+
+  // Build chart data with aggregation
   const chartData = useMemo(() => {
     return periods.map((period) => {
       const dataPoint: Record<string, string | number | null> = {
@@ -76,7 +118,7 @@ export const KPIChart: React.FC<KPIChartProps> = ({
       };
       
       metrics.forEach((metric) => {
-        dataPoint[metric.id] = valuesByMetric[metric.id]?.[period] ?? null;
+        dataPoint[metric.id] = aggregateValue(valuesByMetric[metric.id], period, granularity);
       });
       
       return dataPoint;
@@ -154,7 +196,10 @@ export const KPIChart: React.FC<KPIChartProps> = ({
                     borderRadius: '8px',
                   }}
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
-                  formatter={(value: number) => [formatValue(value), '']}
+                  formatter={(value: number, name: string) => {
+                    const metric = metrics.find(m => m.id === name);
+                    return [formatValue(value), metric?.name || name];
+                  }}
                 />
                 <Legend />
                 {metrics.map((metric, index) => (
@@ -187,7 +232,10 @@ export const KPIChart: React.FC<KPIChartProps> = ({
                     borderRadius: '8px',
                   }}
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
-                  formatter={(value: number) => [formatValue(value), '']}
+                  formatter={(value: number, name: string) => {
+                    const metric = metrics.find(m => m.id === name);
+                    return [formatValue(value), metric?.name || name];
+                  }}
                 />
                 <Legend />
                 {metrics.map((metric, index) => (
