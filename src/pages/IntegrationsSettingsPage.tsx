@@ -4,6 +4,7 @@ import { HubSpotIntegration } from '@/components/settings/HubSpotIntegration';
 import { MetaAdsIntegration } from '@/components/settings/MetaAdsIntegration';
 import { GoogleAdsIntegration } from '@/components/settings/GoogleAdsIntegration';
 import { GoogleAnalyticsIntegration } from '@/components/settings/GoogleAnalyticsIntegration';
+import { LinkedInAdsIntegration } from '@/components/settings/LinkedInAdsIntegration';
 import { Plug } from 'lucide-react';
 
 const IntegrationsSettingsPage: React.FC = () => {
@@ -91,6 +92,25 @@ const IntegrationsSettingsPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <GoogleAnalyticsIntegration />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <img 
+                src="https://content.linkedin.com/content/dam/me/business/en-us/amp/brand-site/v2/bg/LI-Bug.svg.original.svg" 
+                alt="LinkedIn" 
+                className="h-6 w-6"
+              />
+              LinkedIn Ads
+            </CardTitle>
+            <CardDescription>
+              Sync campaign performance data from LinkedIn Campaign Manager
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LinkedInAdsIntegration />
           </CardContent>
         </Card>
       </div>
