@@ -5,6 +5,7 @@ import { MetaAdsIntegration } from '@/components/settings/MetaAdsIntegration';
 import { GoogleAdsIntegration } from '@/components/settings/GoogleAdsIntegration';
 import { GoogleAnalyticsIntegration } from '@/components/settings/GoogleAnalyticsIntegration';
 import { LinkedInAdsIntegration } from '@/components/settings/LinkedInAdsIntegration';
+import { GoogleSearchConsoleIntegration } from '@/components/settings/GoogleSearchConsoleIntegration';
 import { Plug } from 'lucide-react';
 
 const IntegrationsSettingsPage: React.FC = () => {
@@ -111,6 +112,25 @@ const IntegrationsSettingsPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <LinkedInAdsIntegration />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <img 
+                src="https://www.gstatic.com/images/branding/product/1x/search_console_48dp.png" 
+                alt="Google Search Console" 
+                className="h-6 w-6"
+              />
+              Google Search Console
+            </CardTitle>
+            <CardDescription>
+              Sync organic search impressions, clicks, CTR, and position data
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GoogleSearchConsoleIntegration />
           </CardContent>
         </Card>
       </div>
