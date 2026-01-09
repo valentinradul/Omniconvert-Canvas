@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.fetch-google-analytics]
 verify_jwt = true
+
+[functions.fetch-linkedin-ads]
+verify_jwt = true
