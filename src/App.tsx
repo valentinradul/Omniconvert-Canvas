@@ -36,6 +36,7 @@ import CompanyEditPage from "./pages/CompanyEditPage";
 import { GTMDashboard, GTMOutreach, GTMAdCampaigns, GTMCampaigns } from "./gtm";
 import { MarketingPerformance, SalesPerformance } from "./reporting";
 import IntegrationsSettingsPage from "./pages/IntegrationsSettingsPage";
+import OAuthCallback from "./pages/OAuthCallback";
 
 // Super Admin Pages
 import SuperAdminCompaniesPage from "./pages/super-admin/CompaniesPage";
@@ -64,6 +65,7 @@ const App = () => (
                 <Route path="forgot-password" element={<ForgotPassword />} />
                 <Route path="reset-password" element={<ResetPassword />} />
                 <Route path="data-recovery" element={<DataRecoveryPage />} />
+                <Route path="oauth/callback" element={<OAuthCallback />} />
                 
                 {/* Protected regular app routes */}
                 <Route element={<ProtectedRoute />}>
