@@ -1,74 +1,191 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Check, RefreshCw, Unlink, Settings, Search } from 'lucide-react';
-import { useGoogleSearchConsoleIntegration } from '@/hooks/useGoogleSearchConsoleIntegration';
+import { useOAuth } from '@/hooks/useOAuth';
+import { useCompany } from '@/context/company/CompanyContext';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 type Step = 'connect' | 'select-site' | 'connected';
 
+interface Site {
+  siteUrl: string;
+  permissionLevel: string;
+}
+
+interface SyncLog {
+  id: string;
+  started_at: string;
+  status: string;
+  records_processed: number | null;
+}
+
 export function GoogleSearchConsoleIntegration() {
+  const { currentCompany } = useCompany();
   const {
     isConnected,
     isLoading,
-    sites,
-    lastSyncAt,
-    syncHistory,
-    config,
-    testConnection,
-    saveConfig,
-    syncData,
+    isConnecting,
+    connect,
     disconnect,
-  } = useGoogleSearchConsoleIntegration();
+  } = useOAuth('google_search_console');
 
-  const [step, setStep] = useState<Step>(isConnected ? 'connected' : 'connect');
+  const [step, setStep] = useState<Step>('connect');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [syncHistory, setSyncHistory] = useState<SyncLog[]>([]);
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+  const [config, setConfig] = useState<{
+    siteUrl?: string;
+    dateRangePreset?: string;
+  } | null>(null);
 
   // Form state
-  const [accessToken, setAccessToken] = useState('');
-  const [refreshToken, setRefreshToken] = useState('');
-  const [clientId, setClientId] = useState('');
-  const [clientSecret, setClientSecret] = useState('');
   const [selectedSite, setSelectedSite] = useState('');
   const [dateRange, setDateRange] = useState('last_30_days');
 
-  const handleConnect = async () => {
-    if (!accessToken || !clientId || !clientSecret) return;
-
-    setIsSubmitting(true);
-    const result = await testConnection({
-      accessToken,
-      refreshToken,
-      clientId,
-      clientSecret,
-    });
-
-    if (result) {
-      setStep('select-site');
+  // Load integration config when connected
+  useEffect(() => {
+    if (isConnected && currentCompany?.id) {
+      loadIntegrationConfig();
+      setStep('connected');
+    } else {
+      setStep('connect');
     }
-    setIsSubmitting(false);
+  }, [isConnected, currentCompany?.id]);
+
+  const loadIntegrationConfig = async () => {
+    if (!currentCompany?.id) return;
+
+    try {
+      // Get integration config
+      const { data: integration } = await supabase
+        .from('company_integrations')
+        .select('config, last_sync_at')
+        .eq('company_id', currentCompany.id)
+        .eq('integration_type', 'google_search_console')
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (integration) {
+        const integrationConfig = integration.config as Record<string, unknown> | null;
+        setConfig({
+          siteUrl: integrationConfig?.siteUrl as string,
+          dateRangePreset: integrationConfig?.dateRangePreset as string,
+        });
+        setLastSyncAt(integration.last_sync_at);
+      }
+
+      // Get sync history
+      const { data: syncLogs } = await supabase
+        .from('integration_sync_log')
+        .select('id, started_at, status, records_processed')
+        .eq('company_id', currentCompany.id)
+        .eq('sync_type', 'google_search_console')
+        .order('started_at', { ascending: false })
+        .limit(5);
+
+      if (syncLogs) {
+        setSyncHistory(syncLogs);
+      }
+    } catch (error) {
+      console.error('Failed to load integration config:', error);
+    }
   };
 
+  const fetchSites = async () => {
+    if (!currentCompany?.id) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-google-search-console', {
+        body: {
+          action: 'list_sites',
+          companyId: currentCompany.id,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.sites) {
+        setSites(data.sites);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sites:', error);
+      toast.error('Failed to fetch Search Console sites');
+    }
+  };
+
+  const handleConnect = async () => {
+    await connect();
+    // OAuth flow will happen in popup, when successful the isConnected state will update
+  };
+
+  // When OAuth completes, fetch sites
+  useEffect(() => {
+    if (isConnected && step === 'connect') {
+      fetchSites().then(() => setStep('select-site'));
+    }
+  }, [isConnected]);
+
   const handleSaveConfig = async () => {
-    if (!selectedSite) return;
+    if (!selectedSite || !currentCompany?.id) return;
 
     setIsSubmitting(true);
-    const success = await saveConfig(selectedSite, dateRange);
-    if (success) {
+    try {
+      // Update integration config
+      const { error } = await supabase
+        .from('company_integrations')
+        .update({
+          config: {
+            siteUrl: selectedSite,
+            dateRangePreset: dateRange,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('company_id', currentCompany.id)
+        .eq('integration_type', 'google_search_console');
+
+      if (error) throw error;
+
+      setConfig({
+        siteUrl: selectedSite,
+        dateRangePreset: dateRange,
+      });
       setStep('connected');
+      toast.success('Google Search Console configuration saved');
+    } catch (error) {
+      console.error('Failed to save config:', error);
+      toast.error('Failed to save configuration');
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleSync = async () => {
+    if (!currentCompany?.id) return;
+
     setIsSyncing(true);
-    await syncData();
-    setIsSyncing(false);
+    try {
+      const { error } = await supabase.functions.invoke('fetch-google-search-console', {
+        body: {
+          companyId: currentCompany.id,
+        },
+      });
+
+      if (error) throw error;
+      toast.success('Google Search Console data synced successfully');
+      await loadIntegrationConfig();
+    } catch (error) {
+      console.error('Sync failed:', error);
+      toast.error('Failed to sync Search Console data');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleDisconnect = async () => {
@@ -76,17 +193,16 @@ export function GoogleSearchConsoleIntegration() {
     const success = await disconnect();
     if (success) {
       setStep('connect');
-      setAccessToken('');
-      setRefreshToken('');
-      setClientId('');
-      setClientSecret('');
       setSelectedSite('');
+      setConfig(null);
+      setSyncHistory([]);
     }
     setIsSubmitting(false);
   };
 
-  const handleReconfigure = () => {
-    setStep('connect');
+  const handleReconfigure = async () => {
+    await fetchSites();
+    setStep('select-site');
   };
 
   if (isLoading) {
@@ -97,11 +213,6 @@ export function GoogleSearchConsoleIntegration() {
         </CardContent>
       </Card>
     );
-  }
-
-  // Check if already connected on mount
-  if (isConnected && step === 'connect') {
-    setStep('connected');
   }
 
   return (
@@ -119,7 +230,7 @@ export function GoogleSearchConsoleIntegration() {
               </CardDescription>
             </div>
           </div>
-          {isConnected && (
+          {isConnected && step === 'connected' && (
             <Badge variant="default" className="bg-green-500">
               <Check className="mr-1 h-3 w-3" />
               Connected
@@ -134,65 +245,14 @@ export function GoogleSearchConsoleIntegration() {
               Connect your Google Search Console to import organic search impressions, clicks, CTR, and average position.
             </p>
             
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="gsc-client-id">OAuth Client ID</Label>
-                <Input
-                  id="gsc-client-id"
-                  type="text"
-                  placeholder="Your OAuth 2.0 Client ID"
-                  value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="gsc-client-secret">OAuth Client Secret</Label>
-                <Input
-                  id="gsc-client-secret"
-                  type="password"
-                  placeholder="Your OAuth 2.0 Client Secret"
-                  value={clientSecret}
-                  onChange={(e) => setClientSecret(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="gsc-access-token">Access Token</Label>
-                <Input
-                  id="gsc-access-token"
-                  type="password"
-                  placeholder="Your OAuth Access Token"
-                  value={accessToken}
-                  onChange={(e) => setAccessToken(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="gsc-refresh-token">Refresh Token (optional)</Label>
-                <Input
-                  id="gsc-refresh-token"
-                  type="password"
-                  placeholder="Your OAuth Refresh Token"
-                  value={refreshToken}
-                  onChange={(e) => setRefreshToken(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <Button
-              onClick={handleConnect}
-              disabled={isSubmitting || !accessToken || !clientId || !clientSecret}
-              className="w-full"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                'Connect'
-              )}
+            <Button onClick={handleConnect} className="w-full">
+              <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Connect with Google
             </Button>
           </div>
         )}
@@ -238,7 +298,7 @@ export function GoogleSearchConsoleIntegration() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setStep('connect')}
+                onClick={() => setStep(isConnected ? 'connected' : 'connect')}
                 className="flex-1"
               >
                 Back
