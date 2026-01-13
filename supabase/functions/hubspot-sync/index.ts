@@ -74,6 +74,11 @@ async function getPipelines(accessToken: string) {
   console.log('Fetching HubSpot pipelines...');
   const data = await hubspotFetch(accessToken, '/crm/v3/pipelines/deals');
   
+  console.log(`Found ${data.results.length} pipelines:`);
+  data.results.forEach((pipeline: any) => {
+    console.log(`  - Pipeline: "${pipeline.label}" (ID: ${pipeline.id}) with ${pipeline.stages?.length || 0} stages`);
+  });
+  
   return data.results.map((pipeline: any) => ({
     id: pipeline.id,
     label: pipeline.label,

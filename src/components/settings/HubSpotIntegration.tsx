@@ -549,8 +549,11 @@ export const HubSpotIntegration: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <ScrollArea className="h-[300px] pr-4">
+              <ScrollArea className="h-[400px] pr-4">
                 <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Found {pipelines.length} pipeline(s) in HubSpot
+                  </p>
                   {pipelines.map(pipeline => (
                     <div 
                       key={pipeline.id}
