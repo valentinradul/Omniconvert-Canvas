@@ -24,6 +24,7 @@ interface FieldMapping {
   amountField: string;
   closeDateField: string;
   countryField?: string;
+  dealTypeField?: string; // For inbound/outbound classification
 }
 
 interface HubSpotDeal {
@@ -126,6 +127,7 @@ async function fetchDeals(
     fieldMapping.amountField,
     fieldMapping.closeDateField,
     fieldMapping.countryField,
+    fieldMapping.dealTypeField,
   ].filter(Boolean);
 
   // Build filters
@@ -182,6 +184,7 @@ async function fetchDeals(
     stageId: deal.properties.dealstage,
     pipelineId: deal.properties.pipeline,
     forecastCategory: deal.properties.hs_forecast_category || null,
+    dealType: fieldMapping.dealTypeField ? deal.properties[fieldMapping.dealTypeField] : null,
     rawProperties: deal.properties,
   }));
 

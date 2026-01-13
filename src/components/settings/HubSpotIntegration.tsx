@@ -74,6 +74,7 @@ export const HubSpotIntegration: React.FC = () => {
     clientNameField: 'dealname',
     amountField: 'amount',
     closeDateField: 'closedate',
+    dealTypeField: '',
   });
 
   // Preview state
@@ -102,6 +103,7 @@ export const HubSpotIntegration: React.FC = () => {
         clientNameField: 'dealname',
         amountField: 'amount',
         closeDateField: 'closedate',
+        dealTypeField: '',
       });
       setWizardStep('complete');
     }
@@ -256,6 +258,7 @@ export const HubSpotIntegration: React.FC = () => {
         clientNameField: 'dealname',
         amountField: 'amount',
         closeDateField: 'closedate',
+        dealTypeField: '',
       });
       setPreviewDeals([]);
       setSyncStatus('idle');
@@ -705,6 +708,28 @@ export const HubSpotIntegration: React.FC = () => {
                       ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Deal Type Field (Inbound/Outbound)</Label>
+                <Select 
+                  value={fieldMapping.dealTypeField || ''}
+                  onValueChange={(value) => setFieldMapping(prev => ({ ...prev, dealTypeField: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select deal type field (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {properties.map(prop => (
+                      <SelectItem key={prop.name} value={prop.name}>
+                        {prop.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Select the HubSpot field that indicates if a deal is inbound or outbound
+                </p>
               </div>
             </div>
             <div className="flex justify-between pt-4">

@@ -24,6 +24,7 @@ export interface HubSpotDealPreview {
   stageId: string | null;
   pipelineId: string | null;
   forecastCategory: string | null;
+  dealType: string | null;
   rawProperties: Record<string, string | null>;
 }
 
@@ -39,6 +40,7 @@ export interface FieldMapping {
   amountField: string;
   closeDateField: string;
   countryField?: string;
+  dealTypeField?: string; // For inbound/outbound classification
 }
 
 export interface HubSpotConfig {
