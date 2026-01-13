@@ -117,8 +117,16 @@ export const HubSpotIntegration: React.FC = () => {
     setIsConnecting(true);
     try {
       // Test connection by fetching pipelines
+      console.log('Fetching pipelines with access token...');
       const fetchedPipelines = await getPipelines(accessToken);
+      console.log('Fetched pipelines:', fetchedPipelines);
+      
       const fetchedProperties = await getDealProperties(accessToken);
+      console.log('Fetched properties:', fetchedProperties);
+      
+      if (!fetchedPipelines || fetchedPipelines.length === 0) {
+        toast.warning('No pipelines found in your HubSpot account');
+      }
       
       setPipelines(fetchedPipelines);
       setProperties(fetchedProperties);
@@ -532,26 +540,36 @@ export const HubSpotIntegration: React.FC = () => {
                 Choose which deal pipelines you want to sync from HubSpot.
               </p>
             </div>
-            <div className="space-y-2">
-              {pipelines.map(pipeline => (
-                <div 
-                  key={pipeline.id}
-                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                  onClick={() => handlePipelineToggle(pipeline.id)}
-                >
-                  <Checkbox 
-                    checked={selectedPipelines.includes(pipeline.id)}
-                    onCheckedChange={() => handlePipelineToggle(pipeline.id)}
-                  />
-                  <div>
-                    <p className="font-medium">{pipeline.label}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {pipeline.stages.length} stages
-                    </p>
+            {pipelines.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-muted-foreground">No pipelines found in your HubSpot account.</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Make sure your HubSpot account has at least one deal pipeline configured.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {pipelines.map(pipeline => (
+                  <div 
+                    key={pipeline.id}
+                    className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                    onClick={() => handlePipelineToggle(pipeline.id)}
+                  >
+                    <Checkbox 
+                      checked={selectedPipelines.includes(pipeline.id)}
+                      onCheckedChange={() => handlePipelineToggle(pipeline.id)}
+                    />
+                    <div>
+                      <p className="font-medium">{pipeline.label}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {pipeline.stages.length} stages
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             <div className="flex justify-between pt-4">
               <Button variant="outline" onClick={() => setWizardStep('connect')}>
                 <ChevronLeft className="h-4 w-4 mr-1" />
