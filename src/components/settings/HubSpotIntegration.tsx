@@ -81,6 +81,7 @@ export const HubSpotIntegration: React.FC = () => {
   const [previewDeals, setPreviewDeals] = useState<HubSpotDealPreview[]>([]);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [previewCount, setPreviewCount] = useState({ total: 0, filtered: 0 });
+  const [dealTypeFilter, setDealTypeFilter] = useState<'all' | 'inbound' | 'outbound'>('all');
 
   // Sync state
   const [syncStatus, setSyncStatus] = useState<'idle' | 'running' | 'completed' | 'failed'>('idle');
@@ -185,13 +186,14 @@ export const HubSpotIntegration: React.FC = () => {
   };
 
   // Load preview
-  const loadPreview = async () => {
+  const loadPreview = async (filterOverride?: 'all' | 'inbound' | 'outbound') => {
     setIsLoadingPreview(true);
     try {
       const result = await fetchDealsPreview(
         accessToken || undefined,
         selectedStages,
-        fieldMapping
+        fieldMapping,
+        { dealTypeFilter: filterOverride ?? dealTypeFilter }
       );
       setPreviewDeals(result.deals);
       setPreviewCount({ total: result.totalCount, filtered: result.filteredCount });
@@ -201,6 +203,12 @@ export const HubSpotIntegration: React.FC = () => {
     } finally {
       setIsLoadingPreview(false);
     }
+  };
+
+  // Handle deal type filter change
+  const handleDealTypeFilterChange = (value: 'all' | 'inbound' | 'outbound') => {
+    setDealTypeFilter(value);
+    loadPreview(value);
   };
 
   // Save configuration
@@ -757,13 +765,25 @@ export const HubSpotIntegration: React.FC = () => {
                   Showing {previewCount.filtered} of {previewCount.total} deals
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={loadPreview} disabled={isLoadingPreview}>
-                {isLoadingPreview ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select value={dealTypeFilter} onValueChange={(v) => handleDealTypeFilterChange(v as 'all' | 'inbound' | 'outbound')}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Deals</SelectItem>
+                    <SelectItem value="inbound">Inbound Only</SelectItem>
+                    <SelectItem value="outbound">Outbound Only</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" onClick={() => loadPreview()} disabled={isLoadingPreview}>
+                  {isLoadingPreview ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
             
             <ScrollArea className="h-[300px]">
@@ -783,6 +803,7 @@ export const HubSpotIntegration: React.FC = () => {
                       <TableHead>Deal Name</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Close Date</TableHead>
+                      <TableHead>Type</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -792,6 +813,15 @@ export const HubSpotIntegration: React.FC = () => {
                         <TableCell>${deal.amount.toLocaleString()}</TableCell>
                         <TableCell>
                           {deal.closeDate ? format(new Date(deal.closeDate), 'MMM d, yyyy') : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {deal.dealType ? (
+                            <Badge variant={deal.dealType.toLowerCase().includes('inbound') ? 'default' : 'secondary'}>
+                              {deal.dealType}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

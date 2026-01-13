@@ -113,9 +113,12 @@ async function fetchDeals(
     dateTo?: string | null;
     sortBy?: 'closeDate' | 'amount' | 'name';
     sortOrder?: 'asc' | 'desc';
+    dealTypeFilter?: 'all' | 'inbound' | 'outbound';
   }
 ) {
   console.log('Fetching HubSpot deals...');
+  console.log('Deal type filter:', options?.dealTypeFilter);
+  console.log('Deal type field:', fieldMapping.dealTypeField);
   
   const properties = [
     'dealname',
@@ -178,7 +181,7 @@ async function fetchDeals(
     body: JSON.stringify(searchBody),
   });
 
-  const deals = data.results.map((deal: HubSpotDeal) => ({
+  let deals = data.results.map((deal: HubSpotDeal) => ({
     id: deal.id,
     name: deal.properties.dealname || deal.properties[fieldMapping.clientNameField] || 'Unnamed Deal',
     amount: parseFloat(deal.properties[fieldMapping.amountField] || deal.properties.amount || '0'),
@@ -190,9 +193,25 @@ async function fetchDeals(
     rawProperties: deal.properties,
   }));
 
+  // Apply deal type filter client-side (HubSpot search doesn't support CONTAINS on all fields)
+  const totalBeforeFilter = deals.length;
+  if (options?.dealTypeFilter && options.dealTypeFilter !== 'all' && fieldMapping.dealTypeField) {
+    deals = deals.filter(deal => {
+      if (!deal.dealType) return false;
+      const dealTypeLower = deal.dealType.toLowerCase();
+      if (options.dealTypeFilter === 'inbound') {
+        return dealTypeLower.includes('inbound');
+      } else if (options.dealTypeFilter === 'outbound') {
+        return dealTypeLower.includes('outbound');
+      }
+      return true;
+    });
+    console.log(`Filtered from ${totalBeforeFilter} to ${deals.length} deals by deal type: ${options.dealTypeFilter}`);
+  }
+
   return {
     deals,
-    totalCount: data.total || deals.length,
+    totalCount: data.total || totalBeforeFilter,
     filteredCount: deals.length,
   };
 }
@@ -399,7 +418,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action, companyId, accessToken, useStoredCredentials, config, selectedStages, fieldMapping, dateFrom, dateTo, sortBy, sortOrder } = body;
+    const { action, companyId, accessToken, useStoredCredentials, config, selectedStages, fieldMapping, dateFrom, dateTo, sortBy, sortOrder, dealTypeFilter } = body;
 
     console.log(`HubSpot sync action: ${action} for company: ${companyId}`);
 
@@ -460,7 +479,7 @@ Deno.serve(async (req) => {
           clientNameField: 'dealname',
           amountField: 'amount',
           closeDateField: 'closedate',
-        }, { dateFrom, dateTo, sortBy, sortOrder });
+        }, { dateFrom, dateTo, sortBy, sortOrder, dealTypeFilter });
         break;
 
       case 'save-config':
