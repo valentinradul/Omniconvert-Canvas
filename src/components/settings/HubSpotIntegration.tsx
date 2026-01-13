@@ -650,88 +650,90 @@ export const HubSpotIntegration: React.FC = () => {
                 Select which HubSpot fields to use for syncing.
               </p>
             </div>
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <Label>Deal/Client Name Field</Label>
-                <Select 
-                  value={fieldMapping.clientNameField}
-                  onValueChange={(value) => setFieldMapping(prev => ({ ...prev, clientNameField: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties.map(prop => (
-                      <SelectItem key={prop.name} value={prop.name}>
-                        {prop.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Amount Field</Label>
-                <Select 
-                  value={fieldMapping.amountField}
-                  onValueChange={(value) => setFieldMapping(prev => ({ ...prev, amountField: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties
-                      .filter(p => p.type === 'number')
-                      .map(prop => (
+            <ScrollArea className="h-[350px] pr-4">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label>Deal/Client Name Field</Label>
+                  <Select 
+                    value={fieldMapping.clientNameField}
+                    onValueChange={(value) => setFieldMapping(prev => ({ ...prev, clientNameField: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {properties.map(prop => (
                         <SelectItem key={prop.name} value={prop.name}>
                           {prop.label}
                         </SelectItem>
                       ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Close Date Field</Label>
-                <Select 
-                  value={fieldMapping.closeDateField}
-                  onValueChange={(value) => setFieldMapping(prev => ({ ...prev, closeDateField: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties
-                      .filter(p => p.type === 'date' || p.type === 'datetime')
-                      .map(prop => (
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Amount Field</Label>
+                  <Select 
+                    value={fieldMapping.amountField}
+                    onValueChange={(value) => setFieldMapping(prev => ({ ...prev, amountField: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {properties
+                        .filter(p => p.type === 'number')
+                        .map(prop => (
+                          <SelectItem key={prop.name} value={prop.name}>
+                            {prop.label}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Close Date Field</Label>
+                  <Select 
+                    value={fieldMapping.closeDateField}
+                    onValueChange={(value) => setFieldMapping(prev => ({ ...prev, closeDateField: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {properties
+                        .filter(p => p.type === 'date' || p.type === 'datetime')
+                        .map(prop => (
+                          <SelectItem key={prop.name} value={prop.name}>
+                            {prop.label}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Deal Type Field (Inbound/Outbound)</Label>
+                  <Select 
+                    value={fieldMapping.dealTypeField || ''}
+                    onValueChange={(value) => setFieldMapping(prev => ({ ...prev, dealTypeField: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select deal type field (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {properties.map(prop => (
                         <SelectItem key={prop.name} value={prop.name}>
                           {prop.label}
                         </SelectItem>
                       ))}
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select the HubSpot field that indicates if a deal is inbound or outbound
+                  </p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Deal Type Field (Inbound/Outbound)</Label>
-                <Select 
-                  value={fieldMapping.dealTypeField || ''}
-                  onValueChange={(value) => setFieldMapping(prev => ({ ...prev, dealTypeField: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select deal type field (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    {properties.map(prop => (
-                      <SelectItem key={prop.name} value={prop.name}>
-                        {prop.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Select the HubSpot field that indicates if a deal is inbound or outbound
-                </p>
-              </div>
-            </div>
+            </ScrollArea>
             <div className="flex justify-between pt-4">
               <Button variant="outline" onClick={() => setWizardStep('stages')}>
                 <ChevronLeft className="h-4 w-4 mr-1" />
