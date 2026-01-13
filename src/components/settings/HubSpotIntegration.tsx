@@ -549,26 +549,28 @@ export const HubSpotIntegration: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {pipelines.map(pipeline => (
-                  <div 
-                    key={pipeline.id}
-                    className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                    onClick={() => handlePipelineToggle(pipeline.id)}
-                  >
-                    <Checkbox 
-                      checked={selectedPipelines.includes(pipeline.id)}
-                      onCheckedChange={() => handlePipelineToggle(pipeline.id)}
-                    />
-                    <div>
-                      <p className="font-medium">{pipeline.label}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {pipeline.stages.length} stages
-                      </p>
+              <ScrollArea className="h-[300px] pr-4">
+                <div className="space-y-2">
+                  {pipelines.map(pipeline => (
+                    <div 
+                      key={pipeline.id}
+                      className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                      onClick={() => handlePipelineToggle(pipeline.id)}
+                    >
+                      <Checkbox 
+                        checked={selectedPipelines.includes(pipeline.id)}
+                        onCheckedChange={() => handlePipelineToggle(pipeline.id)}
+                      />
+                      <div>
+                        <p className="font-medium">{pipeline.label}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {pipeline.stages.length} stages
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </ScrollArea>
             )}
             <div className="flex justify-between pt-4">
               <Button variant="outline" onClick={() => setWizardStep('connect')}>
