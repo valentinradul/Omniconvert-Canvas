@@ -221,6 +221,7 @@ export function useHubSpotIntegration() {
       dateTo?: string | null;
       sortBy?: 'closeDate' | 'amount' | 'name';
       sortOrder?: 'asc' | 'desc';
+      dealTypeFilter?: 'all' | 'inbound' | 'outbound';
     }
   ): Promise<{ deals: HubSpotDealPreview[]; totalCount: number; filteredCount: number }> => {
     if (!selectedCompanyId || !session?.access_token) {
@@ -238,7 +239,8 @@ export function useHubSpotIntegration() {
         dateFrom: options?.dateFrom || null,
         dateTo: options?.dateTo || null,
         sortBy: options?.sortBy || 'closeDate',
-        sortOrder: options?.sortOrder || 'desc'
+        sortOrder: options?.sortOrder || 'desc',
+        dealTypeFilter: options?.dealTypeFilter || 'all'
       }
     });
 
