@@ -157,13 +157,15 @@ async function fetchDeals(
     });
   }
 
+  const sortDirection = options?.sortOrder === 'asc' ? 'ASCENDING' : 'DESCENDING';
+  
   const searchBody: any = {
     properties,
     limit: 100,
     sorts: [{
       propertyName: options?.sortBy === 'name' ? 'dealname' : 
                     options?.sortBy === 'amount' ? 'amount' : 'closedate',
-      direction: options?.sortOrder?.toUpperCase() || 'DESCENDING',
+      direction: sortDirection,
     }],
   };
 
