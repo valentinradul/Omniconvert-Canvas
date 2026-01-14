@@ -54,6 +54,7 @@ export const MetaAdsIntegration: React.FC = () => {
   const [dateRangePreset, setDateRangePreset] = useState<'last_7d' | 'last_30d' | 'last_90d'>('last_30d');
   const [isFetchingCampaigns, setIsFetchingCampaigns] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ACTIVE' | 'PAUSED' | 'DELETED'>('all');
   const [integrationConfig, setIntegrationConfig] = useState<MetaAdsConfig | null>(null);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
 
@@ -321,38 +322,71 @@ export const MetaAdsIntegration: React.FC = () => {
 
   // Campaign selection
   if (wizardStep === 'configure' && isOAuthConnected) {
+    const filteredCampaigns = statusFilter === 'all' 
+      ? campaigns 
+      : campaigns.filter(c => c.status === statusFilter);
+    
+    const getStatusBadgeVariant = (status: string) => {
+      switch (status) {
+        case 'ACTIVE': return 'default';
+        case 'PAUSED': return 'secondary';
+        default: return 'outline';
+      }
+    };
+
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <h4 className="font-medium">Select Campaigns</h4>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setSelectedCampaigns(
-              selectedCampaigns.length === campaigns.length ? [] : campaigns.map(c => c.id)
-            )}
-          >
-            {selectedCampaigns.length === campaigns.length ? 'Deselect All' : 'Select All'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+              <SelectTrigger className="w-[130px] h-8">
+                <SelectValue placeholder="Filter status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="PAUSED">Paused</SelectItem>
+                <SelectItem value="DELETED">Off</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setSelectedCampaigns(
+                selectedCampaigns.length === filteredCampaigns.length ? [] : filteredCampaigns.map(c => c.id)
+              )}
+            >
+              {selectedCampaigns.length === filteredCampaigns.length && filteredCampaigns.length > 0 ? 'Deselect All' : 'Select All'}
+            </Button>
+          </div>
         </div>
 
         <div className="border rounded-lg max-h-48 overflow-y-auto">
-          {campaigns.map(campaign => (
-            <div key={campaign.id} className="flex items-center gap-3 p-3 border-b last:border-b-0 hover:bg-muted/50">
-              <Checkbox
-                checked={selectedCampaigns.includes(campaign.id)}
-                onCheckedChange={() => {
-                  setSelectedCampaigns(prev => 
-                    prev.includes(campaign.id) ? prev.filter(id => id !== campaign.id) : [...prev, campaign.id]
-                  );
-                }}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{campaign.name}</p>
-                <p className="text-xs text-muted-foreground">{campaign.status}</p>
-              </div>
+          {filteredCampaigns.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              No campaigns found with selected status
             </div>
-          ))}
+          ) : (
+            filteredCampaigns.map(campaign => (
+              <div key={campaign.id} className="flex items-center gap-3 p-3 border-b last:border-b-0 hover:bg-muted/50">
+                <Checkbox
+                  checked={selectedCampaigns.includes(campaign.id)}
+                  onCheckedChange={() => {
+                    setSelectedCampaigns(prev => 
+                      prev.includes(campaign.id) ? prev.filter(id => id !== campaign.id) : [...prev, campaign.id]
+                    );
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{campaign.name}</p>
+                  <Badge variant={getStatusBadgeVariant(campaign.status)} className="text-xs">
+                    {campaign.status === 'DELETED' ? 'Off' : campaign.status}
+                  </Badge>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="space-y-2">
