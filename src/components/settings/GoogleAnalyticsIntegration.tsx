@@ -131,10 +131,27 @@ export function GoogleAnalyticsIntegration() {
     if (!currentCompany?.id) return;
 
     try {
+      // First get the access token from oauth tokens
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('company_oauth_tokens')
+        .select('access_token')
+        .eq('company_id', currentCompany.id)
+        .eq('provider', 'google_analytics')
+        .maybeSingle();
+
+      if (tokenError) throw tokenError;
+      if (!tokenData?.access_token) {
+        toast.error('No Google Analytics connection found');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('fetch-google-analytics', {
         body: {
-          action: 'list_properties',
+          action: 'get-properties',
           companyId: currentCompany.id,
+          config: {
+            accessToken: tokenData.access_token,
+          },
         },
       });
 
