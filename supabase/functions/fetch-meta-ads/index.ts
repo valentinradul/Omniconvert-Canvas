@@ -70,7 +70,7 @@ serve(async (req) => {
         break;
 
       case "get-campaigns":
-        result = await getCampaigns(accessToken, adAccountId);
+        result = await getCampaigns(accessToken, adAccountId, body.includeDeliveryData);
         break;
 
       case "save-config":
@@ -121,8 +121,10 @@ async function testConnection(accessToken: string, adAccountId: string) {
   return { success: true, accountName: data.name };
 }
 
-async function getCampaigns(accessToken: string, adAccountId: string) {
+async function getCampaigns(accessToken: string, adAccountId: string, includeDeliveryData: boolean = true) {
   const accountId = adAccountId.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
+  
+  console.log(`Fetching campaigns for account: ${accountId}, includeDeliveryData: ${includeDeliveryData}`);
   
   const response = await fetch(
     `${META_GRAPH_API_BASE}/${accountId}/campaigns?fields=id,name,status,objective&limit=100&access_token=${accessToken}`
@@ -130,11 +132,65 @@ async function getCampaigns(accessToken: string, adAccountId: string) {
 
   if (!response.ok) {
     const error = await response.json();
+    console.error("Failed to fetch campaigns:", error);
     throw new Error(error.error?.message || "Failed to fetch campaigns");
   }
 
   const data = await response.json();
-  return { campaigns: data.data || [] };
+  const campaigns = data.data || [];
+  
+  if (!includeDeliveryData || campaigns.length === 0) {
+    return { campaigns };
+  }
+  
+  // Fetch delivery data (impressions) for last 30 days
+  const now = new Date();
+  const since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const until = now.toISOString().split('T')[0];
+  
+  console.log(`Fetching delivery data from ${since} to ${until}`);
+  
+  // Get insights at campaign level for last 30 days
+  const insightsUrl = `${META_GRAPH_API_BASE}/${accountId}/insights?` +
+    `level=campaign` +
+    `&fields=campaign_id,impressions` +
+    `&time_range={"since":"${since}","until":"${until}"}` +
+    `&access_token=${accessToken}`;
+  
+  try {
+    const insightsResponse = await fetch(insightsUrl);
+    
+    if (insightsResponse.ok) {
+      const insightsData = await insightsResponse.json();
+      const insights = insightsData.data || [];
+      
+      console.log(`Got ${insights.length} insight records`);
+      
+      // Create a map of campaign_id to total impressions
+      const deliveryMap = new Map<string, number>();
+      for (const insight of insights) {
+        const currentImpressions = deliveryMap.get(insight.campaign_id) || 0;
+        deliveryMap.set(insight.campaign_id, currentImpressions + (parseInt(insight.impressions) || 0));
+      }
+      
+      // Add delivery info to campaigns
+      const campaignsWithDelivery = campaigns.map((campaign: any) => ({
+        ...campaign,
+        hasRecentDelivery: deliveryMap.has(campaign.id) && (deliveryMap.get(campaign.id) || 0) > 0,
+        recentImpressions: deliveryMap.get(campaign.id) || 0,
+      }));
+      
+      console.log(`Campaigns with recent delivery: ${campaignsWithDelivery.filter((c: any) => c.hasRecentDelivery).length}`);
+      
+      return { campaigns: campaignsWithDelivery };
+    } else {
+      console.warn("Could not fetch insights, returning campaigns without delivery data");
+      return { campaigns };
+    }
+  } catch (error) {
+    console.warn("Error fetching insights:", error);
+    return { campaigns };
+  }
 }
 
 async function saveConfig(

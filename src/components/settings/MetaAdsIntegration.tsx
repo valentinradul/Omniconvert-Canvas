@@ -28,6 +28,8 @@ interface MetaAdsCampaign {
   name: string;
   status: string;
   objective?: string;
+  hasRecentDelivery?: boolean;
+  recentImpressions?: number;
 }
 
 interface MetaAdsConfig {
@@ -54,7 +56,7 @@ export const MetaAdsIntegration: React.FC = () => {
   const [dateRangePreset, setDateRangePreset] = useState<'last_7d' | 'last_30d' | 'last_90d'>('last_30d');
   const [isFetchingCampaigns, setIsFetchingCampaigns] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'ACTIVE' | 'PAUSED' | 'DELETED'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ACTIVE' | 'PAUSED' | 'DELETED' | 'DELIVERED_30D'>('all');
   const [integrationConfig, setIntegrationConfig] = useState<MetaAdsConfig | null>(null);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
 
@@ -324,7 +326,9 @@ export const MetaAdsIntegration: React.FC = () => {
   if (wizardStep === 'configure' && isOAuthConnected) {
     const filteredCampaigns = statusFilter === 'all' 
       ? campaigns 
-      : campaigns.filter(c => c.status === statusFilter);
+      : statusFilter === 'DELIVERED_30D'
+        ? campaigns.filter(c => c.hasRecentDelivery)
+        : campaigns.filter(c => c.status === statusFilter);
     
     const getStatusBadgeVariant = (status: string) => {
       switch (status) {
@@ -340,11 +344,12 @@ export const MetaAdsIntegration: React.FC = () => {
           <h4 className="font-medium">Select Campaigns</h4>
           <div className="flex items-center gap-2">
             <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-              <SelectTrigger className="w-[130px] h-8">
+              <SelectTrigger className="w-[180px] h-8">
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">All Campaigns</SelectItem>
+                <SelectItem value="DELIVERED_30D">Delivered (30 days)</SelectItem>
                 <SelectItem value="ACTIVE">Active</SelectItem>
                 <SelectItem value="PAUSED">Paused</SelectItem>
                 <SelectItem value="DELETED">Off</SelectItem>
@@ -379,8 +384,15 @@ export const MetaAdsIntegration: React.FC = () => {
                   }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{campaign.name}</p>
-                  <Badge variant={getStatusBadgeVariant(campaign.status)} className="text-xs">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium truncate">{campaign.name}</p>
+                    {campaign.hasRecentDelivery && (
+                      <Badge variant="default" className="text-xs bg-green-600">
+                        Delivered
+                      </Badge>
+                    )}
+                  </div>
+                  <Badge variant={getStatusBadgeVariant(campaign.status)} className="text-xs mt-1">
                     {campaign.status === 'DELETED' ? 'Off' : campaign.status}
                   </Badge>
                 </div>
