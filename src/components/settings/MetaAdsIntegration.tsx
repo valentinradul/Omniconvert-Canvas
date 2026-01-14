@@ -347,21 +347,9 @@ export const MetaAdsIntegration: React.FC = () => {
 
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <h4 className="font-medium">Select Campaigns</h4>
-          <div className="flex items-center gap-2">
-            <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-              <SelectTrigger className="w-[180px] h-8">
-                <SelectValue placeholder="Filter status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Campaigns</SelectItem>
-                <SelectItem value="DELIVERED_30D">Delivered (30 days)</SelectItem>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="PAUSED">Paused</SelectItem>
-                <SelectItem value="DELETED">Off</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium">Select Campaigns</h4>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -371,6 +359,21 @@ export const MetaAdsIntegration: React.FC = () => {
             >
               {selectedCampaigns.length === filteredCampaigns.length && filteredCampaigns.length > 0 ? 'Deselect All' : 'Select All'}
             </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground">Filter:</Label>
+            <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Campaigns</SelectItem>
+                <SelectItem value="DELIVERED_30D">Delivered (30 days)</SelectItem>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="PAUSED">Paused</SelectItem>
+                <SelectItem value="DELETED">Off</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
