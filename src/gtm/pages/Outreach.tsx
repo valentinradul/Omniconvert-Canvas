@@ -7,55 +7,134 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { FunnelChart, ROIGauge, ExportButton, EmailScheduleTable, EmailScheduleChart } from '../components';
-import { Mail, Linkedin, Calculator, TrendingUp, Target, DollarSign, Building2 } from 'lucide-react';
+import { Mail, Linkedin, Calculator, TrendingUp, Target, DollarSign, Building2, Save, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useOutreachCampaigns } from '../hooks/useOutreachCampaigns';
+import { useCampaignDraft } from '../hooks/useCampaignDraft';
+
+interface OutreachFormData {
+  campaignName: string;
+  emailEnabled: boolean;
+  targetedCompanies: number;
+  contactsPerCompany: number;
+  emailsPerContact: number;
+  campaignDuration: number;
+  maxEmailsPerDay: number;
+  emailAddressCost: number;
+  maxEmailsPerDomain: number;
+  domainCostPerYear: number;
+  followUpInterval: number;
+  customEmailAddresses: number | null;
+  weekendSending: boolean;
+  emailAgencyCost: number;
+  emailInternalCost: number;
+  emailTechCost: number;
+  linkedinEnabled: boolean;
+  linkedinAccountsCount: number;
+  linkedinInvitesPerDay: number;
+  linkedinAccountCost: number;
+  connectionAcceptanceRate: number;
+  linkedinMeetingRate: number;
+  linkedinAgencyCost: number;
+  linkedinInternalCost: number;
+  linkedinTechCost: number;
+  aiCostPerCompany: number;
+  scrapingCostPerCompany: number;
+  meetingRate: number;
+  opportunityConversionRate: number;
+  closingRate: number;
+  revenuePerCustomer: number;
+}
+
+const defaultFormData: OutreachFormData = {
+  campaignName: '',
+  emailEnabled: true,
+  targetedCompanies: 30000,
+  contactsPerCompany: 4,
+  emailsPerContact: 5,
+  campaignDuration: 30,
+  maxEmailsPerDay: 30,
+  emailAddressCost: 2.5,
+  maxEmailsPerDomain: 5,
+  domainCostPerYear: 15,
+  followUpInterval: 3,
+  customEmailAddresses: null,
+  weekendSending: true,
+  emailAgencyCost: 0,
+  emailInternalCost: 0,
+  emailTechCost: 0,
+  linkedinEnabled: true,
+  linkedinAccountsCount: 10,
+  linkedinInvitesPerDay: 25,
+  linkedinAccountCost: 100,
+  connectionAcceptanceRate: 15,
+  linkedinMeetingRate: 5,
+  linkedinAgencyCost: 0,
+  linkedinInternalCost: 0,
+  linkedinTechCost: 0,
+  aiCostPerCompany: 0.0275,
+  scrapingCostPerCompany: 0.05,
+  meetingRate: 1,
+  opportunityConversionRate: 45,
+  closingRate: 5,
+  revenuePerCustomer: 10000,
+};
 
 const Outreach: React.FC = () => {
-  // Email Channel State
-  const [emailEnabled, setEmailEnabled] = useState(true);
-  const [targetedCompanies, setTargetedCompanies] = useState(30000);
-  const [contactsPerCompany, setContactsPerCompany] = useState(4);
-  const [emailsPerContact, setEmailsPerContact] = useState(5);
-  const [campaignDuration, setCampaignDuration] = useState(30);
-  const [maxEmailsPerDay, setMaxEmailsPerDay] = useState(30);
-  const [emailAddressCost, setEmailAddressCost] = useState(2.5);
-  const [maxEmailsPerDomain, setMaxEmailsPerDomain] = useState(5);
-  const [domainCostPerYear, setDomainCostPerYear] = useState(15);
-  const [followUpInterval, setFollowUpInterval] = useState(3);
-  const [customEmailAddresses, setCustomEmailAddresses] = useState<number | null>(null);
-  const [weekendSending, setWeekendSending] = useState(true);
+  const { createCampaign } = useOutreachCampaigns();
+  const [isSaving, setIsSaving] = useState(false);
 
-  // New Email costs
-  const [emailAgencyCost, setEmailAgencyCost] = useState(0);
-  const [emailInternalCost, setEmailInternalCost] = useState(0);
-  const [emailTechCost, setEmailTechCost] = useState(0);
+  // Use draft state persistence
+  const {
+    formData,
+    updateField,
+    hasSavedDraft,
+    lastSaved,
+    resetForm,
+    onSaveSuccess,
+    isInitialized,
+  } = useCampaignDraft<OutreachFormData>({
+    storageKey: 'outreach-campaign-draft',
+    defaultValues: defaultFormData,
+    autoSaveInterval: 5000, // Auto-save every 5 seconds
+  });
 
-  // LinkedIn Channel State
-  const [linkedinEnabled, setLinkedinEnabled] = useState(true);
-  const [linkedinAccountsCount, setLinkedinAccountsCount] = useState(10);
-  const [linkedinInvitesPerDay, setLinkedinInvitesPerDay] = useState(25);
-  const [linkedinAccountCost, setLinkedinAccountCost] = useState(100);
-  const [connectionAcceptanceRate, setConnectionAcceptanceRate] = useState(15);
-  const [linkedinMeetingRate, setLinkedinMeetingRate] = useState(5);
-
-  // New LinkedIn costs
-  const [linkedinAgencyCost, setLinkedinAgencyCost] = useState(0);
-  const [linkedinInternalCost, setLinkedinInternalCost] = useState(0);
-  const [linkedinTechCost, setLinkedinTechCost] = useState(0);
-
-  // AI & Scraping State
-  const [aiCostPerCompany, setAiCostPerCompany] = useState(0.0275);
-  const [scrapingCostPerCompany, setScrapingCostPerCompany] = useState(0.05);
-
-  // Funnel Performance State
-  const [meetingRate, setMeetingRate] = useState(1);
-  const [opportunityConversionRate, setOpportunityConversionRate] = useState(45);
-  const [closingRate, setClosingRate] = useState(5);
-  const [revenuePerCustomer, setRevenuePerCustomer] = useState(10000);
-
-  // Campaign Management State
-  const [campaignName, setCampaignName] = useState('');
+  // Destructure form data for easier access
+  const {
+    campaignName,
+    emailEnabled,
+    targetedCompanies,
+    contactsPerCompany,
+    emailsPerContact,
+    campaignDuration,
+    maxEmailsPerDay,
+    emailAddressCost,
+    maxEmailsPerDomain,
+    domainCostPerYear,
+    followUpInterval,
+    customEmailAddresses,
+    weekendSending,
+    emailAgencyCost,
+    emailInternalCost,
+    emailTechCost,
+    linkedinEnabled,
+    linkedinAccountsCount,
+    linkedinInvitesPerDay,
+    linkedinAccountCost,
+    connectionAcceptanceRate,
+    linkedinMeetingRate,
+    linkedinAgencyCost,
+    linkedinInternalCost,
+    linkedinTechCost,
+    aiCostPerCompany,
+    scrapingCostPerCompany,
+    meetingRate,
+    opportunityConversionRate,
+    closingRate,
+    revenuePerCustomer,
+  } = formData;
 
   // Calculate minimum campaign duration based on follow-up schedule
   const minCampaignDuration = useMemo(() => {
@@ -269,39 +348,48 @@ const Outreach: React.FC = () => {
       maximumFractionDigits: decimals,
     }).format(value);
   };
-
-  const saveCampaign = () => {
+  const saveCampaign = async () => {
     if (!campaignName.trim()) {
       toast.error('Please enter a campaign name');
       return;
     }
 
-    const campaign = {
-      id: Date.now().toString(),
-      name: campaignName,
-      createdAt: new Date().toISOString(),
-      emailEnabled,
-      linkedinEnabled,
-      targetedCompanies,
-      contactsPerCompany,
-      emailsPerContact,
-      campaignDuration: effectiveCampaignDuration,
-      followUpInterval,
-      meetingRate,
-      totalContacts: calculations.totalContacts,
-      totalCost: calculations.totalCost,
-      revenue: calculations.revenue,
-      roi: calculations.roi,
-      customers: calculations.customers
-    };
+    setIsSaving(true);
+    try {
+      await createCampaign({
+        name: campaignName,
+        email_enabled: emailEnabled,
+        linkedin_enabled: linkedinEnabled,
+        targeted_companies: targetedCompanies,
+        contacts_per_company: contactsPerCompany,
+        emails_per_contact: emailsPerContact,
+        campaign_duration: effectiveCampaignDuration,
+        follow_up_interval: followUpInterval,
+        meeting_rate: meetingRate,
+        opportunity_conversion_rate: opportunityConversionRate,
+        closing_rate: closingRate,
+        revenue_per_customer: revenuePerCustomer,
+        email_agency_cost: emailAgencyCost,
+        email_internal_cost: emailInternalCost,
+        email_tech_cost: emailTechCost,
+        linkedin_agency_cost: linkedinAgencyCost,
+        linkedin_internal_cost: linkedinInternalCost,
+        linkedin_tech_cost: linkedinTechCost,
+        total_contacts: calculations.totalContacts,
+        total_cost: calculations.totalCost,
+        revenue: calculations.revenue,
+        roi: calculations.roi,
+        customers: calculations.customers,
+      });
 
-    const existing = localStorage.getItem('savedCampaigns');
-    const campaigns = existing ? JSON.parse(existing) : [];
-    campaigns.push(campaign);
-    localStorage.setItem('savedCampaigns', JSON.stringify(campaigns));
-
-    toast.success(`Campaign "${campaignName}" saved successfully!`);
-    setCampaignName('');
+      toast.success(`Campaign "${campaignName}" saved to database!`);
+      onSaveSuccess(); // Clear draft and reset form
+    } catch (err) {
+      console.error('Error saving campaign:', err);
+      toast.error('Failed to save campaign');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -385,7 +473,7 @@ const Outreach: React.FC = () => {
                     <Mail className="h-5 w-5 text-blue-600" />
                     <CardTitle>Email Channel</CardTitle>
                   </div>
-                  <Switch checked={emailEnabled} onCheckedChange={setEmailEnabled} />
+                  <Switch checked={emailEnabled} onCheckedChange={(checked) => updateField('emailEnabled', checked)} />
                 </div>
               </CardHeader>
               <CardContent className={`space-y-4 ${!emailEnabled ? 'opacity-50' : ''}`}>
@@ -395,7 +483,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={targetedCompanies}
-                      onChange={(e) => setTargetedCompanies(Number(e.target.value))}
+                      onChange={(e) => updateField('targetedCompanies', Number(e.target.value))}
                       disabled={!emailEnabled}
                     />
                   </div>
@@ -404,7 +492,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={contactsPerCompany}
-                      onChange={(e) => setContactsPerCompany(Number(e.target.value))}
+                      onChange={(e) => updateField('contactsPerCompany', Number(e.target.value))}
                       disabled={!emailEnabled}
                     />
                   </div>
@@ -413,7 +501,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={emailsPerContact}
-                      onChange={(e) => setEmailsPerContact(Number(e.target.value))}
+                      onChange={(e) => updateField('emailsPerContact', Number(e.target.value))}
                       disabled={!emailEnabled}
                     />
                   </div>
@@ -422,7 +510,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={campaignDuration}
-                      onChange={(e) => setCampaignDuration(Number(e.target.value))}
+                      onChange={(e) => updateField('campaignDuration', Number(e.target.value))}
                       disabled={!emailEnabled}
                       min={minCampaignDuration}
                     />
@@ -437,7 +525,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={maxEmailsPerDay}
-                      onChange={(e) => setMaxEmailsPerDay(Number(e.target.value))}
+                      onChange={(e) => updateField('maxEmailsPerDay', Number(e.target.value))}
                       disabled={!emailEnabled}
                     />
                   </div>
@@ -447,7 +535,7 @@ const Outreach: React.FC = () => {
                       type="number"
                       step="0.1"
                       value={emailAddressCost}
-                      onChange={(e) => setEmailAddressCost(Number(e.target.value))}
+                      onChange={(e) => updateField('emailAddressCost', Number(e.target.value))}
                       disabled={!emailEnabled}
                     />
                   </div>
@@ -456,7 +544,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={maxEmailsPerDomain}
-                      onChange={(e) => setMaxEmailsPerDomain(Number(e.target.value))}
+                      onChange={(e) => updateField('maxEmailsPerDomain', Number(e.target.value))}
                       disabled={!emailEnabled}
                     />
                   </div>
@@ -465,7 +553,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={domainCostPerYear}
-                      onChange={(e) => setDomainCostPerYear(Number(e.target.value))}
+                      onChange={(e) => updateField('domainCostPerYear', Number(e.target.value))}
                       disabled={!emailEnabled}
                     />
                   </div>
@@ -474,7 +562,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={followUpInterval}
-                      onChange={(e) => setFollowUpInterval(Number(e.target.value))}
+                      onChange={(e) => updateField('followUpInterval', Number(e.target.value))}
                       disabled={!emailEnabled}
                       min={1}
                     />
@@ -485,7 +573,7 @@ const Outreach: React.FC = () => {
                       type="number"
                       value={customEmailAddresses || ''}
                       placeholder={`Auto: ${calculations.emailAddressesNeeded}`}
-                      onChange={(e) => setCustomEmailAddresses(e.target.value ? Number(e.target.value) : null)}
+                      onChange={(e) => updateField('customEmailAddresses', e.target.value ? Number(e.target.value) : null)}
                       disabled={!emailEnabled}
                       min={1}
                     />
@@ -496,7 +584,7 @@ const Outreach: React.FC = () => {
                   <Checkbox
                     id="weekend-sending"
                     checked={weekendSending}
-                    onCheckedChange={(checked) => setWeekendSending(checked === true)}
+                    onCheckedChange={(checked) => updateField('weekendSending', checked === true)}
                     disabled={!emailEnabled}
                   />
                   <Label htmlFor="weekend-sending" className="text-sm">
@@ -517,7 +605,7 @@ const Outreach: React.FC = () => {
                       <Input
                         type="number"
                         value={emailAgencyCost}
-                        onChange={(e) => setEmailAgencyCost(Number(e.target.value))}
+                        onChange={(e) => updateField('emailAgencyCost', Number(e.target.value))}
                         disabled={!emailEnabled}
                       />
                     </div>
@@ -526,7 +614,7 @@ const Outreach: React.FC = () => {
                       <Input
                         type="number"
                         value={emailInternalCost}
-                        onChange={(e) => setEmailInternalCost(Number(e.target.value))}
+                        onChange={(e) => updateField('emailInternalCost', Number(e.target.value))}
                         disabled={!emailEnabled}
                       />
                     </div>
@@ -535,7 +623,7 @@ const Outreach: React.FC = () => {
                       <Input
                         type="number"
                         value={emailTechCost}
-                        onChange={(e) => setEmailTechCost(Number(e.target.value))}
+                        onChange={(e) => updateField('emailTechCost', Number(e.target.value))}
                         disabled={!emailEnabled}
                       />
                     </div>
@@ -552,7 +640,7 @@ const Outreach: React.FC = () => {
                     <Linkedin className="h-5 w-5 text-blue-700" />
                     <CardTitle>LinkedIn Channel</CardTitle>
                   </div>
-                  <Switch checked={linkedinEnabled} onCheckedChange={setLinkedinEnabled} />
+                  <Switch checked={linkedinEnabled} onCheckedChange={(checked) => updateField('linkedinEnabled', checked)} />
                 </div>
               </CardHeader>
               <CardContent className={`space-y-4 ${!linkedinEnabled ? 'opacity-50' : ''}`}>
@@ -562,7 +650,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={linkedinAccountsCount}
-                      onChange={(e) => setLinkedinAccountsCount(Number(e.target.value))}
+                      onChange={(e) => updateField('linkedinAccountsCount', Number(e.target.value))}
                       disabled={!linkedinEnabled}
                     />
                   </div>
@@ -571,7 +659,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={linkedinInvitesPerDay}
-                      onChange={(e) => setLinkedinInvitesPerDay(Number(e.target.value))}
+                      onChange={(e) => updateField('linkedinInvitesPerDay', Number(e.target.value))}
                       disabled={!linkedinEnabled}
                     />
                   </div>
@@ -580,7 +668,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={linkedinAccountCost}
-                      onChange={(e) => setLinkedinAccountCost(Number(e.target.value))}
+                      onChange={(e) => updateField('linkedinAccountCost', Number(e.target.value))}
                       disabled={!linkedinEnabled}
                     />
                   </div>
@@ -589,7 +677,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={connectionAcceptanceRate}
-                      onChange={(e) => setConnectionAcceptanceRate(Number(e.target.value))}
+                      onChange={(e) => updateField('connectionAcceptanceRate', Number(e.target.value))}
                       disabled={!linkedinEnabled}
                     />
                   </div>
@@ -598,7 +686,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={linkedinMeetingRate}
-                      onChange={(e) => setLinkedinMeetingRate(Number(e.target.value))}
+                      onChange={(e) => updateField('linkedinMeetingRate', Number(e.target.value))}
                       disabled={!linkedinEnabled}
                     />
                   </div>
@@ -617,7 +705,7 @@ const Outreach: React.FC = () => {
                       <Input
                         type="number"
                         value={linkedinAgencyCost}
-                        onChange={(e) => setLinkedinAgencyCost(Number(e.target.value))}
+                        onChange={(e) => updateField('linkedinAgencyCost', Number(e.target.value))}
                         disabled={!linkedinEnabled}
                       />
                     </div>
@@ -626,7 +714,7 @@ const Outreach: React.FC = () => {
                       <Input
                         type="number"
                         value={linkedinInternalCost}
-                        onChange={(e) => setLinkedinInternalCost(Number(e.target.value))}
+                        onChange={(e) => updateField('linkedinInternalCost', Number(e.target.value))}
                         disabled={!linkedinEnabled}
                       />
                     </div>
@@ -635,7 +723,7 @@ const Outreach: React.FC = () => {
                       <Input
                         type="number"
                         value={linkedinTechCost}
-                        onChange={(e) => setLinkedinTechCost(Number(e.target.value))}
+                        onChange={(e) => updateField('linkedinTechCost', Number(e.target.value))}
                         disabled={!linkedinEnabled}
                       />
                     </div>
@@ -657,7 +745,7 @@ const Outreach: React.FC = () => {
                       type="number"
                       step="0.001"
                       value={aiCostPerCompany}
-                      onChange={(e) => setAiCostPerCompany(Number(e.target.value))}
+                      onChange={(e) => updateField('aiCostPerCompany', Number(e.target.value))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -666,7 +754,7 @@ const Outreach: React.FC = () => {
                       type="number"
                       step="0.01"
                       value={scrapingCostPerCompany}
-                      onChange={(e) => setScrapingCostPerCompany(Number(e.target.value))}
+                      onChange={(e) => updateField('scrapingCostPerCompany', Number(e.target.value))}
                     />
                   </div>
                 </div>
@@ -684,7 +772,7 @@ const Outreach: React.FC = () => {
                     <Label>% of Companies Generating Meetings (Email): {meetingRate}%</Label>
                     <Slider
                       value={[meetingRate]}
-                      onValueChange={(value) => setMeetingRate(value[0])}
+                      onValueChange={(value) => updateField('meetingRate', value[0])}
                       max={10}
                       step={0.01}
                       className="w-full"
@@ -694,7 +782,7 @@ const Outreach: React.FC = () => {
                     <Label>% of Meetings → Opportunities: {opportunityConversionRate}%</Label>
                     <Slider
                       value={[opportunityConversionRate]}
-                      onValueChange={(value) => setOpportunityConversionRate(value[0])}
+                      onValueChange={(value) => updateField('opportunityConversionRate', value[0])}
                       max={100}
                       step={1}
                       className="w-full"
@@ -704,7 +792,7 @@ const Outreach: React.FC = () => {
                     <Label>% of Opportunities Closed: {closingRate}%</Label>
                     <Slider
                       value={[closingRate]}
-                      onValueChange={(value) => setClosingRate(value[0])}
+                      onValueChange={(value) => updateField('closingRate', value[0])}
                       max={50}
                       step={1}
                       className="w-full"
@@ -715,7 +803,7 @@ const Outreach: React.FC = () => {
                     <Input
                       type="number"
                       value={revenuePerCustomer}
-                      onChange={(e) => setRevenuePerCustomer(Number(e.target.value))}
+                      onChange={(e) => updateField('revenuePerCustomer', Number(e.target.value))}
                     />
                   </div>
                 </div>
@@ -725,16 +813,33 @@ const Outreach: React.FC = () => {
             {/* Save Campaign */}
             <Card>
               <CardHeader>
-                <CardTitle>Save Campaign</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Save Campaign</CardTitle>
+                  {hasSavedDraft && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        Draft auto-saved
+                        {lastSaved && ` at ${lastSaved.toLocaleTimeString()}`}
+                      </Badge>
+                      <Button variant="ghost" size="sm" onClick={resetForm}>
+                        <RotateCcw className="h-4 w-4 mr-1" />
+                        Reset
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-4">
                   <Input
                     placeholder="Campaign name..."
                     value={campaignName}
-                    onChange={(e) => setCampaignName(e.target.value)}
+                    onChange={(e) => updateField('campaignName', e.target.value)}
                   />
-                  <Button onClick={saveCampaign}>Save Campaign</Button>
+                  <Button onClick={saveCampaign} disabled={isSaving}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSaving ? 'Saving...' : 'Save Campaign'}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
