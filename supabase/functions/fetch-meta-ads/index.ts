@@ -70,7 +70,7 @@ serve(async (req) => {
         break;
 
       case "get-campaigns":
-        result = await getCampaigns(accessToken, adAccountId, body.includeDeliveryData);
+        result = await getCampaigns(accessToken, adAccountId, body.includeDeliveryData, body.customDateRange);
         break;
 
       case "save-config":
@@ -121,7 +121,12 @@ async function testConnection(accessToken: string, adAccountId: string) {
   return { success: true, accountName: data.name };
 }
 
-async function getCampaigns(accessToken: string, adAccountId: string, includeDeliveryData: boolean = true) {
+async function getCampaigns(
+  accessToken: string, 
+  adAccountId: string, 
+  includeDeliveryData: boolean = true,
+  customDateRange?: { from: string; to: string }
+) {
   const accountId = adAccountId.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
   
   console.log(`Fetching campaigns for account: ${accountId}, includeDeliveryData: ${includeDeliveryData}`);
@@ -143,12 +148,20 @@ async function getCampaigns(accessToken: string, adAccountId: string, includeDel
     return { campaigns };
   }
   
-  // Fetch delivery data (impressions) for last 30 days
+  // Fetch delivery data (impressions) - use custom range or default to 30 days
   const now = new Date();
-  const since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const until = now.toISOString().split('T')[0];
+  let since: string;
+  let until: string;
   
-  console.log(`Fetching delivery data from ${since} to ${until}`);
+  if (customDateRange?.from && customDateRange?.to) {
+    since = customDateRange.from;
+    until = customDateRange.to;
+    console.log(`Using custom date range: ${since} to ${until}`);
+  } else {
+    since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    until = now.toISOString().split('T')[0];
+    console.log(`Using default 30-day range: ${since} to ${until}`);
+  }
   
   // Get insights at campaign level for last 30 days
   const insightsUrl = `${META_GRAPH_API_BASE}/${accountId}/insights?` +

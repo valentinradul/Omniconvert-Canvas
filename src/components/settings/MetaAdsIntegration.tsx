@@ -7,6 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { 
   Unlink, 
@@ -14,12 +16,15 @@ import {
   Settings2, 
   CheckCircle2, 
   Loader2, 
-  ChevronRight
+  ChevronRight,
+  CalendarIcon
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { useOAuth } from '@/hooks/useOAuth';
 import { useCompany } from '@/context/company/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
+import { DateRange } from 'react-day-picker';
 
 type WizardStep = 'connect' | 'configure' | 'complete';
 
@@ -35,7 +40,8 @@ interface MetaAdsCampaign {
 interface MetaAdsConfig {
   adAccountId: string;
   selectedCampaigns: string[];
-  dateRangePreset: 'last_7d' | 'last_30d' | 'last_90d';
+  dateRangePreset: 'last_7d' | 'last_30d' | 'last_90d' | 'custom';
+  customDateRange?: { from: string; to: string };
 }
 
 export const MetaAdsIntegration: React.FC = () => {
@@ -53,10 +59,14 @@ export const MetaAdsIntegration: React.FC = () => {
   const [adAccountId, setAdAccountId] = useState('');
   const [campaigns, setCampaigns] = useState<MetaAdsCampaign[]>([]);
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
-  const [dateRangePreset, setDateRangePreset] = useState<'last_7d' | 'last_30d' | 'last_90d'>('last_30d');
+  const [dateRangePreset, setDateRangePreset] = useState<'last_7d' | 'last_30d' | 'last_90d' | 'custom'>('last_30d');
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date()
+  });
   const [isFetchingCampaigns, setIsFetchingCampaigns] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'ACTIVE' | 'PAUSED' | 'DELETED' | 'DELIVERED_30D'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ACTIVE' | 'PAUSED' | 'DELETED' | 'DELIVERED_30D' | 'DELIVERED_CUSTOM'>('all');
   const [integrationConfig, setIntegrationConfig] = useState<MetaAdsConfig | null>(null);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
 
@@ -80,6 +90,12 @@ export const MetaAdsIntegration: React.FC = () => {
         setAdAccountId(config?.adAccountId || '');
         setSelectedCampaigns(config?.selectedCampaigns || []);
         setDateRangePreset(config?.dateRangePreset || 'last_30d');
+        if (config?.customDateRange) {
+          setCustomDateRange({
+            from: new Date(config.customDateRange.from),
+            to: new Date(config.customDateRange.to)
+          });
+        }
         setLastSyncAt(data.last_sync_at);
         
         if (isOAuthConnected && config?.adAccountId) {
@@ -95,7 +111,7 @@ export const MetaAdsIntegration: React.FC = () => {
     await connect();
   };
 
-  const handleFetchCampaigns = async () => {
+  const handleFetchCampaigns = async (customRange?: { from: string; to: string }) => {
     if (!adAccountId.trim()) {
       toast.error('Please enter your Ad Account ID');
       return;
@@ -115,6 +131,7 @@ export const MetaAdsIntegration: React.FC = () => {
           companyId: currentCompany?.id,
           accessToken,
           adAccountId,
+          customDateRange: customRange,
         },
       });
 
@@ -123,13 +140,26 @@ export const MetaAdsIntegration: React.FC = () => {
       }
 
       setCampaigns(data.campaigns);
-      setSelectedCampaigns(data.campaigns.map((c: MetaAdsCampaign) => c.id));
+      if (!customRange) {
+        // Only auto-select all when first loading, not when refreshing for custom filter
+        setSelectedCampaigns(data.campaigns.map((c: MetaAdsCampaign) => c.id));
+      }
       setWizardStep('configure');
       toast.success('Campaigns loaded!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to fetch campaigns');
     } finally {
       setIsFetchingCampaigns(false);
+    }
+  };
+
+  // Refetch campaigns when custom date range changes for DELIVERED_CUSTOM filter
+  const handleRefreshWithCustomRange = async () => {
+    if (customDateRange?.from && customDateRange?.to) {
+      await handleFetchCampaigns({
+        from: format(customDateRange.from, 'yyyy-MM-dd'),
+        to: format(customDateRange.to, 'yyyy-MM-dd'),
+      });
     }
   };
 
@@ -142,23 +172,31 @@ export const MetaAdsIntegration: React.FC = () => {
     try {
       const accessToken = await getAccessToken();
       
+      const configToSave: MetaAdsConfig = {
+        adAccountId,
+        selectedCampaigns,
+        dateRangePreset,
+        ...(dateRangePreset === 'custom' && customDateRange?.from && customDateRange?.to ? {
+          customDateRange: {
+            from: format(customDateRange.from, 'yyyy-MM-dd'),
+            to: format(customDateRange.to, 'yyyy-MM-dd')
+          }
+        } : {})
+      };
+      
       const { error } = await supabase.functions.invoke('fetch-meta-ads', {
         body: {
           action: 'save-config',
           companyId: currentCompany?.id,
           accessToken,
           adAccountId,
-          config: {
-            adAccountId,
-            selectedCampaigns,
-            dateRangePreset,
-          },
+          config: configToSave,
         },
       });
 
       if (error) throw error;
 
-      setIntegrationConfig({ adAccountId, selectedCampaigns, dateRangePreset });
+      setIntegrationConfig(configToSave);
       setWizardStep('complete');
       toast.success('Configuration saved!');
     } catch (err: any) {
@@ -287,7 +325,11 @@ export const MetaAdsIntegration: React.FC = () => {
             <span className="text-muted-foreground">Date Range:</span>
             <span className="ml-2 font-medium">
               {integrationConfig.dateRangePreset === 'last_7d' ? 'Last 7 days' :
-               integrationConfig.dateRangePreset === 'last_30d' ? 'Last 30 days' : 'Last 90 days'}
+               integrationConfig.dateRangePreset === 'last_30d' ? 'Last 30 days' : 
+               integrationConfig.dateRangePreset === 'last_90d' ? 'Last 90 days' :
+               integrationConfig.customDateRange ? 
+                 `${integrationConfig.customDateRange.from} to ${integrationConfig.customDateRange.to}` : 
+                 'Custom'}
             </span>
           </div>
         </div>
@@ -318,7 +360,7 @@ export const MetaAdsIntegration: React.FC = () => {
         </div>
 
         <Button 
-          onClick={handleFetchCampaigns}
+          onClick={() => handleFetchCampaigns()}
           disabled={isFetchingCampaigns || !adAccountId.trim()}
           className="w-full"
         >
@@ -333,7 +375,7 @@ export const MetaAdsIntegration: React.FC = () => {
   if (wizardStep === 'configure' && isOAuthConnected) {
     const filteredCampaigns = statusFilter === 'all' 
       ? campaigns 
-      : statusFilter === 'DELIVERED_30D'
+      : statusFilter === 'DELIVERED_30D' || statusFilter === 'DELIVERED_CUSTOM'
         ? campaigns.filter(c => c.hasRecentDelivery)
         : campaigns.filter(c => c.status === statusFilter);
     
@@ -360,7 +402,7 @@ export const MetaAdsIntegration: React.FC = () => {
               {selectedCampaigns.length === filteredCampaigns.length && filteredCampaigns.length > 0 ? 'Deselect All' : 'Select All'}
             </Button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Label className="text-sm text-muted-foreground">Filter:</Label>
             <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
               <SelectTrigger className="w-[200px]">
@@ -369,11 +411,59 @@ export const MetaAdsIntegration: React.FC = () => {
               <SelectContent>
                 <SelectItem value="all">All Campaigns</SelectItem>
                 <SelectItem value="DELIVERED_30D">Delivered (30 days)</SelectItem>
+                <SelectItem value="DELIVERED_CUSTOM">Delivered (custom range)</SelectItem>
                 <SelectItem value="ACTIVE">Active</SelectItem>
                 <SelectItem value="PAUSED">Paused</SelectItem>
                 <SelectItem value="DELETED">Off</SelectItem>
               </SelectContent>
             </Select>
+            {statusFilter === 'DELIVERED_CUSTOM' && (
+              <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "justify-start text-left font-normal",
+                        !customDateRange && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customDateRange?.from ? (
+                        customDateRange.to ? (
+                          <>
+                            {format(customDateRange.from, "LLL dd")} -{" "}
+                            {format(customDateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(customDateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Pick dates</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={customDateRange?.from}
+                      selected={customDateRange}
+                      onSelect={setCustomDateRange}
+                      numberOfMonths={2}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={handleRefreshWithCustomRange}
+                  disabled={isFetchingCampaigns || !customDateRange?.from || !customDateRange?.to}
+                >
+                  {isFetchingCampaigns ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -412,15 +502,53 @@ export const MetaAdsIntegration: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <Label>Date Range</Label>
+          <Label>Date Range for Sync</Label>
           <Select value={dateRangePreset} onValueChange={(v: any) => setDateRangePreset(v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="last_7d">Last 7 days</SelectItem>
               <SelectItem value="last_30d">Last 30 days</SelectItem>
               <SelectItem value="last_90d">Last 90 days</SelectItem>
+              <SelectItem value="custom">Custom range</SelectItem>
             </SelectContent>
           </Select>
+          {dateRangePreset === 'custom' && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !customDateRange && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customDateRange?.from ? (
+                    customDateRange.to ? (
+                      <>
+                        {format(customDateRange.from, "LLL dd, y")} -{" "}
+                        {format(customDateRange.to, "LLL dd, y")}
+                      </>
+                    ) : (
+                      format(customDateRange.from, "LLL dd, y")
+                    )
+                  ) : (
+                    <span>Pick a date range</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={customDateRange?.from}
+                  selected={customDateRange}
+                  onSelect={setCustomDateRange}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
 
         <div className="flex gap-2">
