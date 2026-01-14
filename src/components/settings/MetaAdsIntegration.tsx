@@ -224,7 +224,14 @@ export const MetaAdsIntegration: React.FC = () => {
           </div>
           {canManage && (
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setWizardStep('connect')}>
+              <Button variant="outline" size="sm" onClick={async () => {
+                // Load campaigns first, then go to configure
+                if (campaigns.length === 0) {
+                  await handleFetchCampaigns();
+                } else {
+                  setWizardStep('configure');
+                }
+              }}>
                 <Settings2 className="h-4 w-4 mr-1" />
                 Configure
               </Button>
