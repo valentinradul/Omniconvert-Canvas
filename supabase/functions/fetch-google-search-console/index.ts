@@ -107,22 +107,25 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
-    if (authError || !user) {
-      throw new Error('Unauthorized')
-    }
-
     const body: SearchConsoleRequest = await req.json()
     const { action, integrationId, companyId, credentials, config } = body
 
     console.log(`Google Search Console action: ${action}`, { integrationId, companyId })
+
+    // For sync-reporting-metrics, we don't need user auth - just validate company exists
+    if (action !== 'sync-reporting-metrics') {
+      const authHeader = req.headers.get('Authorization')
+      if (!authHeader) {
+        throw new Error('No authorization header')
+      }
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser(
+        authHeader.replace('Bearer ', '')
+      )
+      if (authError || !user) {
+        throw new Error('Unauthorized')
+      }
+    }
 
     switch (action) {
       case 'test-connection': {
