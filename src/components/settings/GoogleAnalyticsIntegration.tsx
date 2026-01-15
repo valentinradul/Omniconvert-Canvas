@@ -28,13 +28,12 @@ interface SyncLog {
 }
 
 const AVAILABLE_METRICS = [
-  { id: 'sessions', name: 'Sessions' },
-  { id: 'totalUsers', name: 'Total Users' },
-  { id: 'newUsers', name: 'New Users' },
-  { id: 'screenPageViews', name: 'Page Views' },
-  { id: 'bounceRate', name: 'Bounce Rate' },
-  { id: 'averageSessionDuration', name: 'Avg Session Duration' },
-  { id: 'conversions', name: 'Conversions' },
+  { id: 'totalUsers', name: 'Total Traffic Users' },
+  { id: 'pricingPageUsers', name: 'Pricing Page Users (/pricing)' },
+  { id: 'bookCallPageUsers', name: 'Book a Call Page Users (/book-a-call)' },
+  { id: 'bookDemoPageUsers', name: 'Book a Demo Page Users (/book-a-demo)' },
+  { id: 'purchases', name: 'Purchases' },
+  { id: 'signups', name: 'Sign Ups' },
 ];
 
 export function GoogleAnalyticsIntegration() {
@@ -62,7 +61,7 @@ export function GoogleAnalyticsIntegration() {
 
   // Form state
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['sessions', 'totalUsers', 'screenPageViews', 'conversions']);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['totalUsers', 'pricingPageUsers', 'purchases', 'signups']);
   const [dateRangeMonths, setDateRangeMonths] = useState('3');
 
   // Load integration config when connected
