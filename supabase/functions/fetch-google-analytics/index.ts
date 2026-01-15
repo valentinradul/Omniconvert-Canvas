@@ -222,60 +222,151 @@ Deno.serve(async (req) => {
           const startDate = new Date();
           startDate.setMonth(startDate.getMonth() - (integrationConfig.date_range_months || 3));
 
-          // Fetch analytics data
-          const response = await fetch(
-            `https://analyticsdata.googleapis.com/v1beta/properties/${integrationConfig.property_id}:runReport`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${credentials.access_token}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                dateRanges: [{
-                  startDate: startDate.toISOString().split('T')[0],
-                  endDate: endDate.toISOString().split('T')[0],
-                }],
-                metrics: [
-                  { name: 'sessions' },
-                  { name: 'totalUsers' },
-                  { name: 'newUsers' },
-                  { name: 'screenPageViews' },
-                  { name: 'bounceRate' },
-                  { name: 'averageSessionDuration' },
-                  { name: 'conversions' },
-                ],
-                dimensions: [{ name: 'date' }],
-                orderBys: [{ dimension: { dimensionName: 'date' } }],
-              }),
-            }
-          );
+          const dateRange = {
+            startDate: startDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0],
+          };
 
-          if (!response.ok) {
-            throw new Error('Failed to fetch analytics data');
-          }
-
-          const analyticsData = await response.json();
+          const propertyId = integrationConfig.property_id;
+          const accessToken = credentials.access_token;
           let recordsProcessed = 0;
 
-          // Process and store metrics
-          for (const row of analyticsData.rows || []) {
+          // Helper function to make GA4 API requests
+          const fetchGAReport = async (requestBody: Record<string, unknown>) => {
+            const response = await fetch(
+              `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+              }
+            );
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('GA API error:', errorText);
+              throw new Error('Failed to fetch analytics data');
+            }
+            return response.json();
+          };
+
+          // 1. Fetch total users by date
+          const totalUsersData = await fetchGAReport({
+            dateRanges: [dateRange],
+            metrics: [{ name: 'totalUsers' }],
+            dimensions: [{ name: 'date' }],
+            orderBys: [{ dimension: { dimensionName: 'date' } }],
+          });
+
+          // 2. Fetch page-specific users (pricing, book-a-call, book-a-demo)
+          const pageMetrics = [
+            { id: 'pricingPageUsers', path: '/pricing' },
+            { id: 'bookCallPageUsers', path: '/book-a-call' },
+            { id: 'bookDemoPageUsers', path: '/book-a-demo' },
+          ];
+
+          const pageUsersByDate: Record<string, Record<string, number>> = {};
+
+          for (const pageMetric of pageMetrics) {
+            const pageData = await fetchGAReport({
+              dateRanges: [dateRange],
+              metrics: [{ name: 'totalUsers' }],
+              dimensions: [{ name: 'date' }],
+              dimensionFilter: {
+                filter: {
+                  fieldName: 'pagePath',
+                  stringFilter: {
+                    matchType: 'CONTAINS',
+                    value: pageMetric.path,
+                  },
+                },
+              },
+              orderBys: [{ dimension: { dimensionName: 'date' } }],
+            });
+
+            for (const row of pageData.rows || []) {
+              const dateValue = row.dimensionValues[0].value;
+              if (!pageUsersByDate[dateValue]) {
+                pageUsersByDate[dateValue] = {};
+              }
+              pageUsersByDate[dateValue][pageMetric.id] = parseInt(row.metricValues[0]?.value || '0');
+            }
+          }
+
+          // 3. Fetch purchases (ecommerce transactions)
+          const purchasesData = await fetchGAReport({
+            dateRanges: [dateRange],
+            metrics: [{ name: 'transactions' }],
+            dimensions: [{ name: 'date' }],
+            orderBys: [{ dimension: { dimensionName: 'date' } }],
+          });
+
+          const purchasesByDate: Record<string, number> = {};
+          for (const row of purchasesData.rows || []) {
+            const dateValue = row.dimensionValues[0].value;
+            purchasesByDate[dateValue] = parseInt(row.metricValues[0]?.value || '0');
+          }
+
+          // 4. Fetch signups (using conversions event or custom event)
+          // Try to get sign_up events first, fallback to conversions
+          let signupsByDate: Record<string, number> = {};
+          try {
+            const signupsData = await fetchGAReport({
+              dateRanges: [dateRange],
+              metrics: [{ name: 'eventCount' }],
+              dimensions: [{ name: 'date' }],
+              dimensionFilter: {
+                filter: {
+                  fieldName: 'eventName',
+                  stringFilter: {
+                    matchType: 'EXACT',
+                    value: 'sign_up',
+                  },
+                },
+              },
+              orderBys: [{ dimension: { dimensionName: 'date' } }],
+            });
+
+            for (const row of signupsData.rows || []) {
+              const dateValue = row.dimensionValues[0].value;
+              signupsByDate[dateValue] = parseInt(row.metricValues[0]?.value || '0');
+            }
+          } catch (e) {
+            console.log('sign_up event not found, using conversions');
+            const conversionsData = await fetchGAReport({
+              dateRanges: [dateRange],
+              metrics: [{ name: 'conversions' }],
+              dimensions: [{ name: 'date' }],
+              orderBys: [{ dimension: { dimensionName: 'date' } }],
+            });
+
+            for (const row of conversionsData.rows || []) {
+              const dateValue = row.dimensionValues[0].value;
+              signupsByDate[dateValue] = parseInt(row.metricValues[0]?.value || '0');
+            }
+          }
+
+          // Process and store all metrics by date
+          for (const row of totalUsersData.rows || []) {
             const dateValue = row.dimensionValues[0].value;
             const formattedDate = `${dateValue.slice(0, 4)}-${dateValue.slice(4, 6)}-${dateValue.slice(6, 8)}`;
+            const totalUsers = parseInt(row.metricValues[0]?.value || '0');
 
-            // Store as campaign metrics with channel_source = 'google_analytics'
+            // Store metrics in a structured format
             const metricsData = {
               company_id: companyId,
-              campaign_id: `ga_${integrationConfig.property_id}`,
+              campaign_id: `ga_${propertyId}`,
               campaign_name: 'Google Analytics',
               channel_source: 'google_analytics',
               date_reported: formattedDate,
-              impressions: parseInt(row.metricValues[3]?.value || '0'), // pageviews
-              clicks: parseInt(row.metricValues[0]?.value || '0'), // sessions
-              conversions: parseInt(row.metricValues[6]?.value || '0'),
-              spend: null,
-              ctr: null,
-              cpc: null,
+              impressions: totalUsers, // Using impressions to store totalUsers
+              clicks: pageUsersByDate[dateValue]?.pricingPageUsers || 0, // Pricing page users
+              conversions: purchasesByDate[dateValue] || 0, // Purchases
+              spend: signupsByDate[dateValue] || null, // Using spend field for signups (temporary)
+              ctr: pageUsersByDate[dateValue]?.bookCallPageUsers || null, // Book a call users
+              cpc: pageUsersByDate[dateValue]?.bookDemoPageUsers || null, // Book a demo users
               cpm: null,
               last_synced_at: new Date().toISOString(),
             };
@@ -302,6 +393,16 @@ Deno.serve(async (req) => {
                 completed_at: new Date().toISOString(),
                 records_processed: recordsProcessed,
                 records_created: recordsProcessed,
+                details: {
+                  metrics_synced: [
+                    'totalUsers',
+                    'pricingPageUsers',
+                    'bookCallPageUsers',
+                    'bookDemoPageUsers',
+                    'purchases',
+                    'signups',
+                  ],
+                },
               })
               .eq('id', syncLog.id);
           }
@@ -314,7 +415,8 @@ Deno.serve(async (req) => {
 
           return new Response(JSON.stringify({ 
             success: true, 
-            recordsProcessed 
+            recordsProcessed,
+            message: 'Synced: Total Users, Pricing/Book-a-call/Book-a-demo page visits, Purchases, Sign Ups'
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
