@@ -164,17 +164,58 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [saveChartDialogOpen, setSaveChartDialogOpen] = useState(false);
   
-  // Date range defaults to all time (Oct 2021 - end of current month)
+  // Date range - persist in localStorage
+  const STORAGE_KEY = 'reporting-table-preferences';
+  
   const [dateRange, setDateRange] = useState<DateRange>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const prefs = JSON.parse(stored);
+        if (prefs.dateRange?.from && prefs.dateRange?.to) {
+          return {
+            from: new Date(prefs.dateRange.from),
+            to: new Date(prefs.dateRange.to),
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load stored date range');
+    }
+    // Default: all time (Oct 2021 - end of current month)
     const now = new Date();
-    // Set to last day of current month to ensure current month is included
     const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     return {
       from: new Date(2021, 9, 1),
       to: endOfCurrentMonth,
     };
   });
-  const [granularity, setGranularity] = useState<Granularity>('month');
+  
+  const [granularity, setGranularity] = useState<Granularity>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const prefs = JSON.parse(stored);
+        if (prefs.granularity) return prefs.granularity;
+      }
+    } catch (e) {}
+    return 'month';
+  });
+  
+  // Persist preferences to localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        dateRange: {
+          from: dateRange.from.toISOString(),
+          to: dateRange.to.toISOString(),
+        },
+        granularity,
+      }));
+    } catch (e) {
+      console.warn('Failed to save preferences');
+    }
+  }, [dateRange, granularity]);
 
   const createMetric = useCreateMetric();
   const updateMetric = useUpdateMetric();
