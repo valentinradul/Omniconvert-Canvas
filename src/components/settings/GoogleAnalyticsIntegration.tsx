@@ -185,22 +185,44 @@ export function GoogleAnalyticsIntegration() {
     if (!currentCompany?.id || !selectedPropertyId) return;
 
     try {
-      // Upsert integration config (create if doesn't exist, update if it does)
-      const { error } = await supabase
+      const configData = {
+        propertyId: selectedPropertyId,
+        selectedMetrics,
+        dateRangeMonths: parseInt(dateRangeMonths),
+      };
+
+      // Check if integration already exists
+      const { data: existing } = await supabase
         .from('company_integrations')
-        .upsert({
-          company_id: currentCompany.id,
-          integration_type: 'google_analytics',
-          is_active: true,
-          config: {
-            propertyId: selectedPropertyId,
-            selectedMetrics,
-            dateRangeMonths: parseInt(dateRangeMonths),
-          },
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'company_id,integration_type',
-        });
+        .select('id')
+        .eq('company_id', currentCompany.id)
+        .eq('integration_type', 'google_analytics')
+        .maybeSingle();
+
+      let error;
+      if (existing) {
+        // Update existing
+        const result = await supabase
+          .from('company_integrations')
+          .update({
+            config: configData,
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id);
+        error = result.error;
+      } else {
+        // Insert new
+        const result = await supabase
+          .from('company_integrations')
+          .insert({
+            company_id: currentCompany.id,
+            integration_type: 'google_analytics',
+            is_active: true,
+            config: configData,
+          });
+        error = result.error;
+      }
 
       if (error) throw error;
 
