@@ -444,6 +444,8 @@ Deno.serve(async (req) => {
       }
 
       case 'sync-reporting-metrics': {
+        console.log('Starting sync-reporting-metrics for company:', companyId);
+        
         // Get GA OAuth tokens for this company
         const { data: oauthToken, error: oauthError } = await supabase
           .from('company_oauth_tokens')
@@ -451,6 +453,8 @@ Deno.serve(async (req) => {
           .eq('company_id', companyId)
           .eq('provider', 'google_analytics')
           .maybeSingle();
+
+        console.log('OAuth token lookup:', { found: !!oauthToken, error: oauthError?.message });
 
         if (oauthError || !oauthToken) {
           return new Response(JSON.stringify({ 
@@ -470,6 +474,8 @@ Deno.serve(async (req) => {
           .eq('is_active', true)
           .maybeSingle();
 
+        console.log('Integration config lookup:', { found: !!integration, config: integration?.config, error: intError?.message });
+
         if (intError || !integration?.config) {
           return new Response(JSON.stringify({ 
             success: false, 
@@ -479,8 +485,10 @@ Deno.serve(async (req) => {
           });
         }
 
-        const gaConfig = integration.config as { propertyId?: string };
-        const propertyId = gaConfig.propertyId;
+        const gaConfig = integration.config as { propertyId?: string; property_id?: string };
+        const propertyId = gaConfig.propertyId || gaConfig.property_id;
+
+        console.log('Property ID:', propertyId);
 
         if (!propertyId) {
           return new Response(JSON.stringify({ 
