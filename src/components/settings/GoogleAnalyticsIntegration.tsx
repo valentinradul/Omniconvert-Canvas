@@ -45,6 +45,7 @@ export function GoogleAnalyticsIntegration() {
     isConnecting,
     connect,
     disconnect,
+    getAccessToken,
   } = useOAuth('google_analytics');
 
   const [step, setStep] = useState<Step>('connect');
@@ -131,17 +132,11 @@ export function GoogleAnalyticsIntegration() {
     if (!currentCompany?.id) return;
 
     try {
-      // First get the access token from oauth tokens
-      const { data: tokenData, error: tokenError } = await supabase
-        .from('company_oauth_tokens')
-        .select('access_token')
-        .eq('company_id', currentCompany.id)
-        .eq('provider', 'google_analytics')
-        .maybeSingle();
-
-      if (tokenError) throw tokenError;
-      if (!tokenData?.access_token) {
-        toast.error('No Google Analytics connection found');
+      // Get a fresh access token (handles refresh if expired)
+      const accessToken = await getAccessToken();
+      
+      if (!accessToken) {
+        toast.error('No Google Analytics connection found. Please reconnect.');
         return;
       }
 
@@ -150,7 +145,7 @@ export function GoogleAnalyticsIntegration() {
           action: 'get-properties',
           companyId: currentCompany.id,
           config: {
-            accessToken: tokenData.access_token,
+            accessToken,
           },
         },
       });
@@ -158,10 +153,12 @@ export function GoogleAnalyticsIntegration() {
       if (error) throw error;
       if (data?.properties) {
         setProperties(data.properties);
+      } else if (data?.error) {
+        throw new Error(data.error);
       }
     } catch (error) {
       console.error('Failed to fetch properties:', error);
-      toast.error('Failed to fetch Google Analytics properties');
+      toast.error('Failed to fetch Google Analytics properties. Please try reconnecting.');
     }
   };
 
