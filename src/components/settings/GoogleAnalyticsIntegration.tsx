@@ -185,19 +185,22 @@ export function GoogleAnalyticsIntegration() {
     if (!currentCompany?.id || !selectedPropertyId) return;
 
     try {
-      // Update integration config
+      // Upsert integration config (create if doesn't exist, update if it does)
       const { error } = await supabase
         .from('company_integrations')
-        .update({
+        .upsert({
+          company_id: currentCompany.id,
+          integration_type: 'google_analytics',
+          is_active: true,
           config: {
             propertyId: selectedPropertyId,
             selectedMetrics,
             dateRangeMonths: parseInt(dateRangeMonths),
           },
           updated_at: new Date().toISOString(),
-        })
-        .eq('company_id', currentCompany.id)
-        .eq('integration_type', 'google_analytics');
+        }, {
+          onConflict: 'company_id,integration_type',
+        });
 
       if (error) throw error;
 
