@@ -25,6 +25,9 @@ interface SyncLog {
   started_at: string;
   status: string;
   records_processed: number | null;
+  details: {
+    metrics_synced?: string[];
+  } | null;
 }
 
 const AVAILABLE_METRICS = [
@@ -100,14 +103,16 @@ export function GoogleAnalyticsIntegration() {
       // Get sync history
       const { data: syncLogs } = await supabase
         .from('integration_sync_log')
-        .select('id, started_at, status, records_processed')
+        .select('id, started_at, status, records_processed, details')
         .eq('company_id', currentCompany.id)
-        .eq('sync_type', 'google_analytics')
         .order('started_at', { ascending: false })
         .limit(5);
 
       if (syncLogs) {
-        setSyncHistory(syncLogs);
+        setSyncHistory(syncLogs.map(log => ({
+          ...log,
+          details: log.details as { metrics_synced?: string[] } | null,
+        })));
       }
     } catch (error) {
       console.error('Failed to load integration config:', error);
@@ -286,21 +291,39 @@ export function GoogleAnalyticsIntegration() {
           {syncHistory.length > 0 && (
             <div className="border rounded-lg p-3">
               <h4 className="text-sm font-medium mb-2">Recent Syncs</h4>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {syncHistory.slice(0, 3).map((log) => (
-                  <div key={log.id} className="flex items-center justify-between text-sm">
-                    <span>{format(new Date(log.started_at), 'PP')}</span>
-                    <div className="flex items-center gap-2">
-                      {log.status === 'completed' ? (
-                        <Badge variant="outline" className="text-green-600">
-                          {log.records_processed} records
-                        </Badge>
-                      ) : log.status === 'failed' ? (
-                        <Badge variant="destructive">Failed</Badge>
-                      ) : (
-                        <Badge variant="secondary">Running</Badge>
-                      )}
+                  <div key={log.id} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>{format(new Date(log.started_at), 'PP')}</span>
+                      <div className="flex items-center gap-2">
+                        {log.status === 'completed' ? (
+                          <Badge variant="outline" className="text-green-600">
+                            {log.records_processed} records
+                          </Badge>
+                        ) : log.status === 'failed' ? (
+                          <Badge variant="destructive">Failed</Badge>
+                        ) : (
+                          <Badge variant="secondary">Running</Badge>
+                        )}
+                      </div>
                     </div>
+                    {log.status === 'completed' && log.details?.metrics_synced && (
+                      <div className="flex flex-wrap gap-1">
+                        {log.details.metrics_synced.map((metricId) => {
+                          const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                          return (
+                            <Badge 
+                              key={metricId} 
+                              variant="secondary" 
+                              className="text-xs bg-primary/10 text-primary"
+                            >
+                              {metric?.name || metricId}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
