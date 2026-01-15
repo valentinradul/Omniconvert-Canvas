@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 interface SearchConsoleRequest {
-  action: 'test-connection' | 'get-sites' | 'save-config' | 'sync' | 'disconnect'
+  action: 'test-connection' | 'get-sites' | 'list_sites' | 'save-config' | 'sync' | 'disconnect'
   integrationId?: string
   companyId?: string
   credentials?: {
@@ -19,6 +19,72 @@ interface SearchConsoleRequest {
     siteUrl: string
     dateRangePreset: string
   }
+}
+
+// Helper to get valid access token from OAuth tokens table
+async function getValidAccessToken(supabase: any, companyId: string): Promise<string> {
+  const { data: oauthToken, error } = await supabase
+    .from('company_oauth_tokens')
+    .select('id, access_token, refresh_token, token_expires_at')
+    .eq('company_id', companyId)
+    .eq('provider', 'google_search_console')
+    .maybeSingle();
+
+  if (error || !oauthToken) {
+    throw new Error('Google Search Console not connected. Please reconnect in Settings.');
+  }
+
+  const now = new Date();
+  const expiresAt = oauthToken.token_expires_at ? new Date(oauthToken.token_expires_at) : null;
+  const needsRefresh = !expiresAt || expiresAt.getTime() - now.getTime() < 5 * 60 * 1000;
+
+  if (!needsRefresh) {
+    return oauthToken.access_token;
+  }
+
+  console.log('Refreshing access token...');
+
+  if (!oauthToken.refresh_token) {
+    throw new Error('No refresh token. Please reconnect Google Search Console.');
+  }
+
+  const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
+  const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
+
+  if (!clientId || !clientSecret) {
+    throw new Error('Google OAuth not configured on server.');
+  }
+
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: oauthToken.refresh_token,
+      grant_type: 'refresh_token',
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    const errorData = await tokenResponse.text();
+    console.error('Token refresh failed:', errorData);
+    throw new Error('Token expired. Please reconnect Google Search Console.');
+  }
+
+  const tokenData = await tokenResponse.json();
+  const newExpiresAt = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000);
+
+  await supabase
+    .from('company_oauth_tokens')
+    .update({
+      access_token: tokenData.access_token,
+      token_expires_at: newExpiresAt.toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', oauthToken.id);
+
+  return tokenData.access_token;
 }
 
 Deno.serve(async (req) => {
@@ -124,34 +190,29 @@ Deno.serve(async (req) => {
         )
       }
 
-      case 'get-sites': {
-        if (!integrationId) {
-          throw new Error('Integration ID is required')
+      case 'get-sites':
+      case 'list_sites': {
+        // Support both action names for backwards compatibility
+        if (!companyId) {
+          throw new Error('companyId is required')
         }
 
-        const { data: integration, error: fetchError } = await supabase
-          .from('company_integrations')
-          .select('encrypted_credentials')
-          .eq('id', integrationId)
-          .single()
-
-        if (fetchError || !integration) {
-          throw new Error('Integration not found')
-        }
-
-        const creds = JSON.parse(integration.encrypted_credentials || '{}')
+        // Get access token from OAuth tokens table
+        const accessToken = await getValidAccessToken(supabase, companyId)
         
         const sitesResponse = await fetch(
           'https://www.googleapis.com/webmasters/v3/sites',
           {
             headers: {
-              'Authorization': `Bearer ${creds.accessToken}`,
+              'Authorization': `Bearer ${accessToken}`,
             },
           }
         )
 
         if (!sitesResponse.ok) {
-          throw new Error('Failed to fetch sites')
+          const errorData = await sitesResponse.json()
+          console.error('Failed to fetch sites:', errorData)
+          throw new Error(errorData.error?.message || 'Failed to fetch sites')
         }
 
         const sitesData = await sitesResponse.json()
