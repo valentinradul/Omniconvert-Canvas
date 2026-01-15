@@ -153,7 +153,7 @@ export const MetricRow: React.FC<MetricRowProps> = ({
       "border-b border-border hover:bg-muted/50",
       isFromOtherCategory && "bg-muted/20"
     )}>
-      <td className="sticky left-0 bg-background z-10 px-3 py-2 font-medium text-sm border-r border-border min-w-[200px]">
+      <td className="sticky left-0 bg-background z-10 px-3 py-2 font-medium text-sm border-r border-border min-w-[250px]">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <span className="flex items-center gap-1">

@@ -542,7 +542,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-muted/50">
-                  <th className="sticky left-0 bg-muted z-20 px-3 py-2 text-left text-sm font-semibold border-r border-border min-w-[200px]">
+                  <th className="sticky left-0 bg-muted z-20 px-3 py-2 text-left text-sm font-semibold border-r border-border min-w-[250px]">
                     Metric
                   </th>
                   {periods.map((period) => (
