@@ -529,7 +529,7 @@ Deno.serve(async (req) => {
         console.log('Aggregate monthly totals:', JSON.stringify(monthlyMetrics))
 
         // Now fetch branded data separately using query filter
-        const brandedKeywords = ['omniconvert', 'omni convert', 'explore', 'reveal']
+        const brandedKeywords = ['omniconvert', 'omni convert']
         
         // Fetch branded data by paginating through query results
         let startRow = 0
