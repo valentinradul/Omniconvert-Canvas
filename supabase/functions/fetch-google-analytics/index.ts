@@ -443,6 +443,236 @@ Deno.serve(async (req) => {
         }
       }
 
+      case 'sync-reporting-metrics': {
+        // Get GA OAuth tokens for this company
+        const { data: oauthToken, error: oauthError } = await supabase
+          .from('company_oauth_tokens')
+          .select('access_token, refresh_token, token_expires_at')
+          .eq('company_id', companyId)
+          .eq('provider', 'google_analytics')
+          .maybeSingle();
+
+        if (oauthError || !oauthToken) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Google Analytics not connected. Please connect in Settings → Integrations.' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Get integration config for property ID
+        const { data: integration, error: intError } = await supabase
+          .from('company_integrations')
+          .select('config')
+          .eq('company_id', companyId)
+          .eq('integration_type', 'google_analytics')
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (intError || !integration?.config) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Google Analytics not configured. Please configure a property in Settings → Integrations.' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const gaConfig = integration.config as { propertyId?: string };
+        const propertyId = gaConfig.propertyId;
+
+        if (!propertyId) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'No Google Analytics property configured.' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Get all metrics with google_analytics integration type
+        const { startDate, endDate, metricIds } = await req.json().then(b => ({
+          startDate: b.startDate,
+          endDate: b.endDate,
+          metricIds: b.metricIds,
+        })).catch(() => ({ startDate: undefined, endDate: undefined, metricIds: undefined }));
+
+        let metricsQuery = supabase
+          .from('reporting_metrics')
+          .select('id, name, integration_field')
+          .eq('company_id', companyId)
+          .eq('integration_type', 'google_analytics')
+          .not('integration_field', 'is', null);
+
+        if (metricIds?.length) {
+          metricsQuery = metricsQuery.in('id', metricIds);
+        }
+
+        const { data: metrics, error: metricsError } = await metricsQuery;
+
+        if (metricsError) {
+          console.error('Error fetching metrics:', metricsError);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Failed to fetch metrics configuration' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        if (!metrics || metrics.length === 0) {
+          return new Response(JSON.stringify({ 
+            success: true, 
+            recordsProcessed: 0,
+            metricsUpdated: [],
+            message: 'No metrics configured for Google Analytics sync' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const accessToken = oauthToken.access_token;
+
+        // Calculate date range (default to last 24 months if not specified)
+        const now = new Date();
+        const defaultStartDate = new Date(now.getFullYear() - 2, 0, 1);
+        const dateRange = {
+          startDate: startDate || defaultStartDate.toISOString().split('T')[0],
+          endDate: endDate || now.toISOString().split('T')[0],
+        };
+
+        // Group metrics by their GA field to minimize API calls
+        const fieldToMetrics: Record<string, Array<{ id: string; name: string }>> = {};
+        for (const metric of metrics) {
+          const field = metric.integration_field!;
+          if (!fieldToMetrics[field]) {
+            fieldToMetrics[field] = [];
+          }
+          fieldToMetrics[field].push({ id: metric.id, name: metric.name });
+        }
+
+        // Map our field names to GA4 API metric names
+        const fieldToGAMetric: Record<string, string> = {
+          totalUsers: 'totalUsers',
+          sessions: 'sessions',
+          pageviews: 'screenPageViews',
+          newUsers: 'newUsers',
+          bounceRate: 'bounceRate',
+          avgSessionDuration: 'averageSessionDuration',
+          transactions: 'transactions',
+          purchaseRevenue: 'purchaseRevenue',
+          conversions: 'conversions',
+          eventCount: 'eventCount',
+        };
+
+        let totalRecordsProcessed = 0;
+        const metricsUpdated: string[] = [];
+        const valuesToUpsert: Array<{
+          metric_id: string;
+          period_date: string;
+          value: number;
+          is_manual_override: boolean;
+        }> = [];
+
+        // Fetch data for each unique GA field
+        for (const [field, fieldMetrics] of Object.entries(fieldToMetrics)) {
+          const gaMetricName = fieldToGAMetric[field];
+          if (!gaMetricName) {
+            console.warn(`Unknown GA field: ${field}`);
+            continue;
+          }
+
+          try {
+            // Fetch monthly data from GA4
+            const response = await fetch(
+              `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  dateRanges: [dateRange],
+                  metrics: [{ name: gaMetricName }],
+                  dimensions: [{ name: 'yearMonth' }],
+                  orderBys: [{ dimension: { dimensionName: 'yearMonth' } }],
+                }),
+              }
+            );
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(`GA API error for ${field}:`, errorText);
+              continue;
+            }
+
+            const data = await response.json();
+
+            // Process each row and create values for all metrics mapped to this field
+            for (const row of data.rows || []) {
+              const yearMonth = row.dimensionValues[0].value; // Format: YYYYMM
+              const year = yearMonth.slice(0, 4);
+              const month = yearMonth.slice(4, 6);
+              const periodDate = `${year}-${month}-01`;
+              
+              let value = parseFloat(row.metricValues[0]?.value || '0');
+              
+              // Convert bounce rate and percentages to proper format
+              if (field === 'bounceRate') {
+                value = value * 100; // GA returns as decimal, convert to percentage
+              }
+
+              // Create a value record for each metric mapped to this field
+              for (const metric of fieldMetrics) {
+                valuesToUpsert.push({
+                  metric_id: metric.id,
+                  period_date: periodDate,
+                  value,
+                  is_manual_override: false,
+                });
+                
+                if (!metricsUpdated.includes(metric.name)) {
+                  metricsUpdated.push(metric.name);
+                }
+              }
+              
+              totalRecordsProcessed++;
+            }
+          } catch (fetchError) {
+            console.error(`Error fetching ${field} data:`, fetchError);
+          }
+        }
+
+        // Batch upsert all values
+        if (valuesToUpsert.length > 0) {
+          const { error: upsertError } = await supabase
+            .from('reporting_metric_values')
+            .upsert(valuesToUpsert, { onConflict: 'metric_id,period_date' });
+
+          if (upsertError) {
+            console.error('Error upserting values:', upsertError);
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Failed to save synced data' 
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        }
+
+        console.log(`Synced ${valuesToUpsert.length} values for ${metricsUpdated.length} metrics`);
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          recordsProcessed: valuesToUpsert.length,
+          metricsUpdated,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'disconnect': {
         const { error } = await supabase
           .from('company_integrations')
