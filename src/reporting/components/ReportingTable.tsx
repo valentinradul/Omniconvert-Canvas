@@ -449,36 +449,31 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
               </Button>
             </>
           )}
-          {hasIntegratedMetrics && (
-            <Button 
-              size="sm" 
-              variant="default"
-              onClick={() => {
-                const now = new Date();
-                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                // Sync all integrations for current month
-                // Currently only GA is implemented, but this will sync all when others are added
-                if (hasGAMetrics) {
-                  syncGA.mutate({
-                    startDate: format(startOfMonth, 'yyyy-MM-dd'),
-                    endDate: format(now, 'yyyy-MM-dd'),
-                  });
-                }
-                // TODO: Add other integration syncs here as they're implemented
-                // if (hasLinkedInMetrics) syncLinkedIn.mutate(...)
-                // if (hasMetaMetrics) syncMeta.mutate(...)
-              }}
-              disabled={syncGA.isPending}
-              className="bg-primary hover:bg-primary/90"
-            >
-              {syncGA.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <CloudDownload className="h-4 w-4 mr-2" />
-              )}
-              Sync This Month
-            </Button>
-          )}
+          <Button 
+            size="sm" 
+            variant="default"
+            onClick={() => {
+              const now = new Date();
+              const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+              // Sync all integrations for current month
+              if (hasGAMetrics) {
+                syncGA.mutate({
+                  startDate: format(startOfMonth, 'yyyy-MM-dd'),
+                  endDate: format(now, 'yyyy-MM-dd'),
+                });
+              }
+              // TODO: Add other integration syncs here as they're implemented
+            }}
+            disabled={syncGA.isPending || !hasIntegratedMetrics}
+            className="bg-primary hover:bg-primary/90"
+          >
+            {syncGA.isPending ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CloudDownload className="h-4 w-4 mr-2" />
+            )}
+            Sync This Month
+          </Button>
           <Button 
             size="sm" 
             variant="outline" 

@@ -175,9 +175,6 @@ export const MetricRow: React.FC<MetricRowProps> = ({
                 </Tooltip>
               )}
             </span>
-            {metric.source && (
-              <span className="text-xs text-muted-foreground">{metric.source}</span>
-            )}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
