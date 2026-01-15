@@ -449,7 +449,7 @@ Deno.serve(async (req) => {
         // Get GA OAuth tokens for this company
         const { data: oauthToken, error: oauthError } = await supabase
           .from('company_oauth_tokens')
-          .select('access_token, refresh_token, token_expires_at')
+          .select('id, access_token, refresh_token, token_expires_at')
           .eq('company_id', companyId)
           .eq('provider', 'google_analytics')
           .maybeSingle();
@@ -464,6 +464,76 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
+
+        // Helper function to refresh token if expired
+        const getValidAccessToken = async (): Promise<string> => {
+          const now = new Date();
+          const expiresAt = oauthToken.token_expires_at ? new Date(oauthToken.token_expires_at) : null;
+          
+          // Check if token is expired or will expire in the next 5 minutes
+          const needsRefresh = !expiresAt || expiresAt.getTime() - now.getTime() < 5 * 60 * 1000;
+          
+          if (!needsRefresh) {
+            console.log('Access token still valid, expires at:', expiresAt);
+            return oauthToken.access_token;
+          }
+
+          console.log('Access token expired or expiring soon, refreshing...');
+
+          if (!oauthToken.refresh_token) {
+            throw new Error('No refresh token available. Please reconnect Google Analytics.');
+          }
+
+          // Get client credentials from environment
+          const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
+          const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
+
+          if (!clientId || !clientSecret) {
+            throw new Error('Google OAuth credentials not configured');
+          }
+
+          // Refresh the token
+          const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              client_id: clientId,
+              client_secret: clientSecret,
+              refresh_token: oauthToken.refresh_token,
+              grant_type: 'refresh_token',
+            }),
+          });
+
+          if (!tokenResponse.ok) {
+            const errorData = await tokenResponse.text();
+            console.error('Token refresh failed:', errorData);
+            throw new Error('Failed to refresh access token. Please reconnect Google Analytics.');
+          }
+
+          const tokenData = await tokenResponse.json();
+          console.log('Token refreshed successfully');
+
+          // Calculate new expiry time
+          const newExpiresAt = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000);
+
+          // Update the token in the database
+          const { error: updateError } = await supabase
+            .from('company_oauth_tokens')
+            .update({
+              access_token: tokenData.access_token,
+              token_expires_at: newExpiresAt.toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', oauthToken.id);
+
+          if (updateError) {
+            console.error('Failed to update token in database:', updateError);
+          }
+
+          return tokenData.access_token;
+        };
 
         // Get integration config for property ID
         const { data: integration, error: intError } = await supabase
@@ -499,12 +569,23 @@ Deno.serve(async (req) => {
           });
         }
 
+        // Get valid access token (refreshing if needed)
+        let accessToken: string;
+        try {
+          accessToken = await getValidAccessToken();
+        } catch (tokenError) {
+          console.error('Token error:', tokenError);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: tokenError.message 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
         // Get all metrics with google_analytics integration type
-        const { startDate, endDate, metricIds } = await req.json().then(b => ({
-          startDate: b.startDate,
-          endDate: b.endDate,
-          metricIds: b.metricIds,
-        })).catch(() => ({ startDate: undefined, endDate: undefined, metricIds: undefined }));
+        const body = await req.json().catch(() => ({}));
+        const { startDate, endDate, metricIds } = body;
 
         let metricsQuery = supabase
           .from('reporting_metrics')
@@ -539,8 +620,6 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
-
-        const accessToken = oauthToken.access_token;
 
         // Calculate date range (default to last 24 months if not specified)
         const now = new Date();
