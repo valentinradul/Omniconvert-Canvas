@@ -191,6 +191,12 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
     [metrics]
   );
   
+  // Check if any metrics have ANY integration (for "Sync This Month" button)
+  const hasIntegratedMetrics = useMemo(() => 
+    metrics.some(m => m.integration_type && m.integration_field),
+    [metrics]
+  );
+  
   // Get calculated metric IDs and fetch their values
   const calculatedMetricIds = useMemo(() => 
     metrics.filter(m => m.is_calculated).map(m => m.id),
@@ -441,28 +447,37 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                 )}
                 Sync GA
               </Button>
-              <Button 
-                size="sm" 
-                variant="default"
-                onClick={() => {
-                  const now = new Date();
-                  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            </>
+          )}
+          {hasIntegratedMetrics && (
+            <Button 
+              size="sm" 
+              variant="default"
+              onClick={() => {
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                // Sync all integrations for current month
+                // Currently only GA is implemented, but this will sync all when others are added
+                if (hasGAMetrics) {
                   syncGA.mutate({
                     startDate: format(startOfMonth, 'yyyy-MM-dd'),
                     endDate: format(now, 'yyyy-MM-dd'),
                   });
-                }}
-                disabled={syncGA.isPending}
-                className="bg-primary hover:bg-primary/90"
-              >
-                {syncGA.isPending ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <CloudDownload className="h-4 w-4 mr-2" />
-                )}
-                Sync This Month
-              </Button>
-            </>
+                }
+                // TODO: Add other integration syncs here as they're implemented
+                // if (hasLinkedInMetrics) syncLinkedIn.mutate(...)
+                // if (hasMetaMetrics) syncMeta.mutate(...)
+              }}
+              disabled={syncGA.isPending}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {syncGA.isPending ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CloudDownload className="h-4 w-4 mr-2" />
+              )}
+              Sync This Month
+            </Button>
           )}
           <Button 
             size="sm" 
