@@ -227,7 +227,7 @@ export function GoogleAnalyticsIntegration() {
     if (success) {
       setStep('connect');
       setSelectedPropertyId('');
-      setSelectedMetrics(['sessions', 'totalUsers', 'screenPageViews', 'conversions']);
+      setSelectedMetrics(['totalUsers', 'pricingPageUsers', 'purchases', 'signups']);
       setCurrentConfig(null);
       setSyncHistory([]);
     }
