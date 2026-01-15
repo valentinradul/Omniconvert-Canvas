@@ -253,9 +253,81 @@ async function saveConfiguration(
   return { success: true };
 }
 
+// Fetch contacts from HubSpot with filters
+async function fetchContacts(
+  accessToken: string,
+  filters: any[],
+  properties: string[]
+) {
+  console.log('Fetching HubSpot contacts with filters:', JSON.stringify(filters));
+  
+  let allContacts: any[] = [];
+  let after: string | undefined;
+  
+  do {
+    const searchBody: any = {
+      properties,
+      limit: 100,
+      filterGroups: filters.length > 0 ? [{ filters }] : undefined,
+    };
+    
+    if (after) {
+      searchBody.after = after;
+    }
+    
+    const data = await hubspotFetch(accessToken, '/crm/v3/objects/contacts/search', {
+      method: 'POST',
+      body: JSON.stringify(searchBody),
+    });
+    
+    allContacts = allContacts.concat(data.results || []);
+    after = data.paging?.next?.after;
+    
+    console.log(`Fetched ${data.results?.length || 0} contacts, total so far: ${allContacts.length}`);
+  } while (after);
+  
+  return allContacts;
+}
+
+// Fetch all deals from HubSpot with pagination
+async function fetchAllDeals(
+  accessToken: string,
+  filters: any[],
+  properties: string[]
+) {
+  console.log('Fetching all HubSpot deals with filters:', JSON.stringify(filters));
+  
+  let allDeals: any[] = [];
+  let after: string | undefined;
+  
+  do {
+    const searchBody: any = {
+      properties,
+      limit: 100,
+      filterGroups: filters.length > 0 ? [{ filters }] : undefined,
+    };
+    
+    if (after) {
+      searchBody.after = after;
+    }
+    
+    const data = await hubspotFetch(accessToken, '/crm/v3/objects/deals/search', {
+      method: 'POST',
+      body: JSON.stringify(searchBody),
+    });
+    
+    allDeals = allDeals.concat(data.results || []);
+    after = data.paging?.next?.after;
+    
+    console.log(`Fetched ${data.results?.length || 0} deals, total so far: ${allDeals.length}`);
+  } while (after);
+  
+  return allDeals;
+}
+
 // Sync deals to reporting metrics
-async function syncDeals(supabase: any, companyId: string) {
-  console.log('Starting HubSpot sync...');
+async function syncDeals(supabase: any, companyId: string, dateFrom?: string, dateTo?: string) {
+  console.log('Starting HubSpot sync...', { dateFrom, dateTo });
   
   // Get integration config
   const { data: integration, error: integrationError } = await supabase
@@ -270,8 +342,6 @@ async function syncDeals(supabase: any, companyId: string) {
   }
 
   const accessToken = integration.encrypted_credentials;
-  const config = integration.config as HubSpotConfig;
-
   if (!accessToken) {
     throw new Error('No access token found');
   }
@@ -294,32 +364,207 @@ async function syncDeals(supabase: any, companyId: string) {
   }
 
   try {
-    // Fetch deals from HubSpot
-    const { deals } = await fetchDeals(
-      accessToken,
-      config.selectedStages,
-      config.fieldMapping
-    );
+    // Get HubSpot metrics from reporting_metrics table
+    const { data: hubspotMetrics, error: metricsError } = await supabase
+      .from('reporting_metrics')
+      .select('id, name, integration_field')
+      .eq('company_id', companyId)
+      .eq('integration_type', 'hubspot');
 
+    if (metricsError) {
+      console.error('Error fetching metrics:', metricsError);
+      throw new Error('Failed to fetch HubSpot metrics');
+    }
+
+    console.log('Found HubSpot metrics:', hubspotMetrics?.map((m: any) => m.name));
+
+    // Build date filters
+    const dateFilters: any[] = [];
+    if (dateFrom) {
+      dateFilters.push({
+        propertyName: 'createdate',
+        operator: 'GTE',
+        value: new Date(dateFrom).getTime(),
+      });
+    }
+    if (dateTo) {
+      dateFilters.push({
+        propertyName: 'createdate',
+        operator: 'LTE',
+        value: new Date(dateTo + 'T23:59:59').getTime(),
+      });
+    }
+
+    const results: Record<string, number> = {};
+    let recordsProcessed = 0;
+
+    // 1. Total MQs: Contacts with lifecycle_stage = MQL, lead_status NOT Disqualified/Unsubscribed
+    console.log('Fetching Total MQs...');
+    const mqFilters = [
+      ...dateFilters,
+      {
+        propertyName: 'lifecyclestage',
+        operator: 'EQ',
+        value: 'marketingqualifiedlead',
+      },
+      {
+        propertyName: 'hs_lead_status',
+        operator: 'NOT_IN',
+        values: ['Disqualified', 'Unsubscribed', 'DISQUALIFIED', 'UNSUBSCRIBED'],
+      },
+    ];
+    
+    const mqContacts = await fetchContacts(accessToken, mqFilters, ['lifecyclestage', 'hs_lead_status', 'createdate']);
+    results['Total MQs'] = mqContacts.length;
+    recordsProcessed += mqContacts.length;
+    console.log(`Total MQs: ${mqContacts.length}`);
+
+    // 2. New Clients: Deals in Closed Won stage
+    console.log('Fetching New Clients...');
+    const closedWonFilters = [
+      {
+        propertyName: 'dealstage',
+        operator: 'EQ',
+        value: 'closedwon',
+      },
+    ];
+    
+    // Add date filter for closedate for deals
+    if (dateFrom) {
+      closedWonFilters.push({
+        propertyName: 'closedate',
+        operator: 'GTE',
+        value: new Date(dateFrom).getTime(),
+      } as any);
+    }
+    if (dateTo) {
+      closedWonFilters.push({
+        propertyName: 'closedate',
+        operator: 'LTE',
+        value: new Date(dateTo + 'T23:59:59').getTime(),
+      } as any);
+    }
+    
+    const closedWonDeals = await fetchAllDeals(accessToken, closedWonFilters, ['dealstage', 'closedate', 'dealname']);
+    results['New Clients'] = closedWonDeals.length;
+    recordsProcessed += closedWonDeals.length;
+    console.log(`New Clients: ${closedWonDeals.length}`);
+
+    // 3. Explore SQLs: Contacts with interest = cro
+    console.log('Fetching Explore SQLs...');
+    const exploreSqlFilters = [
+      ...dateFilters,
+      {
+        propertyName: 'interests',
+        operator: 'CONTAINS_TOKEN',
+        value: 'cro',
+      },
+    ];
+    
+    const exploreSqlContacts = await fetchContacts(accessToken, exploreSqlFilters, ['interests', 'createdate']);
+    results['Explore SQLs'] = exploreSqlContacts.length;
+    recordsProcessed += exploreSqlContacts.length;
+    console.log(`Explore SQLs: ${exploreSqlContacts.length}`);
+
+    // 4. Reveal SQLs: Contacts with interest = cvo
+    console.log('Fetching Reveal SQLs...');
+    const revealSqlFilters = [
+      ...dateFilters,
+      {
+        propertyName: 'interests',
+        operator: 'CONTAINS_TOKEN',
+        value: 'cvo',
+      },
+    ];
+    
+    const revealSqlContacts = await fetchContacts(accessToken, revealSqlFilters, ['interests', 'createdate']);
+    results['Reveal SQLs'] = revealSqlContacts.length;
+    recordsProcessed += revealSqlContacts.length;
+    console.log(`Reveal SQLs: ${revealSqlContacts.length}`);
+
+    // 5. Inbound Deals: Deals from contacts with inbound/outbound = inbound
+    console.log('Fetching Inbound Deals...');
+    // First, fetch all deals and filter by associated contact's inbound/outbound property
+    const allDealsFilters = [];
+    if (dateFrom) {
+      allDealsFilters.push({
+        propertyName: 'createdate',
+        operator: 'GTE',
+        value: new Date(dateFrom).getTime(),
+      });
+    }
+    if (dateTo) {
+      allDealsFilters.push({
+        propertyName: 'createdate',
+        operator: 'LTE',
+        value: new Date(dateTo + 'T23:59:59').getTime(),
+      });
+    }
+    
+    // Try to filter deals by a deal property for inbound/outbound if it exists
+    // Common property names: hs_analytics_source, lead_source, or custom field
+    const inboundDeals = await fetchAllDeals(accessToken, allDealsFilters, ['dealname', 'createdate', 'hs_analytics_source']);
+    
+    // Filter for inbound deals based on analytics source
+    const inboundCount = inboundDeals.filter((deal: any) => {
+      const source = deal.properties?.hs_analytics_source?.toLowerCase() || '';
+      return source.includes('organic') || source.includes('direct') || source.includes('referral') || source.includes('social');
+    }).length;
+    
+    results['Inbound Deals'] = inboundCount;
+    recordsProcessed += inboundDeals.length;
+    console.log(`Inbound Deals: ${inboundCount}`);
+
+    // Now save these values to reporting_metric_values
+    const periodDate = dateFrom || new Date().toISOString().split('T')[0];
     let recordsCreated = 0;
     let recordsUpdated = 0;
-    let recordsSkipped = 0;
 
-    // Process each deal based on stage mapping
-    for (const deal of deals) {
-      const stageMapping = config.stageMapping.find(m => m.stageId === deal.stageId);
+    for (const metric of hubspotMetrics || []) {
+      const metricName = metric.name;
+      const value = results[metricName];
       
-      if (!stageMapping || !stageMapping.includeInSync) {
-        recordsSkipped++;
-        continue;
+      if (value !== undefined) {
+        // Check if value exists for this period
+        const { data: existingValue } = await supabase
+          .from('reporting_metric_values')
+          .select('id')
+          .eq('metric_id', metric.id)
+          .eq('period_date', periodDate)
+          .maybeSingle();
+
+        if (existingValue) {
+          // Update existing value
+          const { error: updateError } = await supabase
+            .from('reporting_metric_values')
+            .update({
+              value: value,
+              is_manual_override: false,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingValue.id);
+
+          if (!updateError) {
+            recordsUpdated++;
+            console.log(`Updated ${metricName}: ${value}`);
+          }
+        } else {
+          // Insert new value
+          const { error: insertError } = await supabase
+            .from('reporting_metric_values')
+            .insert({
+              metric_id: metric.id,
+              period_date: periodDate,
+              value: value,
+              is_manual_override: false,
+            });
+
+          if (!insertError) {
+            recordsCreated++;
+            console.log(`Created ${metricName}: ${value}`);
+          }
+        }
       }
-
-      // Here you would implement the actual sync logic to your reporting metrics
-      // This is a placeholder that logs the deal
-      console.log(`Processing deal: ${deal.name}, Amount: ${deal.amount}, Stage: ${deal.stageId}`);
-      
-      // For now, just count as processed
-      recordsCreated++;
     }
 
     // Update sync log
@@ -328,11 +573,11 @@ async function syncDeals(supabase: any, companyId: string) {
         .from('integration_sync_log')
         .update({
           status: 'completed',
-          records_processed: deals.length,
+          records_processed: recordsProcessed,
           records_created: recordsCreated,
           records_updated: recordsUpdated,
           completed_at: new Date().toISOString(),
-          details: { recordsSkipped },
+          details: { results },
         })
         .eq('id', syncLog.id);
     }
@@ -344,12 +589,13 @@ async function syncDeals(supabase: any, companyId: string) {
       .eq('id', integration.id);
 
     return {
-      dealsProcessed: deals.length,
+      results,
+      recordsProcessed,
       recordsCreated,
       recordsUpdated,
-      recordsSkipped,
     };
   } catch (error: any) {
+    console.error('Sync error:', error);
     // Update sync log with error
     if (syncLog) {
       await supabase
@@ -500,7 +746,7 @@ Deno.serve(async (req) => {
         break;
 
       case 'sync':
-        result = await syncDeals(supabase, companyId);
+        result = await syncDeals(supabase, companyId, dateFrom, dateTo);
         break;
 
       case 'disconnect':
