@@ -23,12 +23,12 @@ interface SearchConsoleRequest {
   }
 }
 
-// Mapping from reporting metric names to GSC fields
+// Mapping from reporting metric names to GSC fields (case-insensitive keys)
 const GSC_METRIC_MAPPINGS: Record<string, string> = {
-  'Total Impressions': 'impressions',
-  'Total Google Clicks': 'clicks',
-  'Branded Impressions': 'branded_impressions',
-  'Branded Clicks': 'branded_clicks',
+  'total impressions': 'impressions',
+  'total google clicks': 'clicks',
+  'branded impressions': 'branded_impressions',
+  'branded clicks': 'branded_clicks',
 }
 
 // Helper to get valid access token from OAuth tokens table
@@ -539,7 +539,7 @@ Deno.serve(async (req) => {
 
         // Process each metric
         for (const metric of gscMetrics) {
-          const fieldMapping = GSC_METRIC_MAPPINGS[metric.name]
+          const fieldMapping = GSC_METRIC_MAPPINGS[metric.name.toLowerCase()]
           
           if (!fieldMapping) {
             console.log(`No mapping for metric: ${metric.name}`)
