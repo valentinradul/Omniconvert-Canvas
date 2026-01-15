@@ -15,6 +15,7 @@ const GOOGLE_SCOPES = {
   ],
   analytics: [
     'https://www.googleapis.com/auth/analytics.readonly',
+    'https://www.googleapis.com/auth/analytics.manage.users.readonly',
   ],
   search_console: [
     'https://www.googleapis.com/auth/webmasters.readonly',
