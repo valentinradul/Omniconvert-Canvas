@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Plus, RefreshCw, BarChart3, LineChart, Calculator, Upload, Trash2 } from 'lucide-react';
+import { Plus, RefreshCw, BarChart3, LineChart, Calculator, Upload, Trash2, CloudDownload } from 'lucide-react';
 import { format, startOfWeek, startOfMonth, startOfQuarter, startOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachQuarterOfInterval, eachYearOfInterval } from 'date-fns';
 import { MetricRow } from './MetricRow';
 import { AddMetricDialog } from './AddMetricDialog';
@@ -18,6 +18,7 @@ import { SavedChartsPanel } from './SavedChartsPanel';
 import { ReportingMetric, ReportingMetricValue, ReportingCategory, SavedChart, CalculationFormula } from '@/types/reporting';
 import { useSavedCharts, useCreateSavedChart, useDeleteSavedChart } from '@/hooks/useSavedCharts';
 import { useExcelImport } from '@/hooks/useExcelImport';
+import { useSyncGoogleAnalytics } from '@/hooks/useSyncGoogleAnalytics';
 import {
   useCreateMetric,
   useUpdateMetric,
@@ -156,6 +157,13 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const updateCalculatedMetric = useUpdateCalculatedMetric();
   const excelImport = useExcelImport();
   const clearMetricValues = useClearMetricValues();
+  const syncGA = useSyncGoogleAnalytics();
+  
+  // Check if any metrics have GA integration
+  const hasGAMetrics = useMemo(() => 
+    metrics.some(m => m.integration_type === 'google_analytics' && m.integration_field),
+    [metrics]
+  );
   
   // Get calculated metric IDs and fetch their values
   const calculatedMetricIds = useMemo(() => 
@@ -312,10 +320,11 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
     }
   };
 
-  const handleIntegrationConnect = (metricId: string, integrationType: string | null) => {
+  const handleIntegrationConnect = (metricId: string, integrationType: string | null, integrationField?: string | null) => {
     updateMetric.mutate({
       id: metricId,
       integration_type: integrationType,
+      integration_field: integrationField ?? null,
     }, {
       onSuccess: () => setIntegrationDialogOpen(false),
     });
@@ -387,6 +396,25 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
             <Upload className="h-4 w-4 mr-2" />
             Import Excel
           </Button>
+          {hasGAMetrics && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => syncGA.mutate({
+                startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                endDate: format(dateRange.to, 'yyyy-MM-dd'),
+              })}
+              disabled={syncGA.isPending}
+              className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
+            >
+              {syncGA.isPending ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CloudDownload className="h-4 w-4 mr-2" />
+              )}
+              Sync GA
+            </Button>
+          )}
           <Button 
             size="sm" 
             variant="outline" 

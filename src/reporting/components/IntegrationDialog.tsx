@@ -18,13 +18,14 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { INTEGRATION_LABELS, IntegrationType, ReportingMetric } from '@/types/reporting';
-import { Link2, Unlink } from 'lucide-react';
+import { Link2, Unlink, AlertCircle, CheckCircle } from 'lucide-react';
+import { useOAuth } from '@/hooks/useOAuth';
 
 interface IntegrationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   metric: ReportingMetric | null;
-  onConnect: (metricId: string, integrationType: string | null) => void;
+  onConnect: (metricId: string, integrationType: string | null, integrationField?: string | null) => void;
   isLoading?: boolean;
 }
 
@@ -38,6 +39,23 @@ const INTEGRATION_ICONS: Record<IntegrationType, string> = {
   manual: '✏️',
 };
 
+// Google Analytics available fields for mapping
+const GA_FIELDS = [
+  { id: 'totalUsers', name: 'Total Users', description: 'Total unique users' },
+  { id: 'sessions', name: 'Sessions', description: 'Total sessions' },
+  { id: 'pageviews', name: 'Page Views', description: 'Total page views' },
+  { id: 'newUsers', name: 'New Users', description: 'New unique users' },
+  { id: 'bounceRate', name: 'Bounce Rate', description: 'Percentage of single-page sessions' },
+  { id: 'avgSessionDuration', name: 'Avg Session Duration', description: 'Average session duration in seconds' },
+  { id: 'transactions', name: 'Transactions', description: 'E-commerce transactions' },
+  { id: 'purchaseRevenue', name: 'Purchase Revenue', description: 'E-commerce revenue' },
+  { id: 'conversions', name: 'Conversions', description: 'Total conversions' },
+  { id: 'eventCount', name: 'Event Count', description: 'Total event triggers' },
+];
+
+// Integrations that are fully implemented
+const IMPLEMENTED_INTEGRATIONS: IntegrationType[] = ['manual', 'google_analytics'];
+
 export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
   open,
   onOpenChange,
@@ -48,28 +66,37 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
   const [selectedIntegration, setSelectedIntegration] = useState<string>(
     metric?.integration_type || 'manual'
   );
+  const [selectedField, setSelectedField] = useState<string>(
+    metric?.integration_field || ''
+  );
+
+  const { isConnected: isGAConnected } = useOAuth('google_analytics');
 
   React.useEffect(() => {
     if (metric) {
       setSelectedIntegration(metric.integration_type || 'manual');
+      setSelectedField(metric.integration_field || '');
     }
   }, [metric]);
 
   const handleConnect = () => {
     if (metric) {
-      onConnect(metric.id, selectedIntegration === 'manual' ? null : selectedIntegration);
+      const fieldValue = selectedIntegration === 'google_analytics' ? selectedField : null;
+      onConnect(metric.id, selectedIntegration === 'manual' ? null : selectedIntegration, fieldValue);
     }
   };
 
   const handleDisconnect = () => {
     if (metric) {
-      onConnect(metric.id, null);
+      onConnect(metric.id, null, null);
     }
   };
 
   if (!metric) return null;
 
   const isConnected = metric.integration_type && metric.integration_type !== 'manual';
+  const isImplemented = IMPLEMENTED_INTEGRATIONS.includes(selectedIntegration as IntegrationType);
+  const needsGAConnection = selectedIntegration === 'google_analytics' && !isGAConnected;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -89,6 +116,7 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
                   <Link2 className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium text-green-800 dark:text-green-200">
                     Connected to {INTEGRATION_LABELS[metric.integration_type as IntegrationType]}
+                    {metric.integration_field && ` (${GA_FIELDS.find(f => f.id === metric.integration_field)?.name || metric.integration_field})`}
                   </span>
                 </div>
                 <Button
@@ -106,31 +134,92 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
 
           <div className="space-y-2">
             <Label>Select Integration</Label>
-            <Select value={selectedIntegration} onValueChange={setSelectedIntegration}>
+            <Select value={selectedIntegration} onValueChange={(v) => {
+              setSelectedIntegration(v);
+              setSelectedField('');
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder="Select an integration" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(INTEGRATION_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
-                    <div className="flex items-center gap-2">
-                      <span>{INTEGRATION_ICONS[key as IntegrationType]}</span>
-                      <span>{label}</span>
-                      {key !== 'manual' && (
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          Coming Soon
-                        </Badge>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
+                {Object.entries(INTEGRATION_LABELS).map(([key, label]) => {
+                  const implemented = IMPLEMENTED_INTEGRATIONS.includes(key as IntegrationType);
+                  return (
+                    <SelectItem key={key} value={key}>
+                      <div className="flex items-center gap-2">
+                        <span>{INTEGRATION_ICONS[key as IntegrationType]}</span>
+                        <span>{label}</span>
+                        {!implemented && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            Coming Soon
+                          </Badge>
+                        )}
+                        {key === 'google_analytics' && isGAConnected && (
+                          <Badge variant="default" className="ml-2 text-xs bg-green-500">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Ready
+                          </Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
 
-          {selectedIntegration !== 'manual' && (
+          {/* Google Analytics field selection */}
+          {selectedIntegration === 'google_analytics' && (
+            <div className="space-y-2">
+              <Label>Select GA Metric to Sync</Label>
+              <Select value={selectedField} onValueChange={setSelectedField}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose which GA metric to pull" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GA_FIELDS.map((field) => (
+                    <SelectItem key={field.id} value={field.id}>
+                      <div className="flex flex-col">
+                        <span>{field.name}</span>
+                        <span className="text-xs text-muted-foreground">{field.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Warning for GA not connected */}
+          {needsGAConnection && (
             <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <p className="text-sm text-amber-800 dark:text-amber-200">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+                <div className="text-sm text-amber-800 dark:text-amber-200">
+                  <p className="font-medium">Google Analytics not connected</p>
+                  <p className="text-xs mt-1">
+                    Go to Settings → Integrations to connect your Google Analytics account first.
+                    Once connected, syncing will work automatically.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Info for implemented integrations */}
+          {selectedIntegration === 'google_analytics' && isGAConnected && selectedField && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                <strong>Ready to sync!</strong> This metric will automatically pull "{GA_FIELDS.find(f => f.id === selectedField)?.name}" 
+                data from your connected Google Analytics property when you run a sync.
+              </p>
+            </div>
+          )}
+
+          {/* Coming soon message for unimplemented integrations */}
+          {!isImplemented && selectedIntegration !== 'manual' && (
+            <div className="p-3 bg-muted border rounded-lg">
+              <p className="text-sm text-muted-foreground">
                 <strong>Note:</strong> Automatic data sync with {INTEGRATION_LABELS[selectedIntegration as IntegrationType]} is coming soon. 
                 For now, this marks the field's intended data source. You can still manually enter values.
               </p>
@@ -142,7 +231,10 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleConnect} disabled={isLoading}>
+          <Button 
+            onClick={handleConnect} 
+            disabled={isLoading || (selectedIntegration === 'google_analytics' && !selectedField)}
+          >
             {isLoading ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
