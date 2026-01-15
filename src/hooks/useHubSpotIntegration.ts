@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/context/company/CompanyContext';
-import { useAuth } from '@/context/AuthContext';
 
 export interface HubSpotPipeline {
   id: string;
@@ -71,7 +70,6 @@ export interface SyncLogEntry {
 
 export function useHubSpotIntegration() {
   const { currentCompany } = useCompany();
-  const { session } = useAuth();
   const selectedCompanyId = currentCompany?.id || null;
   
   const [status, setStatus] = useState<IntegrationStatus>({
@@ -173,8 +171,14 @@ export function useHubSpotIntegration() {
   }, [fetchStatus, fetchSyncHistory]);
 
   const getPipelines = async (accessToken?: string): Promise<HubSpotPipeline[]> => {
-    if (!selectedCompanyId || !session?.access_token) {
-      throw new Error('Not authenticated or no company selected');
+    if (!selectedCompanyId) {
+      throw new Error('No company selected');
+    }
+
+    // Refresh session before making API call
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession?.access_token) {
+      throw new Error('Session expired. Please refresh the page and try again.');
     }
 
     const response = await supabase.functions.invoke('hubspot-sync', {
@@ -193,8 +197,14 @@ export function useHubSpotIntegration() {
   };
 
   const getDealProperties = async (accessToken?: string): Promise<HubSpotProperty[]> => {
-    if (!selectedCompanyId || !session?.access_token) {
-      throw new Error('Not authenticated or no company selected');
+    if (!selectedCompanyId) {
+      throw new Error('No company selected');
+    }
+
+    // Refresh session before making API call
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession?.access_token) {
+      throw new Error('Session expired. Please refresh the page and try again.');
     }
 
     const response = await supabase.functions.invoke('hubspot-sync', {
@@ -224,8 +234,14 @@ export function useHubSpotIntegration() {
       dealTypeFilter?: 'all' | 'inbound' | 'outbound';
     }
   ): Promise<{ deals: HubSpotDealPreview[]; totalCount: number; filteredCount: number }> => {
-    if (!selectedCompanyId || !session?.access_token) {
-      throw new Error('Not authenticated or no company selected');
+    if (!selectedCompanyId) {
+      throw new Error('No company selected');
+    }
+
+    // Refresh session before making API call
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession?.access_token) {
+      throw new Error('Session expired. Please refresh the page and try again.');
     }
 
     const response = await supabase.functions.invoke('hubspot-sync', {
@@ -255,8 +271,14 @@ export function useHubSpotIntegration() {
   };
 
   const saveConfig = async (accessToken: string | undefined, config: HubSpotConfig): Promise<void> => {
-    if (!selectedCompanyId || !session?.access_token) {
-      throw new Error('Not authenticated or no company selected');
+    if (!selectedCompanyId) {
+      throw new Error('No company selected');
+    }
+
+    // Refresh session before making API call
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession?.access_token) {
+      throw new Error('Session expired. Please refresh the page and try again.');
     }
 
     const response = await supabase.functions.invoke('hubspot-sync', {
@@ -276,8 +298,14 @@ export function useHubSpotIntegration() {
   };
 
   const syncNow = async (): Promise<{ dealsProcessed: number; recordsCreated: number; recordsUpdated: number; recordsSkipped: number }> => {
-    if (!selectedCompanyId || !session?.access_token) {
-      throw new Error('Not authenticated or no company selected');
+    if (!selectedCompanyId) {
+      throw new Error('No company selected');
+    }
+
+    // Refresh session before making API call
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession?.access_token) {
+      throw new Error('Session expired. Please refresh the page and try again.');
     }
 
     setIsSyncing(true);
@@ -306,8 +334,14 @@ export function useHubSpotIntegration() {
   };
 
   const disconnect = async (): Promise<void> => {
-    if (!selectedCompanyId || !session?.access_token) {
-      throw new Error('Not authenticated or no company selected');
+    if (!selectedCompanyId) {
+      throw new Error('No company selected');
+    }
+
+    // Refresh session before making API call
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession?.access_token) {
+      throw new Error('Session expired. Please refresh the page and try again.');
     }
 
     const response = await supabase.functions.invoke('hubspot-sync', {
