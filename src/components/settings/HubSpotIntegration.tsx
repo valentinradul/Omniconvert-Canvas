@@ -509,10 +509,14 @@ export const HubSpotIntegration: React.FC = () => {
               <Label htmlFor="accessToken">HubSpot Private App Access Token</Label>
               <Input
                 id="accessToken"
-                type="password"
+                type="text"
                 placeholder="pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
+                data-form-type="other"
               />
               <p className="text-sm text-muted-foreground">
                 Create a private app in HubSpot with CRM &gt; Deals read access.{' '}
