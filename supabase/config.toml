@@ -1,28 +1,28 @@
 project_id = "jdukmuskbpalfqmjelnl"
 
 [functions.send-invitation]
-verify_jwt = true
+verify_jwt = false
 
 [functions.send-contact-email]
 verify_jwt = false
 
 [functions.hubspot-sync]
-verify_jwt = true
+verify_jwt = false
 
 [functions.calculate-metrics]
 verify_jwt = false
 
 [functions.fetch-meta-ads]
-verify_jwt = true
+verify_jwt = false
 
 [functions.fetch-google-ads]
-verify_jwt = true
+verify_jwt = false
 
 [functions.fetch-google-analytics]
-verify_jwt = true
+verify_jwt = false
 
 [functions.fetch-linkedin-ads]
-verify_jwt = true
+verify_jwt = false
 
 [functions.fetch-google-search-console]
 verify_jwt = false
