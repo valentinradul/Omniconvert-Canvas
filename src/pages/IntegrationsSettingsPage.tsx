@@ -77,24 +77,7 @@ const IntegrationsSettingsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <img 
-                src="https://www.gstatic.com/analytics-suite/header/suite/v2/ic_analytics.svg" 
-                alt="Google Analytics" 
-                className="h-6 w-6"
-              />
-              Google Analytics
-            </CardTitle>
-            <CardDescription>
-              Sync website traffic and user behavior data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <GoogleAnalyticsIntegration />
-          </CardContent>
-        </Card>
+        <GoogleAnalyticsIntegration />
 
         <Card>
           <CardHeader>
@@ -115,24 +98,7 @@ const IntegrationsSettingsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <img 
-                src="https://www.gstatic.com/images/branding/product/1x/search_console_48dp.png" 
-                alt="Google Search Console" 
-                className="h-6 w-6"
-              />
-              Google Search Console
-            </CardTitle>
-            <CardDescription>
-              Sync organic search impressions, clicks, CTR, and position data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <GoogleSearchConsoleIntegration />
-          </CardContent>
-        </Card>
+        <GoogleSearchConsoleIntegration />
       </div>
     </div>
   );

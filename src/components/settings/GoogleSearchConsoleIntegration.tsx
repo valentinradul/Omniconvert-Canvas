@@ -103,9 +103,23 @@ export function GoogleSearchConsoleIntegration() {
     if (!currentCompany?.id) return;
 
     try {
+      // First get the integration ID
+      const { data: integration } = await supabase
+        .from('company_integrations')
+        .select('id')
+        .eq('company_id', currentCompany.id)
+        .eq('integration_type', 'google_search_console')
+        .maybeSingle();
+
+      if (!integration?.id) {
+        console.error('No integration found');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('fetch-google-search-console', {
         body: {
-          action: 'list_sites',
+          action: 'get-sites',
+          integrationId: integration.id,
           companyId: currentCompany.id,
         },
       });
@@ -145,6 +159,7 @@ export function GoogleSearchConsoleIntegration() {
             siteUrl: selectedSite,
             dateRangePreset: dateRange,
           },
+          is_active: true,
           updated_at: new Date().toISOString(),
         })
         .eq('company_id', currentCompany.id)
@@ -171,8 +186,22 @@ export function GoogleSearchConsoleIntegration() {
 
     setIsSyncing(true);
     try {
+      // Get integration ID first
+      const { data: integration } = await supabase
+        .from('company_integrations')
+        .select('id')
+        .eq('company_id', currentCompany.id)
+        .eq('integration_type', 'google_search_console')
+        .maybeSingle();
+
+      if (!integration?.id) {
+        throw new Error('Integration not found');
+      }
+
       const { error } = await supabase.functions.invoke('fetch-google-search-console', {
         body: {
+          action: 'sync',
+          integrationId: integration.id,
           companyId: currentCompany.id,
         },
       });
