@@ -245,18 +245,24 @@ export function GoogleAnalyticsIntegration() {
 
     setIsSyncing(true);
     try {
-      const { error } = await supabase.functions.invoke('fetch-google-analytics', {
+      const { data, error } = await supabase.functions.invoke('fetch-google-analytics', {
         body: {
+          action: 'sync',
           companyId: currentCompany.id,
         },
       });
 
       if (error) throw error;
-      toast.success('Google Analytics data synced successfully');
+      
+      if (!data?.success) {
+        throw new Error(data?.error || 'Sync failed');
+      }
+      
+      toast.success(`Google Analytics data synced (${data.recordsProcessed || 0} records)`);
       await loadIntegrationConfig();
     } catch (error) {
       console.error('Sync failed:', error);
-      toast.error('Failed to sync Google Analytics data');
+      toast.error(error instanceof Error ? error.message : 'Failed to sync Google Analytics data');
     } finally {
       setIsSyncing(false);
     }
