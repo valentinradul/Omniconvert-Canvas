@@ -423,23 +423,46 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
             Import Excel
           </Button>
           {hasGAMetrics && (
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => syncGA.mutate({
-                startDate: format(dateRange.from, 'yyyy-MM-dd'),
-                endDate: format(dateRange.to, 'yyyy-MM-dd'),
-              })}
-              disabled={syncGA.isPending}
-              className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
-            >
-              {syncGA.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <CloudDownload className="h-4 w-4 mr-2" />
-              )}
-              Sync GA
-            </Button>
+            <>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => syncGA.mutate({
+                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
+                })}
+                disabled={syncGA.isPending}
+                className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
+              >
+                {syncGA.isPending ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CloudDownload className="h-4 w-4 mr-2" />
+                )}
+                Sync GA
+              </Button>
+              <Button 
+                size="sm" 
+                variant="default"
+                onClick={() => {
+                  const now = new Date();
+                  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                  syncGA.mutate({
+                    startDate: format(startOfMonth, 'yyyy-MM-dd'),
+                    endDate: format(now, 'yyyy-MM-dd'),
+                  });
+                }}
+                disabled={syncGA.isPending}
+                className="bg-primary hover:bg-primary/90"
+              >
+                {syncGA.isPending ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CloudDownload className="h-4 w-4 mr-2" />
+                )}
+                Sync This Month
+              </Button>
+            </>
           )}
           <Button 
             size="sm" 
