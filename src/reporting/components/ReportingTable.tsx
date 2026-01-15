@@ -163,10 +163,15 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [saveChartDialogOpen, setSaveChartDialogOpen] = useState(false);
   
-  // Date range defaults to all time (Oct 2021 - current month)
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(2021, 9, 1),
-    to: new Date(), // Current date - includes Jan 2026
+  // Date range defaults to all time (Oct 2021 - end of current month)
+  const [dateRange, setDateRange] = useState<DateRange>(() => {
+    const now = new Date();
+    // Set to last day of current month to ensure current month is included
+    const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return {
+      from: new Date(2021, 9, 1),
+      to: endOfCurrentMonth,
+    };
   });
   const [granularity, setGranularity] = useState<Granularity>('month');
 
