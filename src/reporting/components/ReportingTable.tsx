@@ -97,19 +97,40 @@ const generatePeriods = (dateRange: DateRange, granularity: Granularity): string
 
 const formatPeriodHeader = (period: string, granularity: Granularity): string => {
   const date = new Date(period);
+  const now = new Date();
+  const isCurrentPeriod = (() => {
+    switch (granularity) {
+      case 'day':
+        return date.toDateString() === now.toDateString();
+      case 'week':
+        return format(date, 'yyyy-ww') === format(now, 'yyyy-ww');
+      case 'month':
+        return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+      case 'quarter':
+        return date.getFullYear() === now.getFullYear() && 
+          Math.ceil((date.getMonth() + 1) / 3) === Math.ceil((now.getMonth() + 1) / 3);
+      case 'year':
+        return date.getFullYear() === now.getFullYear();
+      default:
+        return false;
+    }
+  })();
+
+  const suffix = isCurrentPeriod ? ' (Now)' : '';
+  
   switch (granularity) {
     case 'day':
-      return format(date, 'MMM d, yyyy');
+      return format(date, 'MMM d, yyyy') + suffix;
     case 'week':
-      return `W${format(date, 'w yyyy')}`;
+      return `W${format(date, 'w yyyy')}` + suffix;
     case 'month':
-      return format(date, 'MMM yyyy');
+      return format(date, 'MMM yyyy') + suffix;
     case 'quarter':
-      return `Q${Math.ceil((date.getMonth() + 1) / 3)} ${date.getFullYear()}`;
+      return `Q${Math.ceil((date.getMonth() + 1) / 3)} ${date.getFullYear()}` + suffix;
     case 'year':
-      return format(date, 'yyyy');
+      return format(date, 'yyyy') + suffix;
     default:
-      return format(date, 'MMM yyyy');
+      return format(date, 'MMM yyyy') + suffix;
   }
 };
 
@@ -142,10 +163,10 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [saveChartDialogOpen, setSaveChartDialogOpen] = useState(false);
   
-  // Date range defaults to all time (Oct 2021 - Dec 2025)
+  // Date range defaults to all time (Oct 2021 - current month)
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(2021, 9, 1),
-    to: new Date(2025, 11, 31),
+    to: new Date(), // Current date - includes Jan 2026
   });
   const [granularity, setGranularity] = useState<Granularity>('month');
 
