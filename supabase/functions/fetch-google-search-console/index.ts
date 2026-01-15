@@ -482,8 +482,10 @@ Deno.serve(async (req) => {
 
         console.log('Date range:', startDateStr, 'to', endDateStr)
 
-        // Fetch search analytics data by date
-        const analyticsResponse = await fetch(
+        // First, fetch AGGREGATE totals (without query dimension) - this gives accurate total clicks/impressions
+        console.log('Fetching aggregate totals from GSC...')
+        
+        const aggregateResponse = await fetch(
           `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`,
           {
             method: 'POST',
@@ -494,31 +496,27 @@ Deno.serve(async (req) => {
             body: JSON.stringify({
               startDate: startDateStr,
               endDate: endDateStr,
-              dimensions: ['date', 'query'],
+              dimensions: ['date'], // Only date, no query - gives true totals
               rowLimit: 25000,
             }),
           }
         )
 
-        if (!analyticsResponse.ok) {
-          const errorData = await analyticsResponse.json()
-          console.error('GSC API error:', errorData)
-          throw new Error(errorData.error?.message || 'Failed to fetch search analytics')
+        if (!aggregateResponse.ok) {
+          const errorData = await aggregateResponse.json()
+          console.error('GSC API error (aggregate):', errorData)
+          throw new Error(errorData.error?.message || 'Failed to fetch aggregate data')
         }
 
-        const analyticsData = await analyticsResponse.json()
-        console.log('Search analytics data fetched:', analyticsData.rows?.length || 0, 'rows')
+        const aggregateData = await aggregateResponse.json()
+        console.log('Aggregate data rows:', aggregateData.rows?.length || 0)
 
-        // Aggregate data by month
+        // Calculate true monthly totals from aggregate data
         const monthlyMetrics: Record<string, { clicks: number; impressions: number; brandedClicks: number; brandedImpressions: number }> = {}
-
-        // Define branded keywords (adjust based on actual brand)
-        const brandedKeywords = ['omniconvert', 'omni convert', 'explore', 'reveal']
-
-        for (const row of analyticsData.rows || []) {
-          const date = row.keys[0] // e.g., "2026-01-15"
-          const query = (row.keys[1] || '').toLowerCase()
-          const monthKey = date.substring(0, 7) // e.g., "2026-01"
+        
+        for (const row of aggregateData.rows || []) {
+          const date = row.keys[0]
+          const monthKey = date.substring(0, 7)
           
           if (!monthlyMetrics[monthKey]) {
             monthlyMetrics[monthKey] = { clicks: 0, impressions: 0, brandedClicks: 0, brandedImpressions: 0 }
@@ -526,14 +524,79 @@ Deno.serve(async (req) => {
           
           monthlyMetrics[monthKey].clicks += row.clicks || 0
           monthlyMetrics[monthKey].impressions += row.impressions || 0
+        }
 
-          // Check if branded
-          const isBranded = brandedKeywords.some(kw => query.includes(kw))
-          if (isBranded) {
-            monthlyMetrics[monthKey].brandedClicks += row.clicks || 0
-            monthlyMetrics[monthKey].brandedImpressions += row.impressions || 0
+        console.log('Aggregate monthly totals:', JSON.stringify(monthlyMetrics))
+
+        // Now fetch branded data separately using query filter
+        const brandedKeywords = ['omniconvert', 'omni convert', 'explore', 'reveal']
+        
+        // Fetch branded data by paginating through query results
+        let startRow = 0
+        const rowLimit = 25000
+        let totalRowsFetched = 0
+        let hasMoreData = true
+
+        while (hasMoreData) {
+          console.log(`Fetching GSC branded data from row ${startRow}...`)
+          
+          const analyticsResponse = await fetch(
+            `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                startDate: startDateStr,
+                endDate: endDateStr,
+                dimensions: ['date', 'query'],
+                rowLimit: rowLimit,
+                startRow: startRow,
+              }),
+            }
+          )
+
+          if (!analyticsResponse.ok) {
+            const errorData = await analyticsResponse.json()
+            console.error('GSC API error:', errorData)
+            throw new Error(errorData.error?.message || 'Failed to fetch search analytics')
+          }
+
+          const analyticsData = await analyticsResponse.json()
+          const rowsInBatch = analyticsData.rows?.length || 0
+          totalRowsFetched += rowsInBatch
+          
+          console.log(`Fetched ${rowsInBatch} rows (total: ${totalRowsFetched})`)
+
+          // Process this batch for BRANDED data only
+          for (const row of analyticsData.rows || []) {
+            const date = row.keys[0]
+            const query = (row.keys[1] || '').toLowerCase()
+            const monthKey = date.substring(0, 7)
+            
+            // Only count branded queries
+            const isBranded = brandedKeywords.some(kw => query.includes(kw))
+            if (isBranded) {
+              if (!monthlyMetrics[monthKey]) {
+                monthlyMetrics[monthKey] = { clicks: 0, impressions: 0, brandedClicks: 0, brandedImpressions: 0 }
+              }
+              monthlyMetrics[monthKey].brandedClicks += row.clicks || 0
+              monthlyMetrics[monthKey].brandedImpressions += row.impressions || 0
+            }
+          }
+
+          // Check if we need to fetch more
+          if (rowsInBatch < rowLimit) {
+            hasMoreData = false
+          } else {
+            startRow += rowLimit
           }
         }
+
+        console.log(`Total query rows fetched: ${totalRowsFetched}`)
+        console.log('Final monthly totals:', JSON.stringify(monthlyMetrics))
 
         console.log('Monthly aggregated data:', Object.keys(monthlyMetrics).length, 'months')
 
