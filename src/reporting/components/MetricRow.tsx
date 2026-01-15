@@ -175,6 +175,11 @@ export const MetricRow: React.FC<MetricRowProps> = ({
                 </Tooltip>
               )}
             </span>
+            {metric.integration_type && (
+              <span className="text-xs text-muted-foreground">
+                {INTEGRATION_LABELS[metric.integration_type as IntegrationType] || metric.integration_type}
+              </span>
+            )}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

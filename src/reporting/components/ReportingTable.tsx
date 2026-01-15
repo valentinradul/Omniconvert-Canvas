@@ -464,7 +464,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
               }
               // TODO: Add other integration syncs here as they're implemented
             }}
-            disabled={syncGA.isPending || !hasIntegratedMetrics}
+            disabled={syncGA.isPending}
             className="bg-primary hover:bg-primary/90"
           >
             {syncGA.isPending ? (
