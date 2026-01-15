@@ -19,6 +19,7 @@ import { ReportingMetric, ReportingMetricValue, ReportingCategory, SavedChart, C
 import { useSavedCharts, useCreateSavedChart, useDeleteSavedChart } from '@/hooks/useSavedCharts';
 import { useExcelImport } from '@/hooks/useExcelImport';
 import { useSyncGoogleAnalytics } from '@/hooks/useSyncGoogleAnalytics';
+import { useSyncGoogleSearchConsole } from '@/hooks/useSyncGoogleSearchConsole';
 import {
   useCreateMetric,
   useUpdateMetric,
@@ -184,6 +185,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const excelImport = useExcelImport();
   const clearMetricValues = useClearMetricValues();
   const syncGA = useSyncGoogleAnalytics();
+  const syncGSC = useSyncGoogleSearchConsole();
   
   // Check if any metrics have GA integration
   const hasGAMetrics = useMemo(() => 
@@ -191,9 +193,15 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
     [metrics]
   );
   
+  // Check if any metrics have GSC integration (by source name)
+  const hasGSCMetrics = useMemo(() => 
+    metrics.some(m => m.source === 'Google Search Console'),
+    [metrics]
+  );
+  
   // Check if any metrics have ANY integration (for "Sync This Month" button)
   const hasIntegratedMetrics = useMemo(() => 
-    metrics.some(m => m.integration_type && m.integration_field),
+    metrics.some(m => (m.integration_type && m.integration_field) || m.source === 'Google Search Console'),
     [metrics]
   );
   
@@ -449,6 +457,27 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
               </Button>
             </>
           )}
+          {hasGSCMetrics && (
+            <>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => syncGSC.mutate({
+                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
+                })}
+                disabled={syncGSC.isPending}
+                className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
+              >
+                {syncGSC.isPending ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CloudDownload className="h-4 w-4 mr-2" />
+                )}
+                Sync GSC
+              </Button>
+            </>
+          )}
           <Button 
             size="sm" 
             variant="default"
@@ -462,12 +491,17 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                   endDate: format(now, 'yyyy-MM-dd'),
                 });
               }
-              // TODO: Add other integration syncs here as they're implemented
+              if (hasGSCMetrics) {
+                syncGSC.mutate({
+                  startDate: '2026-01-01',
+                  endDate: format(now, 'yyyy-MM-dd'),
+                });
+              }
             }}
-            disabled={syncGA.isPending}
+            disabled={syncGA.isPending || syncGSC.isPending}
             className="bg-primary hover:bg-primary/90"
           >
-            {syncGA.isPending ? (
+            {(syncGA.isPending || syncGSC.isPending) ? (
               <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <CloudDownload className="h-4 w-4 mr-2" />
