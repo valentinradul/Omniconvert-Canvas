@@ -176,6 +176,8 @@ Deno.serve(async (req) => {
       }
 
       case 'sync': {
+        console.log('Starting sync for company:', companyId);
+        
         // Get integration config
         const { data: integration, error: intError } = await supabase
           .from('company_integrations')
@@ -185,20 +187,134 @@ Deno.serve(async (req) => {
           .single();
 
         if (intError || !integration) {
+          console.error('Integration not found:', intError);
           return new Response(JSON.stringify({ 
             success: false, 
-            error: 'Integration not found' 
+            error: 'Integration not found. Please configure Google Analytics first.' 
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
 
-        const credentials = JSON.parse(integration.encrypted_credentials);
-        const integrationConfig = integration.config as { 
-          property_id: string; 
-          selected_metrics: string[]; 
-          date_range_months: number 
+        // Get OAuth tokens from company_oauth_tokens table (where OAuth flow stores them)
+        const { data: oauthToken, error: oauthError } = await supabase
+          .from('company_oauth_tokens')
+          .select('id, access_token, refresh_token, token_expires_at')
+          .eq('company_id', companyId)
+          .eq('provider', 'google_analytics')
+          .maybeSingle();
+
+        console.log('OAuth token lookup:', { found: !!oauthToken, error: oauthError?.message });
+
+        if (oauthError || !oauthToken) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Google Analytics OAuth not connected. Please reconnect in Settings → Integrations.' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Helper function to refresh token if expired
+        const getValidAccessToken = async (): Promise<string> => {
+          const now = new Date();
+          const expiresAt = oauthToken.token_expires_at ? new Date(oauthToken.token_expires_at) : null;
+          
+          // Check if token is expired or will expire in the next 5 minutes
+          const needsRefresh = !expiresAt || expiresAt.getTime() - now.getTime() < 5 * 60 * 1000;
+          
+          if (!needsRefresh) {
+            console.log('Access token still valid, expires at:', expiresAt);
+            return oauthToken.access_token;
+          }
+
+          console.log('Access token expired or expiring soon, refreshing...');
+
+          if (!oauthToken.refresh_token) {
+            throw new Error('No refresh token available. Please reconnect Google Analytics.');
+          }
+
+          // Get client credentials from environment
+          const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
+          const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
+
+          if (!clientId || !clientSecret) {
+            throw new Error('Google OAuth credentials not configured in environment');
+          }
+
+          // Refresh the token
+          const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              client_id: clientId,
+              client_secret: clientSecret,
+              refresh_token: oauthToken.refresh_token,
+              grant_type: 'refresh_token',
+            }),
+          });
+
+          if (!tokenResponse.ok) {
+            const errorData = await tokenResponse.text();
+            console.error('Token refresh failed:', errorData);
+            throw new Error('Failed to refresh access token. Please reconnect Google Analytics.');
+          }
+
+          const tokenData = await tokenResponse.json();
+          console.log('Token refreshed successfully');
+
+          // Calculate new expiry time
+          const newExpiresAt = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000);
+
+          // Update the token in the database
+          const { error: updateError } = await supabase
+            .from('company_oauth_tokens')
+            .update({
+              access_token: tokenData.access_token,
+              token_expires_at: newExpiresAt.toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', oauthToken.id);
+
+          if (updateError) {
+            console.error('Failed to update token in database:', updateError);
+          }
+
+          return tokenData.access_token;
         };
+
+        // Get valid access token
+        let accessToken: string;
+        try {
+          accessToken = await getValidAccessToken();
+        } catch (tokenError) {
+          console.error('Token error:', tokenError);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: tokenError.message 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const integrationConfig = integration.config as { 
+          property_id?: string;
+          propertyId?: string;
+          selected_metrics?: string[]; 
+          date_range_months?: number 
+        };
+
+        const propertyId = integrationConfig.property_id || integrationConfig.propertyId;
+        if (!propertyId) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'No Google Analytics property configured.' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
 
         // Create sync log entry
         const { data: syncLog, error: syncLogError } = await supabase
@@ -218,17 +334,15 @@ Deno.serve(async (req) => {
 
         try {
           // Calculate date range
-          const endDate = new Date();
-          const startDate = new Date();
-          startDate.setMonth(startDate.getMonth() - (integrationConfig.date_range_months || 3));
+          const endDateObj = new Date();
+          const startDateObj = new Date();
+          startDateObj.setMonth(startDateObj.getMonth() - (integrationConfig.date_range_months || 3));
 
           const dateRange = {
-            startDate: startDate.toISOString().split('T')[0],
-            endDate: endDate.toISOString().split('T')[0],
+            startDate: startDateObj.toISOString().split('T')[0],
+            endDate: endDateObj.toISOString().split('T')[0],
           };
 
-          const propertyId = integrationConfig.property_id;
-          const accessToken = credentials.access_token;
           let recordsProcessed = 0;
 
           // Helper function to make GA4 API requests
@@ -247,7 +361,7 @@ Deno.serve(async (req) => {
             if (!response.ok) {
               const errorText = await response.text();
               console.error('GA API error:', errorText);
-              throw new Error('Failed to fetch analytics data');
+              throw new Error('Failed to fetch analytics data: ' + errorText);
             }
             return response.json();
           };
