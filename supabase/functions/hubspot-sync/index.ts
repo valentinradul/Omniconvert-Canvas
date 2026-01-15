@@ -398,14 +398,14 @@ async function syncDeals(supabase: any, companyId: string, dateFrom?: string, da
     const results: Record<string, number> = {};
     let recordsProcessed = 0;
 
-    // 1. Total MQs: Contacts with lifecycle_stage = MQL, lead_status NOT Disqualified/Unsubscribed
+    // 1. Total MQs: Contacts with lifecycle_stage = MQL or SQL, lead_status NOT Disqualified/Unsubscribed
     console.log('Fetching Total MQs...');
     const mqFilters = [
       ...dateFilters,
       {
         propertyName: 'lifecyclestage',
-        operator: 'EQ',
-        value: 'marketingqualifiedlead',
+        operator: 'IN',
+        values: ['marketingqualifiedlead', 'salesqualifiedlead'],
       },
       {
         propertyName: 'hs_lead_status',
