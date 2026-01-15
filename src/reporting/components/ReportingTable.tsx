@@ -229,16 +229,18 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const syncGSC = useSyncGoogleSearchConsole();
   
   // Check if any metrics have GA integration (by source name or integration_type)
-  const hasGAMetrics = useMemo(() => 
-    metrics.some(m => m.source === 'Google Analytics' || (m.integration_type === 'google_analytics' && m.integration_field)),
-    [metrics]
-  );
+  const hasGAMetrics = useMemo(() => {
+    const result = metrics.some(m => m.source === 'Google Analytics' || (m.integration_type === 'google_analytics' && m.integration_field));
+    console.log('hasGAMetrics check:', result, 'metrics sources:', metrics.map(m => m.source));
+    return result;
+  }, [metrics]);
   
   // Check if any metrics have GSC integration (by source name)
-  const hasGSCMetrics = useMemo(() => 
-    metrics.some(m => m.source === 'Google Search Console'),
-    [metrics]
-  );
+  const hasGSCMetrics = useMemo(() => {
+    const result = metrics.some(m => m.source === 'Google Search Console');
+    console.log('hasGSCMetrics check:', result);
+    return result;
+  }, [metrics]);
   
   // Check if any metrics have ANY integration (for "Sync This Month" button)
   const hasIntegratedMetrics = useMemo(() => 
