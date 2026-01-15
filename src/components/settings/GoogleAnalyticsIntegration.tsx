@@ -92,11 +92,21 @@ export function GoogleAnalyticsIntegration() {
 
       if (integration) {
         const config = integration.config as Record<string, unknown> | null;
+        const savedMetrics = config?.selectedMetrics as string[] | undefined;
+        // Filter out any old/invalid metric IDs that no longer exist
+        const validMetricIds = AVAILABLE_METRICS.map(m => m.id);
+        const filteredMetrics = savedMetrics?.filter(id => validMetricIds.includes(id)) || [];
+        
         setCurrentConfig({
           propertyId: config?.propertyId as string,
-          selectedMetrics: config?.selectedMetrics as string[],
+          selectedMetrics: filteredMetrics.length > 0 ? filteredMetrics : validMetricIds,
           dateRangeMonths: config?.dateRangeMonths as number,
         });
+        // Also update the form state with valid metrics
+        setSelectedMetrics(filteredMetrics.length > 0 ? filteredMetrics : validMetricIds);
+        if (config?.propertyId) {
+          setSelectedPropertyId(config.propertyId as string);
+        }
         setLastSyncAt(integration.last_sync_at);
       }
 
