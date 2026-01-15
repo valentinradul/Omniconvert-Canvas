@@ -458,9 +458,6 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                   <th className="sticky left-0 bg-muted z-20 px-3 py-2 text-left text-sm font-semibold border-r border-border min-w-[200px]">
                     Metric
                   </th>
-                  <th className="sticky left-[200px] bg-muted z-20 px-3 py-2 text-left text-sm font-semibold border-r border-border min-w-[120px]">
-                    Source
-                  </th>
                   {periods.map((period) => (
                     <th 
                       key={period} 
@@ -477,7 +474,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                   groupedMetrics.length === 0 ? (
                     <tr>
                       <td 
-                        colSpan={periods.length + 2} 
+                        colSpan={periods.length + 1} 
                         className="px-4 py-8 text-center text-muted-foreground"
                       >
                         No metrics defined yet. Add metrics in the subcategory tabs.
@@ -489,7 +486,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                         {/* Category group header */}
                         <tr className="bg-muted/30">
                           <td 
-                            colSpan={periods.length + 2} 
+                            colSpan={periods.length + 1} 
                             className="px-3 py-2 text-sm font-semibold text-muted-foreground border-t border-border"
                           >
                             {groupCategory.name}
@@ -520,7 +517,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                   visibleMetrics.native.length === 0 && visibleMetrics.shared.length === 0 ? (
                     <tr>
                       <td 
-                        colSpan={periods.length + 2} 
+                        colSpan={periods.length + 1} 
                         className="px-4 py-8 text-center text-muted-foreground"
                       >
                         No metrics defined yet. Click "Add Metric" to get started.

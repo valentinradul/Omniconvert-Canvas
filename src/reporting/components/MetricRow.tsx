@@ -220,11 +220,6 @@ export const MetricRow: React.FC<MetricRowProps> = ({
           </DropdownMenu>
         </div>
       </td>
-      <td className="sticky left-[200px] bg-background z-10 px-3 py-2 text-sm text-muted-foreground border-r border-border min-w-[120px]">
-        {metric.integration_type 
-          ? INTEGRATION_LABELS[metric.integration_type as IntegrationType] || metric.source
-          : metric.source || 'Manual'}
-      </td>
       {periods.map((period) => {
         // Use aggregated value for quarter/year granularity
         const aggregatedValue = aggregateValue(values, period, granularity, dateRange);
