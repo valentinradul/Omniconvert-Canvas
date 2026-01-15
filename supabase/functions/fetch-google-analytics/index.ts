@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, companyId, config } = await req.json();
+    const { action, companyId, config, startDate, endDate, metricIds } = await req.json();
 
     switch (action) {
       case 'test-connection': {
@@ -584,8 +584,7 @@ Deno.serve(async (req) => {
         }
 
         // Get all metrics with google_analytics integration type
-        const body = await req.json().catch(() => ({}));
-        const { startDate, endDate, metricIds } = body;
+        // Note: startDate, endDate, metricIds already parsed from initial req.json()
 
         let metricsQuery = supabase
           .from('reporting_metrics')
