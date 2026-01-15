@@ -151,6 +151,46 @@ Deno.serve(async (req) => {
           throw new Error('Failed to save OAuth tokens');
         }
 
+        // Also ensure company_integrations record exists for this integration
+        const integrationTypeMap = {
+          ads: 'google_ads',
+          analytics: 'google_analytics',
+          search_console: 'google_search_console',
+        };
+        const integrationType = integrationTypeMap[stateData.service];
+
+        // Check if integration already exists
+        const { data: existingIntegration } = await supabase
+          .from('company_integrations')
+          .select('id')
+          .eq('company_id', stateData.companyId)
+          .eq('integration_type', integrationType)
+          .maybeSingle();
+
+        if (!existingIntegration) {
+          // Create a basic integration record - user will configure property later
+          const { error: integrationError } = await supabase
+            .from('company_integrations')
+            .insert({
+              company_id: stateData.companyId,
+              integration_type: integrationType,
+              is_active: true,
+              config: {},
+              updated_at: new Date().toISOString(),
+            });
+
+          if (integrationError) {
+            console.error('Failed to create integration record:', integrationError);
+            // Don't fail - OAuth tokens are saved, integration can be created later
+          }
+        } else {
+          // Mark existing integration as active
+          await supabase
+            .from('company_integrations')
+            .update({ is_active: true, updated_at: new Date().toISOString() })
+            .eq('id', existingIntegration.id);
+        }
+
         return new Response(
           JSON.stringify({ 
             success: true, 
