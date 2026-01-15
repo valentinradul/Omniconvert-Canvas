@@ -144,20 +144,26 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
               <SelectContent>
                 {Object.entries(INTEGRATION_LABELS).map(([key, label]) => {
                   const implemented = IMPLEMENTED_INTEGRATIONS.includes(key as IntegrationType);
+                  const isGAOption = key === 'google_analytics';
                   return (
                     <SelectItem key={key} value={key}>
                       <div className="flex items-center gap-2">
                         <span>{INTEGRATION_ICONS[key as IntegrationType]}</span>
                         <span>{label}</span>
-                        {!implemented && (
-                          <Badge variant="outline" className="ml-2 text-xs">
-                            Coming Soon
-                          </Badge>
-                        )}
-                        {key === 'google_analytics' && isGAConnected && (
+                        {isGAOption && isGAConnected && (
                           <Badge variant="default" className="ml-2 text-xs bg-green-500">
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            Ready
+                            Connected
+                          </Badge>
+                        )}
+                        {isGAOption && !isGAConnected && (
+                          <Badge variant="outline" className="ml-2 text-xs text-amber-600 border-amber-300">
+                            Not Connected
+                          </Badge>
+                        )}
+                        {!implemented && !isGAOption && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            Coming Soon
                           </Badge>
                         )}
                       </div>
