@@ -25,7 +25,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.fetch-google-search-console]
-verify_jwt = true
+verify_jwt = false
 
 [functions.oauth-google]
 verify_jwt = false
