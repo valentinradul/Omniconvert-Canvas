@@ -35,6 +35,8 @@ interface DateRange {
 interface DateRangePickerProps {
   value: DateRange;
   onChange: (range: DateRange) => void;
+  selectedPreset?: DatePreset;
+  onPresetChange?: (preset: DatePreset) => void;
 }
 
 const presets: { key: DatePreset; label: string }[] = [
@@ -102,14 +104,23 @@ const getPresetRange = (preset: DatePreset): DateRange => {
   }
 };
 
-export const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChange }) => {
+export const DateRangePicker: React.FC<DateRangePickerProps> = ({ 
+  value, 
+  onChange,
+  selectedPreset: controlledPreset,
+  onPresetChange,
+}) => {
   const [open, setOpen] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState<DatePreset>('all-time');
+  const [internalPreset, setInternalPreset] = useState<DatePreset>(controlledPreset || 'all-time');
   const [tempFrom, setTempFrom] = useState<Date | undefined>(value.from);
   const [tempTo, setTempTo] = useState<Date | undefined>(value.to);
+  
+  // Use controlled preset if provided, otherwise use internal state
+  const selectedPreset = controlledPreset ?? internalPreset;
 
   const handlePresetClick = (preset: DatePreset) => {
-    setSelectedPreset(preset);
+    setInternalPreset(preset);
+    onPresetChange?.(preset);
     if (preset !== 'custom') {
       const range = getPresetRange(preset);
       setTempFrom(range.from);
@@ -193,7 +204,8 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChang
                   setTempFrom(range?.from);
                   setTempTo(range?.to);
                   if (range?.from && range?.to) {
-                    setSelectedPreset('custom');
+                    setInternalPreset('custom');
+                    onPresetChange?.('custom');
                   }
                 }}
                 numberOfMonths={2}

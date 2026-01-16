@@ -9,7 +9,7 @@ import { FormulaBuilderDialog } from './FormulaBuilderDialog';
 import { IntegrationDialog } from './IntegrationDialog';
 import { MetricVisibilityDialog } from './MetricVisibilityDialog';
 import { ExcelImportDialog } from './ExcelImportDialog';
-import { DateRangePicker } from './DateRangePicker';
+import { DateRangePicker, DatePreset } from './DateRangePicker';
 import { GranularitySelector, Granularity } from './GranularitySelector';
 import { KPIChart } from './KPIChart';
 import { KPISelector } from './KPISelector';
@@ -167,6 +167,17 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   // Date range - persist in localStorage
   const STORAGE_KEY = 'reporting-table-preferences';
   
+  const [datePreset, setDatePreset] = useState<DatePreset>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const prefs = JSON.parse(stored);
+        if (prefs.datePreset) return prefs.datePreset;
+      }
+    } catch (e) {}
+    return 'all-time';
+  });
+  
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -210,12 +221,13 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
           from: dateRange.from.toISOString(),
           to: dateRange.to.toISOString(),
         },
+        datePreset,
         granularity,
       }));
     } catch (e) {
       console.warn('Failed to save preferences');
     }
-  }, [dateRange, granularity]);
+  }, [dateRange, datePreset, granularity]);
 
   const createMetric = useCreateMetric();
   const updateMetric = useUpdateMetric();
@@ -459,7 +471,12 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h3 className="text-lg font-semibold">{category.name}</h3>
         <div className="flex items-center gap-2 flex-wrap">
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          <DateRangePicker 
+            value={dateRange} 
+            onChange={setDateRange} 
+            selectedPreset={datePreset}
+            onPresetChange={setDatePreset}
+          />
           <GranularitySelector value={granularity} onChange={setGranularity} />
           {onRefresh && (
             <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
