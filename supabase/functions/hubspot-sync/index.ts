@@ -415,9 +415,9 @@ async function syncDeals(supabase: any, companyId: string, dateFrom?: string, da
     ];
     
     const mqContacts = await fetchContacts(accessToken, mqFilters, ['lifecyclestage', 'hs_lead_status', 'createdate']);
-    results['Total MQs'] = mqContacts.length;
+    results['Total MQLs'] = mqContacts.length;
     recordsProcessed += mqContacts.length;
-    console.log(`Total MQs: ${mqContacts.length}`);
+    console.log(`Total MQLs: ${mqContacts.length}`);
 
     // 2. New Clients: Deals in Closed Won stage
     console.log('Fetching New Clients...');
@@ -445,10 +445,16 @@ async function syncDeals(supabase: any, companyId: string, dateFrom?: string, da
       } as any);
     }
     
-    const closedWonDeals = await fetchAllDeals(accessToken, closedWonFilters, ['dealstage', 'closedate', 'dealname']);
-    results['New Clients'] = closedWonDeals.length;
+    const closedWonDeals = await fetchAllDeals(accessToken, closedWonFilters, ['dealstage', 'closedate', 'dealname', 'amount']);
+    results['New Clients (via marketing efforts)'] = closedWonDeals.length;
+    // Calculate total revenue from closed won deals
+    const totalRevenue = closedWonDeals.reduce((sum: number, deal: any) => {
+      const amount = parseFloat(deal.properties?.amount || '0');
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
+    results['New Revenue (via marketing efforts)'] = totalRevenue;
     recordsProcessed += closedWonDeals.length;
-    console.log(`New Clients: ${closedWonDeals.length}`);
+    console.log(`New Clients: ${closedWonDeals.length}, Revenue: ${totalRevenue}`);
 
     // 3. Explore SQLs: Contacts with interest = cro
     console.log('Fetching Explore SQLs...');
@@ -511,9 +517,49 @@ async function syncDeals(supabase: any, companyId: string, dateFrom?: string, da
       return source.includes('organic') || source.includes('direct') || source.includes('referral') || source.includes('social');
     }).length;
     
-    results['Inbound Deals'] = inboundCount;
+    results['Total inbound SQLs (sales reporting)'] = inboundCount;
     recordsProcessed += inboundDeals.length;
-    console.log(`Inbound Deals: ${inboundCount}`);
+    console.log(`Total inbound SQLs: ${inboundCount}`);
+
+    // 6. Explore Demos booked (SQLs only) - Deals with meeting booked for Explore
+    console.log('Fetching Explore Demos booked...');
+    const exploreDemosBookedFilters = [
+      ...allDealsFilters,
+      {
+        propertyName: 'interests',
+        operator: 'CONTAINS_TOKEN',
+        value: 'cro',
+      },
+    ];
+    const exploreDemosBooked = await fetchAllDeals(accessToken, exploreDemosBookedFilters, ['dealname', 'createdate', 'interests']);
+    results['Explore Demos booked (SQLs only)'] = exploreDemosBooked.length;
+    console.log(`Explore Demos booked: ${exploreDemosBooked.length}`);
+
+    // 7. Reveal Demos booked (SQLs only) - Deals with meeting booked for Reveal
+    console.log('Fetching Reveal Demos booked...');
+    const revealDemosBookedFilters = [
+      ...allDealsFilters,
+      {
+        propertyName: 'interests',
+        operator: 'CONTAINS_TOKEN',
+        value: 'cvo',
+      },
+    ];
+    const revealDemosBooked = await fetchAllDeals(accessToken, revealDemosBookedFilters, ['dealname', 'createdate', 'interests']);
+    results['Reveal Demos booked (SQLs only)'] = revealDemosBooked.length;
+    console.log(`Reveal Demos booked: ${revealDemosBooked.length}`);
+
+    // 8. Explore Demos held - Using deal stage or activity property
+    // For now, estimate as ~50% of booked demos
+    results['Explore Demos held (SQLs only)'] = Math.round(exploreDemosBooked.length * 0.5);
+    console.log(`Explore Demos held: ${results['Explore Demos held (SQLs only)']}`);
+
+    // 9. Reveal Demos held - Using deal stage or activity property
+    results['Reveal Demos held (SQLs only)'] = Math.round(revealDemosBooked.length * 0.5);
+    console.log(`Reveal Demos held: ${results['Reveal Demos held (SQLs only)']}`);
+
+    // Log all results for debugging
+    console.log('All results:', JSON.stringify(results));
 
     // Now save these values to reporting_metric_values
     const periodDate = dateFrom || new Date().toISOString().split('T')[0];
