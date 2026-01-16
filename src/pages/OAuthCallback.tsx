@@ -38,18 +38,25 @@ export default function OAuthCallback() {
       try {
         // Decode state to determine provider
         const stateData = JSON.parse(atob(state));
-        const { service } = stateData;
+        const { service, provider: stateProvider } = stateData;
 
-        // Determine which OAuth function to call
+        // Determine which OAuth function to call based on state or service
         let oauthFunction = 'oauth-google';
         let provider = 'google_ads';
 
-        if (service === 'analytics') {
+        // Check if provider is explicitly set in state (LinkedIn, Meta)
+        if (stateProvider === 'linkedin_ads') {
+          oauthFunction = 'oauth-linkedin';
+          provider = 'linkedin_ads';
+        } else if (stateProvider === 'meta_ads') {
+          oauthFunction = 'oauth-meta';
+          provider = 'meta_ads';
+        } else if (service === 'analytics') {
           provider = 'google_analytics';
         } else if (service === 'search_console') {
           provider = 'google_search_console';
         } else if (!service) {
-          // Check URL for hints about provider
+          // Fallback: Check URL for hints about provider
           const referer = document.referrer;
           if (referer.includes('facebook.com') || referer.includes('meta.com')) {
             oauthFunction = 'oauth-meta';
