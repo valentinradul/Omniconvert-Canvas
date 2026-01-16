@@ -468,7 +468,7 @@ export const HubSpotIntegration: React.FC = () => {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent data-form-type="other" data-1p-ignore data-lpignore="true">
         {/* Progress indicator */}
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm mb-2">
@@ -505,18 +505,21 @@ export const HubSpotIntegration: React.FC = () => {
         {/* Step: Connect */}
         {wizardStep === 'connect' && (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="accessToken">HubSpot Private App Access Token</Label>
+            <div className="space-y-2" data-1p-ignore data-lpignore="true">
+              <Label htmlFor="hubspot-api-key">HubSpot Private App Access Token</Label>
               <Input
-                id="accessToken"
+                id="hubspot-api-key"
+                name="hubspot-api-key"
                 type="text"
                 placeholder="pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
-                autoComplete="off"
-                data-1p-ignore
+                autoComplete="new-password"
+                data-1p-ignore="true"
                 data-lpignore="true"
                 data-form-type="other"
+                data-bwignore="true"
+                aria-autocomplete="none"
               />
               <p className="text-sm text-muted-foreground">
                 Create a private app in HubSpot with CRM &gt; Deals read access.{' '}
