@@ -158,9 +158,10 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(INTEGRATION_LABELS).map(([key, label]) => {
-                  const implemented = IMPLEMENTED_INTEGRATIONS.includes(key as IntegrationType);
                   const isGAOption = key === 'google_analytics';
                   const isGSCOption = key === 'google_search_console';
+                  const isManual = key === 'manual';
+                  const isImplemented = isGAOption || isGSCOption || isManual;
                   return (
                     <SelectItem key={key} value={key}>
                       <div className="flex items-center gap-2">
@@ -188,7 +189,7 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
                             Not Connected
                           </Badge>
                         )}
-                        {!implemented && !isGAOption && !isGSCOption && (
+                        {!isImplemented && (
                           <Badge variant="outline" className="ml-2 text-xs">
                             Coming Soon
                           </Badge>
