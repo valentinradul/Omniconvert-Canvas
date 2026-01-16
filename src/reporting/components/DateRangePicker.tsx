@@ -148,7 +148,10 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     setOpen(false);
   };
 
-  const displayText = `${format(value.from, 'MMM d, yyyy')} - ${format(value.to, 'MMM d, yyyy')}`;
+  const presetLabel = presets.find(p => p.key === selectedPreset)?.label;
+  const displayText = selectedPreset !== 'custom' && presetLabel 
+    ? `${presetLabel} (${format(value.from, 'MMM d')} - ${format(value.to, 'MMM d, yyyy')})`
+    : `${format(value.from, 'MMM d, yyyy')} - ${format(value.to, 'MMM d, yyyy')}`;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

@@ -53,8 +53,20 @@ const GA_FIELDS = [
   { id: 'eventCount', name: 'Event Count', description: 'Total event triggers' },
 ];
 
+// Google Search Console available fields for mapping
+const GSC_FIELDS = [
+  { id: 'clicks', name: 'Total Clicks', description: 'Total clicks from search results' },
+  { id: 'impressions', name: 'Total Impressions', description: 'Total impressions in search results' },
+  { id: 'ctr', name: 'CTR', description: 'Click-through rate' },
+  { id: 'position', name: 'Average Position', description: 'Average position in search results' },
+  { id: 'branded_clicks', name: 'Branded Clicks', description: 'Clicks for branded keywords' },
+  { id: 'branded_impressions', name: 'Branded Impressions', description: 'Impressions for branded keywords' },
+  { id: 'non_branded_clicks', name: 'Non-Branded Clicks', description: 'Clicks for non-branded keywords' },
+  { id: 'non_branded_impressions', name: 'Non-Branded Impressions', description: 'Impressions for non-branded keywords' },
+];
+
 // Integrations that are fully implemented
-const IMPLEMENTED_INTEGRATIONS: IntegrationType[] = ['manual', 'google_analytics'];
+const IMPLEMENTED_INTEGRATIONS: IntegrationType[] = ['manual', 'google_analytics', 'google_search_console'];
 
 export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
   open,
@@ -71,6 +83,7 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
   );
 
   const { isConnected: isGAConnected } = useOAuth('google_analytics');
+  const { isConnected: isGSCConnected } = useOAuth('google_search_console');
 
   React.useEffect(() => {
     if (metric) {
@@ -81,7 +94,7 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
 
   const handleConnect = () => {
     if (metric) {
-      const fieldValue = selectedIntegration === 'google_analytics' ? selectedField : null;
+      const fieldValue = (selectedIntegration === 'google_analytics' || selectedIntegration === 'google_search_console') ? selectedField : null;
       onConnect(metric.id, selectedIntegration === 'manual' ? null : selectedIntegration, fieldValue);
     }
   };
@@ -97,6 +110,7 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
   const isConnected = metric.integration_type && metric.integration_type !== 'manual';
   const isImplemented = IMPLEMENTED_INTEGRATIONS.includes(selectedIntegration as IntegrationType);
   const needsGAConnection = selectedIntegration === 'google_analytics' && !isGAConnected;
+  const needsGSCConnection = selectedIntegration === 'google_search_console' && !isGSCConnected;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -116,7 +130,8 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
                   <Link2 className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium text-green-800 dark:text-green-200">
                     Connected to {INTEGRATION_LABELS[metric.integration_type as IntegrationType]}
-                    {metric.integration_field && ` (${GA_FIELDS.find(f => f.id === metric.integration_field)?.name || metric.integration_field})`}
+                    {metric.integration_field && metric.integration_type === 'google_analytics' && ` (${GA_FIELDS.find(f => f.id === metric.integration_field)?.name || metric.integration_field})`}
+                    {metric.integration_field && metric.integration_type === 'google_search_console' && ` (${GSC_FIELDS.find(f => f.id === metric.integration_field)?.name || metric.integration_field})`}
                   </span>
                 </div>
                 <Button
@@ -145,6 +160,7 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
                 {Object.entries(INTEGRATION_LABELS).map(([key, label]) => {
                   const implemented = IMPLEMENTED_INTEGRATIONS.includes(key as IntegrationType);
                   const isGAOption = key === 'google_analytics';
+                  const isGSCOption = key === 'google_search_console';
                   return (
                     <SelectItem key={key} value={key}>
                       <div className="flex items-center gap-2">
@@ -161,7 +177,18 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
                             Not Connected
                           </Badge>
                         )}
-                        {!implemented && !isGAOption && (
+                        {isGSCOption && isGSCConnected && (
+                          <Badge variant="default" className="ml-2 text-xs bg-green-500">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Connected
+                          </Badge>
+                        )}
+                        {isGSCOption && !isGSCConnected && (
+                          <Badge variant="outline" className="ml-2 text-xs text-amber-600 border-amber-300">
+                            Not Connected
+                          </Badge>
+                        )}
+                        {!implemented && !isGAOption && !isGSCOption && (
                           <Badge variant="outline" className="ml-2 text-xs">
                             Coming Soon
                           </Badge>
@@ -196,6 +223,28 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
             </div>
           )}
 
+          {/* Google Search Console field selection */}
+          {selectedIntegration === 'google_search_console' && (
+            <div className="space-y-2">
+              <Label>Select GSC Metric to Sync</Label>
+              <Select value={selectedField} onValueChange={setSelectedField}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose which GSC metric to pull" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GSC_FIELDS.map((field) => (
+                    <SelectItem key={field.id} value={field.id}>
+                      <div className="flex flex-col">
+                        <span>{field.name}</span>
+                        <span className="text-xs text-muted-foreground">{field.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Warning for GA not connected */}
           {needsGAConnection && (
             <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
@@ -212,12 +261,38 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
             </div>
           )}
 
-          {/* Info for implemented integrations */}
+          {/* Warning for GSC not connected */}
+          {needsGSCConnection && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+                <div className="text-sm text-amber-800 dark:text-amber-200">
+                  <p className="font-medium">Google Search Console not connected</p>
+                  <p className="text-xs mt-1">
+                    Go to Settings → Integrations to connect your Google Search Console account first.
+                    Once connected, syncing will work automatically.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Ready to sync message for GA */}
           {selectedIntegration === 'google_analytics' && isGAConnected && selectedField && (
             <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-200">
                 <strong>Ready to sync!</strong> This metric will automatically pull "{GA_FIELDS.find(f => f.id === selectedField)?.name}" 
                 data from your connected Google Analytics property when you run a sync.
+              </p>
+            </div>
+          )}
+
+          {/* Ready to sync message for GSC */}
+          {selectedIntegration === 'google_search_console' && isGSCConnected && selectedField && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                <strong>Ready to sync!</strong> This metric will automatically pull "{GSC_FIELDS.find(f => f.id === selectedField)?.name}" 
+                data from your connected Google Search Console property when you run a sync.
               </p>
             </div>
           )}
@@ -239,7 +314,7 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
           </Button>
           <Button 
             onClick={handleConnect} 
-            disabled={isLoading || (selectedIntegration === 'google_analytics' && !selectedField)}
+            disabled={isLoading || ((selectedIntegration === 'google_analytics' || selectedIntegration === 'google_search_console') && !selectedField)}
           >
             {isLoading ? 'Saving...' : 'Save'}
           </Button>
