@@ -566,13 +566,180 @@ async function syncDeals(supabase: any, companyId: string, dateFrom?: string, da
       results['Total inbound SQLs (sales reporting)'] = 0;
     }
 
-    // 6-9: For demos booked/held - use deal stage info or set to 0 if not available
-    // These require specific deal stages that may not exist in all HubSpot instances
-    console.log('Setting demo metrics to 0 (requires specific deal stage configuration)...');
-    results['Explore Demos booked (SQLs only)'] = 0;
-    results['Reveal Demos booked (SQLs only)'] = 0;
-    results['Explore Demos held (SQLs only)'] = 0;
-    results['Reveal Demos held (SQLs only)'] = 0;
+    // 6. Explore Demos booked: Contacts with lead_source = 'book a demo overlay' OR 'book a demo overlay - pas 2'
+    console.log('Fetching Explore Demos booked...');
+    try {
+      const exploreDemoBookedFilters1 = [
+        ...dateFilters,
+        {
+          propertyName: 'hs_lead_status',
+          operator: 'NEQ',
+          value: 'DISQUALIFIED',
+        },
+        {
+          propertyName: 'hs_lead_status',
+          operator: 'NEQ',
+          value: 'UNSUBSCRIBED',
+        },
+        {
+          propertyName: 'hs_latest_source',
+          operator: 'EQ',
+          value: 'book a demo overlay',
+        },
+      ];
+      const exploreDemoBookedFilters2 = [
+        ...dateFilters,
+        {
+          propertyName: 'hs_lead_status',
+          operator: 'NEQ',
+          value: 'DISQUALIFIED',
+        },
+        {
+          propertyName: 'hs_lead_status',
+          operator: 'NEQ',
+          value: 'UNSUBSCRIBED',
+        },
+        {
+          propertyName: 'hs_latest_source',
+          operator: 'EQ',
+          value: 'book a demo overlay - pas 2',
+        },
+      ];
+      const exploreDemoBooked1 = await fetchContacts(accessToken, exploreDemoBookedFilters1, ['hs_latest_source', 'createdate']);
+      const exploreDemoBooked2 = await fetchContacts(accessToken, exploreDemoBookedFilters2, ['hs_latest_source', 'createdate']);
+      results['Explore Demos booked (SQLs only)'] = exploreDemoBooked1.length + exploreDemoBooked2.length;
+      recordsProcessed += exploreDemoBooked1.length + exploreDemoBooked2.length;
+      console.log(`Explore Demos booked: ${exploreDemoBooked1.length + exploreDemoBooked2.length}`);
+    } catch (e) {
+      console.log('Explore Demos booked fetch failed, trying alternative property names...');
+      try {
+        // Try with lead_source property instead
+        const altFilters1 = [
+          ...dateFilters,
+          { propertyName: 'lead_source', operator: 'EQ', value: 'book a demo overlay' },
+        ];
+        const altFilters2 = [
+          ...dateFilters,
+          { propertyName: 'lead_source', operator: 'EQ', value: 'book a demo overlay - pas 2' },
+        ];
+        const alt1 = await fetchContacts(accessToken, altFilters1, ['lead_source', 'createdate']);
+        const alt2 = await fetchContacts(accessToken, altFilters2, ['lead_source', 'createdate']);
+        results['Explore Demos booked (SQLs only)'] = alt1.length + alt2.length;
+        recordsProcessed += alt1.length + alt2.length;
+        console.log(`Explore Demos booked (alt): ${alt1.length + alt2.length}`);
+      } catch (e2) {
+        console.log('Explore Demos booked fetch failed completely, setting to 0');
+        results['Explore Demos booked (SQLs only)'] = 0;
+      }
+    }
+
+    // 7. Reveal Demos booked: Contacts with lead_source = 'book a demo overlay pricing Reveal - pas 2'
+    console.log('Fetching Reveal Demos booked...');
+    try {
+      const revealDemoBookedFilters = [
+        ...dateFilters,
+        {
+          propertyName: 'hs_lead_status',
+          operator: 'NEQ',
+          value: 'DISQUALIFIED',
+        },
+        {
+          propertyName: 'hs_lead_status',
+          operator: 'NEQ',
+          value: 'UNSUBSCRIBED',
+        },
+        {
+          propertyName: 'hs_latest_source',
+          operator: 'EQ',
+          value: 'book a demo overlay pricing Reveal - pas 2',
+        },
+      ];
+      const revealDemoBooked = await fetchContacts(accessToken, revealDemoBookedFilters, ['hs_latest_source', 'createdate']);
+      results['Reveal Demos booked (SQLs only)'] = revealDemoBooked.length;
+      recordsProcessed += revealDemoBooked.length;
+      console.log(`Reveal Demos booked: ${revealDemoBooked.length}`);
+    } catch (e) {
+      console.log('Reveal Demos booked fetch failed, trying alternative property...');
+      try {
+        const altFilters = [
+          ...dateFilters,
+          { propertyName: 'lead_source', operator: 'EQ', value: 'book a demo overlay pricing Reveal - pas 2' },
+        ];
+        const alt = await fetchContacts(accessToken, altFilters, ['lead_source', 'createdate']);
+        results['Reveal Demos booked (SQLs only)'] = alt.length;
+        recordsProcessed += alt.length;
+        console.log(`Reveal Demos booked (alt): ${alt.length}`);
+      } catch (e2) {
+        console.log('Reveal Demos booked fetch failed completely, setting to 0');
+        results['Reveal Demos booked (SQLs only)'] = 0;
+      }
+    }
+
+    // 8. Explore Demos held: Deals with deal stage = 'Demo held (Saas)'
+    console.log('Fetching Explore Demos held...');
+    try {
+      const exploreDemoHeldFilters: any[] = [
+        {
+          propertyName: 'dealstage',
+          operator: 'EQ',
+          value: 'Demo held (Saas)',
+        },
+      ];
+      if (dateFrom) {
+        exploreDemoHeldFilters.push({
+          propertyName: 'createdate',
+          operator: 'GTE',
+          value: new Date(dateFrom).getTime(),
+        });
+      }
+      if (dateTo) {
+        exploreDemoHeldFilters.push({
+          propertyName: 'createdate',
+          operator: 'LTE',
+          value: new Date(dateTo + 'T23:59:59').getTime(),
+        });
+      }
+      const exploreDemoHeld = await fetchAllDeals(accessToken, exploreDemoHeldFilters, ['dealstage', 'createdate', 'dealname']);
+      results['Explore Demos held (SQLs only)'] = exploreDemoHeld.length;
+      recordsProcessed += exploreDemoHeld.length;
+      console.log(`Explore Demos held: ${exploreDemoHeld.length}`);
+    } catch (e) {
+      console.log('Explore Demos held fetch failed, setting to 0');
+      results['Explore Demos held (SQLs only)'] = 0;
+    }
+
+    // 9. Reveal Demos held: Deals with deal stage = 'Discovery held (Saas)'
+    console.log('Fetching Reveal Demos held...');
+    try {
+      const revealDemoHeldFilters: any[] = [
+        {
+          propertyName: 'dealstage',
+          operator: 'EQ',
+          value: 'Discovery held (Saas)',
+        },
+      ];
+      if (dateFrom) {
+        revealDemoHeldFilters.push({
+          propertyName: 'createdate',
+          operator: 'GTE',
+          value: new Date(dateFrom).getTime(),
+        });
+      }
+      if (dateTo) {
+        revealDemoHeldFilters.push({
+          propertyName: 'createdate',
+          operator: 'LTE',
+          value: new Date(dateTo + 'T23:59:59').getTime(),
+        });
+      }
+      const revealDemoHeld = await fetchAllDeals(accessToken, revealDemoHeldFilters, ['dealstage', 'createdate', 'dealname']);
+      results['Reveal Demos held (SQLs only)'] = revealDemoHeld.length;
+      recordsProcessed += revealDemoHeld.length;
+      console.log(`Reveal Demos held: ${revealDemoHeld.length}`);
+    } catch (e) {
+      console.log('Reveal Demos held fetch failed, setting to 0');
+      results['Reveal Demos held (SQLs only)'] = 0;
+    }
 
     // Log all results for debugging
     console.log('All results:', JSON.stringify(results));
