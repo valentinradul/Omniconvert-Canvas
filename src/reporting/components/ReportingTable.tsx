@@ -20,6 +20,7 @@ import { useSavedCharts, useCreateSavedChart, useDeleteSavedChart } from '@/hook
 import { useExcelImport } from '@/hooks/useExcelImport';
 import { useSyncGoogleAnalytics } from '@/hooks/useSyncGoogleAnalytics';
 import { useSyncGoogleSearchConsole } from '@/hooks/useSyncGoogleSearchConsole';
+import { useOAuth } from '@/hooks/useOAuth';
 import {
   useCreateMetric,
   useUpdateMetric,
@@ -240,24 +241,26 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const syncGA = useSyncGoogleAnalytics();
   const syncGSC = useSyncGoogleSearchConsole();
   
-  // Check if any metrics have GA integration (by source name or integration_type)
-  const hasGAMetrics = useMemo(() => {
-    const result = metrics.some(m => m.source === 'Google Analytics' || (m.integration_type === 'google_analytics' && m.integration_field));
-    console.log('hasGAMetrics check:', result, 'metrics sources:', metrics.map(m => m.source));
-    return result;
-  }, [metrics]);
+  // Check OAuth connection status for GA and GSC
+  const { isConnected: isGAConnected } = useOAuth('google_analytics');
+  const { isConnected: isGSCConnected } = useOAuth('google_search_console');
   
-  // Check if any metrics have GSC integration (by source name)
+  // Check if any metrics have GA integration (by source name or integration_type) OR if OAuth is connected
+  const hasGAMetrics = useMemo(() => {
+    const hasMetrics = metrics.some(m => m.source === 'Google Analytics' || (m.integration_type === 'google_analytics' && m.integration_field));
+    return hasMetrics || isGAConnected;
+  }, [metrics, isGAConnected]);
+  
+  // Check if any metrics have GSC integration (by source name) OR if OAuth is connected
   const hasGSCMetrics = useMemo(() => {
-    const result = metrics.some(m => m.source === 'Google Search Console');
-    console.log('hasGSCMetrics check:', result);
-    return result;
-  }, [metrics]);
+    const hasMetrics = metrics.some(m => m.source === 'Google Search Console');
+    return hasMetrics || isGSCConnected;
+  }, [metrics, isGSCConnected]);
   
   // Check if any metrics have ANY integration (for "Sync This Month" button)
   const hasIntegratedMetrics = useMemo(() => 
-    metrics.some(m => m.source === 'Google Analytics' || m.source === 'Google Search Console' || (m.integration_type && m.integration_field)),
-    [metrics]
+    metrics.some(m => m.source === 'Google Analytics' || m.source === 'Google Search Console' || (m.integration_type && m.integration_field)) || isGAConnected || isGSCConnected,
+    [metrics, isGAConnected, isGSCConnected]
   );
   
   // Get calculated metric IDs and fetch their values

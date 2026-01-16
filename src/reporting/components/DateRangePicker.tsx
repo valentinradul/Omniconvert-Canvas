@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, subDays, subMonths, subWeeks, startOfMonth, startOfQuarter, startOfYear, startOfWeek, endOfWeek } from 'date-fns';
 import { Calendar, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -114,6 +114,13 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const [internalPreset, setInternalPreset] = useState<DatePreset>(controlledPreset || 'all-time');
   const [tempFrom, setTempFrom] = useState<Date | undefined>(value.from);
   const [tempTo, setTempTo] = useState<Date | undefined>(value.to);
+  
+  // Sync internal preset with controlled preset when it changes
+  useEffect(() => {
+    if (controlledPreset !== undefined) {
+      setInternalPreset(controlledPreset);
+    }
+  }, [controlledPreset]);
   
   // Use controlled preset if provided, otherwise use internal state
   const selectedPreset = controlledPreset ?? internalPreset;
