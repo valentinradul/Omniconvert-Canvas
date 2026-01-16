@@ -725,14 +725,14 @@ export const HubSpotIntegration: React.FC = () => {
                 <div className="space-y-2">
                   <Label>Deal Type Field (Inbound/Outbound)</Label>
                   <Select 
-                    value={fieldMapping.dealTypeField || ''}
-                    onValueChange={(value) => setFieldMapping(prev => ({ ...prev, dealTypeField: value }))}
+                    value={fieldMapping.dealTypeField || 'none'}
+                    onValueChange={(value) => setFieldMapping(prev => ({ ...prev, dealTypeField: value === 'none' ? '' : value }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select deal type field (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {properties.map(prop => (
                         <SelectItem key={prop.name} value={prop.name}>
                           {prop.label}
