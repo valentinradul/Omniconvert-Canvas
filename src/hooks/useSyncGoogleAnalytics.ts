@@ -24,7 +24,7 @@ export function useSyncGoogleAnalytics() {
 
       const { data, error } = await supabase.functions.invoke('fetch-google-analytics', {
         body: {
-          action: 'sync-reporting-metrics',
+          action: 'sync',
           companyId: currentCompany.id,
           startDate: options?.startDate,
           endDate: options?.endDate,
