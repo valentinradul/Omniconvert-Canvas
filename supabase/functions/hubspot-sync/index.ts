@@ -398,14 +398,14 @@ async function syncDeals(supabase: any, companyId: string, dateFrom?: string, da
     const results: Record<string, number> = {};
     let recordsProcessed = 0;
 
-    // 1. Total MQs: Contacts with lifecycle_stage = MQL or SQL, lead_status NOT Disqualified/Unsubscribed
-    console.log('Fetching Total MQs...');
-    const mqFilters = [
+    // 1. Total MQLs: Contacts with lifecycle_stage = MQL, inbound_outbound = inbound, lead_status NOT Disqualified/Unsubscribed
+    console.log('Fetching Total MQLs...');
+    const mqlFilters = [
       ...dateFilters,
       {
         propertyName: 'lifecyclestage',
-        operator: 'IN',
-        values: ['marketingqualifiedlead', 'salesqualifiedlead'],
+        operator: 'EQ',
+        value: 'marketingqualifiedlead',
       },
       {
         propertyName: 'hs_lead_status',
@@ -414,10 +414,48 @@ async function syncDeals(supabase: any, companyId: string, dateFrom?: string, da
       },
     ];
     
-    const mqContacts = await fetchContacts(accessToken, mqFilters, ['lifecyclestage', 'hs_lead_status', 'createdate']);
-    results['Total MQLs'] = mqContacts.length;
-    recordsProcessed += mqContacts.length;
-    console.log(`Total MQLs: ${mqContacts.length}`);
+    // First try with inbound filter, then fallback to without
+    let mqlContacts: any[] = [];
+    try {
+      // Try with inbound_outbound filter
+      const mqlFiltersWithInbound = [
+        ...mqlFilters,
+        {
+          propertyName: 'inbound_outbound',
+          operator: 'EQ',
+          value: 'Inbound',
+        },
+      ];
+      mqlContacts = await fetchContacts(accessToken, mqlFiltersWithInbound, ['lifecyclestage', 'hs_lead_status', 'inbound_outbound', 'createdate']);
+      console.log(`Total MQLs (with Inbound filter): ${mqlContacts.length}`);
+      
+      // If 0 results, try lowercase
+      if (mqlContacts.length === 0) {
+        const mqlFiltersWithInboundLower = [
+          ...mqlFilters,
+          {
+            propertyName: 'inbound_outbound',
+            operator: 'EQ',
+            value: 'inbound',
+          },
+        ];
+        mqlContacts = await fetchContacts(accessToken, mqlFiltersWithInboundLower, ['lifecyclestage', 'hs_lead_status', 'inbound_outbound', 'createdate']);
+        console.log(`Total MQLs (with inbound lowercase): ${mqlContacts.length}`);
+      }
+      
+      // If still 0, fallback to without inbound filter
+      if (mqlContacts.length === 0) {
+        console.log('inbound filter returned 0, falling back to MQL-only filter...');
+        mqlContacts = await fetchContacts(accessToken, mqlFilters, ['lifecyclestage', 'hs_lead_status', 'createdate']);
+        console.log(`Total MQLs (MQL lifecycle only): ${mqlContacts.length}`);
+      }
+    } catch (e) {
+      console.log('inbound_outbound property error, fetching MQLs without inbound filter...');
+      mqlContacts = await fetchContacts(accessToken, mqlFilters, ['lifecyclestage', 'hs_lead_status', 'createdate']);
+      console.log(`Total MQLs (fallback): ${mqlContacts.length}`);
+    }
+    results['Total MQLs'] = mqlContacts.length;
+    recordsProcessed += mqlContacts.length;
 
     // 2. New Clients: Deals in Closed Won stage
     console.log('Fetching New Clients...');
