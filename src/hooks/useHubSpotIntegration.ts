@@ -175,12 +175,6 @@ export function useHubSpotIntegration() {
       throw new Error('No company selected');
     }
 
-    // Refresh session before making API call
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    if (!currentSession?.access_token) {
-      throw new Error('Session expired. Please refresh the page and try again.');
-    }
-
     const response = await supabase.functions.invoke('hubspot-sync', {
       body: {
         action: 'get-pipelines',
@@ -199,12 +193,6 @@ export function useHubSpotIntegration() {
   const getDealProperties = async (accessToken?: string): Promise<HubSpotProperty[]> => {
     if (!selectedCompanyId) {
       throw new Error('No company selected');
-    }
-
-    // Refresh session before making API call
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    if (!currentSession?.access_token) {
-      throw new Error('Session expired. Please refresh the page and try again.');
     }
 
     const response = await supabase.functions.invoke('hubspot-sync', {
@@ -238,12 +226,6 @@ export function useHubSpotIntegration() {
       throw new Error('No company selected');
     }
 
-    // Refresh session before making API call
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    if (!currentSession?.access_token) {
-      throw new Error('Session expired. Please refresh the page and try again.');
-    }
-
     const response = await supabase.functions.invoke('hubspot-sync', {
       body: {
         action: 'fetch-deals',
@@ -275,12 +257,6 @@ export function useHubSpotIntegration() {
       throw new Error('No company selected');
     }
 
-    // Refresh session before making API call
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    if (!currentSession?.access_token) {
-      throw new Error('Session expired. Please refresh the page and try again.');
-    }
-
     const response = await supabase.functions.invoke('hubspot-sync', {
       body: {
         action: 'save-config',
@@ -300,12 +276,6 @@ export function useHubSpotIntegration() {
   const syncNow = async (): Promise<{ dealsProcessed: number; recordsCreated: number; recordsUpdated: number; recordsSkipped: number }> => {
     if (!selectedCompanyId) {
       throw new Error('No company selected');
-    }
-
-    // Refresh session before making API call
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    if (!currentSession?.access_token) {
-      throw new Error('Session expired. Please refresh the page and try again.');
     }
 
     setIsSyncing(true);
@@ -336,12 +306,6 @@ export function useHubSpotIntegration() {
   const disconnect = async (): Promise<void> => {
     if (!selectedCompanyId) {
       throw new Error('No company selected');
-    }
-
-    // Refresh session before making API call
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    if (!currentSession?.access_token) {
-      throw new Error('Session expired. Please refresh the page and try again.');
     }
 
     const response = await supabase.functions.invoke('hubspot-sync', {
