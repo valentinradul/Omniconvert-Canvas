@@ -20,6 +20,13 @@ import { Badge } from '@/components/ui/badge';
 import { INTEGRATION_LABELS, IntegrationType, ReportingMetric } from '@/types/reporting';
 import { Link2, Unlink, AlertCircle, CheckCircle } from 'lucide-react';
 import { useOAuth } from '@/hooks/useOAuth';
+import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
+
+// Custom hook to get just the HubSpot status
+const useHubSpotStatus = () => {
+  const { status, isLoading } = useHubSpotIntegration();
+  return { status, isLoading };
+};
 
 interface IntegrationDialogProps {
   open: boolean;
@@ -65,8 +72,21 @@ const GSC_FIELDS = [
   { id: 'non_branded_impressions', name: 'Non-Branded Impressions', description: 'Impressions for non-branded keywords' },
 ];
 
+// HubSpot available fields for mapping
+const HUBSPOT_FIELDS = [
+  { id: 'total_mqs', name: 'Total MQs', description: 'Marketing qualified leads' },
+  { id: 'total_mqls', name: 'Total MQLs', description: 'Marketing qualified leads count' },
+  { id: 'new_clients', name: 'New Clients', description: 'New closed-won deals' },
+  { id: 'new_revenue', name: 'New Revenue', description: 'Revenue from new deals' },
+  { id: 'explore_sqls', name: 'Explore SQLs', description: 'SQLs with CRO interest' },
+  { id: 'reveal_sqls', name: 'Reveal SQLs', description: 'SQLs with CVO interest' },
+  { id: 'inbound_sqls', name: 'Inbound SQLs', description: 'Inbound sales qualified leads' },
+  { id: 'demos_booked', name: 'Demos Booked', description: 'Total demos booked' },
+  { id: 'demos_held', name: 'Demos Held', description: 'Total demos completed' },
+];
+
 // Integrations that are fully implemented
-const IMPLEMENTED_INTEGRATIONS: IntegrationType[] = ['manual', 'google_analytics', 'google_search_console'];
+const IMPLEMENTED_INTEGRATIONS: IntegrationType[] = ['manual', 'google_analytics', 'google_search_console', 'hubspot'];
 
 export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
   open,
@@ -84,6 +104,7 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
 
   const { isConnected: isGAConnected } = useOAuth('google_analytics');
   const { isConnected: isGSCConnected } = useOAuth('google_search_console');
+  const { status: hubspotStatus } = useHubSpotStatus();
 
   React.useEffect(() => {
     if (metric) {
@@ -94,7 +115,10 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
 
   const handleConnect = () => {
     if (metric) {
-      const fieldValue = (selectedIntegration === 'google_analytics' || selectedIntegration === 'google_search_console') ? selectedField : null;
+      const needsField = selectedIntegration === 'google_analytics' || 
+                         selectedIntegration === 'google_search_console' || 
+                         selectedIntegration === 'hubspot';
+      const fieldValue = needsField ? selectedField : null;
       onConnect(metric.id, selectedIntegration === 'manual' ? null : selectedIntegration, fieldValue);
     }
   };
@@ -111,6 +135,8 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
   const isImplemented = IMPLEMENTED_INTEGRATIONS.includes(selectedIntegration as IntegrationType);
   const needsGAConnection = selectedIntegration === 'google_analytics' && !isGAConnected;
   const needsGSCConnection = selectedIntegration === 'google_search_console' && !isGSCConnected;
+  const needsHubSpotConnection = selectedIntegration === 'hubspot' && !hubspotStatus.isConnected;
+  const isHubSpotConnected = hubspotStatus.isConnected;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,6 +158,7 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
                     Connected to {INTEGRATION_LABELS[metric.integration_type as IntegrationType]}
                     {metric.integration_field && metric.integration_type === 'google_analytics' && ` (${GA_FIELDS.find(f => f.id === metric.integration_field)?.name || metric.integration_field})`}
                     {metric.integration_field && metric.integration_type === 'google_search_console' && ` (${GSC_FIELDS.find(f => f.id === metric.integration_field)?.name || metric.integration_field})`}
+                    {metric.integration_field && metric.integration_type === 'hubspot' && ` (${HUBSPOT_FIELDS.find(f => f.id === metric.integration_field)?.name || metric.integration_field})`}
                   </span>
                 </div>
                 <Button
@@ -160,8 +187,9 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
                 {Object.entries(INTEGRATION_LABELS).map(([key, label]) => {
                   const isGAOption = key === 'google_analytics';
                   const isGSCOption = key === 'google_search_console';
+                  const isHubSpotOption = key === 'hubspot';
                   const isManual = key === 'manual';
-                  const isImplemented = isGAOption || isGSCOption || isManual;
+                  const isImplementedOption = isGAOption || isGSCOption || isHubSpotOption || isManual;
                   return (
                     <SelectItem key={key} value={key}>
                       <div className="flex items-center gap-2">
@@ -189,7 +217,18 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
                             Not Connected
                           </Badge>
                         )}
-                        {!isImplemented && (
+                        {isHubSpotOption && isHubSpotConnected && (
+                          <Badge variant="default" className="ml-2 text-xs bg-green-500">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Connected
+                          </Badge>
+                        )}
+                        {isHubSpotOption && !isHubSpotConnected && (
+                          <Badge variant="outline" className="ml-2 text-xs text-amber-600 border-amber-300">
+                            Not Connected
+                          </Badge>
+                        )}
+                        {!isImplementedOption && (
                           <Badge variant="outline" className="ml-2 text-xs">
                             Coming Soon
                           </Badge>
@@ -234,6 +273,28 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {GSC_FIELDS.map((field) => (
+                    <SelectItem key={field.id} value={field.id}>
+                      <div className="flex flex-col">
+                        <span>{field.name}</span>
+                        <span className="text-xs text-muted-foreground">{field.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* HubSpot field selection */}
+          {selectedIntegration === 'hubspot' && (
+            <div className="space-y-2">
+              <Label>Select HubSpot Metric to Sync</Label>
+              <Select value={selectedField} onValueChange={setSelectedField}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose which HubSpot metric to pull" />
+                </SelectTrigger>
+                <SelectContent>
+                  {HUBSPOT_FIELDS.map((field) => (
                     <SelectItem key={field.id} value={field.id}>
                       <div className="flex flex-col">
                         <span>{field.name}</span>
@@ -298,6 +359,32 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
             </div>
           )}
 
+          {/* Warning for HubSpot not connected */}
+          {needsHubSpotConnection && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+                <div className="text-sm text-amber-800 dark:text-amber-200">
+                  <p className="font-medium">HubSpot not connected</p>
+                  <p className="text-xs mt-1">
+                    Go to Settings → Integrations to connect your HubSpot account first.
+                    Once connected, syncing will work automatically.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Ready to sync message for HubSpot */}
+          {selectedIntegration === 'hubspot' && isHubSpotConnected && selectedField && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                <strong>Ready to sync!</strong> This metric will automatically pull "{HUBSPOT_FIELDS.find(f => f.id === selectedField)?.name}" 
+                data from your connected HubSpot account when you run a sync.
+              </p>
+            </div>
+          )}
+
           {/* Coming soon message for unimplemented integrations */}
           {!isImplemented && selectedIntegration !== 'manual' && (
             <div className="p-3 bg-muted border rounded-lg">
@@ -315,7 +402,7 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
           </Button>
           <Button 
             onClick={handleConnect} 
-            disabled={isLoading || ((selectedIntegration === 'google_analytics' || selectedIntegration === 'google_search_console') && !selectedField)}
+            disabled={isLoading || ((selectedIntegration === 'google_analytics' || selectedIntegration === 'google_search_console' || selectedIntegration === 'hubspot') && !selectedField)}
           >
             {isLoading ? 'Saving...' : 'Save'}
           </Button>

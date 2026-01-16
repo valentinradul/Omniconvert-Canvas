@@ -20,7 +20,9 @@ import { useSavedCharts, useCreateSavedChart, useDeleteSavedChart } from '@/hook
 import { useExcelImport } from '@/hooks/useExcelImport';
 import { useSyncGoogleAnalytics } from '@/hooks/useSyncGoogleAnalytics';
 import { useSyncGoogleSearchConsole } from '@/hooks/useSyncGoogleSearchConsole';
+import { useSyncHubSpot } from '@/hooks/useSyncHubSpot';
 import { useOAuth } from '@/hooks/useOAuth';
+import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
 import {
   useCreateMetric,
   useUpdateMetric,
@@ -240,10 +242,13 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const clearMetricValues = useClearMetricValues();
   const syncGA = useSyncGoogleAnalytics();
   const syncGSC = useSyncGoogleSearchConsole();
+  const syncHubSpot = useSyncHubSpot();
+  const { status: hubspotStatus } = useHubSpotIntegration();
   
   // Check OAuth connection status for GA and GSC
   const { isConnected: isGAConnected } = useOAuth('google_analytics');
   const { isConnected: isGSCConnected } = useOAuth('google_search_console');
+  const isHubSpotConnected = hubspotStatus.isConnected;
   
   // Check if any metrics have GA integration (by source name or integration_type) OR if OAuth is connected
   const hasGAMetrics = useMemo(() => {
@@ -257,10 +262,16 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
     return hasMetrics || isGSCConnected;
   }, [metrics, isGSCConnected]);
   
+  // Check if any metrics have HubSpot integration (by source name or integration_type) OR if connected
+  const hasHubSpotMetrics = useMemo(() => {
+    const hasMetrics = metrics.some(m => m.source === 'Hubspot' || m.integration_type === 'hubspot');
+    return hasMetrics || isHubSpotConnected;
+  }, [metrics, isHubSpotConnected]);
+  
   // Check if any metrics have ANY integration (for "Sync This Month" button)
   const hasIntegratedMetrics = useMemo(() => 
-    metrics.some(m => m.source === 'Google Analytics' || m.source === 'Google Search Console' || (m.integration_type && m.integration_field)) || isGAConnected || isGSCConnected,
-    [metrics, isGAConnected, isGSCConnected]
+    metrics.some(m => m.source === 'Google Analytics' || m.source === 'Google Search Console' || m.source === 'Hubspot' || (m.integration_type && m.integration_field)) || isGAConnected || isGSCConnected || isHubSpotConnected,
+    [metrics, isGAConnected, isGSCConnected, isHubSpotConnected]
   );
   
   // Get calculated metric IDs and fetch their values
@@ -541,6 +552,27 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
               </Button>
             </>
           )}
+          {hasHubSpotMetrics && (
+            <>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => syncHubSpot.mutate({
+                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
+                })}
+                disabled={syncHubSpot.isPending}
+                className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
+              >
+                {syncHubSpot.isPending ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CloudDownload className="h-4 w-4 mr-2" />
+                )}
+                Sync HubSpot
+              </Button>
+            </>
+          )}
           <Button 
             size="sm" 
             variant="default"
@@ -556,15 +588,21 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
               }
               if (hasGSCMetrics) {
                 syncGSC.mutate({
-                  startDate: '2026-01-01',
+                  startDate: format(startOfMonth, 'yyyy-MM-dd'),
+                  endDate: format(now, 'yyyy-MM-dd'),
+                });
+              }
+              if (hasHubSpotMetrics) {
+                syncHubSpot.mutate({
+                  startDate: format(startOfMonth, 'yyyy-MM-dd'),
                   endDate: format(now, 'yyyy-MM-dd'),
                 });
               }
             }}
-            disabled={syncGA.isPending || syncGSC.isPending}
+            disabled={syncGA.isPending || syncGSC.isPending || syncHubSpot.isPending}
             className="bg-primary hover:bg-primary/90"
           >
-            {(syncGA.isPending || syncGSC.isPending) ? (
+            {(syncGA.isPending || syncGSC.isPending || syncHubSpot.isPending) ? (
               <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <CloudDownload className="h-4 w-4 mr-2" />
