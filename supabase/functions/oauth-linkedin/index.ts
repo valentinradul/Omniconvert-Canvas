@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
           throw new Error('companyId and redirectUri are required');
         }
 
-        const stateData = JSON.stringify({ companyId });
+        const stateData = JSON.stringify({ companyId, provider: 'linkedin_ads' });
         const encodedState = btoa(stateData);
 
         const authUrl = new URL(LINKEDIN_AUTH_URL);
