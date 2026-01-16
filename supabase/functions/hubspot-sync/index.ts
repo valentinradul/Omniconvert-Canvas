@@ -398,64 +398,59 @@ async function syncDeals(supabase: any, companyId: string, dateFrom?: string, da
     const results: Record<string, number> = {};
     let recordsProcessed = 0;
 
-    // 1. Total MQLs: Contacts with lifecycle_stage = MQL, inbound_outbound = inbound, lead_status NOT Disqualified/Unsubscribed
+    // 1. Total MQLs: Contacts with lifecycle_stage = MQL, inbound_outbound___contact = Inbound, lead_status NOT Disqualified/Unsubscribed
     console.log('Fetching Total MQLs...');
-    const mqlFilters = [
-      ...dateFilters,
-      {
-        propertyName: 'lifecyclestage',
-        operator: 'EQ',
-        value: 'marketingqualifiedlead',
-      },
-      {
-        propertyName: 'hs_lead_status',
-        operator: 'NOT_IN',
-        values: ['Disqualified', 'Unsubscribed', 'DISQUALIFIED', 'UNSUBSCRIBED'],
-      },
-    ];
+    console.log('Date filters for MQL:', JSON.stringify(dateFilters));
     
-    // First try with inbound filter, then fallback to without
+    // Try multiple property name formats for inbound/outbound
+    const inboundPropertyNames = ['inbound_outbound___contact', 'inbound_outbound', 'inbound_outbound_contact'];
     let mqlContacts: any[] = [];
-    try {
-      // Try with inbound_outbound filter
-      const mqlFiltersWithInbound = [
-        ...mqlFilters,
+    let foundWorkingProperty = false;
+    
+    for (const propName of inboundPropertyNames) {
+      if (foundWorkingProperty) break;
+      
+      const mqlFilters = [
+        ...dateFilters,
         {
-          propertyName: 'inbound_outbound',
+          propertyName: 'lifecyclestage',
+          operator: 'EQ',
+          value: 'marketingqualifiedlead',
+        },
+        {
+          propertyName: 'hs_lead_status',
+          operator: 'NOT_IN',
+          values: ['Disqualified', 'Unsubscribed', 'DISQUALIFIED', 'UNSUBSCRIBED'],
+        },
+        {
+          propertyName: propName,
           operator: 'EQ',
           value: 'Inbound',
         },
       ];
-      mqlContacts = await fetchContacts(accessToken, mqlFiltersWithInbound, ['lifecyclestage', 'hs_lead_status', 'inbound_outbound', 'createdate']);
-      console.log(`Total MQLs (with Inbound filter): ${mqlContacts.length}`);
       
-      // If 0 results, try lowercase
-      if (mqlContacts.length === 0) {
-        const mqlFiltersWithInboundLower = [
-          ...mqlFilters,
-          {
-            propertyName: 'inbound_outbound',
-            operator: 'EQ',
-            value: 'inbound',
-          },
-        ];
-        mqlContacts = await fetchContacts(accessToken, mqlFiltersWithInboundLower, ['lifecyclestage', 'hs_lead_status', 'inbound_outbound', 'createdate']);
-        console.log(`Total MQLs (with inbound lowercase): ${mqlContacts.length}`);
+      try {
+        mqlContacts = await fetchContacts(accessToken, mqlFilters, ['lifecyclestage', 'hs_lead_status', propName, 'createdate']);
+        console.log(`Total MQLs with ${propName}=Inbound: ${mqlContacts.length}`);
+        
+        if (mqlContacts.length > 0) {
+          foundWorkingProperty = true;
+          console.log(`Found working property: ${propName}`);
+        }
+      } catch (e) {
+        console.log(`Property ${propName} failed, trying next...`);
       }
-      
-      // If still 0, fallback to without inbound filter
-      if (mqlContacts.length === 0) {
-        console.log('inbound filter returned 0, falling back to MQL-only filter...');
-        mqlContacts = await fetchContacts(accessToken, mqlFilters, ['lifecyclestage', 'hs_lead_status', 'createdate']);
-        console.log(`Total MQLs (MQL lifecycle only): ${mqlContacts.length}`);
-      }
-    } catch (e) {
-      console.log('inbound_outbound property error, fetching MQLs without inbound filter...');
-      mqlContacts = await fetchContacts(accessToken, mqlFilters, ['lifecyclestage', 'hs_lead_status', 'createdate']);
-      console.log(`Total MQLs (fallback): ${mqlContacts.length}`);
     }
+    
+    // If no inbound property worked, log error but don't fallback to unfiltered
+    if (!foundWorkingProperty) {
+      console.error('Could not find working inbound property - MQLs will be 0');
+      mqlContacts = [];
+    }
+    
     results['Total MQLs'] = mqlContacts.length;
     recordsProcessed += mqlContacts.length;
+    console.log(`Final Total MQLs: ${mqlContacts.length}`);
 
     // 2. New Clients: Deals in Closed Won stage
     console.log('Fetching New Clients...');
