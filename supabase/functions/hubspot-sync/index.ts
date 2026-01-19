@@ -875,6 +875,7 @@ Deno.serve(async (req) => {
     // We validate by checking if the company has an active HubSpot integration
     const authHeader = req.headers.get('Authorization');
     let user = null;
+    let membership: { role: string } | null = null;
     
     if (authHeader) {
       // If auth header provided, verify the JWT token
@@ -885,19 +886,21 @@ Deno.serve(async (req) => {
         user = authUser;
         
         // Verify user has access to this company
-        const { data: membership, error: membershipError } = await supabase
+        const { data: membershipData, error: membershipError } = await supabase
           .from('company_members')
           .select('role')
           .eq('company_id', companyId)
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (membershipError || !membership) {
+        if (membershipError || !membershipData) {
           return new Response(
             JSON.stringify({ error: 'Access denied to this company' }),
             { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+        
+        membership = membershipData;
       }
     }
     
@@ -979,7 +982,7 @@ Deno.serve(async (req) => {
           );
         }
         // Check admin/owner permission
-        if (!['admin', 'owner'].includes(membership.role)) {
+        if (!membership || !['admin', 'owner'].includes(membership.role)) {
           return new Response(
             JSON.stringify({ error: 'Admin or owner role required' }),
             { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -994,7 +997,7 @@ Deno.serve(async (req) => {
 
       case 'disconnect':
         // Check admin/owner permission
-        if (!['admin', 'owner'].includes(membership.role)) {
+        if (!membership || !['admin', 'owner'].includes(membership.role)) {
           return new Response(
             JSON.stringify({ error: 'Admin or owner role required' }),
             { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
