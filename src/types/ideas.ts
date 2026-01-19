@@ -16,4 +16,5 @@ export type GrowthIdea = {
   tags?: Tag[];
   companyId?: string;
   isPublic?: boolean;
+  isArchived?: boolean;
 };

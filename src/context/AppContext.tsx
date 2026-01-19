@@ -24,7 +24,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById } = 
     useHypotheses(user, currentCompany, experiments);
   
-  const { ideas, isLoading: ideasLoading, addIdea, editIdea, deleteIdea, getIdeaById } = 
+  const { ideas, archivedIdeas, isLoading: ideasLoading, isLoadingArchived, addIdea, editIdea, deleteIdea, archiveIdea, unarchiveIdea, loadArchivedIdeas, getIdeaById } = 
     useIdeas(user, currentCompany, hypotheses);
   
   const { departments, addDepartment, editDepartment, deleteDepartment, getDepartmentById } = 
@@ -65,16 +65,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     departments,
     categories,
     ideas,
+    archivedIdeas,
     hypotheses,
     experiments,
     pectiWeights,
     isLoading,
+    isLoadingArchived,
     addDepartment,
     editDepartment,
     deleteDepartment: wrappedDeleteDepartment,
     addIdea,
     editIdea,
     deleteIdea,
+    archiveIdea,
+    unarchiveIdea,
+    loadArchivedIdeas,
     addHypothesis,
     editHypothesis,
     deleteHypothesis,

@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Dialog } from '@/components/ui/dialog';
 import { DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Card,
   CardContent,
@@ -17,15 +18,18 @@ import AddIdeaDialog from '@/components/ideas/AddIdeaDialog';
 import IdeasFilterBar from '@/components/ideas/IdeasFilterBar';
 import IdeasTable from '@/components/ideas/IdeasTable';
 import EmptyIdeasState from '@/components/ideas/EmptyIdeasState';
+import { Archive } from 'lucide-react';
 
 const IdeasPage: React.FC = () => {
-  const { ideas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames, addDepartment } = useApp();
+  const { ideas, archivedIdeas, departments, addIdea, getDepartmentById, getAllTags, getAllUserNames, addDepartment, archiveIdea, unarchiveIdea, loadArchivedIdeas, isLoadingArchived } = useApp();
   const { user } = useAuth();
   const { currentCompany, userCompanyRole, contentSettings } = useCompany();
   const { categories, isLoading: categoriesLoading, addCategory } = useCategories(currentCompany);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showAllDepartments, setShowAllDepartments] = useState(false);
+  const [activeTab, setActiveTab] = useState('active');
+  const [archivedLoaded, setArchivedLoaded] = useState(false);
   
   // Search and filters state
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +46,14 @@ const IdeasPage: React.FC = () => {
       }
     }
   }, [categories, categoryFilter, categoriesLoading]);
+
+  // Load archived ideas when switching to archived tab
+  useEffect(() => {
+    if (activeTab === 'archived' && !archivedLoaded) {
+      loadArchivedIdeas();
+      setArchivedLoaded(true);
+    }
+  }, [activeTab, archivedLoaded, loadArchivedIdeas]);
   
   // Get all user names for the filter
   const allUsers = getAllUserNames();
@@ -61,30 +73,30 @@ const IdeasPage: React.FC = () => {
   };
 
   // Filter ideas based on department visibility settings
-  const getFilteredIdeas = () => {
+  const getFilteredIdeas = (ideasList: typeof ideas) => {
     console.log('Filtering ideas:', {
       userCompanyRole,
       contentSettings,
       showAllDepartments,
-      totalIdeas: ideas.length
+      totalIdeas: ideasList.length
     });
 
     // Owners and admins always see all ideas
     if (userCompanyRole === 'owner' || userCompanyRole === 'admin') {
       console.log('User is owner/admin - showing all ideas');
-      return ideas;
+      return ideasList;
     }
     
     // If content is not restricted to departments, show all ideas
     if (!contentSettings?.restrict_content_to_departments) {
       console.log('Content not restricted to departments - showing all ideas');
-      return ideas;
+      return ideasList;
     }
     
     // If user chose to see all departments, show all ideas
     if (showAllDepartments) {
       console.log('User chose to see all departments - showing all ideas');
-      return ideas;
+      return ideasList;
     }
     
     // Filter ideas based on department access
@@ -92,9 +104,6 @@ const IdeasPage: React.FC = () => {
     
     // Get user's accessible departments
     const userAccessibleDepartments = departments.filter(dept => {
-      // For now, we'll assume user has access to all departments since we don't have 
-      // the department permission logic fully implemented yet
-      // This is where you would check member_department_permissions table
       return true; // TODO: Implement actual department permission checking
     });
     
@@ -102,8 +111,7 @@ const IdeasPage: React.FC = () => {
     console.log('User accessible department IDs:', userDepartmentIds);
     
     // Filter ideas based on their department
-    const filteredIdeas = ideas.filter(idea => {
-      // Check if the idea's department is in user's accessible departments
+    const filteredIdeas = ideasList.filter(idea => {
       return userDepartmentIds.includes(idea.departmentId || '');
     });
     
@@ -111,36 +119,41 @@ const IdeasPage: React.FC = () => {
     return filteredIdeas;
   };
 
-  // Apply department filtering first, then apply other filters
-  const departmentFilteredIdeas = getFilteredIdeas();
-  
-  const filteredIdeas = departmentFilteredIdeas.filter(idea => {
-    // Search query filter
-    if (searchQuery && !idea.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
-        !idea.description.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
+  // Apply filters to a list of ideas
+  const applyFilters = (ideasList: typeof ideas) => {
+    const departmentFilteredIdeas = getFilteredIdeas(ideasList);
     
-    // Category filter - using category names
-    if (categoryFilter !== 'all') {
-      const selectedCategory = categories.find(cat => cat.id === categoryFilter);
-      if (!selectedCategory || idea.category !== selectedCategory.name) {
+    return departmentFilteredIdeas.filter(idea => {
+      // Search query filter
+      if (searchQuery && !idea.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
+          !idea.description.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
-    }
-    
-    // Department filter
-    if (departmentFilter !== 'all' && idea.departmentId !== departmentFilter) {
-      return false;
-    }
-    
-    // Responsible user filter
-    if (responsibleFilter !== 'all' && idea.userId !== responsibleFilter) {
-      return false;
-    }
-    
-    return true;
-  });
+      
+      // Category filter - using category names
+      if (categoryFilter !== 'all') {
+        const selectedCategory = categories.find(cat => cat.id === categoryFilter);
+        if (!selectedCategory || idea.category !== selectedCategory.name) {
+          return false;
+        }
+      }
+      
+      // Department filter
+      if (departmentFilter !== 'all' && idea.departmentId !== departmentFilter) {
+        return false;
+      }
+      
+      // Responsible user filter
+      if (responsibleFilter !== 'all' && idea.userId !== responsibleFilter) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
+
+  const filteredIdeas = applyFilters(ideas);
+  const filteredArchivedIdeas = applyFilters(archivedIdeas);
   
   const clearFilters = () => {
     setSearchQuery('');
@@ -217,15 +230,54 @@ const IdeasPage: React.FC = () => {
         hasActiveFilters={hasActiveFilters}
       />
 
-      {ideas.length > 0 ? (
-        <IdeasTable 
-          ideas={filteredIdeas}
-          getDepartmentById={getDepartmentById}
-          getCategoryDisplayName={getCategoryDisplayName}
-        />
-      ) : (
-        <EmptyIdeasState onAddIdeaClick={() => setIsDialogOpen(true)} />
-      )}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
+        <TabsList>
+          <TabsTrigger value="active">
+            Active Ideas ({ideas.length})
+          </TabsTrigger>
+          <TabsTrigger value="archived" className="flex items-center gap-2">
+            <Archive className="h-4 w-4" />
+            Archived ({archivedIdeas.length})
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="active" className="mt-4">
+          {ideas.length > 0 ? (
+            <IdeasTable 
+              ideas={filteredIdeas}
+              getDepartmentById={getDepartmentById}
+              getCategoryDisplayName={getCategoryDisplayName}
+              onArchive={archiveIdea}
+            />
+          ) : (
+            <EmptyIdeasState onAddIdeaClick={() => setIsDialogOpen(true)} />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="archived" className="mt-4">
+          {isLoadingArchived ? (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-muted-foreground">Loading archived ideas...</p>
+            </div>
+          ) : archivedIdeas.length > 0 ? (
+            <IdeasTable 
+              ideas={filteredArchivedIdeas}
+              getDepartmentById={getDepartmentById}
+              getCategoryDisplayName={getCategoryDisplayName}
+              onUnarchive={unarchiveIdea}
+              showArchived={true}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Archive className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium">No archived ideas</h3>
+              <p className="text-muted-foreground text-sm mt-1">
+                Ideas you archive will appear here
+              </p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
       
       <AddIdeaDialog 
         departments={departments}

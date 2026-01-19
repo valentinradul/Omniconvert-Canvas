@@ -11,7 +11,9 @@ export const useIdeas = (
   hypotheses: Hypothesis[]
 ) => {
   const [ideas, setIdeas] = useState<GrowthIdea[]>([]);
+  const [archivedIdeas, setArchivedIdeas] = useState<GrowthIdea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingArchived, setIsLoadingArchived] = useState(false);
   const { toast } = useToast();
   
   // Fetch ideas from Supabase when user or company changes
@@ -19,6 +21,7 @@ export const useIdeas = (
     const loadIdeas = async () => {
       if (!user) {
         setIdeas([]);
+        setArchivedIdeas([]);
         setIsLoading(false);
         return;
       }
@@ -26,7 +29,7 @@ export const useIdeas = (
       setIsLoading(true);
       
       try {
-        const data = await fetchIdeas(currentCompany?.id);
+        const data = await fetchIdeas(currentCompany?.id, false);
         setIdeas(data);
       } catch (error: any) {
         toast({
@@ -41,6 +44,26 @@ export const useIdeas = (
     
     loadIdeas();
   }, [user, currentCompany, toast]);
+  
+  // Function to load archived ideas on demand
+  const loadArchivedIdeas = async () => {
+    if (!user || !currentCompany?.id) return;
+    
+    setIsLoadingArchived(true);
+    try {
+      const allIdeas = await fetchIdeas(currentCompany.id, true);
+      const archived = allIdeas.filter(idea => idea.isArchived === true);
+      setArchivedIdeas(archived);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to load archived ideas',
+        description: error.message,
+      });
+    } finally {
+      setIsLoadingArchived(false);
+    }
+  };
   
   const filteredIdeas = ideas;
   
@@ -97,18 +120,44 @@ export const useIdeas = (
     try {
       await updateIdea(id, ideaUpdates);
       
-      // Update the local state with the edited idea
-      setIdeas(ideas.map(idea => 
-        idea.id === id ? { 
-          ...idea,
-          ...ideaUpdates
-        } : idea
-      ));
-      
-      toast({
-        title: 'Idea updated',
-        description: 'Your growth idea has been updated successfully.',
-      });
+      // Handle archive/unarchive separately
+      if ('isArchived' in ideaUpdates) {
+        if (ideaUpdates.isArchived) {
+          // Move idea from active to archived
+          const ideaToArchive = ideas.find(idea => idea.id === id);
+          if (ideaToArchive) {
+            setIdeas(ideas.filter(idea => idea.id !== id));
+            setArchivedIdeas([...archivedIdeas, { ...ideaToArchive, isArchived: true }]);
+          }
+        } else {
+          // Move idea from archived to active
+          const ideaToUnarchive = archivedIdeas.find(idea => idea.id === id);
+          if (ideaToUnarchive) {
+            setArchivedIdeas(archivedIdeas.filter(idea => idea.id !== id));
+            setIdeas([...ideas, { ...ideaToUnarchive, isArchived: false }]);
+          }
+        }
+        
+        toast({
+          title: ideaUpdates.isArchived ? 'Idea archived' : 'Idea restored',
+          description: ideaUpdates.isArchived 
+            ? 'The idea has been moved to archive.' 
+            : 'The idea has been restored from archive.',
+        });
+      } else {
+        // Regular update
+        setIdeas(ideas.map(idea => 
+          idea.id === id ? { ...idea, ...ideaUpdates } : idea
+        ));
+        setArchivedIdeas(archivedIdeas.map(idea => 
+          idea.id === id ? { ...idea, ...ideaUpdates } : idea
+        ));
+        
+        toast({
+          title: 'Idea updated',
+          description: 'Your growth idea has been updated successfully.',
+        });
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -116,6 +165,14 @@ export const useIdeas = (
         description: error.message,
       });
     }
+  };
+  
+  const archiveIdea = async (id: string) => {
+    await editIdea(id, { isArchived: true });
+  };
+  
+  const unarchiveIdea = async (id: string) => {
+    await editIdea(id, { isArchived: false });
   };
   
   const deleteIdea = async (id: string) => {
@@ -146,14 +203,22 @@ export const useIdeas = (
     }
   };
 
-  const getIdeaById = (id: string) => filteredIdeas.find(idea => idea.id === id);
+  const getIdeaById = (id: string) => {
+    return filteredIdeas.find(idea => idea.id === id) || 
+           archivedIdeas.find(idea => idea.id === id);
+  };
   
   return {
     ideas: filteredIdeas,
+    archivedIdeas,
     isLoading,
+    isLoadingArchived,
     addIdea,
     editIdea,
     deleteIdea,
+    archiveIdea,
+    unarchiveIdea,
+    loadArchivedIdeas,
     getIdeaById
   };
 };
