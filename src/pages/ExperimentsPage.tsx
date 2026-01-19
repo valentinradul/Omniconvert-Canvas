@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import ArchiveLink from '@/components/ArchiveLink';
 
 // Helper function to get all draft experiments from localStorage
 const getDraftExperiments = (getHypothesisById: (id: string) => any): Experiment[] => {
@@ -297,15 +298,18 @@ const ExperimentsPage: React.FC = () => {
       {allExperiments.length === 0 ? (
         <EmptyExperiments />
       ) : (
-        <ExperimentsTable
-          experiments={sortedExperiments}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          handleSort={handleSort}
-          getHypothesisById={getHypothesisById}
-          getIdeaById={getIdeaById}
-          editExperiment={editExperiment}
-        />
+        <>
+          <ExperimentsTable
+            experiments={sortedExperiments}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            handleSort={handleSort}
+            getHypothesisById={getHypothesisById}
+            getIdeaById={getIdeaById}
+            editExperiment={editExperiment}
+          />
+          <ArchiveLink />
+        </>
       )}
     </div>
   );

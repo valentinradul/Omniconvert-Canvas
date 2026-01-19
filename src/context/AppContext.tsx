@@ -18,11 +18,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { currentCompany } = useCompany();
   
   // Initialize our hooks
-  const { experiments, isLoading: experimentsLoading, addExperiment, editExperiment, deleteExperiment, getExperimentByHypothesisId, addExperimentNote, deleteExperimentNote } = 
-    useExperiments(user, currentCompany);
+  const { 
+    experiments, 
+    archivedExperiments,
+    isLoading: experimentsLoading,
+    isLoadingArchived: isLoadingArchivedExperiments,
+    addExperiment, 
+    editExperiment, 
+    deleteExperiment,
+    archiveExperiment,
+    unarchiveExperiment,
+    loadArchivedExperiments,
+    getExperimentByHypothesisId, 
+    addExperimentNote, 
+    deleteExperimentNote 
+  } = useExperiments(user, currentCompany);
   
-  const { hypotheses, isLoading: hypothesesLoading, addHypothesis, editHypothesis, deleteHypothesis, updateAllHypothesesWeights: updateAllHypothesesWeightsBase, getHypothesisByIdeaId, getHypothesisById } = 
-    useHypotheses(user, currentCompany, experiments);
+  const { 
+    hypotheses, 
+    archivedHypotheses,
+    isLoading: hypothesesLoading,
+    isLoadingArchived: isLoadingArchivedHypotheses,
+    addHypothesis, 
+    editHypothesis, 
+    deleteHypothesis,
+    archiveHypothesis,
+    unarchiveHypothesis,
+    loadArchivedHypotheses,
+    updateAllHypothesesWeights: updateAllHypothesesWeightsBase, 
+    getHypothesisByIdeaId, 
+    getHypothesisById 
+  } = useHypotheses(user, currentCompany, experiments);
   
   const { ideas, archivedIdeas, isLoading: ideasLoading, isLoadingArchived, addIdea, editIdea, deleteIdea, archiveIdea, unarchiveIdea, loadArchivedIdeas, getIdeaById } = 
     useIdeas(user, currentCompany, hypotheses);
@@ -67,10 +93,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ideas,
     archivedIdeas,
     hypotheses,
+    archivedHypotheses,
     experiments,
+    archivedExperiments,
     pectiWeights,
     isLoading,
     isLoadingArchived,
+    isLoadingArchivedHypotheses,
+    isLoadingArchivedExperiments,
     addDepartment,
     editDepartment,
     deleteDepartment: wrappedDeleteDepartment,
@@ -83,9 +113,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addHypothesis,
     editHypothesis,
     deleteHypothesis,
+    archiveHypothesis,
+    unarchiveHypothesis,
+    loadArchivedHypotheses,
     addExperiment,
     editExperiment,
     deleteExperiment,
+    archiveExperiment,
+    unarchiveExperiment,
+    loadArchivedExperiments,
     addExperimentNote,
     deleteExperimentNote,
     updatePectiWeights,

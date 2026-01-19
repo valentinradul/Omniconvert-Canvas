@@ -18,6 +18,7 @@ import AddIdeaDialog from '@/components/ideas/AddIdeaDialog';
 import IdeasFilterBar from '@/components/ideas/IdeasFilterBar';
 import IdeasTable from '@/components/ideas/IdeasTable';
 import EmptyIdeasState from '@/components/ideas/EmptyIdeasState';
+import ArchiveLink from '@/components/ArchiveLink';
 import { Archive } from 'lucide-react';
 
 const IdeasPage: React.FC = () => {
@@ -278,6 +279,8 @@ const IdeasPage: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+      
+      <ArchiveLink />
       
       <AddIdeaDialog 
         departments={departments}

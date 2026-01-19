@@ -8,7 +8,9 @@ export const useExperiments = (
   currentCompany: any
 ) => {
   const [experiments, setExperiments] = useState<Experiment[]>([]);
+  const [archivedExperiments, setArchivedExperiments] = useState<Experiment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingArchived, setIsLoadingArchived] = useState(false);
   const { toast } = useToast();
   
   // Fetch experiments from Supabase when user or company changes
@@ -16,6 +18,7 @@ export const useExperiments = (
     const fetchExperiments = async () => {
       if (!user) {
         setExperiments([]);
+        setArchivedExperiments([]);
         setIsLoading(false);
         return;
       }
@@ -29,6 +32,9 @@ export const useExperiments = (
         if (currentCompany?.id) {
           query = query.eq('company_id', currentCompany.id);
         }
+        
+        // Only fetch non-archived experiments
+        query = query.eq('is_archived', false);
         
         const { data, error } = await query;
         
@@ -84,7 +90,8 @@ export const useExperiments = (
             userName: exp.username,
             companyId: exp.company_id,
             totalCost: totalCost || null,
-            totalReturn: totalReturn || null
+            totalReturn: totalReturn || null,
+            isArchived: exp.is_archived || false
           };
         });
         
@@ -103,6 +110,53 @@ export const useExperiments = (
     
     fetchExperiments();
   }, [user, currentCompany]);
+
+  // Load archived experiments on demand
+  const loadArchivedExperiments = async () => {
+    if (!user || !currentCompany?.id) return;
+    
+    setIsLoadingArchived(true);
+    try {
+      const { data, error } = await supabase
+        .from('experiments')
+        .select('*')
+        .eq('company_id', currentCompany.id)
+        .eq('is_archived', true);
+      
+      if (error) throw error;
+      
+      const formattedExperiments: Experiment[] = (data || []).map(exp => ({
+        id: exp.id,
+        hypothesisId: exp.hypothesisid || "",
+        title: exp.title,
+        startDate: exp.startdate ? new Date(exp.startdate) : null,
+        endDate: exp.enddate ? new Date(exp.enddate) : null,
+        status: exp.status as any || "Planned",
+        notes: exp.notes || "",
+        notes_history: exp.notes_history ? (exp.notes_history as unknown as ExperimentNote[]) : [],
+        observationContent: exp.observationcontent as any,
+        createdAt: new Date(exp.createdat),
+        updatedAt: new Date(exp.updatedat),
+        userId: exp.userid,
+        userName: exp.username,
+        companyId: exp.company_id,
+        totalCost: null,
+        totalReturn: null,
+        isArchived: true
+      }));
+      
+      setArchivedExperiments(formattedExperiments);
+    } catch (error: any) {
+      console.error('Error loading archived experiments:', error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to load archived experiments',
+        description: error.message,
+      });
+    } finally {
+      setIsLoadingArchived(false);
+    }
+  };
   
   const filteredExperiments = experiments;
   
@@ -127,7 +181,8 @@ export const useExperiments = (
         observationcontent: experiment.observationContent,
         userid: experiment.userId || user.id,
         username: experiment.userName || user.user_metadata?.full_name || user.email,
-        company_id: currentCompany.id
+        company_id: currentCompany.id,
+        is_archived: false
       };
       
       const { data, error } = await supabase
@@ -152,7 +207,8 @@ export const useExperiments = (
         updatedAt: new Date(data.updatedat),
         userId: data.userid,
         userName: data.username,
-        companyId: data.company_id
+        companyId: data.company_id,
+        isArchived: false
       };
       
       setExperiments([...experiments, formattedExperiment]);
@@ -191,6 +247,7 @@ export const useExperiments = (
       if ('status' in experimentUpdates) updates.status = experimentUpdates.status;
       if ('notes' in experimentUpdates) updates.notes = experimentUpdates.notes;
       if ('observationContent' in experimentUpdates) updates.observationcontent = experimentUpdates.observationContent;
+      if ('isArchived' in experimentUpdates) updates.is_archived = experimentUpdates.isArchived;
       
       // Always update the 'updatedat' field
       updates.updatedat = new Date().toISOString();
@@ -204,19 +261,45 @@ export const useExperiments = (
       
       if (error) throw error;
       
-      // Update the local state with the edited experiment
-      setExperiments(experiments.map(experiment => 
-        experiment.id === id ? { 
-          ...experiment, 
-          ...experimentUpdates,
-          updatedAt: new Date()
-        } : experiment
-      ));
-      
-      toast({
-        title: 'Experiment updated',
-        description: 'Your experiment has been updated successfully.',
-      });
+      // Handle archive/unarchive
+      if ('isArchived' in experimentUpdates) {
+        if (experimentUpdates.isArchived) {
+          // Move from active to archived
+          const experimentToArchive = experiments.find(e => e.id === id);
+          if (experimentToArchive) {
+            setExperiments(experiments.filter(e => e.id !== id));
+            setArchivedExperiments([...archivedExperiments, { ...experimentToArchive, isArchived: true }]);
+          }
+        } else {
+          // Move from archived to active
+          const experimentToUnarchive = archivedExperiments.find(e => e.id === id);
+          if (experimentToUnarchive) {
+            setArchivedExperiments(archivedExperiments.filter(e => e.id !== id));
+            setExperiments([...experiments, { ...experimentToUnarchive, isArchived: false }]);
+          }
+        }
+        
+        toast({
+          title: experimentUpdates.isArchived ? 'Experiment archived' : 'Experiment restored',
+          description: experimentUpdates.isArchived 
+            ? 'The experiment has been moved to archive.' 
+            : 'The experiment has been restored from archive.',
+        });
+      } else {
+        // Regular update
+        setExperiments(experiments.map(experiment => 
+          experiment.id === id ? { 
+            ...experiment, 
+            ...experimentUpdates,
+            updatedAt: new Date()
+          } : experiment
+        ));
+        
+        toast({
+          title: 'Experiment updated',
+          description: 'Your experiment has been updated successfully.',
+        });
+      }
     } catch (error: any) {
       console.error('Error updating experiment:', error.message);
       toast({
@@ -225,6 +308,14 @@ export const useExperiments = (
         description: error.message,
       });
     }
+  };
+
+  const archiveExperiment = async (id: string) => {
+    await editExperiment(id, { isArchived: true });
+  };
+
+  const unarchiveExperiment = async (id: string) => {
+    await editExperiment(id, { isArchived: false });
   };
   
   const deleteExperiment = async (id: string) => {
@@ -237,6 +328,7 @@ export const useExperiments = (
       if (error) throw error;
       
       setExperiments(experiments.filter(experiment => experiment.id !== id));
+      setArchivedExperiments(archivedExperiments.filter(experiment => experiment.id !== id));
       
       toast({
         title: 'Experiment deleted',
@@ -358,10 +450,15 @@ export const useExperiments = (
   
   return {
     experiments: filteredExperiments,
+    archivedExperiments,
     isLoading,
+    isLoadingArchived,
     addExperiment,
     editExperiment,
     deleteExperiment,
+    archiveExperiment,
+    unarchiveExperiment,
+    loadArchivedExperiments,
     getExperimentByHypothesisId,
     addExperimentNote,
     deleteExperimentNote

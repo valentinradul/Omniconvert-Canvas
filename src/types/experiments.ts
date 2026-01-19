@@ -43,4 +43,5 @@ export type Experiment = {
   companyId?: string;
   totalCost?: number | null;
   totalReturn?: number | null;
+  isArchived?: boolean;
 };

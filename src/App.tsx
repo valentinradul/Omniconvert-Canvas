@@ -29,6 +29,7 @@ import AccountSettingsPage from "./pages/AccountSettingsPage";
 import TeamSettingsPage from "./pages/TeamSettingsPage";
 import CategorySettingsPage from "./pages/CategorySettingsPage";
 import DataRecoveryPage from "./pages/DataRecoveryPage";
+import ArchivePage from "./pages/ArchivePage";
 import NotFound from "./pages/NotFound";
 import ContentManagementPage from "./pages/ContentManagementPage";
 import CompanyManagementPage from "./pages/CompanyManagementPage";
@@ -81,6 +82,7 @@ const App = () => (
                     <Route path="experiment-details/:experimentId" element={<ExperimentDetailsPage />} />
                     <Route path="experiments/:experimentId" element={<ExperimentDetailsPage />} />
                     <Route path="departments" element={<DepartmentsPage />} />
+                    <Route path="archive" element={<ArchivePage />} />
                     <Route path="content-management" element={<ContentManagementPage />} />
                     <Route path="account-settings" element={<AccountSettingsPage />} />
                     <Route path="team-settings" element={<TeamSettingsPage />} />
