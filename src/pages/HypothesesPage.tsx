@@ -8,6 +8,7 @@ import HypothesisTable from '@/components/hypothesis/HypothesisTable';
 import EmptyHypothesisList from '@/components/hypothesis/EmptyHypothesisList';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import ArchiveLink from '@/components/ArchiveLink';
 
 const HypothesesPage: React.FC = () => {
   const { hypotheses, ideas, experiments, getIdeaById, editHypothesis, departments, getAllTags, getAllUserNames } = useApp();
@@ -157,17 +158,20 @@ const HypothesesPage: React.FC = () => {
           <EmptyHypothesisList />
         </div>
       ) : (
-        <HypothesisTable
-          hypotheses={filteredHypotheses}
-          departments={departments}
-          experiments={experiments}
-          getIdeaById={getIdeaById}
-          calculatePectiPercentage={calculatePectiPercentage}
+        <>
+          <HypothesisTable
+            hypotheses={filteredHypotheses}
+            departments={departments}
+            experiments={experiments}
+            getIdeaById={getIdeaById}
+            calculatePectiPercentage={calculatePectiPercentage}
           onSortChange={handleSort}
-          onEditPecti={handleEditPecti}
-          onStatusChange={handleStatusChange}
-          sortField={sortField}
-        />
+            onEditPecti={handleEditPecti}
+            onStatusChange={handleStatusChange}
+            sortField={sortField}
+          />
+          <ArchiveLink />
+        </>
       )}
     </div>
   );

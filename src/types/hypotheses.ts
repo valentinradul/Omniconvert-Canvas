@@ -30,4 +30,5 @@ export type Hypothesis = {
   userName?: string;
   status?: HypothesisStatus;
   companyId?: string;
+  isArchived?: boolean;
 };

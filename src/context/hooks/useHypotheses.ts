@@ -9,7 +9,9 @@ export const useHypotheses = (
   experiments: any[]
 ) => {
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>([]);
+  const [archivedHypotheses, setArchivedHypotheses] = useState<Hypothesis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingArchived, setIsLoadingArchived] = useState(false);
   const { toast } = useToast();
   
   // Fetch hypotheses from Supabase when user or company changes
@@ -17,6 +19,7 @@ export const useHypotheses = (
     const fetchHypotheses = async () => {
       if (!user) {
         setHypotheses([]);
+        setArchivedHypotheses([]);
         setIsLoading(false);
         return;
       }
@@ -30,6 +33,9 @@ export const useHypotheses = (
         if (currentCompany?.id) {
           query = query.eq('company_id', currentCompany.id);
         }
+        
+        // Only fetch non-archived hypotheses
+        query = query.eq('is_archived', false);
         
         const { data, error } = await query;
         
@@ -54,7 +60,8 @@ export const useHypotheses = (
           userId: h.userid,
           userName: h.username,
           status: h.status as HypothesisStatus || "Backlog",
-          companyId: h.company_id
+          companyId: h.company_id,
+          isArchived: h.is_archived || false
         }));
         
         setHypotheses(formattedHypotheses);
@@ -72,6 +79,55 @@ export const useHypotheses = (
     
     fetchHypotheses();
   }, [user, currentCompany]);
+
+  // Load archived hypotheses on demand
+  const loadArchivedHypotheses = async () => {
+    if (!user || !currentCompany?.id) return;
+    
+    setIsLoadingArchived(true);
+    try {
+      const { data, error } = await supabase
+        .from('hypotheses')
+        .select('*')
+        .eq('company_id', currentCompany.id)
+        .eq('is_archived', true);
+      
+      if (error) throw error;
+      
+      const formattedHypotheses: Hypothesis[] = (data || []).map(h => ({
+        id: h.id,
+        ideaId: h.ideaid || "",
+        observation: h.observation || "",
+        observationContent: h.observationcontent as any,
+        initiative: h.initiative || "",
+        metric: h.metric || "",
+        pectiScore: h.pectiscore as any || {
+          potential: 1,
+          ease: 1,
+          cost: 1,
+          time: 1,
+          impact: 1
+        },
+        createdAt: new Date(h.createdat),
+        userId: h.userid,
+        userName: h.username,
+        status: h.status as HypothesisStatus || "Backlog",
+        companyId: h.company_id,
+        isArchived: true
+      }));
+      
+      setArchivedHypotheses(formattedHypotheses);
+    } catch (error: any) {
+      console.error('Error loading archived hypotheses:', error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to load archived hypotheses',
+        description: error.message,
+      });
+    } finally {
+      setIsLoadingArchived(false);
+    }
+  };
   
   const filteredHypotheses = hypotheses;
   
@@ -97,7 +153,8 @@ export const useHypotheses = (
         status: hypothesis.status || 'Backlog',
         userid: user.id,
         username: user.user_metadata?.full_name || user.email,
-        company_id: currentCompany.id
+        company_id: currentCompany.id,
+        is_archived: false
       };
       
       const { data, error } = await supabase
@@ -127,7 +184,8 @@ export const useHypotheses = (
         userId: data.userid,
         userName: data.username,
         status: data.status as HypothesisStatus || "Backlog",
-        companyId: data.company_id
+        companyId: data.company_id,
+        isArchived: false
       };
       
       setHypotheses([...hypotheses, formattedHypothesis]);
@@ -167,6 +225,7 @@ export const useHypotheses = (
       if ('metric' in hypothesisUpdates) updates.metric = hypothesisUpdates.metric;
       if ('pectiScore' in hypothesisUpdates) updates.pectiscore = hypothesisUpdates.pectiScore;
       if ('status' in hypothesisUpdates) updates.status = hypothesisUpdates.status;
+      if ('isArchived' in hypothesisUpdates) updates.is_archived = hypothesisUpdates.isArchived;
       
       const { data, error } = await supabase
         .from('hypotheses')
@@ -177,18 +236,44 @@ export const useHypotheses = (
       
       if (error) throw error;
       
-      // Update the local state with the edited hypothesis
-      setHypotheses(hypotheses.map(hypothesis => 
-        hypothesis.id === id ? {
-          ...hypothesis,
-          ...hypothesisUpdates
-        } : hypothesis
-      ));
-      
-      toast({
-        title: 'Hypothesis updated',
-        description: 'Your hypothesis has been updated successfully.',
-      });
+      // Handle archive/unarchive
+      if ('isArchived' in hypothesisUpdates) {
+        if (hypothesisUpdates.isArchived) {
+          // Move from active to archived
+          const hypothesisToArchive = hypotheses.find(h => h.id === id);
+          if (hypothesisToArchive) {
+            setHypotheses(hypotheses.filter(h => h.id !== id));
+            setArchivedHypotheses([...archivedHypotheses, { ...hypothesisToArchive, isArchived: true }]);
+          }
+        } else {
+          // Move from archived to active
+          const hypothesisToUnarchive = archivedHypotheses.find(h => h.id === id);
+          if (hypothesisToUnarchive) {
+            setArchivedHypotheses(archivedHypotheses.filter(h => h.id !== id));
+            setHypotheses([...hypotheses, { ...hypothesisToUnarchive, isArchived: false }]);
+          }
+        }
+        
+        toast({
+          title: hypothesisUpdates.isArchived ? 'Hypothesis archived' : 'Hypothesis restored',
+          description: hypothesisUpdates.isArchived 
+            ? 'The hypothesis has been moved to archive.' 
+            : 'The hypothesis has been restored from archive.',
+        });
+      } else {
+        // Regular update
+        setHypotheses(hypotheses.map(hypothesis => 
+          hypothesis.id === id ? {
+            ...hypothesis,
+            ...hypothesisUpdates
+          } : hypothesis
+        ));
+        
+        toast({
+          title: 'Hypothesis updated',
+          description: 'Your hypothesis has been updated successfully.',
+        });
+      }
     } catch (error: any) {
       console.error('Error updating hypothesis:', error.message);
       toast({
@@ -197,6 +282,14 @@ export const useHypotheses = (
         description: error.message,
       });
     }
+  };
+
+  const archiveHypothesis = async (id: string) => {
+    await editHypothesis(id, { isArchived: true });
+  };
+
+  const unarchiveHypothesis = async (id: string) => {
+    await editHypothesis(id, { isArchived: false });
   };
   
   const deleteHypothesis = async (id: string) => {
@@ -220,6 +313,7 @@ export const useHypotheses = (
       if (error) throw error;
       
       setHypotheses(hypotheses.filter(hypothesis => hypothesis.id !== id));
+      setArchivedHypotheses(archivedHypotheses.filter(hypothesis => hypothesis.id !== id));
       
       toast({
         title: 'Hypothesis deleted',
@@ -247,14 +341,22 @@ export const useHypotheses = (
   };
 
   const getHypothesisByIdeaId = (ideaId: string) => filteredHypotheses.find(h => h.ideaId === ideaId);
-  const getHypothesisById = (id: string) => filteredHypotheses.find(h => h.id === id);
+  const getHypothesisById = (id: string) => {
+    return filteredHypotheses.find(h => h.id === id) || 
+           archivedHypotheses.find(h => h.id === id);
+  };
   
   return {
     hypotheses: filteredHypotheses,
+    archivedHypotheses,
     isLoading,
+    isLoadingArchived,
     addHypothesis,
     editHypothesis,
     deleteHypothesis,
+    archiveHypothesis,
+    unarchiveHypothesis,
+    loadArchivedHypotheses,
     updateAllHypothesesWeights,
     getHypothesisByIdeaId,
     getHypothesisById

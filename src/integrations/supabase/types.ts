@@ -371,6 +371,7 @@ export type Database = {
           enddate: string | null
           hypothesisid: string | null
           id: string
+          is_archived: boolean
           notes: string | null
           notes_history: Json | null
           observationcontent: Json | null
@@ -393,6 +394,7 @@ export type Database = {
           enddate?: string | null
           hypothesisid?: string | null
           id?: string
+          is_archived?: boolean
           notes?: string | null
           notes_history?: Json | null
           observationcontent?: Json | null
@@ -415,6 +417,7 @@ export type Database = {
           enddate?: string | null
           hypothesisid?: string | null
           id?: string
+          is_archived?: boolean
           notes?: string | null
           notes_history?: Json | null
           observationcontent?: Json | null
@@ -711,6 +714,7 @@ export type Database = {
           id: string
           ideaid: string | null
           initiative: string | null
+          is_archived: boolean
           metric: string | null
           observation: string | null
           observationcontent: Json | null
@@ -726,6 +730,7 @@ export type Database = {
           id?: string
           ideaid?: string | null
           initiative?: string | null
+          is_archived?: boolean
           metric?: string | null
           observation?: string | null
           observationcontent?: Json | null
@@ -741,6 +746,7 @@ export type Database = {
           id?: string
           ideaid?: string | null
           initiative?: string | null
+          is_archived?: boolean
           metric?: string | null
           observation?: string | null
           observationcontent?: Json | null
