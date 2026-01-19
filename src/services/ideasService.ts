@@ -15,6 +15,7 @@ type IdeaDatabaseRecord = {
   company_id: string;
   responsibleuserid: string;
   is_public: boolean;
+  is_archived: boolean;
 };
 
 export interface NewIdea {
@@ -29,13 +30,18 @@ export interface NewIdea {
   isPublic?: boolean;
 }
 
-export const fetchIdeas = async (companyId?: string) => {
-  console.log('Fetching ideas for company:', companyId)
+export const fetchIdeas = async (companyId?: string, includeArchived: boolean = false) => {
+  console.log('Fetching ideas for company:', companyId, 'includeArchived:', includeArchived)
   try {
     let query = supabase.from('ideas').select();
     
     if (companyId) {
       query = query.eq('company_id', companyId);
+    }
+    
+    // By default, filter out archived ideas unless explicitly requested
+    if (!includeArchived) {
+      query = query.eq('is_archived', false);
     }
     
     const { data, error } = await query;
@@ -54,13 +60,15 @@ export const fetchIdeas = async (companyId?: string) => {
       userName: idea.username,
       tags: idea.tags || [],
       companyId: idea.company_id,
-      isPublic: idea.is_public
+      isPublic: idea.is_public,
+      isArchived: idea.is_archived
     }));
     
     console.log('Formatted ideas:', formattedIdeas.map(idea => ({
       id: idea.id,
       title: idea.title,
-      departmentId: idea.departmentId
+      departmentId: idea.departmentId,
+      isArchived: idea.isArchived
     })));
     
     return formattedIdeas;
@@ -128,6 +136,7 @@ export const updateIdea = async (id: string, ideaUpdates: Partial<GrowthIdea>) =
     if ('departmentId' in ideaUpdates) updates.departmentid = ideaUpdates.departmentId;
     if ('tags' in ideaUpdates) updates.tags = ideaUpdates.tags;
     if ('isPublic' in ideaUpdates) updates.is_public = ideaUpdates.isPublic;
+    if ('isArchived' in ideaUpdates) updates.is_archived = ideaUpdates.isArchived;
     
     // Use simple select() with no table references to avoid ambiguity
     const { data, error } = await supabase

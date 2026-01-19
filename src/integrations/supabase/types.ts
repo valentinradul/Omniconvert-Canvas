@@ -775,6 +775,7 @@ export type Database = {
           departmentid: string | null
           description: string | null
           id: string
+          is_archived: boolean
           is_public: boolean | null
           responsibleuserid: string | null
           tags: string[] | null
@@ -789,6 +790,7 @@ export type Database = {
           departmentid?: string | null
           description?: string | null
           id?: string
+          is_archived?: boolean
           is_public?: boolean | null
           responsibleuserid?: string | null
           tags?: string[] | null
@@ -803,6 +805,7 @@ export type Database = {
           departmentid?: string | null
           description?: string | null
           id?: string
+          is_archived?: boolean
           is_public?: boolean | null
           responsibleuserid?: string | null
           tags?: string[] | null
