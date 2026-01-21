@@ -579,27 +579,27 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
             onClick={() => {
               const now = new Date();
               const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-              // Sync all integrations for current month
-              if (hasGAMetrics) {
+              // Sync all connected integrations for current month
+              if (isGAConnected) {
                 syncGA.mutate({
                   startDate: format(startOfMonth, 'yyyy-MM-dd'),
                   endDate: format(now, 'yyyy-MM-dd'),
                 });
               }
-              if (hasGSCMetrics) {
+              if (isGSCConnected) {
                 syncGSC.mutate({
                   startDate: format(startOfMonth, 'yyyy-MM-dd'),
                   endDate: format(now, 'yyyy-MM-dd'),
                 });
               }
-              if (hasHubSpotMetrics) {
+              if (isHubSpotConnected) {
                 syncHubSpot.mutate({
                   startDate: format(startOfMonth, 'yyyy-MM-dd'),
                   endDate: format(now, 'yyyy-MM-dd'),
                 });
               }
             }}
-            disabled={syncGA.isPending || syncGSC.isPending || syncHubSpot.isPending}
+            disabled={syncGA.isPending || syncGSC.isPending || syncHubSpot.isPending || (!isGAConnected && !isGSCConnected && !isHubSpotConnected)}
             className="bg-primary hover:bg-primary/90"
           >
             {(syncGA.isPending || syncGSC.isPending || syncHubSpot.isPending) ? (
@@ -607,7 +607,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
             ) : (
               <CloudDownload className="h-4 w-4 mr-2" />
             )}
-            Sync This Month
+            Sync All
           </Button>
           <Button 
             size="sm" 
