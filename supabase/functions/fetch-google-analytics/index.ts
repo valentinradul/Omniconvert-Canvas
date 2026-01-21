@@ -11,13 +11,13 @@ const GA_METRIC_MAPPINGS: Record<string, {
   pageFilter?: string;
   pageFilterType?: 'contains' | 'exact';
 }> = {
-  'Total Traffic (Users)': { metric: 'totalUsers' },
-  'Pricing (users)': { metric: 'totalUsers', pageFilter: '/pricing', pageFilterType: 'contains' },
-  'Book-a-demo': { metric: 'totalUsers', pageFilter: '/book-a-demo', pageFilterType: 'contains' },
-  'Book-a-call': { metric: 'totalUsers', pageFilter: '/book-a-call', pageFilterType: 'contains' },
-  'Pricing Explore': { metric: 'totalUsers', pageFilter: '/pricing/explore', pageFilterType: 'contains' },
-  'Pricing Reveal': { metric: 'totalUsers', pageFilter: '/pricing/reveal', pageFilterType: 'contains' },
-  'Pricing Pulse': { metric: 'totalUsers', pageFilter: '/pricing/pulse', pageFilterType: 'contains' },
+  'Total Traffic (Users)': { metric: 'activeUsers' },
+  'Pricing (users)': { metric: 'activeUsers', pageFilter: '/pricing', pageFilterType: 'exact' },
+  'Book-a-demo': { metric: 'activeUsers', pageFilter: '/book-a-demo', pageFilterType: 'contains' },
+  'Book-a-call': { metric: 'activeUsers', pageFilter: '/book-a-call', pageFilterType: 'contains' },
+  'Pricing Explore': { metric: 'activeUsers', pageFilter: '/pricing/explore', pageFilterType: 'contains' },
+  'Pricing Reveal': { metric: 'activeUsers', pageFilter: '/pricing/reveal', pageFilterType: 'contains' },
+  'Pricing Pulse': { metric: 'activeUsers', pageFilter: '/pricing/pulse', pageFilterType: 'contains' },
 };
 
 Deno.serve(async (req) => {
@@ -432,8 +432,8 @@ Deno.serve(async (req) => {
           console.log('Calculating combined metric: Pricing + Book a demo');
           
           try {
-            const pricingValues = await fetchGAReport(propertyId, accessToken, dateRange, 'totalUsers', '/pricing', 'contains');
-            const demoValues = await fetchGAReport(propertyId, accessToken, dateRange, 'totalUsers', '/book-a-demo', 'contains');
+            const pricingValues = await fetchGAReport(propertyId, accessToken, dateRange, 'activeUsers', '/pricing', 'exact');
+            const demoValues = await fetchGAReport(propertyId, accessToken, dateRange, 'activeUsers', '/book-a-demo', 'contains');
 
             const allDates = new Set([...Object.keys(pricingValues), ...Object.keys(demoValues)]);
             
