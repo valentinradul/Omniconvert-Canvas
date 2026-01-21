@@ -89,6 +89,7 @@ interface MetricRowProps {
   onConnectIntegration: (metric: ReportingMetric) => void;
   onShowInViews?: (metric: ReportingMetric) => void;
   isFromOtherCategory?: boolean;
+  liveIntegrationValue?: number | null; // Live value from integration (e.g., GA) for the full period
 }
 
 export const MetricRow: React.FC<MetricRowProps> = ({
@@ -104,6 +105,7 @@ export const MetricRow: React.FC<MetricRowProps> = ({
   onConnectIntegration,
   onShowInViews,
   isFromOtherCategory = false,
+  liveIntegrationValue,
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>('');
@@ -222,24 +224,32 @@ export const MetricRow: React.FC<MetricRowProps> = ({
           </DropdownMenu>
         </div>
       </td>
-      {periods.map((period) => {
-        // Use aggregated value for quarter/year granularity
-        const aggregatedValue = aggregateValue(values, period, granularity, dateRange);
+      {periods.map((period, periodIndex) => {
+        // Use live integration value if available and we only have one period (aggregated view)
+        // OR if this is the first period and we have live data
+        const useLiveValue = liveIntegrationValue !== undefined && liveIntegrationValue !== null && periods.length === 1;
+        
+        // Use aggregated value for quarter/year granularity, or live value if available
+        const aggregatedValue = useLiveValue 
+          ? liveIntegrationValue 
+          : aggregateValue(values, period, granularity, dateRange);
         const valueRecord = values[period];
         const isEditing = editingCell === period;
         const isOverride = valueRecord?.is_manual_override;
+        const isLive = useLiveValue;
 
         return (
           <td 
             key={period}
             className={cn(
               "px-2 py-1 text-sm text-right min-w-[100px] border-r border-border",
-              !metric.is_calculated && granularity === 'month' && "cursor-pointer hover:bg-muted",
-              isOverride && granularity === 'month' && "bg-blue-50 dark:bg-blue-950",
+              !metric.is_calculated && granularity === 'month' && !isLive && "cursor-pointer hover:bg-muted",
+              isOverride && granularity === 'month' && !isLive && "bg-blue-50 dark:bg-blue-950",
               metric.is_calculated && "bg-primary/5",
-              (granularity === 'quarter' || granularity === 'year') && "bg-muted/30"
+              (granularity === 'quarter' || granularity === 'year') && "bg-muted/30",
+              isLive && "bg-orange-50 dark:bg-orange-950/30"
             )}
-            onClick={() => !isEditing && !metric.is_calculated && granularity === 'month' && handleCellClick(period, aggregatedValue)}
+            onClick={() => !isEditing && !metric.is_calculated && granularity === 'month' && !isLive && handleCellClick(period, aggregatedValue)}
           >
             {isEditing ? (
               <div className="flex items-center gap-1">
@@ -271,12 +281,17 @@ export const MetricRow: React.FC<MetricRowProps> = ({
             ) : (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className={cn(isOverride && granularity === 'month' && "text-blue-600 font-medium")}>
+                  <span className={cn(
+                    isOverride && granularity === 'month' && !isLive && "text-blue-600 font-medium",
+                    isLive && "text-orange-600 dark:text-orange-400 font-medium"
+                  )}>
                     {formatValue(aggregatedValue)}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {granularity === 'month' ? (
+                  {isLive ? (
+                    <p className="text-xs">Live data from {metric.source || 'integration'}</p>
+                  ) : granularity === 'month' ? (
                     <>
                       <p>Click to edit</p>
                       {isOverride && <p className="text-xs text-muted-foreground">Manually entered</p>}
