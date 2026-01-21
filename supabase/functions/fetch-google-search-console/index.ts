@@ -127,18 +127,52 @@ Deno.serve(async (req) => {
       );
     }
 
-    // For sync-reporting-metrics, we don't need user auth - just validate company exists
-    if (action !== 'sync-reporting-metrics') {
+    // For sync and sync-reporting-metrics actions with companyId, allow service-role background syncing
+    // This enables automated/scheduled syncs and backend-triggered syncs
+    if ((action === 'sync' || action === 'sync-reporting-metrics') && companyId) {
+      // Verify company has active GSC integration (using stored credentials)
+      const { data: integration } = await supabase
+        .from('company_integrations')
+        .select('id, is_active')
+        .eq('company_id', companyId)
+        .eq('integration_type', 'google_search_console')
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (!integration) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'No active Google Search Console integration found for this company' 
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log('Background sync: Using stored credentials for company', companyId);
+    } else {
+      // Other actions require user authentication
       const authHeader = req.headers.get('Authorization')
       if (!authHeader) {
-        throw new Error('No authorization header')
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'No authorization header' 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
 
       const { data: { user }, error: authError } = await supabase.auth.getUser(
         authHeader.replace('Bearer ', '')
       )
       if (authError || !user) {
-        throw new Error('Unauthorized')
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Unauthorized' 
+        }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     }
 
@@ -278,48 +312,72 @@ Deno.serve(async (req) => {
       }
 
       case 'sync': {
-        if (!integrationId) {
-          throw new Error('Integration ID is required')
+        // Support both integrationId and companyId for background syncing
+        let integration;
+        if (integrationId) {
+          const { data, error: fetchError } = await supabase
+            .from('company_integrations')
+            .select('*')
+            .eq('id', integrationId)
+            .single();
+          if (fetchError || !data) {
+            throw new Error('Integration not found');
+          }
+          integration = data;
+        } else if (companyId) {
+          const { data, error: fetchError } = await supabase
+            .from('company_integrations')
+            .select('*')
+            .eq('company_id', companyId)
+            .eq('integration_type', 'google_search_console')
+            .eq('is_active', true)
+            .maybeSingle();
+          if (fetchError || !data) {
+            throw new Error('No active GSC integration found for this company');
+          }
+          integration = data;
+        } else {
+          throw new Error('Either integrationId or companyId is required');
         }
 
-        const { data: integration, error: fetchError } = await supabase
-          .from('company_integrations')
-          .select('*')
-          .eq('id', integrationId)
-          .single()
-
-        if (fetchError || !integration) {
-          throw new Error('Integration not found')
-        }
-
-        const creds = JSON.parse(integration.encrypted_credentials || '{}')
-        const integrationConfig = integration.config as any
-
-        // Calculate date range
-        const endDate = new Date()
-        let startDate = new Date()
+        const integrationConfig = integration.config as any;
         
-        switch (integrationConfig.dateRangePreset) {
-          case 'last_7_days':
-            startDate.setDate(endDate.getDate() - 7)
-            break
-          case 'last_30_days':
-            startDate.setDate(endDate.getDate() - 30)
-            break
-          case 'last_90_days':
-            startDate.setDate(endDate.getDate() - 90)
-            break
-          default:
-            startDate.setDate(endDate.getDate() - 30)
+        // Get valid access token using OAuth tokens table
+        const accessToken = await getValidAccessToken(supabase, integration.company_id);
+
+        // Use provided date range or calculate from config
+        let syncStartDate: Date;
+        let syncEndDate: Date;
+        
+        if (body.startDate && body.endDate) {
+          syncStartDate = new Date(body.startDate);
+          syncEndDate = new Date(body.endDate);
+        } else {
+          syncEndDate = new Date();
+          syncStartDate = new Date();
+          
+          switch (integrationConfig?.dateRangePreset) {
+            case 'last_7_days':
+              syncStartDate.setDate(syncEndDate.getDate() - 7);
+              break;
+            case 'last_30_days':
+              syncStartDate.setDate(syncEndDate.getDate() - 30);
+              break;
+            case 'last_90_days':
+              syncStartDate.setDate(syncEndDate.getDate() - 90);
+              break;
+            default:
+              syncStartDate.setDate(syncEndDate.getDate() - 30);
+          }
         }
 
         // Create sync log entry
         const { data: syncLog, error: syncLogError } = await supabase
           .from('integration_sync_log')
           .insert({
-            integration_id: integrationId,
+            integration_id: integration.id,
             company_id: integration.company_id,
-            sync_type: 'manual',
+            sync_type: companyId && !integrationId ? 'background' : 'manual',
             status: 'in_progress',
             started_at: new Date().toISOString(),
           })
@@ -335,12 +393,12 @@ Deno.serve(async (req) => {
             {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${creds.accessToken}`,
+                'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                startDate: startDate.toISOString().split('T')[0],
-                endDate: endDate.toISOString().split('T')[0],
+                startDate: syncStartDate.toISOString().split('T')[0],
+                endDate: syncEndDate.toISOString().split('T')[0],
                 dimensions: ['date', 'query'],
                 rowLimit: 1000,
               }),
