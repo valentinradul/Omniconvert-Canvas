@@ -112,6 +112,21 @@ Deno.serve(async (req) => {
 
     console.log(`Google Search Console action: ${action}`, { integrationId, companyId })
 
+    // Validate action is provided
+    if (!action) {
+      console.error('No action provided in request body:', JSON.stringify(body));
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'No action specified. Valid actions: test-connection, get-sites, list_sites, save-config, sync, sync-reporting-metrics, disconnect' 
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     // For sync-reporting-metrics, we don't need user auth - just validate company exists
     if (action !== 'sync-reporting-metrics') {
       const authHeader = req.headers.get('Authorization')

@@ -54,6 +54,18 @@ Deno.serve(async (req) => {
     
     console.log('Request received:', { action, companyId, hasConfig: !!config });
 
+    // Validate action is provided
+    if (!action) {
+      console.error('No action provided in request body:', JSON.stringify(body));
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'No action specified. Valid actions: get-properties, save-config, sync, disconnect' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Helper: Get valid access token (with refresh if needed)
     const getValidAccessToken = async (companyIdParam: string): Promise<string> => {
       const { data: oauthToken, error: oauthError } = await supabase
