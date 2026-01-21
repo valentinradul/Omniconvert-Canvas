@@ -49,6 +49,7 @@ import {
   ToggleGroupItem,
 } from '@/components/ui/toggle-group';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface ReportingTableProps {
   category: ReportingCategory;
@@ -369,6 +370,25 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
     
     return grouped;
   }, [values, calculatedValues]);
+  
+  // Create a mapping from metric ID to live GA value
+  const liveGAValuesByMetricId = useMemo(() => {
+    const mapping: Record<string, number | null> = {};
+    if (!liveGAData?.success || !liveGAData.data) return mapping;
+    
+    // Map live GA data to metric IDs based on metric name
+    metrics.forEach(metric => {
+      if (metric.source === 'Google Analytics') {
+        // Try to match by metric name
+        const liveValue = liveGAData.data[metric.name];
+        if (liveValue !== undefined) {
+          mapping[metric.id] = liveValue;
+        }
+      }
+    });
+    
+    return mapping;
+  }, [liveGAData, metrics]);
 
   const handleAddMetric = (data: { name: string; source: string; integration_type: string | null }) => {
     createMetric.mutate({
@@ -685,71 +705,31 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
         isLoading={deleteSavedChart.isPending}
       />
 
-      {/* Live GA Data Panel - shows aggregated totals for selected period */}
+      {/* Live GA Data Status Indicator */}
       {isGAConnected && (
-        <div className="border rounded-lg p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-orange-500" />
-              <h4 className="font-semibold text-sm">Live Google Analytics Data</h4>
-              <Badge variant="outline" className="text-xs">
-                {format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d, yyyy')}
-              </Badge>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => refetchLiveGA()}
-              disabled={isFetchingLiveGA}
-              className="text-orange-600 hover:text-orange-700"
-            >
-              {isFetchingLiveGA ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Refresh
-            </Button>
-          </div>
-          
-          {isLoadingLiveGA ? (
-            <div className="text-sm text-muted-foreground flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 animate-spin" />
-              Loading live data from Google Analytics...
-            </div>
-          ) : liveGAData?.success && liveGAData.data ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-orange-200 dark:border-orange-800">
-                    <th className="text-left py-2 px-3 font-semibold">Metric</th>
-                    <th className="text-right py-2 px-3 font-semibold">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(liveGAData.data).map(([metricName, value]) => (
-                    <tr 
-                      key={metricName}
-                      className="border-b border-orange-100 dark:border-orange-900 hover:bg-orange-100/50 dark:hover:bg-orange-900/30"
-                    >
-                      <td className="py-2 px-3 text-muted-foreground">{metricName}</td>
-                      <td className="py-2 px-3 text-right font-bold text-orange-600 dark:text-orange-400">
-                        {new Intl.NumberFormat('en-US').format(value)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Zap className="h-4 w-4 text-orange-500" />
+          {isLoadingLiveGA || isFetchingLiveGA ? (
+            <span className="flex items-center gap-1">
+              <RefreshCw className="h-3 w-3 animate-spin" />
+              Loading live data...
+            </span>
+          ) : liveGAData?.success ? (
+            <span className="text-orange-600 dark:text-orange-400">
+              Live GA data loaded for {format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d, yyyy')}
+            </span>
           ) : liveGAData?.error ? (
-            <div className="text-sm text-destructive">
-              {liveGAData.error}
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              Select a date range to fetch live data
-            </div>
-          )}
+            <span className="text-destructive">{liveGAData.error}</span>
+          ) : null}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => refetchLiveGA()}
+            disabled={isFetchingLiveGA}
+            className="h-6 px-2"
+          >
+            <RefreshCw className={cn("h-3 w-3", isFetchingLiveGA && "animate-spin")} />
+          </Button>
         </div>
       )}
 
@@ -811,6 +791,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                             onConnectIntegration={handleConnectIntegration}
                             onShowInViews={handleShowInViews}
                             isFromOtherCategory={false}
+                            liveIntegrationValue={liveGAValuesByMetricId[metric.id]}
                           />
                         ))}
                       </React.Fragment>
@@ -844,6 +825,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                           onConnectIntegration={handleConnectIntegration}
                           onShowInViews={handleShowInViews}
                           isFromOtherCategory={false}
+                          liveIntegrationValue={liveGAValuesByMetricId[metric.id]}
                         />
                       ))}
                       {visibleMetrics.shared.map((metric) => (
@@ -860,6 +842,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                           onEditFormula={handleEditFormula}
                           onConnectIntegration={handleConnectIntegration}
                           isFromOtherCategory={true}
+                          liveIntegrationValue={liveGAValuesByMetricId[metric.id]}
                         />
                       ))}
                     </>
