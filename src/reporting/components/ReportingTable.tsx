@@ -713,29 +713,33 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
           </div>
           
           {isLoadingLiveGA ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="animate-pulse bg-white dark:bg-gray-800 rounded-lg p-3">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-2"></div>
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                </div>
-              ))}
+            <div className="text-sm text-muted-foreground flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Loading live data from Google Analytics...
             </div>
           ) : liveGAData?.success && liveGAData.data ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              {Object.entries(liveGAData.data).map(([metricName, value]) => (
-                <div 
-                  key={metricName} 
-                  className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-orange-100 dark:border-orange-900"
-                >
-                  <div className="text-xs text-muted-foreground truncate mb-1" title={metricName}>
-                    {metricName}
-                  </div>
-                  <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                    {new Intl.NumberFormat('en-US').format(value)}
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-orange-200 dark:border-orange-800">
+                    <th className="text-left py-2 px-3 font-semibold">Metric</th>
+                    <th className="text-right py-2 px-3 font-semibold">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(liveGAData.data).map(([metricName, value]) => (
+                    <tr 
+                      key={metricName}
+                      className="border-b border-orange-100 dark:border-orange-900 hover:bg-orange-100/50 dark:hover:bg-orange-900/30"
+                    >
+                      <td className="py-2 px-3 text-muted-foreground">{metricName}</td>
+                      <td className="py-2 px-3 text-right font-bold text-orange-600 dark:text-orange-400">
+                        {new Intl.NumberFormat('en-US').format(value)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : liveGAData?.error ? (
             <div className="text-sm text-destructive">
