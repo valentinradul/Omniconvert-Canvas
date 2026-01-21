@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const GOOGLE_ADS_API_BASE = 'https://googleads.googleapis.com/v16';
+const GOOGLE_ADS_API_BASE = 'https://googleads.googleapis.com/v18';
 
 interface GoogleAdsConfig {
   customerId: string;
