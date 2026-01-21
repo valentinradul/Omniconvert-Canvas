@@ -30,25 +30,6 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'No authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const body = await req.json();
     const { action, companyId, config, startDate, endDate } = body;
     
@@ -64,6 +45,53 @@ Deno.serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // For sync action with companyId, allow service-role background syncing (no user auth required)
+    // This enables automated/scheduled syncs and backend-triggered syncs
+    const authHeader = req.headers.get('Authorization');
+    let userId: string | null = null;
+    
+    if (action === 'sync' && companyId) {
+      // Verify company has active GA integration (using stored credentials)
+      const { data: integration } = await supabase
+        .from('company_integrations')
+        .select('id, is_active')
+        .eq('company_id', companyId)
+        .eq('integration_type', 'google_analytics')
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (!integration) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'No active Google Analytics integration found for this company' 
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log('Background sync: Using stored credentials for company', companyId);
+    } else {
+      // Other actions require user authentication
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: 'No authorization header' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser(
+        authHeader.replace('Bearer ', '')
+      );
+
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      userId = user.id;
     }
 
     // Helper: Get valid access token (with refresh if needed)
