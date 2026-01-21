@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Plus, RefreshCw, BarChart3, LineChart, Calculator, Upload, Trash2, CloudDownload } from 'lucide-react';
+import { Plus, RefreshCw, BarChart3, LineChart, Calculator, Upload, Trash2, CloudDownload, Zap } from 'lucide-react';
 import { format, startOfWeek, startOfMonth, startOfQuarter, startOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachQuarterOfInterval, eachYearOfInterval } from 'date-fns';
 import { MetricRow } from './MetricRow';
 import { AddMetricDialog } from './AddMetricDialog';
@@ -21,6 +21,7 @@ import { useExcelImport } from '@/hooks/useExcelImport';
 import { useSyncGoogleAnalytics } from '@/hooks/useSyncGoogleAnalytics';
 import { useSyncGoogleSearchConsole } from '@/hooks/useSyncGoogleSearchConsole';
 import { useSyncHubSpot } from '@/hooks/useSyncHubSpot';
+import { useFetchGAPeriodTotals } from '@/hooks/useFetchGAPeriodTotals';
 import { useOAuth } from '@/hooks/useOAuth';
 import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
 import {
@@ -47,6 +48,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from '@/components/ui/toggle-group';
+import { Badge } from '@/components/ui/badge';
 
 interface ReportingTableProps {
   category: ReportingCategory;
@@ -249,6 +251,18 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
   const { isConnected: isGAConnected } = useOAuth('google_analytics');
   const { isConnected: isGSCConnected } = useOAuth('google_search_console');
   const isHubSpotConnected = hubspotStatus.isConnected;
+  
+  // Fetch live GA data for the selected period (aggregated totals, not stored)
+  const { 
+    data: liveGAData, 
+    isLoading: isLoadingLiveGA,
+    isFetching: isFetchingLiveGA,
+    refetch: refetchLiveGA,
+  } = useFetchGAPeriodTotals(
+    format(dateRange.from, 'yyyy-MM-dd'),
+    format(dateRange.to, 'yyyy-MM-dd'),
+    isGAConnected // Only fetch when GA is connected
+  );
   
   // Check if any metrics have GA integration (by source name or integration_type) OR if OAuth is connected
   const hasGAMetrics = useMemo(() => {
@@ -670,6 +684,70 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
         onDelete={(id) => deleteSavedChart.mutate(id)}
         isLoading={deleteSavedChart.isPending}
       />
+
+      {/* Live GA Data Panel - shows aggregated totals for selected period */}
+      {isGAConnected && (
+        <div className="border rounded-lg p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-orange-500" />
+              <h4 className="font-semibold text-sm">Live Google Analytics Data</h4>
+              <Badge variant="outline" className="text-xs">
+                {format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d, yyyy')}
+              </Badge>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => refetchLiveGA()}
+              disabled={isFetchingLiveGA}
+              className="text-orange-600 hover:text-orange-700"
+            >
+              {isFetchingLiveGA ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Refresh
+            </Button>
+          </div>
+          
+          {isLoadingLiveGA ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="animate-pulse bg-white dark:bg-gray-800 rounded-lg p-3">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-2"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          ) : liveGAData?.success && liveGAData.data ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              {Object.entries(liveGAData.data).map(([metricName, value]) => (
+                <div 
+                  key={metricName} 
+                  className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-orange-100 dark:border-orange-900"
+                >
+                  <div className="text-xs text-muted-foreground truncate mb-1" title={metricName}>
+                    {metricName}
+                  </div>
+                  <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                    {new Intl.NumberFormat('en-US').format(value)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : liveGAData?.error ? (
+            <div className="text-sm text-destructive">
+              {liveGAData.error}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Select a date range to fetch live data
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="border rounded-lg overflow-hidden">
         <ScrollArea className="w-full">
