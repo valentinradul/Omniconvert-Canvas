@@ -491,6 +491,152 @@ Deno.serve(async (req) => {
         });
       }
 
+      case 'fetch-period-totals': {
+        // Fetch aggregated totals for a date range directly from GA (no storage)
+        console.log('Fetching period totals for company:', companyId);
+
+        if (!companyId) {
+          return new Response(JSON.stringify({ success: false, error: 'companyId is required' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Get integration config for property ID
+        const { data: integration, error: intError } = await supabase
+          .from('company_integrations')
+          .select('id, config')
+          .eq('company_id', companyId)
+          .eq('integration_type', 'google_analytics')
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (intError || !integration) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Google Analytics not configured' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const integrationConfig = integration.config as { propertyId?: string } | null;
+        const propertyId = integrationConfig?.propertyId;
+
+        if (!propertyId) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'No GA property configured' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Get access token
+        let accessToken: string;
+        try {
+          accessToken = await getValidAccessToken(companyId);
+        } catch (tokenError) {
+          console.error('Token error:', tokenError);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: tokenError instanceof Error ? tokenError.message : 'Token error' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const dateRange = {
+          startDate: startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+          endDate: endDate || new Date().toISOString().split('T')[0],
+        };
+
+        console.log('Fetching totals for date range:', dateRange);
+
+        // Helper to fetch aggregated total (no date dimension = single total)
+        const fetchGATotalReport = async (
+          propId: string, 
+          token: string, 
+          range: { startDate: string; endDate: string },
+          metricName: string,
+          pageFilter?: string,
+          pageFilterType?: 'contains' | 'exact'
+        ): Promise<number> => {
+          const requestBody: Record<string, unknown> = {
+            dateRanges: [range],
+            metrics: [{ name: metricName }],
+            // No dimensions = aggregated total for the period
+          };
+
+          if (pageFilter) {
+            requestBody.dimensionFilter = {
+              filter: {
+                fieldName: 'pagePath',
+                stringFilter: {
+                  matchType: pageFilterType === 'exact' ? 'EXACT' : 'CONTAINS',
+                  value: pageFilter,
+                },
+              },
+            };
+          }
+
+          const response = await fetch(
+            `https://analyticsdata.googleapis.com/v1beta/properties/${propId}:runReport`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(requestBody),
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('GA API error:', errorText);
+            throw new Error(`GA API error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          // Single row with total for the period
+          const value = data.rows?.[0]?.metricValues?.[0]?.value || '0';
+          return parseInt(value);
+        };
+
+        // Fetch totals for all mapped metrics
+        const results: Record<string, number> = {};
+
+        for (const [metricName, mapping] of Object.entries(GA_METRIC_MAPPINGS)) {
+          try {
+            const total = await fetchGATotalReport(
+              propertyId,
+              accessToken,
+              dateRange,
+              mapping.metric,
+              mapping.pageFilter,
+              mapping.pageFilterType
+            );
+            results[metricName] = total;
+            console.log(`${metricName}: ${total}`);
+          } catch (metricError) {
+            console.error(`Failed to fetch ${metricName}:`, metricError);
+            results[metricName] = 0;
+          }
+        }
+
+        // Calculate combined metric
+        results['Pricing + Book a demo (Users)'] = (results['Pricing (users)'] || 0) + (results['Book-a-demo'] || 0);
+
+        return new Response(JSON.stringify({ 
+          success: true,
+          data: results,
+          dateRange,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'disconnect': {
         if (!companyId) {
           return new Response(JSON.stringify({ success: false, error: 'companyId required' }), {
