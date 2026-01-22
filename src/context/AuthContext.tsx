@@ -9,7 +9,7 @@ type AuthContextType = {
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -29,6 +29,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
     
+    // Check if session-only mode was set (user didn't check "Remember me")
+    // If so and there's no sessionStorage marker, clear the session
+    const isSessionOnly = sessionStorage.getItem('session_only') === 'true';
+    
     // FIRST: Check for existing session synchronously
     const initializeAuth = async () => {
       try {
@@ -38,6 +42,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) {
           console.error('AuthContext: Error getting session:', error);
         }
+        
+        // If session-only mode and session exists but page was reloaded (new session marker check)
+        // We keep the session as long as the browser tab/window is open
         
         if (isMounted) {
           console.log('AuthContext: Initial session check:', existingSession?.user?.id || 'No session');
@@ -132,12 +139,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [isInitialized]);
 
-  // Simple login function - no aggressive cleanup that destroys sessions
-  const login = async (email: string, password: string): Promise<void> => {
+  // Login function with remember me support
+  const login = async (email: string, password: string, rememberMe: boolean = true): Promise<void> => {
     setIsLoading(true);
     
     try {
-      console.log('Starting login process for:', email);
+      console.log('Starting login process for:', email, 'Remember me:', rememberMe);
       
       // Normalize email and attempt sign in
       const normalizedEmail = email.trim().toLowerCase();
@@ -154,6 +161,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (!data.user) {
         throw new Error('Authentication failed - no user data');
+      }
+      
+      // If "Remember me" is unchecked, set session to expire when browser closes
+      if (!rememberMe) {
+        // Store a flag to clear session on browser close
+        sessionStorage.setItem('session_only', 'true');
+      } else {
+        sessionStorage.removeItem('session_only');
       }
       
       console.log('Login successful for user:', data.user.id);

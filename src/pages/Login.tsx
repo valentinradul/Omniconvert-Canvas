@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -14,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft } from "lucide-react";
@@ -31,6 +31,7 @@ const Login = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
   const { invitationId, isProcessingInvitation } = useInvitationHandler();
   const [invitationDetails, setInvitationDetails] = useState<any>(null);
+  const [rememberMe, setRememberMe] = useState(true);
   
   // Load invitation details if invitation ID is present
   useEffect(() => {
@@ -91,7 +92,7 @@ const Login = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await login(values.email, values.password);
+      await login(values.email, values.password, rememberMe);
       // The invitation will be handled automatically by the useInvitationHandler hook after auth
       // No need to navigate here as the effect will handle it
     } catch (error) {
@@ -232,6 +233,19 @@ const Login = () => {
               />
 
               <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="remember-me" 
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                  />
+                  <label 
+                    htmlFor="remember-me" 
+                    className="text-sm font-medium leading-none cursor-pointer"
+                  >
+                    Remember me
+                  </label>
+                </div>
                 <Link
                   to="/forgot-password"
                   className="text-sm text-blue-600 hover:text-blue-500"
