@@ -532,104 +532,28 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
               Refresh
             </Button>
           )}
-          <Button size="sm" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Metric
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => setFormulaDialogOpen(true)}>
-            <Calculator className="h-4 w-4 mr-2" />
-            Add Calculated
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Import Excel
-          </Button>
-          {hasGAMetrics && (
-            <>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => syncGA.mutate({
-                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
-                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
-                })}
-                disabled={syncGA.isPending}
-                className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
-              >
-                {syncGA.isPending ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <CloudDownload className="h-4 w-4 mr-2" />
-                )}
-                Sync GA
-              </Button>
-            </>
-          )}
-          {hasGSCMetrics && (
-            <>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => syncGSC.mutate({
-                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
-                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
-                })}
-                disabled={syncGSC.isPending}
-                className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
-              >
-                {syncGSC.isPending ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <CloudDownload className="h-4 w-4 mr-2" />
-                )}
-                Sync GSC
-              </Button>
-            </>
-          )}
-          {hasHubSpotMetrics && (
-            <>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => syncHubSpot.mutate({
-                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
-                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
-                })}
-                disabled={syncHubSpot.isPending}
-                className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
-              >
-                {syncHubSpot.isPending ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <CloudDownload className="h-4 w-4 mr-2" />
-                )}
-                Sync HubSpot
-              </Button>
-            </>
-          )}
+          {/* Sync All Button - Always visible, syncs all connected integrations */}
           <Button 
             size="sm" 
             variant="default"
             onClick={() => {
-              const now = new Date();
-              const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-              // Sync all connected integrations for current month
+              // Sync for the selected date range
               if (isGAConnected) {
                 syncGA.mutate({
-                  startDate: format(startOfMonth, 'yyyy-MM-dd'),
-                  endDate: format(now, 'yyyy-MM-dd'),
+                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
                 });
               }
               if (isGSCConnected) {
                 syncGSC.mutate({
-                  startDate: format(startOfMonth, 'yyyy-MM-dd'),
-                  endDate: format(now, 'yyyy-MM-dd'),
+                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
                 });
               }
               if (isHubSpotConnected) {
                 syncHubSpot.mutate({
-                  startDate: format(startOfMonth, 'yyyy-MM-dd'),
-                  endDate: format(now, 'yyyy-MM-dd'),
+                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
                 });
               }
             }}
@@ -642,6 +566,18 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
               <CloudDownload className="h-4 w-4 mr-2" />
             )}
             Sync All
+          </Button>
+          <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Metric
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => setFormulaDialogOpen(true)}>
+            <Calculator className="h-4 w-4 mr-2" />
+            Add Calculated
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import Excel
           </Button>
           <Button 
             size="sm" 
