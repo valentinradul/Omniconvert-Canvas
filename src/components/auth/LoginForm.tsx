@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 
 const formSchema = z.object({
@@ -21,10 +21,12 @@ const formSchema = z.object({
 });
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string) => Promise<void>;
+  onSubmit: (email: string, password: string, rememberMe: boolean) => Promise<void>;
 }
 
 export const LoginForm = ({ onSubmit }: LoginFormProps) => {
+  const [rememberMe, setRememberMe] = useState(true);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -34,7 +36,7 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
   });
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    await onSubmit(values.email, values.password);
+    await onSubmit(values.email, values.password, rememberMe);
   };
 
   return (
@@ -79,6 +81,19 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
         />
 
         <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="remember-me" 
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked === true)}
+            />
+            <label 
+              htmlFor="remember-me" 
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              Remember me
+            </label>
+          </div>
           <div className="text-sm">
             <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
               Forgot your password?
