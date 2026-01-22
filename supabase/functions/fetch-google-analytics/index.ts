@@ -31,7 +31,9 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json();
-    const { action, companyId, config, startDate, endDate } = body;
+    // Default to 'sync' action if companyId is provided but no action specified (backwards compatibility)
+    const action = body.action || (body.companyId ? 'sync' : undefined);
+    const { companyId, config, startDate, endDate } = body;
     
     console.log('Request received:', { action, companyId, hasConfig: !!config });
 
