@@ -9,10 +9,10 @@ const corsHeaders = {
 const GA_METRIC_MAPPINGS: Record<string, { 
   metric: string; 
   pageFilter?: string;
-  pageFilterType?: 'contains' | 'exact';
+  pageFilterType?: 'contains' | 'exact' | 'begins_with';
 }> = {
   'Total Traffic (Users)': { metric: 'activeUsers' },
-  'Pricing (users)': { metric: 'activeUsers', pageFilter: '/pricing', pageFilterType: 'exact' },
+  'Pricing (users)': { metric: 'activeUsers', pageFilter: '/pricing', pageFilterType: 'begins_with' },
   'Book-a-demo': { metric: 'activeUsers', pageFilter: '/book-a-demo', pageFilterType: 'contains' },
   'Book-a-call': { metric: 'activeUsers', pageFilter: '/book-a-call', pageFilterType: 'contains' },
   'Pricing Explore': { metric: 'activeUsers', pageFilter: '/pricing/explore', pageFilterType: 'contains' },
@@ -47,12 +47,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // For sync action with companyId, allow service-role background syncing (no user auth required)
-    // This enables automated/scheduled syncs and backend-triggered syncs
+    // For sync and fetch-period-totals actions with companyId, allow service-role background access (no user auth required)
+    // This enables automated/scheduled syncs and live data fetching with stored credentials
     const authHeader = req.headers.get('Authorization');
     let userId: string | null = null;
     
-    if (action === 'sync' && companyId) {
+    if ((action === 'sync' || action === 'fetch-period-totals') && companyId) {
       // Verify company has active GA integration (using stored credentials)
       const { data: integration } = await supabase
         .from('company_integrations')
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      console.log('Background sync: Using stored credentials for company', companyId);
+      console.log(`${action}: Using stored credentials for company`, companyId);
     } else {
       // Other actions require user authentication
       if (!authHeader) {
@@ -560,7 +560,7 @@ Deno.serve(async (req) => {
           range: { startDate: string; endDate: string },
           metricName: string,
           pageFilter?: string,
-          pageFilterType?: 'contains' | 'exact'
+          pageFilterType?: 'contains' | 'exact' | 'begins_with'
         ): Promise<number> => {
           const requestBody: Record<string, unknown> = {
             dateRanges: [range],
@@ -569,11 +569,15 @@ Deno.serve(async (req) => {
           };
 
           if (pageFilter) {
+            let matchType = 'CONTAINS';
+            if (pageFilterType === 'exact') matchType = 'EXACT';
+            else if (pageFilterType === 'begins_with') matchType = 'BEGINS_WITH';
+            
             requestBody.dimensionFilter = {
               filter: {
                 fieldName: 'pagePath',
                 stringFilter: {
-                  matchType: pageFilterType === 'exact' ? 'EXACT' : 'CONTAINS',
+                  matchType,
                   value: pageFilter,
                 },
               },
