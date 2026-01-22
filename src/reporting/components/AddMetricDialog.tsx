@@ -84,11 +84,21 @@ export const AddMetricDialog: React.FC<AddMetricDialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
-            {integrationType !== 'manual' && (
+            {/* Show "Coming Soon" only for unimplemented integrations */}
+            {integrationType !== 'manual' && 
+             !['google_analytics', 'google_search_console', 'hubspot'].includes(integrationType) && (
               <div className="p-3 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">
                   Integration with {INTEGRATION_LABELS[integrationType as IntegrationType]} will be available soon. 
                   For now, you can manually enter data.
+                </p>
+              </div>
+            )}
+            {/* Show ready message for implemented integrations */}
+            {['google_analytics', 'google_search_console', 'hubspot'].includes(integrationType) && (
+              <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  After adding this metric, click the link icon to configure which {INTEGRATION_LABELS[integrationType as IntegrationType]} field to sync.
                 </p>
               </div>
             )}
