@@ -23,33 +23,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   // Check for existing session and set up auth listener
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let isMounted = true;
+    
+    // FIRST: Check for existing session synchronously
+    const initializeAuth = async () => {
+      try {
+        console.log('AuthContext: Initializing auth...');
+        const { data: { session: existingSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('AuthContext: Error getting session:', error);
+        }
+        
+        if (isMounted) {
+          console.log('AuthContext: Initial session check:', existingSession?.user?.id || 'No session');
+          setSession(existingSession);
+          setUser(existingSession?.user ?? null);
+          setIsInitialized(true);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('AuthContext: Failed to get session:', error);
+        if (isMounted) {
+          setIsInitialized(true);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+    
+    // THEN: Set up auth state listener for future changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state change:', event, session?.user?.id);
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, newSession) => {
+        console.log('Auth state change:', event, newSession?.user?.id);
+        
+        if (!isMounted) return;
+        
+        // Update state
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        // Ensure loading is false after any auth event
+        if (isInitialized) {
+          setIsLoading(false);
+        }
         
         if (event === 'SIGNED_IN') {
-          console.log('User signed in:', session?.user.id);
+          console.log('User signed in:', newSession?.user?.id);
           
           // Check for user company access and redirect accordingly
           // Only redirect if we're on the login page or root page
           const currentPath = window.location.pathname;
           if (currentPath === '/' || currentPath === '/login') {
             setTimeout(async () => {
-              if (session?.user?.id) {
+              if (newSession?.user?.id) {
                 try {
-                  
                   // Check for pending invitations for regular users
                   const { data: invitations } = await supabase
                     .from('company_invitations')
                     .select('*')
-                    .eq('email', session.user.email)
+                    .eq('email', newSession.user.email)
                     .eq('accepted', false);
                   
                   if (invitations && invitations.length > 0) {
@@ -59,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     const { data: membership } = await supabase
                       .from('company_members')
                       .select('company_id')
-                      .eq('user_id', session.user.id)
+                      .eq('user_id', newSession.user.id)
                       .limit(1);
                     
                     if (membership && membership.length > 0) {
@@ -80,20 +119,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Clear any stored company data
           localStorage.removeItem('currentCompanyId');
         }
+        
+        // Handle token refresh events - keep user logged in
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed successfully');
+        }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isInitialized]);
 
   // Enhanced login function with better error handling and cleanup
   const login = async (email: string, password: string): Promise<void> => {
