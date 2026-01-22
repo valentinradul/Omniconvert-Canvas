@@ -516,57 +516,65 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h3 className="text-lg font-semibold">{category.name}</h3>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">{category.name}</h3>
+          <div className="flex items-center gap-2">
+            <DateRangePicker 
+              value={dateRange} 
+              onChange={setDateRange} 
+              selectedPreset={datePreset}
+              onPresetChange={setDatePreset}
+            />
+            <GranularitySelector value={granularity} onChange={setGranularity} />
+          </div>
+        </div>
+        
         <div className="flex items-center gap-2 flex-wrap">
-          <DateRangePicker 
-            value={dateRange} 
-            onChange={setDateRange} 
-            selectedPreset={datePreset}
-            onPresetChange={setDatePreset}
-          />
-          <GranularitySelector value={granularity} onChange={setGranularity} />
           {onRefresh && (
             <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           )}
-          {/* Sync All Button - Always visible, syncs all connected integrations */}
-          <Button 
-            size="sm" 
-            variant="default"
-            onClick={() => {
-              // Sync for the selected date range
-              if (isGAConnected) {
-                syncGA.mutate({
-                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
-                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
-                });
-              }
-              if (isGSCConnected) {
-                syncGSC.mutate({
-                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
-                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
-                });
-              }
-              if (isHubSpotConnected) {
-                syncHubSpot.mutate({
-                  startDate: format(dateRange.from, 'yyyy-MM-dd'),
-                  endDate: format(dateRange.to, 'yyyy-MM-dd'),
-                });
-              }
-            }}
-            disabled={syncGA.isPending || syncGSC.isPending || syncHubSpot.isPending || (!isGAConnected && !isGSCConnected && !isHubSpotConnected)}
-            className="bg-primary hover:bg-primary/90"
-          >
-            {(syncGA.isPending || syncGSC.isPending || syncHubSpot.isPending) ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <CloudDownload className="h-4 w-4 mr-2" />
-            )}
-            Sync All
-          </Button>
+          
+          {/* Sync All Button - prominent, always visible when any integration is connected */}
+          {(isGAConnected || isGSCConnected || isHubSpotConnected) && (
+            <Button 
+              size="sm" 
+              variant="default"
+              onClick={() => {
+                if (isGAConnected) {
+                  syncGA.mutate({
+                    startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                    endDate: format(dateRange.to, 'yyyy-MM-dd'),
+                  });
+                }
+                if (isGSCConnected) {
+                  syncGSC.mutate({
+                    startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                    endDate: format(dateRange.to, 'yyyy-MM-dd'),
+                  });
+                }
+                if (isHubSpotConnected) {
+                  syncHubSpot.mutate({
+                    startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                    endDate: format(dateRange.to, 'yyyy-MM-dd'),
+                  });
+                }
+              }}
+              disabled={syncGA.isPending || syncGSC.isPending || syncHubSpot.isPending}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {(syncGA.isPending || syncGSC.isPending || syncHubSpot.isPending) ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CloudDownload className="h-4 w-4 mr-2" />
+              )}
+              Sync All
+            </Button>
+          )}
+          
           <Button size="sm" onClick={() => setAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Metric
