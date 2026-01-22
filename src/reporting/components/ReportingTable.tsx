@@ -750,6 +750,15 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                       {formatPeriodHeader(period, granularity)}
                     </th>
                   ))}
+                  {/* Live Total Column Header */}
+                  {isGAConnected && (
+                    <th className="px-2 py-2 text-right text-sm font-semibold border-r border-border min-w-[120px] bg-orange-100 dark:bg-orange-900/30">
+                      <div className="flex items-center justify-end gap-1">
+                        <Zap className="h-3 w-3 text-orange-500" />
+                        <span className="text-orange-700 dark:text-orange-300">Total (Live)</span>
+                      </div>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -758,7 +767,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                   groupedMetrics.length === 0 ? (
                     <tr>
                       <td 
-                        colSpan={periods.length + 1} 
+                        colSpan={periods.length + 1 + (isGAConnected ? 1 : 0)} 
                         className="px-4 py-8 text-center text-muted-foreground"
                       >
                         No metrics defined yet. Add metrics in the subcategory tabs.
@@ -770,7 +779,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                         {/* Category group header */}
                         <tr className="bg-muted/30">
                           <td 
-                            colSpan={periods.length + 1} 
+                            colSpan={periods.length + 1 + (isGAConnected ? 1 : 0)} 
                             className="px-3 py-2 text-sm font-semibold text-muted-foreground border-t border-border"
                           >
                             {groupCategory.name}
@@ -792,6 +801,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                             onShowInViews={handleShowInViews}
                             isFromOtherCategory={false}
                             liveIntegrationValue={liveGAValuesByMetricId[metric.id]}
+                            showLiveTotalColumn={isGAConnected}
                           />
                         ))}
                       </React.Fragment>
@@ -802,7 +812,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                   visibleMetrics.native.length === 0 && visibleMetrics.shared.length === 0 ? (
                     <tr>
                       <td 
-                        colSpan={periods.length + 1} 
+                        colSpan={periods.length + 1 + (isGAConnected ? 1 : 0)} 
                         className="px-4 py-8 text-center text-muted-foreground"
                       >
                         No metrics defined yet. Click "Add Metric" to get started.
@@ -826,6 +836,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                           onShowInViews={handleShowInViews}
                           isFromOtherCategory={false}
                           liveIntegrationValue={liveGAValuesByMetricId[metric.id]}
+                          showLiveTotalColumn={isGAConnected}
                         />
                       ))}
                       {visibleMetrics.shared.map((metric) => (
@@ -843,6 +854,7 @@ export const ReportingTable: React.FC<ReportingTableProps> = ({
                           onConnectIntegration={handleConnectIntegration}
                           isFromOtherCategory={true}
                           liveIntegrationValue={liveGAValuesByMetricId[metric.id]}
+                          showLiveTotalColumn={isGAConnected}
                         />
                       ))}
                     </>
