@@ -245,15 +245,17 @@ export const IntegrationDialog: React.FC<IntegrationDialogProps> = ({
           {selectedIntegration === 'google_analytics' && (
             <div className="space-y-2">
               <Label>Select GA Metric to Sync</Label>
-              <Select value={selectedField} onValueChange={setSelectedField}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose which GA metric to pull" />
+              <Select value={selectedField || undefined} onValueChange={setSelectedField}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose which GA metric to pull">
+                    {selectedField ? GA_FIELDS.find(f => f.id === selectedField)?.name : 'Choose which GA metric to pull'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {GA_FIELDS.map((field) => (
                     <SelectItem key={field.id} value={field.id}>
                       <div className="flex flex-col">
-                        <span>{field.name}</span>
+                        <span className="font-medium">{field.name}</span>
                         <span className="text-xs text-muted-foreground">{field.description}</span>
                       </div>
                     </SelectItem>
